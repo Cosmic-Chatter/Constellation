@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="A flexible interface for collecting votes">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <style>
+
+      @font-face {
+        font-family: Good-Times;
+        src: url(good-times-rg.ttf);
+      }
+      @font-face {
+        font-family: Gotham-Bold;
+        src: url(Gotham-Bold.otf);
+      }
+      @font-face {
+        font-family: Gotham-Book;
+        src: url(Gotham-Book.otf);
+      }
+
+      html {
+        touch-action: manipulation;
+        word-wrap: break-word;
+        font-size: 25px;
+      }
+      .card-text {
+        font-size: 2vw;
+      }
+      .card-title {
+        font-size: 3vw;
+        text-align: center;
+      }
+      #header {
+        text-align: center;
+        width: 100%;
+        font-size: 5vw;
+        font-weight: bold;
+      }
+      #subheader {
+        text-align: center;
+        width: 100%;
+        font-size: 2vw;
+        font-weight: lighter;
+      }
+    </style>
+
+    <title>Flexible Tracker</title>
+
+  </head>
+
+  <body>
+    <div class="container-fluid">
+
+      <div id="connectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
+        <div class="alert alert-danger col-auto mx-auto" role="alert">Server Connection Lost</div>
+      </div>
+
+      <div class="row mt-2">
+        <div class="col-12 text-center">
+          <span id='header'>Call to Action</span>
+        </div>
+        <div class="col-12 text-center">
+          <span id='subheader'>Touch an option below to make your choice!</span>
+        </div>
+      </div>
+      <div id="cardRow" class="row mt-4"></div>
+        <div class='col-4'>
+          <div class="card">
+            <!-- <img class="card-img-top" src="..." alt="Card image cap"> -->
+            <div class="card-body">
+              <h5 class="card-title">Card title</h5>
+              <p class="card-text">A brief description of the card's meaning.</p>
+            </div>
+          </div>
+        </div>
+    </div>
+
+  <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/showdown.min.js"></script>
+
+  <script>
+
+    function buildLayout(definition) {
+
+      // Take a layout defition in the form of a dictionary of dictionaries and
+      // create cards for each element
+
+      // Clear the exisiting layout
+      $("#cardRow").empty();
+    }
+
+    function checkConnection() {
+
+      // Send a message to the server checking that the connection is stable.
+
+      var requestDict = {"class": "tracker",
+                         "action": "checkConnection"};
+
+      var requestString = JSON.stringify(requestDict);
+
+      function badConnection() {
+        $("#connectionWarning").show();
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverIP, true);
+      xhr.timeout = 1000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.ontimeout = badConnection;
+      xhr.onerror = badConnection;
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          var response = JSON.parse(this.responseText);
+          if (response["success"] == true) {
+            $("#connectionWarning").hide();
+          }
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function loadLayoutDefinition(name) {
+
+      // Ask the control server to send a JSON dict with the layout definition
+      // from the file with `name`
+
+      var requestDict = {"class": "voter",
+                         "action": "getLayoutDefinition",
+                         "name": name};
+
+      var requestString = JSON.stringify(requestDict);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverIP, true);
+      xhr.timeout = 1000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          var definition = JSON.parse(this.responseText);
+          buildLayout(definition);
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function sendData() {
+
+      // Collect the current value from each card, build a dictionary, and
+      // send it to the control server for storage.
+
+      resultDict = {};
+
+      // Append the date and time of this recording
+      var tzoffset = (new Date()).getTimezoneOffset() * 60000; // Time zone offset in milliseconds
+      var date_str = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+      resultDict["Date"] = date_str;
+
+
+      var requestDict = {"class": "voter",
+                         "action": "submitData",
+                         "data": resultDict,
+                         "name": configurationName};
+
+      var requestString = JSON.stringify(requestDict);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverIP, true);
+      xhr.timeout = 5000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+        if (this.status == 200) {
+        }
+      };
+      xhr.send(requestString);
+
+    }
+
+    function parseQueryString() {
+
+      // Read the query string to determine what options to set
+
+      var queryString = decodeURIComponent(window.location.search);
+
+      var searchParams = new URLSearchParams(queryString);
+
+      if (searchParams.has("id")) {
+        id = searchParams.get("id");
+      }
+      if (searchParams.has("type")) {
+        type = searchParams.get("type");
+      }
+      if (searchParams.has("config")) {
+        configurationName = searchParams.get("config");
+      }
+    }
+
+    var serverIP;
+    var id = "NO_ID";
+    var type = "VOTING_KIOSK";
+    var configurationName = "default";
+
+    try {
+      serverIP = INSERT_SERVERIP_HERE; // This will be automatically inserted by the server before being sent to the client
+    } catch(e) {
+      serverIP = "http://localhost:8082";
+    }
+
+    setInterval(checkConnection, 500);
+
+  </script>
+
+  </body>
+
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <style>
+
+      @font-face {
+        font-family: Good-Times;
+        src: url(good-times-rg.ttf);
+      }
+
+      html {
+        touch-action: manipulation;
+        -webkit-user-select: none;  /* Chrome all / Safari all */
+        -moz-user-select: none;/* Firefox all */
+        -ms-user-select: none;
+      }
+      .container-fluid {
+        touch-action: manipulation;
+      }
+      .rotation-button {
+        font-size: 65px;
+      }
+      #attractorOverlay {
+        position: fixed;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.9);
+        z-index: 2;
+        cursor: pointer;
+        justify-content: center;
+        align-items: center;
+      }
+      #header {
+      }
+
+      #scrollPad {
+        width: 100%;
+      }
+      #timeoutSecondsDisplay {
+        font-size: 100px;
+      }
+    </style>
+
+    <title>SOS Kiosk</title>
+
+  </head>
+
+  <body>
+    <!-- This overlay covers the whole screen with the video attractor -->
+    <div id="attractorOverlay" class="sticky-top" onclick="hideAttractor()">
+      <div class="container">
+        <center>
+          <div style="color: white; font-size: 4vw;">Touch to explore</div>
+          <div id="attractorDatasetName" style="color: white; font-size:8vw; font-family:Good-Times;">The Moon</div>
+        </center>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div id='header' class="row sticky-top" style="z-index:1">
+        <div class="col bg-primary pt-1">
+          <center>
+            <H1>Explore With Science on a Sphere</H1>
+            <H4>Choose an option below to view that dataset on the sphere in front of you!</H4>
+          </center>
+        </div>
+      </div>
+      <div class="row">
+
+        <div class='col-4 col-md-3 mt-2' style="position: fixed;">
+          <H1 class="mt-1"><center>Rotate sphere:</center></H1>
+          <div class="row mt-4">
+            <div class="col-6 offset-3">
+              <button id="rotateUpButton" class="rotation-button btn btn-secondary w-100">▲</button>
+            </div>
+          </div>
+          <div class='row mb-4 mt-4'>
+            <div class="col-6">
+              <button id="rotateBackButton" class="rotation-button btn btn-secondary w-100">◀</button>
+            </div>
+            <div class="col-6">
+              <button id="rotateForwardButton" class="rotation-button btn btn-secondary w-100">▶</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-6 offset-3">
+              <button id="rotateDownButton" class="rotation-button btn btn-secondary w-100">▼</button>
+            </div>
+          </div>
+        </div>
+        <div class='col-8 col-md-9 offset-4 offset-md-3'>
+          <div id="cardRow" class="row">
+          </div>
+          <div id="timeoutMessage" style="margin-top: 30%;">
+            <center>
+              <H1>You may make a new selection in...</H1><br>
+              <div id="timeoutSecondsDisplay">10</div>
+            </center>
+          </div>
+        </div>
+        </div>
+
+    </div>
+
+  <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+
+  <script type="text/javascript" src="config.js"></script>
+  <script type="text/javascript" src="SOS_kiosk.js"></script>
+  <script>
+
+
+
+  </script>
+
+  </body>
+
+</html>

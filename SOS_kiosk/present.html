@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <style>
+
+      @font-face {
+        font-family: Good-Times;
+        src: url(good-times-rg.ttf);
+      }
+
+      html {
+        touch-action: manipulation;
+      }
+      .container-fluid {
+        touch-action: manipulation;
+        height: 100vh;
+        position: fixed;
+      }
+
+      #header {
+      }
+      #cardRow {
+        height: 100vh;
+        overflow-y: scroll;
+      }
+      #presenterNotes {
+        height: 100vw;
+        font-size: 2vw;
+        overflow-y: scroll;
+      }
+
+      #scrollPad {
+        width: 100%;
+      }
+    </style>
+
+    <title>SOS Presenter Tools</title>
+
+  </head>
+
+  <body>
+    <!-- This overlay covers the whole screen with the video attractor -->
+    <!-- <div id="attractorOverlay" class="sticky-top" onclick="hideAttractor()">
+      <div class="container-fluid">
+        <center>
+          <div style="color: white; font-size: 3vw;">Touch to explore</div>
+          <div id="attractorDatasetName" style="color: white; font-size:11vw; font-family:Good-Times;">The Moon</div>
+        </center>
+      </div>
+    </div> -->
+
+    <div class="container-fluid">
+      <!-- <div id='header' class="row sticky-top" style="z-index:1">
+        <div class="col bg-primary pt-1">
+          <center>
+            <H1>Explore With Science on a Sphere</H1>
+            <H4>Choose an option below to view that dataset on the sphere in front of you!</H4>
+          </center>
+        </div>
+      </div> -->
+      <div class="row">
+
+        <div class='col-3 col-md-4'>
+          <div id="cardRow" class="row">
+          </div>
+        </div>
+
+        <div id="presenterNotes" class='col-5  mt-2 mb-2'>
+        </div>
+
+        <div class='col-4 col-md-3 offset-8 offset-md-9 mt-2' style="position: fixed;">
+          <H3><center>Drag your finger over the globe to rotate the sphere:</center></H3>
+          <img src="sphere.svg" id="scrollPad" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)"></img>
+        </div>
+      </div>
+
+    </div>
+
+  <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/showdown.min.js"></script>
+  <script>
+
+    function handleTouchEnd(event) {
+
+      config["lastTouchX"] = null;
+      config["lastTouchY"] = null;
+    }
+
+    function handleTouchMove(event) {
+
+      // Called when the user slides their finger over the sphere control panel
+
+      // Keep the page from scrolling when we're using the touchpad
+      event.preventDefault();
+
+      var touchX = event.changedTouches[0].pageX;
+      var touchY = event.changedTouches[0].pageY;
+
+      if (config["lastTouchX"] != null) {
+        var dX = touchX - config["lastTouchX"];
+        var dY = touchY - config["lastTouchY"];
+
+        // Send the movement to the server to pass on to SOS
+        requestString = `action=SOS_moveSphere&dLon=${dX}&dLat=${dY}`;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", helperIP, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(requestString);
+      }
+      config["lastTouchX"] = touchX;
+      config["lastTouchY"] = touchY;
+    }
+
+    function askForDefaults() {
+
+      // Send a message to the local helper and ask for the latest configuration
+      // defaults, then use them.
+
+      requestString = `action=getDefaults`;
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", helperIP, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          readUpdate(this.responseText);
+        }
+    };
+      xhr.send(requestString);
+    }
+
+    function readUpdate(responseText) {
+
+      // Function to read a message from the server and take action based
+      // on the contents
+
+      var update = JSON.parse(responseText);
+
+      if ("id" in update) {
+        id = update["id"];
+      }
+      if ("type" in update) {
+        type = update["type"]
+      }
+      if (("server_ip_address" in update) && ("server_port" in update)) {
+        serverAddress = "http://" + update["server_ip_address"] + ":" + update["server_port"];
+      }
+      if ("dictionary" in update) {
+        dictionary = update["dictionary"];
+      }
+    }
+
+    function sendPing() {
+
+      // Contact the control server and ask for any updates
+
+      if (serverAddress != "") {
+        requestString = `class=exhibitComponent&id=${id}&type=${type}`;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", serverAddress, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onerror = function() {
+        }
+        xhr.onreadystatechange = function () {
+
+          if (this.readyState != 4) return;
+
+          if (this.status == 200) {
+            readUpdate(this.responseText);
+          }
+      };
+        xhr.send(requestString);
+      }
+    }
+
+    function gotoClip(clipNumber) {
+
+      // Send a command to the helper to tell SOS to go to the specified clip.
+
+      if (config["block"] == false) {
+        config["clip_number"] = clipNumber;
+        $(".card").removeClass("bg-primary");
+        $("#card"+clipNumber).addClass("bg-primary");
+        $("#attractorDatasetName").html($("#cardName"+clipNumber).html());
+
+        requestString = `action=SOS_gotoClip&clipNumber=${clipNumber}`;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", helperIP, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function () {
+
+          if (this.readyState != 4) return;
+
+          if (this.status == 200) {
+
+          }
+      };
+        xhr.send(requestString);
+        config["block"] = true;
+        setTimeout(function() {config["block"] = false;}, 2000);
+      } else console.log("Touch blocked");
+
+    }
+
+    function createCard(name, number, icon) {
+
+      // Create a card that holds one dataset
+
+      // Try to look up a public-facing name for the dataset
+      if (dictionary != null) {
+        if (name.toLowerCase() in dictionary) {
+          name = dictionary[name.toLowerCase()];
+        }
+      }
+
+      var html = `
+        <div class='card col-12 mt-3' onclick="gotoClip(${number})">
+          <div class="row no-gutters">
+            <div class="col-3">
+              <img class='card-img-top' src="thumbnails/${icon}"></img>
+            </div>
+            <div class="col-9">
+              <div class="card-body">
+                <center><h3 id="cardName${number}" class="card-title">${name}</h3></center>
+                </div>
+            </div>
+          </div>
+        </div>
+      `
+      $("#cardRow").append(html)
+    }
+
+    function rebuildInterface() {
+
+      // Repopulate the clip buttons in response to a change in playlist
+
+      // Retreive the new clip list
+      requestString = `action=SOS_getClipList`;
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", helperIP, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onerror = function() {
+      }
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          $("#cardRow").empty();
+          var clipList = JSON.parse(this.responseText);
+          for (var i=0; i<clipList.length; i++) {
+            clip = clipList[i];
+
+            createCard(clip["name"], clip["clipNumber"], clip["icon"]);
+          }
+          $("#card"+config["clip_number"]).addClass("bg-primary");
+        }
+    };
+      xhr.send(requestString);
+
+      // Get the presenter notes
+      requestString = `action=SOS_readPlaylist&playlistName=${config["playlist_name"]}`;
+
+      xhr = new XMLHttpRequest();
+      xhr.open("POST", helperIP, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onerror = function() {
+      }
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          $("#presenterNotes").empty();
+          var lines = this.response.split("\n");
+          for (var i=0; i<lines.length; i++){
+            var line = lines[i];
+            if (line.slice(0,2) == "#>") {
+              $("#presenterNotes").append(markdownConverter.makeHtml(line.slice(2)));
+            }
+          }
+        }
+    };
+      xhr.send(requestString);
+    }
+
+    function getSOSState() {
+
+      requestString = `action=SOS_getState`;
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", helperIP, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onerror = function() {
+      }
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          var state_dict = JSON.parse(this.responseText);
+          var keys = Object.keys(state_dict);
+
+          for (var i=0;i<keys.length;i++) {
+            key = keys[i];
+            if (key in config) {
+              if (key == 'playlist_name') {
+                if (config[key] != state_dict[key]) {
+                  console.log("New playlist detected")
+                  config[key] = state_dict[key]
+                  rebuildInterface();
+                }
+              } else if (key == 'clip_number') {
+                if (config[key] != state_dict[key]) {
+                  console.log("New active clip detected")
+                  config[key] = state_dict[key]
+                  $(".card").removeClass("bg-primary");
+                  $("#card"+config[key]).addClass("bg-primary");
+                  $("#attractorDatasetName").html($("#cardName"+config[key]).html());
+                }
+              } else if (key == 'frame_number') {
+                // Calculate the approximate time left in the clip
+                var n = Number(state_dict["frame_number"]);
+                var n_tot = Number(state_dict["frame_count"]);
+                var fps_triple = state_dict["frame_rate "].split(" "); // That extra space is on purpose
+                var fps = Number(fps_triple[0]);
+
+                config["secondsToNextClip"] = (n_tot - n)/fps;
+              }
+            } else {
+              config[key] = state_dict[key]
+            }
+          }
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    // These will be replaced by the values specified in defaults.ini
+    var id = 'SOS-KIOSK';
+    var type = 'KIOSK';
+    var serverAddress = ""; // The address of the main control server
+    var helperIP = "http://10.1.1.31:8000"; // This is the address of the local helper process that can interact with the OS
+    var source = "";
+    var dictionary = null;
+    var markdownConverter = new showdown.Converter();
+    // var autorunScheduler = null; // Will hold a reference to a setTimeout object that handles starting autorun gracefully.
+
+    config = {'playlist_name': null,
+              'clip_number': null,
+              'secondsToNextClip': 100000,
+              'block': false,
+              'lastTouchX': null,
+              'lastTouchY': null};
+
+    askForDefaults();
+
+    rebuildInterface();
+    setInterval(getSOSState, 2000);
+
+  </script>
+
+  </body>
+
+</html>

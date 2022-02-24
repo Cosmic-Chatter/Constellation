@@ -1,0 +1,5 @@
+{"date": "2022-01-27T10:52:25.225189", "status": "Off floor, not working", "notes": "Some sample text"}
+{"date": "2022-01-27T10:58:40.569826", "status": "On floor, not Working", "notes": "sdfgsdfsd"}
+{"date": "2022-01-27T10:59:32.881390", "status": "On floor, not Working", "notes": "dfgdfgdf"}
+{"date": "2022-01-27T11:14:33.024172", "status": "On floor, not Working", "notes": "This is some test"}
+{"id": "WINDOW1", "date": "2022-01-28T15:36:59.871465", "status": "On floor, working", "notes": "This is some test text"}

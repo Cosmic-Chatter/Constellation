@@ -1,0 +1,1 @@
+{"Interactiontime": 24.784, "Observingtime": 4.376, "Questionsasked": 2, "Visitortype": ["Adult", "Child", "Family"], "Visitorenjoyment": 4, "Observations": "This is some test text", "Date": "2022-02-18T15:11:35.613"}

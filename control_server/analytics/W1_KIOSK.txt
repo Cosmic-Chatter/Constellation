@@ -1,0 +1,13 @@
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-09-11T10:45:47.843", "exhibit": "weather"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-09-11T10:46:17.846", "exhibit": "weather"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-09-17T15:56:39.993", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T09:54:35.784", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T09:55:03.857", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T09:55:06.264", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T09:56:28.398", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T09:56:58.419", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T09:57:19.799", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T09:57:47.862", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2022-02-14T11:09:25.248", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2022-02-14T11:10:43.555", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2022-02-14T11:14:42.598", "exhibit": "space"}

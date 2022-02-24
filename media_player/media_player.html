@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <title>Constellation Media Player</title>
+
+    <style>
+      body,html {
+        margin: 0;
+        padding: 0;
+        background-color: black;
+      }
+      #imageOverlay {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        line-height: 100%;
+        top: 0px;
+        left: 0px;
+        opacity: 0;
+        margin: 0;
+        padding: 0;
+        cursor: none;
+      }
+      #fullscreenImage {
+        max-width: 100vw;
+        max-height: 100vh;
+        vertical-align: middle;
+        margin: 0;
+        padding: 0;
+      }
+      #videoOverlay {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        opacity: 0;
+        cursor: none;
+      }
+      #fullscreenVideo {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+
+  <div id="videoOverlay">
+    <video id="fullscreenVideo" muted>
+    </video>
+  </div>
+
+  <div id="imageOverlay">
+    <center>
+      <img id="fullscreenImage">
+    </center>
+  </img>
+  </div>
+
+  <!-- Load js file with helperAddress -->
+  <script src="config.js"></script>
+  <script src="media_player.js"></script>
+
+  <script>
+
+
+    // These will be replaced by the values specified in defaults.ini, passed
+    // to this app by the helper server
+    var id = 'UNKNOWN';
+    var type = 'UNKNOWN';
+    var serverAddress = ""; // The address of the main control server
+    const SOFTWARE_VERSION = 1.0
+
+    var activeIndex = 0; // Index of the file from the source list currently showing
+    var sourceList = [];
+    var sourceAdvanceTimer = null; // Will hold reference to a setTimeout instance to move to the next media.
+    var contentPath = "";
+    var currentExhibit = ""; // This will double as the root of the source path
+    var waitingForSynchronization = false;
+    var autoplayEnabled = true;
+    var image_duration = 30000; // milliseconds; the amount of time an image will be displayed before going to the next one
+    var allowedActionsDict = {"refresh": "true"};
+    var allowAudio = false;
+    var AnyDeskID = "";
+
+    var errorDict = {};
+    var debug = true;
+    document.addEventListener("click", unmute);
+
+    askForDefaults();
+    checkForSoftwareUpdate();
+    sendPing();
+    setInterval(sendPing, 5000);
+    setInterval(checkForHelperUpdates, 100);
+
+    // Hide the cursor
+    document.body.style.cursor = 'none';
+
+  </script>
+
+  </body>
+
+</html>
