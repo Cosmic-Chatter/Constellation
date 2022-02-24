@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <style>
+
+      html {
+        touch-action: manipulation;
+        word-wrap: break-word;
+        overflow-y: hidden;
+        height: 100%;
+        position: relative;
+        padding: 0px;
+        margin: 0px;
+
+        /* Disable text selection */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      body {
+        overflow-x: hidden;
+        height: 100%;
+        position: relative;
+        padding: 0px;
+        margin: 0px;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+      #wordCloudContainer {
+        height: 97.5vh;
+        width: 95vw;
+        margin-left: 2.5vw;
+        margin-right: 2.5vw;
+        margin-top: 0vh;
+        margin-bottom: 2.5vh;
+        overflow: visible;
+      }
+    </style>
+
+    <title>Word Cloud Viewer</title>
+
+  </head>
+
+  <body>
+
+    <!-- <canvas id="wordCloudCanvas">
+    </canvas> -->
+    <!-- This div is used the profanity filer -->
+    <div id="profanityCheckingDiv" style="display: none;"></div>
+    <div id="wordCloudContainer">
+    </div>
+
+  <!-- Load js file with helperAddress -->
+  <script src="viewerConfig.js"></script>
+  <script src="js/wordcloud2.js"></script>
+  <script src="js/jquery-3.5.1.slim.min.js"></script>
+  <script src="js/jquery.profanityfilter.min.js"></script>
+  <script src="js/swearWords.js"></script>
+  <script src="js/pluralize-8.0.0.js"></script>
+  <script>
+
+    function arraysEqual(arr1, arr2) {
+
+      // Function to check if two arrays have the same elements in the same order
+
+      if (arr1.length != arr2.length) {
+        return false;
+      } else {
+        for (var i=0; i<arr1.length; i++) {
+          if (arr1[i] != arr2[i]) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+
+    function askForDefaults() {
+
+      // Send a message to the local helper and ask for the latest configuration
+      // defaults, then use them.
+
+      var requestString = `action=getDefaults`;
+
+      var xhr = new XMLHttpRequest();
+      let checkAgain = function() {
+        console.log("Could not get defaults... checking again");
+        setTimeout(askForDefaults, 500);
+      };
+      xhr.timeout = 2000;
+      xhr.ontimeout = checkAgain;
+      xhr.onerror = checkAgain;
+
+      xhr.open("POST", helperAddress, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          current_config = JSON.parse(this.responseText);
+          readUpdate(this.responseText);
+          getTextUpdateFromServer();
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function cleanText(text) {
+
+      // Converver to lowercase and remove special characters, while attempting
+      // to retain apostrophes that are part of names. E.g., ja'mar
+      // Then, check the text for profanity
+
+      var simpleText = text.toLowerCase().replace(/'\B|[^a-z'? ]/g, ` `);
+      $("#profanityCheckingDiv").html(simpleText).profanityFilter({customSwears: swearList, replaceWith: "#"});
+      $("#profanityCheckingDiv").html($("#profanityCheckingDiv").html().replace(/#/g, ""));
+      return($("#profanityCheckingDiv").html().trim())
+    }
+
+    function countText(text) {
+
+      // Segment the text into words and count word frequency, attempting to
+      // combine different variants of the same word.
+
+      var ignoreList = ["a","about","all","also","am", "and","as","at","be",
+                        "because", "but","by","can","come","could","even",
+                        "find","for","from","get","go","have",
+                        "here","how","i","if","in",
+                        "into","is", "it","its","just","like","look","make",
+                        "many","more","my","not","of","on","one",
+                        "only","or","so","some","than","that","the","their",
+                        "them","then","there","these","they","thing",
+                        "this","those","to","very","with", "which","would"];
+
+      var result = {};
+
+      text.split(" ").forEach((item) => {
+        if (item != "") {
+          // Make sure we have a singular form
+          var word = pluralize.singular(item)
+          if (word in result) {
+            result[word] += 1;
+          } else {
+            if (!ignoreList.includes(word)) {
+              result[word] = 1;
+            }
+          }
+        }
+
+      });
+
+      return(result)
+    }
+
+    function createWordCloud(textDict) {
+
+      // convert textDict into a list, as needed by the wordcloud
+      // First, figure out the word with the largest number
+      wc = WordCloud(divForWC, wc_options)
+    }
+
+    function createWordList(textDict) {
+
+      // Take a dictionary of the form {"word": num_occurances} and convert it
+      // into the nested list required by the wordcloud
+
+      var maxValue = 0;
+      Object.keys(textDict).forEach((item) => {
+        if (textDict[item] > maxValue) {
+          maxValue = textDict[item]
+        }
+      });
+      // Then, format the list, scaling each value to the range [3, 9]
+      var wordList = [];
+      Object.keys(textDict).forEach((item) => {
+        wordList.push([item, 6*textDict[item]/maxValue + 3])
+      });
+      return(wordList);
+    }
+
+    function getCurrentExhibit() {
+
+      // Ask the helper to send the current exhibit name and update as necessary
+
+      var requestDict = {"action": "getCurrentExhibit"};
+      var requestString = JSON.stringify(requestDict);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", helperAddress, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          if (this.responseText != "") {
+            current_config["current_exhibit"] = this.responseText
+          }
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function getTextUpdateFromServer() {
+
+      // Ask the server to send the latest raw text, then trigger the wordcloud
+      // to rebuild
+
+      if (serverAddress != "") {
+
+        var requestDict = {"class": "tracker",
+                           "name": `${id}-${current_config['current_exhibit']}`,
+                           "action": "retrieveRawText"};
+
+        var requestString = JSON.stringify(requestDict);
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 1000;
+        xhr.open("POST", serverAddress, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onerror = function() {
+        }
+        xhr.onreadystatechange = function () {
+
+          if (this.readyState != 4) return;
+
+          if (this.status == 200) {
+            if (this.responseText != "") {
+              var result = JSON.parse(this.responseText);
+              if ("success" in result && result["success"] == true) {
+                if ("text" in result && result["text"] != "") {
+                  wc_options["list"] = createWordList(countText(cleanText(result["text"])));
+                }
+              }
+              createWordCloud()
+            }
+          }
+      };
+        xhr.send(requestString);
+      }
+    }
+
+    function readUpdate(responseText) {
+
+      // Function to read a message from the server and take action based
+      // on the contents
+
+      var update = JSON.parse(responseText);
+
+      //current_config = update;
+      if ("id" in update) {
+        id = update["id"];
+      }
+      if ("type" in update) {
+        type = update["type"]
+      }
+      if (("server_ip_address" in update) && ("server_port" in update)) {
+        serverAddress = "http://" + update["server_ip_address"] + ":" + update["server_port"];
+      }
+      if ("dictionary" in update) {
+        dictionary = update["dictionary"];
+      }
+      if ('commands' in update) {
+        for (var i=0; i<update["commands"].length; i++) {
+          var cmd = (update["commands"])[i];
+
+          if (cmd == "refresh_page") {
+              location.reload();
+          }
+        }
+      }
+    }
+
+    function sendAnalytics(data) {
+
+      // Take the provided dicitonary of data and send it to the control server
+
+      // Append the date and time of this recording
+      var tzoffset = (new Date()).getTimezoneOffset() * 60000; // Time zone offset in milliseconds
+      var date_str = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+      data["datetime"] = date_str;
+
+      // Append the current exhibit
+      data["exhibit"] = current_config["current_exhibit"]
+
+      var requestDict = {"class": "tracker",
+                         "action": "submitAnalytics",
+                         "data": data,
+                         "name": id};
+
+      var requestString = JSON.stringify(requestDict);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverAddress, true);
+      xhr.timeout = 5000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+        if (this.status == 200) {
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function sendPing() {
+
+      // Contact the control server and ask for any updates
+
+      if (serverAddress != "") {
+
+        var allowedActionsDict = {"refresh": "true"}
+
+        var requestDict = {"class": "exhibitComponent",
+                           "id": id,
+                           "type": type,
+                           "allowed_actions": allowedActionsDict};
+
+        var requestString = JSON.stringify(requestDict);
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 1000;
+        xhr.open("POST", serverAddress, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onerror = function() {
+        }
+        xhr.onreadystatechange = function () {
+
+          if (this.readyState != 4) return;
+
+          if (this.status == 200) {
+            if (this.responseText != "") {
+              readUpdate(this.responseText);
+            }
+          }
+      };
+        xhr.send(requestString);
+      }
+    }
+
+    // These will be replaced by the values specified in defaults.ini
+    var id = 'UNKNWON';
+    var type = 'WORDCLOUD_VIEWER';
+    var serverAddress = ""; // The address of the main control server
+    var dictionary = null;
+    var current_config = {}; // Will hold the defaults sent from the helper
+
+    var divForWC = document.getElementById("wordCloudContainer");
+    var wc = null; // This will hold the reference to the wc generator
+    var wc_options = {
+      color: "random-dark",
+      gridSize: Math.round(16 * $(divForWC).width() / 1024),
+      list: createWordList({"test": 1}),
+      weightFactor: function (size) {
+        return Math.pow(size, 2.3) * $(divForWC).width() / 1024;
+      },
+      drawOutOfBound: false,
+      minRotation: 1.5708,
+      maxRotation: 1.5708,
+      rotationSteps: 2,
+      rotateRatio: 0.125,
+      shrinkToFit: true,
+      shuffle: true,
+    }
+
+    askForDefaults();
+
+    setInterval(sendPing, 5000);
+    setInterval(getTextUpdateFromServer, 15000);
+  </script>
+  </body>
+</html>

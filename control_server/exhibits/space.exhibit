@@ -1,0 +1,18 @@
+[WINDOW1]
+content = 2048.jpg
+
+[WINDOW2]
+content = window_small.m4v
+
+[WINDOW3]
+content = testfile3.mp4
+
+[WINDOW4]
+content = testfile4.mp4
+
+[HEADER]
+content = /home/pi/Downloads/header_video.mp4
+
+[WC_VIEW]
+content = 2048.jpg
+

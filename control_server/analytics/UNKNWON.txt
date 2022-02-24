@@ -1,0 +1,6 @@
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T10:12:02.281", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T10:13:15.368", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T10:13:45.387", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T10:14:57.494", "exhibit": "space"}
+{"action": "hideAttractor", "target": "attractor", "idle": "false", "datetime": "2021-11-18T10:14:59.551", "exhibit": "space"}
+{"action": "showAttractor", "target": "attractor", "idle": "true", "datetime": "2021-11-18T10:15:29.526", "exhibit": "space"}

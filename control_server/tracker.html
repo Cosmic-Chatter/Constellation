@@ -1,0 +1,604 @@
+/*jshint esversion: 6 */
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="A flexible tracker for collecting observational data">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <style>
+
+      @font-face {
+        font-family: Good-Times;
+        src: url(good-times-rg.ttf);
+      }
+      @font-face {
+        font-family: Gotham-Bold;
+        src: url(Gotham-Bold.otf);
+      }
+      @font-face {
+        font-family: Gotham-Book;
+        src: url(Gotham-Book.otf);
+      }
+
+      html {
+        touch-action: manipulation;
+        word-wrap: break-word;
+        font-size: 25px;
+      }
+      H1 {
+        font-size: 50px;
+      }
+      H2 {
+        font-size: 40px;
+      }
+      .container-fluid {
+        touch-action: manipulation;
+        overflow-y: hidden;
+      }
+      .counter-button {
+        font-size: 60px;
+      }
+      .mastheadText {
+        font-size: 50px;
+      }
+      .seek-button {
+        font-family: Gotham-Bold;
+        font-size: 50px;
+        height: 100%;
+      }
+    </style>
+
+    <title>Flexible Tracker</title>
+
+  </head>
+
+  <body>
+    <div class="container-fluid">
+
+      <div id="connectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
+        <div class="alert alert-danger col-auto mx-auto" role="alert">Server Connection Lost</div>
+      </div>
+
+      <div class="row mt-2 ">
+        <div class="col-12">
+          <H1>Flexible Tracker</H1>
+        </div>
+        <div class="col-12">
+          <div class="row">
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+              <button id="recordButton" class="btn btn-block btn-success" onclick="sendData()">Record</button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+              <button class="btn btn-block btn-danger" onclick="clearInput()">Clear</button>
+            </div>
+            <div class="col-8 col-sm-5 col-md-4 col-lg-3">
+              <div class="input-group">
+                Select Defintion:
+                <select id="definitionListDropdown" class="form-select" onchange="loadLayout()">
+                  <option value=""></option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="cardRow" class="row mt-4"></div>
+    </div>
+
+  <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/showdown.min.js"></script>
+
+  <script type="text/javascript" src="tracker_tools.js"></script>
+
+  <script>
+
+    class TimingObject {
+
+      // This class is to keep track of elapsed time for the timer input type
+
+      constructor(name, exclusive=false) {
+
+        this.name = name;
+        this.exclusive = exclusive; // Exclusive timers will stop all other exclusive timers when started
+        this.elapsedTime = 0;
+        this.timerRunning = false;
+        this.startTime = null;
+        this.timerInterval = null; // Will hold a reference to a setInterval that updates the interface
+      }
+
+      createWidget() {
+
+        // Return the HTML for representing the timer onscreen.
+
+        var html = `
+        <div class="row w-100">
+          <div class="col-12 col-md-6 mt-2">
+            <button id="TimerStartStopButton_${this.name}" class='btn btn-primary btn-block' onclick="getTimer('${this.name}').toggleTimer();">Start</button>
+          </div>
+          <div class="col-12 col-md-6 mt-2">
+            <span id="TimerCounterView_${this.name}" class="btn btn-secondary disabled btn-block">0 sec</span>
+          </div>
+        </div>
+        `
+
+        return html;
+      }
+
+      resetTimer() {
+
+        if (this.timerRunning) {
+          this.stopTimer();
+        }
+        this.elapsedTime = 0;
+        this.timerRunning = false;
+        this.startTime = null;
+        this.timerInterval = null;
+        $("#TimerCounterView_" + this.name).html("0 sec");
+      }
+
+      startTimer() {
+
+        if (this.timerRunning == false)  {
+
+          if (this.exclusive) {
+            timerList.forEach(timer => {
+              if (timer.exclusive) {
+                timer.stopTimer()
+              }
+            });
+          }
+          var d = new Date();
+          this.startTime = d.getTime();
+          this.timerRunning = true;
+
+          var thisObject = this;
+          this.timerInterval = setInterval(
+            function() {
+              thisObject.updateInterface();
+            }, 1000); // Once per second
+
+          $("#TimerStartStopButton_"+this.name).html("Stop");
+          $("#TimerStartStopButton_"+this.name).addClass("btn-danger").removeClass("btn-primary");
+        }
+      }
+
+      stopTimer() {
+
+        // Stop the timer from incrementing and add the accumulated time to
+        // elapsedTime
+
+        if (this.timerRunning) {
+          var d = new Date()
+          var nowTime = d.getTime();
+          this.elapsedTime += nowTime - this.startTime;
+
+          this.startTime = null;
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+          this.timerRunning = false;
+
+          $("#TimerStartStopButton_"+this.name).html("Start");
+          $("#TimerStartStopButton_"+this.name).addClass("btn-primary").removeClass("btn-danger");
+        }
+
+      }
+
+      toggleTimer() {
+
+        if (this.timerRunning) {
+          this.stopTimer();
+        } else {
+          this.startTimer();
+        }
+      }
+
+      updateInterface() {
+
+        // Update the label with the current amount of elapsed time.
+
+        var d = new Date()
+        var nowTime = d.getTime();
+        var displayTime = String(Math.round((nowTime - this.startTime + this.elapsedTime)/1000)) + " sec";
+
+        $("#TimerCounterView_" + this.name).html(displayTime);
+      }
+    }
+
+    function buildLayout(definition) {
+
+      // Take a layout defition in the form of a dictionary of dictionaries and
+      // create cards for each element
+
+      // Clear the exisiting layout
+      $("#cardRow").empty();
+
+      // Clear existing references to cards
+      dropdownList = [];
+      numberList = [];
+      sliderList = [];
+      textList = [];
+      timerList = [];
+
+      // Loop the dictionaries in the definition and make a card for each
+      var keys = Object.keys(definition);
+
+      for (var i=0; i<keys.length; i++) {
+        var item = definition[keys[i]];
+        var item_id = keys[i].replace(/\s/g,'');
+        if (!("type" in item)) {
+          console.log(`buildLayout: Error: item ${keys[i]} does not have a type!`)
+          continue
+        }
+        // Start the card
+        var html = `
+        <div class='col-12 col-sm-6 col-md-6 col-lg-4 mt-2'>
+          <div data-name="${keys[i]}" class="card h-100">
+              <div class="card-body">
+                <H2 class="card-title">${keys[i]}</H2>`
+
+        if ("label" in item) {
+          html += `<label for="${item_id}_input">${item["label"]}</label>`
+        }
+
+        html += `<div class="input-group mb-3">`
+
+        switch(item["type"]) {
+
+          case "counter":
+            html += `
+                      <div class='row w-100'>
+                        <div class="col-4">
+                        <button class='counter-button btn btn-danger w-100' onclick="incrementCounter('${item_id}', -1)">–</button>
+                        </div>
+                        <div class="col-4">
+                          <div class="w-100 h-100 justify-content-center d-flex">
+                            <span id="${item_id}_counter" data-name="${item_id}" class="align-self-center justify-content-center" style="font-size:50px;">0</span>
+                          </div>
+                        </div>
+                        <div class="col-4">
+                        <button class='counter-button btn btn-success w-100' onclick="incrementCounter('${item_id}', 1)">+</button>
+                        </div>
+                      </div>
+            `;
+            break;
+
+          case "dropdown":
+            if ("options" in item) {
+              let multiple = "";
+              if ("multiple" in item) {
+                if (item.multiple.toLowerCase() == "true") {
+                  multiple = "multiple"
+                }
+              }
+
+              var split = item["options"].split(",");
+
+              html += `<select ${multiple} id="${item_id}_input" data-name="${item_id}" class="form-select w-100">`;
+
+              // If we do not have a multiple selector, add a blank entry first
+              // so that it doesn't look like anything has been selected.
+              if (multiple != "multiple") {
+                html += `<option value=""></option>`
+              }
+
+              for (var j=0; j<split.length; j++) {
+                var value = split[j].trim();
+                html += `<option value="${value}">${value}</option>`
+              }
+
+              html += "</select>";
+            }
+            break;
+
+          case "number":
+            html += `<input type="number" id="${item_id}_input" data-name="${item_id}">`;
+            break;
+
+          case "slider":
+            var min;
+            if ("min" in item) {
+              min = item["min"];
+            } else {
+              min = 0;
+            }
+            var max;
+            if ("max" in item) {
+              max = item["max"];
+            } else {
+              max = 100;
+            }
+            var step;
+            if ("step" in item) {
+              step = item["step"];
+            } else {
+              step = 1;
+            }
+            var start;
+            if ("start" in item) {
+              start = item.start;
+            } else {
+              start = min;
+            }
+
+            html += `
+                      <div class="row w-100">
+                        <div class="col-9">
+                          <input type="range" id="${item_id}_input" data-name="${item_id}" data-start="${start}" min="${min}" max="${max}" step="${step}" value=${start} oninput="updateValue('${item_id}_input', '${item_id}_input_label')" class="w-100">
+                        </div>
+                        <div class="col-3">
+                          <span id="${item_id}_input_label">${start}</span>
+                        </div>
+                    `;
+
+            break;
+
+          case "text":
+            let rows = 5;
+            if ("lines" in item) {
+              rows = Math.round(item.lines)
+            }
+            html += `<textarea id="${item_id}_input" data-name="${item_id}" class="form-control w-100" rows="${rows}"></textarea>`;
+            break;
+
+          case "timer":
+            var exclusive = false;
+            if ("exclusive" in item) {
+              if (item["exclusive"].toLowerCase() == "true") {
+                exclusive = true;
+              }
+            }
+            var timer = new TimingObject(item_id, exclusive);
+
+            html += timer.createWidget();
+
+            timerList.push(timer);
+            break;
+        }
+
+        // End the card
+        html += `
+                </div>
+              </div>
+          </div>
+        </div>
+        `
+        $("#cardRow").append(html);
+
+        // Store a reference to the appropriate object
+        switch (item["type"]) {
+
+          case "counter":
+            counterList.push(document.getElementById(item_id + "_counter"));
+            break;
+          case "dropdown":
+            dropdownList.push(document.getElementById(item_id + "_input"))
+            break;
+          case "number":
+            numberList.push(document.getElementById(item_id + "_input"))
+            break;
+          case "slider":
+            sliderList.push(document.getElementById(item_id + "_input"))
+            break;
+          case "text":
+            textList.push(document.getElementById(item_id + "_input"))
+            break;
+          case "timer":
+            // We already store this reference in timerList as part of object creation
+            break;
+        }
+      }
+    }
+
+    function checkConnection() {
+
+      // Send a message to the server checking that the connection is stable.
+
+      var requestDict = {"class": "tracker",
+                         "action": "checkConnection"};
+
+      var requestString = JSON.stringify(requestDict);
+
+      function badConnection() {
+        $("#connectionWarning").show();
+        $("#recordButton").prop("disabled", true);
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverIP, true);
+      xhr.timeout = 1000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.ontimeout = badConnection;
+      xhr.onerror = badConnection;
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          var response = JSON.parse(this.responseText);
+          if (response["success"] == true) {
+            $("#connectionWarning").hide();
+            $("#recordButton").prop("disabled", false);
+          }
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function clearInput() {
+
+      // Reset all cards back to their initial state
+
+      counterList.forEach(item => {
+        item.innerHTML = "0";
+      });
+      dropdownList.forEach(item => {
+        item.value = "";
+      });
+
+      numberList.forEach(item => {
+        item.value = null;
+      });
+
+      sliderList.forEach(item => {
+        item.value = $(item).data('start');
+        document.getElementById($(item).data("name") + "_input_label").innerHTML = $(item).data('start');
+      });
+
+      textList.forEach(item => {
+        item.value = "";
+      });
+
+      timerList.forEach(item => {
+        item.resetTimer();
+      });
+    }
+
+    function incrementCounter(id, value_to_add) {
+
+      // Function to add the given number to the counter with the specified id
+
+      var cur_value = parseInt($('#'+id+"_counter").html());
+      $('#'+id+"_counter").html(cur_value + value_to_add);
+    }
+
+
+
+    function getTimer(name) {
+
+      // Get a TimingObject by its name
+
+      var result = timerList.find(obj => {
+        return obj.name === name
+      });
+
+      return result;
+    }
+
+    function sendData() {
+
+      // Collect the current value from each card, build a dictionary, and
+      // send it to the control server for storage.
+
+      resultDict = {}
+
+      // Do timers first to make sure they stop as close to immediately as possible
+      timerList.forEach(item => {
+        item.stopTimer();
+        resultDict[item.name] = item.elapsedTime/1000;
+      });
+
+      counterList.forEach(item => {
+        resultDict[$(item).data("name")] = parseInt(item.innerHTML);
+      });
+      dropdownList.forEach(item => {
+        resultDict[$(item).data("name")] = $(item).val(); // To support getting multiple values
+      });
+
+      numberList.forEach(item => {
+        resultDict[$(item).data("name")] = parseFloat(item.value);
+      });
+
+      sliderList.forEach(item => {
+        resultDict[$(item).data("name")] = parseFloat(item.value);
+      });
+
+      textList.forEach(item => {
+        resultDict[$(item).data("name")] = item.value;
+      });
+
+      // Append the date and time of this recording
+      var tzoffset = (new Date()).getTimezoneOffset() * 60000; // Time zone offset in milliseconds
+      var date_str = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+      resultDict["Date"] = date_str;
+
+
+      var requestDict = {"class": "tracker",
+                         "action": "submitData",
+                         "data": resultDict,
+                         "name": configurationName};
+
+      var requestString = JSON.stringify(requestDict);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", serverIP, true);
+      xhr.timeout = 5000;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+      xhr.onreadystatechange = function () {
+        if (this.readyState != 4) return;
+        if (this.status == 200) {
+          // Clear the inputs so that we can't double-submit data
+          clearInput();
+        }
+      };
+      xhr.send(requestString);
+    }
+
+    function updateValue(fromID, toID) {
+
+      // Read the value property from the element with ID fromID and put the
+      // value into the div with toID
+
+      var obj = document.getElementById(fromID);
+
+      document.getElementById(toID).innerHTML = obj.value;
+    }
+
+    function populateLayoutDropdown(definitionList) {
+
+      // Take a list of layouts and fill up the dropdown list
+
+      definitionList.forEach(item => {
+        var name = item.split(".").slice(0, -1).join(".");
+        var html = `<option value="${name}">${name}</option>`;
+        $("#definitionListDropdown").append(html);
+      });
+    }
+
+    function loadLayout(name="") {
+
+      if (name == "") {
+        var dropdownName = document.getElementById("definitionListDropdown").value;
+        if (dropdownName == "") {
+          return;
+        } else {
+          name = dropdownName;
+          configurationName = name;
+        }
+      }
+      loadLayoutDefinition(name, buildLayout);
+    }
+
+    var serverIP;
+    try {
+      serverIP = INSERT_SERVERIP_HERE // This will be automatically inserted by the server before being sent to the client
+    } catch(e) {
+      serverIP = "http://localhost:8082";
+    }
+    var configurationName = "test";
+
+    // initialize arrays to hold references to each of our types of cards
+    var counterList = [];
+    var dropdownList = [];
+    var numberList = [];
+    var sliderList = [];
+    var textList = [];
+    var timerList = [];
+
+    getAvailableDefinitions(populateLayoutDropdown);
+    setInterval(checkConnection, 500);
+
+  </script>
+
+  </body>
+
+</html>
