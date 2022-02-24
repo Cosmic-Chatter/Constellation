@@ -1,0 +1,142 @@
+body, html {
+  margin: 0px;
+  padding: 0px;
+  background: #719abf;
+  overscroll-behavior-x: none;
+  user-select: none;
+  /* cursor: none; */
+  overflow: hidden;
+}
+H1 {
+  color: white;
+  font-size: 3.7vh;
+  text-align: center;
+}
+H2 {
+  color: white;
+  font-size: 3.2vh;
+}
+H3 {
+  color: white;
+  font-size: 2.9vh;
+}
+H4 {
+  color: white;
+  font-size: 2.6vh;
+}
+H5 {
+  color: white;
+  font-size: 2.3vh;
+}
+H6 {
+  color: white;
+  font-size: 2vh;
+}
+p {
+  color: white;
+  font-size: 1.6vh;
+}
+li {
+  color: white;
+  font-size: 1.6vh;
+}
+::-webkit-scrollbar {
+  width: 0;
+}
+.bigImage {
+  object-fit: contain;
+  max-height: 50vh;
+  max-width: 100%;
+}
+.box {
+  background-color: #308446;
+  padding: 3vw;
+  margin-top: 2vw;
+  margin-bottom: 2vw;
+  border-style: solid;
+  border-radius: 20px;
+  border-color: white;
+  border-width: 10px;
+  box-shadow: 1vw 1vw RGBA(0,0,0, .5);
+}
+.card {
+}
+.card-img-top {
+  object-fit: contain;
+  max-height: 28vw;
+}
+.card-title {
+  font-size: 2.3vh;
+}
+.overlay {
+  position: absolute;
+  left: 0px;
+  top: 10vh;
+  height: 80vh;
+  width: 100vw;
+  background-color: RGBA(0,0,0, 0.85);
+}
+.overlayCaption {
+  color: white;
+  font-size: 50px;
+}
+.overlayCredit {
+  color: white;
+  font-size: 30px;
+}
+.overlayTitle {
+  font-size: 75px;
+  color: white;
+}
+.tabButton {
+  font-size: 2.5vh;
+}
+#attractorOverlay {
+  position: fixed;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 5;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+}
+#attractorVideo {
+  position: fixed;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+#buttonRow {
+  height: 6vh;
+}
+#langToggleButton {
+  font-size: 2vh;
+}
+#masthead {
+  font-size: 5vh;
+  height: 10vh;
+  line-height: 10vh;
+  color: white;
+  z-index: 1;
+}
+#nav-tabContent {
+  height: 79vh;
+  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+#toolbar {
+  background-color: gray;
+  height: 5vh;
+  z-index: 1;
+}
