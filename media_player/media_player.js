@@ -410,6 +410,8 @@ function askForDefaults() {
   var requestString = JSON.stringify({"action": "getDefaults"});
 
   let checkAgain = function() {
+    $("#helperConnectionWarningAddress").text(helperAddress);
+    $("#helperConnectionWarning").show();
     console.log("Could not get defaults... checking again");
     setTimeout(askForDefaults, 500);
   };
@@ -424,6 +426,7 @@ function askForDefaults() {
     if (this.readyState != 4) return;
 
     if (this.status == 200) {
+      $("#helperConnectionWarning").hide();
       readUpdate(this.responseText);
     }
   };

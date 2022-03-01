@@ -9,6 +9,8 @@
 
     <title>Constellation Media Player</title>
 
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
     <style>
       body,html {
         margin: 0;
@@ -52,6 +54,15 @@
 
   <body>
 
+  <div id="helperConnectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
+    <div class="alert alert-danger col-auto mx-auto" role="alert">
+      <center>
+        <H4>Error: Cannot connect to System Helper!</H4>
+        Make sure the helper is running at <span id='helperConnectionWarningAddress'></span> and then restart Media Player
+      </center>
+    </div>
+  </div>
+
   <div id="videoOverlay">
     <video id="fullscreenVideo" muted>
     </video>
@@ -64,6 +75,8 @@
   </img>
   </div>
 
+  <script src="js/jquery-3.5.1.slim.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
   <!-- Load js file with helperAddress -->
   <script src="config.js"></script>
   <script src="media_player.js"></script>
