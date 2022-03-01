@@ -1,7 +1,7 @@
-### Constellation Control Server
-### A centralized server for controling museum exhibit components
-### Written by Morgan Rehnberg, Fort Worth Museum of Science and History
-### Released under the MIT license
+# Constellation Control Server
+# A centralized server for controlling museum exhibit components
+# Written by Morgan Rehnberg, Fort Worth Museum of Science and History
+# Released under the MIT license
 
 # Standard modules
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -34,7 +34,7 @@ import projector_control
 
 
 class Issue:
-    """Contains information relavant for tracking an issue."""
+    """Contains information relevant for tracking an issue."""
 
     def __init__(self, details):
         """Populate the Issue with the information stored in a dictionary"""
@@ -54,16 +54,16 @@ class Issue:
 class Projector:
     """Holds basic data about a projector"""
 
-    def __init__(self, id, ip, connection_type, mac_address=None, make=None, password=None):
+    def __init__(self, id_, ip, connection_type, mac_address=None, make=None, password=None):
 
-        self.id = id
+        self.id = id_
         self.ip = ip  # IP address of the projector
         self.password = password  # Password to access PJLink
         self.mac_address = mac_address  # For use with Wake on LAN
         self.connection_type = connection_type
         self.make = make
         self.config = {"allowed_actions": ["power_on", "power_off"],
-                       "description": componentDescriptions.get(id, "")}
+                       "description": componentDescriptions.get(id_, "")}
 
         self.state = {"status": "OFFLINE"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -158,14 +158,14 @@ class Projector:
 class ExhibitComponent:
     """Holds basic data about a component in the exhibit"""
 
-    def __init__(self, id, this_type, category='dynamic'):
+    def __init__(self, id_, this_type, category='dynamic'):
 
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from currentExhibitConfiguration.ini
 
         global wakeOnLANList
 
-        self.id = id
+        self.id = id_
         self.type = this_type
         self.category = category
         self.ip = ""  # IP address of client
@@ -181,7 +181,7 @@ class ExhibitComponent:
 
         self.config = {"commands": [],
                        "allowed_actions": [],
-                       "description": componentDescriptions.get(id, ""),
+                       "description": componentDescriptions.get(id_, ""),
                        "AnyDeskID": ""}
 
         if category != "static":
@@ -254,7 +254,7 @@ class ExhibitComponent:
 
     def update_configuration(self):
 
-        """Retreive the latest configuration data from the configParser object"""
+        """Retrieve the latest configuration data from the configParser object"""
         try:
             file_config = dict(currentExhibitConfiguration.items(self.id))
             for key in file_config:
@@ -327,16 +327,16 @@ class ExhibitComponent:
 class WakeOnLANDevice:
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
-    def __init__(self, id, macAddress, ip_address=None):
+    def __init__(self, id_, mac_address, ip_address=None):
 
-        self.id = id
+        self.id = id_
         self.type = "WAKE_ON_LAN"
-        self.macAddress = macAddress
+        self.macAddress = mac_address
         self.broadcastAddress = "255.255.255.255"
         self.port = 9
         self.ip = ip_address
         self.config = {"allowed_actions": ["power_on"],
-                       "description": componentDescriptions.get(id, "")}
+                       "description": componentDescriptions.get(id_, "")}
 
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -401,14 +401,14 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 class RequestHandler(SimpleHTTPRequestHandler):
     """Handle incoming requests to the control server"""
 
-    def send_current_configuration(self, id):
+    def send_current_configuration(self, id_):
 
         """Function to respond to a POST with a string defining the current exhibit configuration"""
 
-        json_string = json.dumps(get_exhibit_component(id).config)
-        if len(get_exhibit_component(id).config["commands"]) > 0:
+        json_string = json.dumps(get_exhibit_component(id_).config)
+        if len(get_exhibit_component(id_).config["commands"]) > 0:
             # Clear the command list now that we have sent
-            get_exhibit_component(id).config["commands"] = []
+            get_exhibit_component(id_).config["commands"] = []
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
     def send_webpage_update(self):
@@ -417,9 +417,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         componentDictList = []
         for item in componentList:
-            temp = {}
-            temp["id"] = item.id
-            temp["type"] = item.type
+            temp = {"id": item.id,
+                    "type": item.type}
             if "content" in item.config:
                 temp["content"] = item.config["content"]
             if "error" in item.config:
@@ -438,10 +437,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
             componentDictList.append(temp)
 
         for item in projectorList:
-            temp = {}
-            temp["id"] = item.id
-            temp["type"] = 'PROJECTOR'
-            temp["ip_address"] = item.ip
+            temp = {"id": item.id,
+                    "type": 'PROJECTOR',
+                    "ip_address": item.ip}
             if "allowed_actions" in item.config:
                 temp["allowed_actions"] = item.config["allowed_actions"]
             if "description" in item.config:
@@ -451,10 +449,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
             componentDictList.append(temp)
 
         for item in wakeOnLANList:
-            temp = {}
-            temp["id"] = item.id
-            temp["type"] = 'WAKE_ON_LAN'
-            temp["ip_address"] = item.ip
+            temp = {"id": item.id,
+                    "type": 'WAKE_ON_LAN',
+                    "ip_address": item.ip}
             if "allowed_actions" in item.config:
                 temp["allowed_actions"] = item.config["allowed_actions"]
             if "description" in item.config:
@@ -464,28 +461,25 @@ class RequestHandler(SimpleHTTPRequestHandler):
             componentDictList.append(temp)
 
         # Also include an object with the status of the overall gallery
-        temp = {}
-        temp["class"] = "gallery"
-        temp["currentExhibit"] = currentExhibit
-        temp["availableExhibits"] = EXHIBIT_LIST
-        temp["galleryName"] = gallery_name
-        temp["updateAvailable"] = str(software_update_available).lower()
+        temp = {"class": "gallery",
+                "currentExhibit": currentExhibit,
+                "availableExhibits": EXHIBIT_LIST,
+                "galleryName": gallery_name,
+                "updateAvailable": str(software_update_available).lower()}
         componentDictList.append(temp)
 
         # Also include an object containing the current issues
-        temp = {}
-        temp["class"] = "issues"
-        temp["issueList"] = [x.details for x in issueList]
-        temp["assignable_staff"] = assignable_staff
+        temp = {"class": "issues",
+                "issueList": [x.details for x in issueList],
+                "assignable_staff": assignable_staff}
         componentDictList.append(temp)
 
         # Also include an object containing the current schedule
         with scheduleLock:
-            temp = {}
-            temp["class"] = "schedule"
-            temp["updateTime"] = scheduleUpdateTime
-            temp["schedule"] = scheduleList
-            temp["nextEvent"] = nextEvent
+            temp = {"class": "schedule",
+                    "updateTime": scheduleUpdateTime,
+                    "schedule": scheduleList,
+                    "nextEvent": nextEvent}
             componentDictList.append(temp)
 
         json_string = json.dumps(componentDictList, default=str)
@@ -597,6 +591,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             with logLock:
                 logging.warning("POST received without content-type header")
             print(self.headers)
+            return
 
         if ctype == "application/json":
             # print("  application/json")
@@ -752,11 +747,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     # Send the updated schedule back
                     with scheduleLock:
-                        response_dict = {}
-                        response_dict["class"] = "schedule"
-                        response_dict["updateTime"] = scheduleUpdateTime
-                        response_dict["schedule"] = scheduleList
-                        response_dict["nextEvent"] = nextEvent
+                        response_dict = {"class": "schedule",
+                                         "updateTime": scheduleUpdateTime,
+                                         "schedule": scheduleList,
+                                         "nextEvent": nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -772,11 +766,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                         # Send the updated schedule back
                         with scheduleLock:
-                            response_dict = {}
-                            response_dict["class"] = "schedule"
-                            response_dict["updateTime"] = scheduleUpdateTime
-                            response_dict["schedule"] = scheduleList
-                            response_dict["nextEvent"] = nextEvent
+                            response_dict = {"class": "schedule",
+                                             "updateTime": scheduleUpdateTime,
+                                             "schedule": scheduleList,
+                                             "nextEvent": nextEvent}
 
                         json_string = json.dumps(response_dict, default=str)
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -791,11 +784,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                         # Send the updated schedule back
                         with scheduleLock:
-                            response_dict = {}
-                            response_dict["class"] = "schedule"
-                            response_dict["updateTime"] = scheduleUpdateTime
-                            response_dict["schedule"] = scheduleList
-                            response_dict["nextEvent"] = nextEvent
+                            response_dict = {"class": "schedule",
+                                             "updateTime": scheduleUpdateTime,
+                                             "schedule": scheduleList,
+                                             "nextEvent": nextEvent}
 
                         json_string = json.dumps(response_dict, default=str)
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -827,11 +819,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     # Send the updated schedule back
                     with scheduleLock:
-                        response_dict = {}
-                        response_dict["class"] = "schedule"
-                        response_dict["updateTime"] = scheduleUpdateTime
-                        response_dict["schedule"] = scheduleList
-                        response_dict["nextEvent"] = nextEvent
+                        response_dict = {"class": "schedule",
+                                         "updateTime": scheduleUpdateTime,
+                                         "schedule": scheduleList,
+                                         "nextEvent": nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -995,7 +986,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         # type = data["type"]
                         if id == "UNKNOWN":
                             print(f"Warning: exhibitComponent ping with id=UNKNOWN coming from {self.address_string()}")
-                            self.wfile.write(json.dumps({}))
+                            self.wfile.write(bytes(json.dumps({}), encoding='UTF-8'))
                             # print("END POST")
                             # print("===============")
                             return
@@ -1157,9 +1148,8 @@ def update_synchronization_list(this_id, other_ids):
 
     if id_known is False:
         # Create a new dictionary
-        temp = {}
-        temp["ids"] = [this_id] + other_ids
-        temp["checked_in"] = [False for i in temp["ids"]]
+        temp = {"ids": [this_id] + other_ids}
+        temp["checked_in"] = [False for _ in temp["ids"]]
         (temp["checked_in"])[0] = True  # Check in the current id
         synchronizationList.append(temp)
     else:
@@ -1190,7 +1180,7 @@ def check_if_schedule_time_exists(path, time_to_set):
 
 
 def poll_event_schedule():
-    """Periodically check the event schedule in an independant thread.
+    """Periodically check the event schedule in an independent thread.
     """
 
     global pollingThreadDict
@@ -1247,9 +1237,9 @@ def check_event_schedule():
                     target = action[1]
                     action = action[0]
                 else:
-                    print(f"Error: unrecofnized event format: {action}")
+                    print(f"Error: unrecognized event format: {action}")
                     with logLock:
-                        logging.error("Unrecofnized event format: %s", action)
+                        logging.error("Unrecognized event format: %s", action)
                     queue_next_on_off_event()
                     return
             if action == 'reload_schedule':
@@ -1376,7 +1366,7 @@ def check_available_exhibits():
 
 
 def create_new_exhibit(name, clone):
-    """Createa new exhibit file
+    """Create a new exhibit file
 
     Set clone=None to create a new file, or set it equal to the name of an
     existing exhibit to clone that exhibit."""
@@ -1456,7 +1446,7 @@ def load_default_configuration():
 
     projectorList = []
 
-    # Load the component descriptions. Do this first so they are available when
+    # Load the component descriptions. Do this first, so they are available when
     # creating the various components
     try:
         print("Reading component descriptions...", end="", flush=True)
@@ -1481,7 +1471,7 @@ def load_default_configuration():
         print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
         if get_projector(key) is None:
             # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, passwprd"
+            # we have the form "ip, password"
             split = pjlink_projectors[key].split(",")
             if len(split) == 2:
                 # We have an IP address and a password
@@ -1499,7 +1489,7 @@ def load_default_configuration():
             projectorList.append(new_proj)
     print("Connecting to PJLink projectors... done                      ")
 
-    # Parse list of serial proejctors
+    # Parse list of serial projectors
     try:
         serial_projectors = configReader["SERIAL_PROJECTORS"]
         print("Connecting to serial projectors...", end="\r", flush=True)
@@ -1514,7 +1504,7 @@ def load_default_configuration():
         print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
         if get_projector(key) is None:
             # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, passwprd"
+            # we have the form "ip, password"
             split = serial_projectors[key].split(",")
             if len(split) == 2:
                 # We have an IP address and a make
@@ -1539,7 +1529,7 @@ def load_default_configuration():
 
         for key in wol:
             if get_exhibit_component(key) is None:
-                # If get_exhibit_component is not None, this key corresponds
+                # If 'get_exhibit_component' is not None, this key corresponds
                 # to a WoL device with a matching exhibit component ID and
                 # we have already loaded that component from the pickle file
                 value_split = wol[key].split(",")
@@ -1625,7 +1615,7 @@ def read_exhibit_configuration(name, updateDefault=False):
         print(
             f"Error: exhibit definition with name {name} does not appear to be properly formatted. This file should be located in the exhibits directory.")
         with logLock:
-            logging.error('Bad exhibit definition fileanme: %s', name)
+            logging.error('Bad exhibit definition filename: %s', name)
         return
 
     currentExhibit = name
@@ -1872,7 +1862,7 @@ def error_handler(*exc_info):
 
 
 def check_for_software_update():
-    """Download the version.txt file from Github and check if there is an update"""
+    """Download the version.txt file from GitHub and check if there is an update"""
 
     global software_update_available
 
@@ -1900,7 +1890,6 @@ if getattr(sys, 'frozen', False):
     config.APP_PATH = os.path.dirname(sys.executable)
 else:
     config.APP_PATH = os.path.dirname(os.path.abspath(__file__))
-
 
 server_port = 8080  # Default; should be set in currentExhibitConfiguration.ini
 ip_address = "localhost"  # Default; should be set in currentExhibitConfiguration.ini

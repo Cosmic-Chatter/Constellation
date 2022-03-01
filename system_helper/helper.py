@@ -236,7 +236,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             try:
                 data_str = self.rfile.read(length).decode("utf-8")
             except ConnectionResetError:
-                print("Error: conneciton reset by client")
+                print("Error: connection reset by client")
                 return
 
             try:  # JSON
@@ -442,9 +442,9 @@ def check_for_software_update():
 
 
 def parse_byte_range(byte_range):
-    '''Returns the two numbers in 'bytes=123-456' or throws ValueError.
+    """Returns the two numbers in 'bytes=123-456' or throws ValueError.
     The last number or both numbers may be None.
-    '''
+    """
 
     BYTE_RANGE_RE = re.compile(r'bytes=(\d+)-(\d+)?$')
     if byte_range.strip() == '':
@@ -477,7 +477,7 @@ def reboot():
 
 
 def shutdown():
-    """Send an OS-appropriate command to shutdown the computer.
+    """Send an OS-appropriate command to shut down the computer.
 
     If shutdown is not allowed, call sleep_display() to put the display to sleep"""
 
@@ -576,7 +576,7 @@ def getAllDirectoryContents():
     content_path = os.path.join(config.application_path, "content")
     result = [os.path.relpath(os.path.join(dp, f), content_path) for dp, dn, fn in os.walk(content_path) for f in fn]
 
-    return ([x for x in result if x.find(".DS_Store") == -1])
+    return [x for x in result if x.find(".DS_Store") == -1]
 
 
 def getDirectoryContents(path, absolute=False):
@@ -591,7 +591,7 @@ def getDirectoryContents(path, absolute=False):
         # root = os.path.dirname(os.path.abspath(__file__))
         content_path = os.path.join(config.application_path, "content")
         contents = os.listdir(os.path.join(content_path, path))
-    return ([x for x in contents if x[0] != "."])  # Don't return hidden files
+    return [x for x in contents if x[0] != "."]  # Don't return hidden files
 
 
 def check_directory_structure():
@@ -860,7 +860,7 @@ def update_defaults(data):
 
 
 def quit_handler(sig, frame):
-    """Called when a user presses ctrl-c to shutdown gracefully"""
+    """Called when a user presses ctrl-c to shut down gracefully"""
     print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
     with config.defaults_file_lock:
         with config.content_file_lock:
@@ -894,7 +894,6 @@ if __name__ == "__main__":
 
     # schedule = None # Will be filled in during read_default_configuration() if needed
     # NEXT_EVENT = None
-    # missingContentWarningList = [] # Will hold one entry for every piece of content that is scheduled but not available
     read_default_configuration()
     # If it exists, load the dictionary that maps one value into another
     load_dictionary()
@@ -902,7 +901,7 @@ if __name__ == "__main__":
     # Look for an availble schedule and load it
     retrieve_schedule()
 
-    # Check the Github server for an available software update
+    # Check the GitHub server for an available software update
     check_for_software_update()
 
     print(f'Launching server at address {get_local_address()} to serve {config.defaults_dict["id"]}.')
