@@ -2,6 +2,8 @@
 
 import threading
 
+application_path = "" # The path to where the 'helper.py' file is located.
+
 clipList = {} # Dict of currently-loaded content. E.g., for the media player
 commandList = [] # List of queued commands to send to the client
 defaults_dict = {} # Dictionary holding default parameters from defaults.ini
