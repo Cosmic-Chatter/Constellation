@@ -1822,11 +1822,11 @@ def quit_handler(*args):
 
     try:
         if rebooting is True:
-            print("\nRebooting server...")
             exit_code = 1
+            print("\nRebooting server...")
         else:
-            print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
             exit_code = 0
+            print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
     except RuntimeError:
         pass
 
@@ -1956,7 +1956,7 @@ load_default_configuration()
 poll_event_schedule()
 poll_projectors()
 poll_wake_on_LAN_devices()
-check_for_software_update()
+# check_for_software_update()
 
 httpd = ThreadedHTTPServer((ADDR, server_port), RequestHandler)
 httpd.serve_forever()
