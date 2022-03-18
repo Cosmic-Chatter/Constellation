@@ -31,6 +31,7 @@ import dateutil.parser
 # Constellation modules
 import config
 import projector_control
+import constellation_tracker as c_track
 
 
 class Issue:
@@ -106,7 +107,7 @@ class Projector:
             # print(e)
             error = True
 
-        if (error and (self.seconds_since_last_contact() > 60)):
+        if error and (self.seconds_since_last_contact() > 60):
             self.state = {"status": "OFFLINE"}
         else:
             if self.state["power_state"] == "on":
@@ -267,7 +268,7 @@ class ExhibitComponent:
         except configparser.NoSectionError:
             pass
             # print(f"Warning: there is no configuration available for component with id={self.id}")
-            # with logLock:
+            # with config.logLock:
             #     logging.warning(f"there is no configuration available for component with id={self.id}")
         self.config["current_exhibit"] = currentExhibit[0:-8]
 
@@ -289,7 +290,7 @@ class ExhibitComponent:
         if self.macAddress is not None:
 
             print(f"Sending wake on LAN packet to {self.id}")
-            with logLock:
+            with config.logLock:
                 logging.info(f"Sending wake on LAN packet to {self.id}")
             try:
                 wakeonlan.send_magic_packet(self.macAddress,
@@ -297,7 +298,7 @@ class ExhibitComponent:
                                             port=self.WOLPort)
             except ValueError as e:
                 print(f"Wake on LAN error for component {self.id}: {str(e)}")
-                with logLock:
+                with config.logLock:
                     logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
 
     def update_PC_status(self):
@@ -318,7 +319,7 @@ class ExhibitComponent:
                 if "wakeOnLANPrivilege" not in serverWarningDict:
                     print(
                         "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
-                    with logLock:
+                    with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
                     serverWarningDict["wakeOnLANPrivilege"] = True
         return status
@@ -358,7 +359,7 @@ class WakeOnLANDevice:
         """Function to send a magic packet waking the device"""
 
         print(f"Sending wake on LAN packet to {self.id}")
-        with logLock:
+        with config.logLock:
             logging.info(f"Sending wake on LAN packet to {self.id}")
         try:
             wakeonlan.send_magic_packet(self.macAddress,
@@ -366,7 +367,7 @@ class WakeOnLANDevice:
                                         port=self.port)
         except ValueError as e:
             print(f"Wake on LAN error for component {self.id}: {str(e)}")
-            with logLock:
+            with config.logLock:
                 logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
 
     def update(self):
@@ -385,7 +386,7 @@ class WakeOnLANDevice:
                 if "wakeOnLANPrivilege" not in serverWarningDict:
                     print(
                         "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
-                    with logLock:
+                    with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
                     serverWarningDict["wakeOnLANPrivilege"] = True
         else:
@@ -415,7 +416,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         """Function to collect the current exhibit status, format it, and send it back to the web client to update the page"""
 
-        componentDictList = []
+        component_dict_list = []
         for item in componentList:
             temp = {"id": item.id,
                     "type": item.type}
@@ -434,7 +435,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             temp["ip_address"] = item.ip
             temp["helperPort"] = item.helperPort
             temp["helperAddress"] = item.helperAddress
-            componentDictList.append(temp)
+            component_dict_list.append(temp)
 
         for item in projectorList:
             temp = {"id": item.id,
@@ -446,7 +447,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 temp["description"] = item.config["description"]
             temp["class"] = "exhibitComponent"
             temp["status"] = item.state["status"]
-            componentDictList.append(temp)
+            component_dict_list.append(temp)
 
         for item in wakeOnLANList:
             temp = {"id": item.id,
@@ -458,7 +459,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 temp["description"] = item.config["description"]
             temp["class"] = "exhibitComponent"
             temp["status"] = item.state["status"]
-            componentDictList.append(temp)
+            component_dict_list.append(temp)
 
         # Also include an object with the status of the overall gallery
         temp = {"class": "gallery",
@@ -466,23 +467,23 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 "availableExhibits": EXHIBIT_LIST,
                 "galleryName": gallery_name,
                 "updateAvailable": str(software_update_available).lower()}
-        componentDictList.append(temp)
+        component_dict_list.append(temp)
 
         # Also include an object containing the current issues
         temp = {"class": "issues",
-                "issueList": [x.details for x in issueList],
+                "issueList": [x.details for x in config.issueList],
                 "assignable_staff": assignable_staff}
-        componentDictList.append(temp)
+        component_dict_list.append(temp)
 
         # Also include an object containing the current schedule
-        with scheduleLock:
+        with config.scheduleLock:
             temp = {"class": "schedule",
                     "updateTime": scheduleUpdateTime,
                     "schedule": scheduleList,
                     "nextEvent": nextEvent}
-            componentDictList.append(temp)
+            component_dict_list.append(temp)
 
-        json_string = json.dumps(componentDictList, default=str)
+        json_string = json.dumps(component_dict_list, default=str)
 
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
@@ -508,6 +509,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
             if self.path == "/":
                 f = open(os.path.join(config.APP_PATH, "webpage.html"), "r", encoding='UTF-8')
             else:
+                if self.path.startswith("/"):
+                    self.path = self.path[1:]
                 f = open(os.path.join(config.APP_PATH, self.path), "r", encoding='UTF-8')
 
             page = str(f.read())
@@ -527,7 +530,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print("+++++++++++++++")
             return
         else:
-
             # Open the file requested and send it
             mimetype = mimetypes.guess_type(self.path, strict=False)[0]
             if self.path[0] == '/':
@@ -545,7 +547,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 return
             except IOError:
                 self.send_error(404, f"File Not Found: {self.path}")
-                with logLock:
+                with config.logLock:
                     logging.error("GET for unexpected file %s", self.path)
 
         # print("END GET")
@@ -588,7 +590,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
         except:
             print("DO_POST: Error: Are we missing the Content-Type header?")
-            with logLock:
+            with config.logLock:
                 logging.warning("POST received without content-type header")
             print(self.headers)
             return
@@ -612,7 +614,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 pingClass = data["class"]
             except KeyError:
                 print("Error: ping received without class field")
-                return  # No id or type, so bail out
+                response = {"success": False,
+                            "reason": "Request missing 'class' field."}
+                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                return
 
             # print(f"  class = {pingClass}")
 
@@ -623,33 +628,43 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     print("Error: webpage ping received without action field")
                     # print("END POST")
                     # print("===============")
-                    return  # No id or type, so bail out
+                    response = {"success": True,
+                                "reason": "Missing required field 'action'."}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 # print(f"    action = {action}")
                 if action == "fetchUpdate":
                     self.send_webpage_update()
                 elif action == "fetchProjectorUpdate":
-                    if "id" in data:
-                        proj = get_projector(data["id"])
-                        if proj is not None:
-                            # proj.update()
-                            json_string = json.dumps(proj.state)
-                            self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                        else:
-                            json_string = json.dumps({"status": "DELETE"})
-                            self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    if "id" not in data:
+                        response = {"success": True,
+                                    "reason": "Missing required field 'id'."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    proj = get_projector(data["id"])
+                    if proj is not None:
+                        json_string = json.dumps(proj.state)
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    else:
+                        json_string = json.dumps({"status": "DELETE"})
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "reloadConfiguration":
                     load_default_configuration()
 
-                    json_string = json.dumps({"result": "success"})
+                    json_string = json.dumps({"result": "success", "success": True})
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "queueCommand":
                     get_exhibit_component(data["id"]).queue_command(data["command"])
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueProjectorCommand":
                     get_projector(data["id"]).queue_command(data["command"])
-                    self.wfile.write(bytes("", encoding="UTF-8"))
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueWOLCommand":
                     get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
-                    self.wfile.write(bytes("", encoding="UTF-8"))
+                    response = {"success": True,"reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "updateSchedule":
                     # This command handles both adding a new scheduled action
                     # and editing an existing action
@@ -676,7 +691,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             error = check_if_schedule_time_exists(path, time_to_set)
 
                             if not error:
-                                with scheduleLock:
+                                with config.scheduleLock:
                                     with open(path, 'a', encoding="UTF-8") as f:
                                         f.write(line_to_set)
                             else:
@@ -697,7 +712,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                 okay_to_edit = not check_if_schedule_time_exists(path, time_to_set)
                             print(okay_to_edit)
                             if okay_to_edit:
-                                with scheduleLock:
+                                with config.scheduleLock:
                                     # Iterate the file to replace the line we are changing
                                     with open(path, 'r', encoding='UTF-8') as f:
                                         for line in f.readlines():
@@ -728,7 +743,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         retrieve_schedule()
 
                         # Send the updated schedule back
-                        with scheduleLock:
+                        with config.scheduleLock:
                             response_dict["class"] = "schedule"
                             response_dict["updateTime"] = scheduleUpdateTime
                             response_dict["schedule"] = scheduleList
@@ -746,8 +761,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     retrieve_schedule()
 
                     # Send the updated schedule back
-                    with scheduleLock:
-                        response_dict = {"class": "schedule",
+                    with config.scheduleLock:
+                        response_dict = {"success": True,
+                                         "class": "schedule",
                                          "updateTime": scheduleUpdateTime,
                                          "schedule": scheduleList,
                                          "nextEvent": nextEvent}
@@ -755,71 +771,85 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "convertSchedule":
-                    if "date" in data and "from" in data:
-                        with scheduleLock:
-                            sched_dir = os.path.join(config.APP_PATH, "schedules")
-                            shutil.copy(os.path.join(sched_dir, data["from"].lower() + ".ini"),
-                                        os.path.join(sched_dir, data["date"] + ".ini"))
+                    if "date" not in data or "from" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'date' or 'from' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
 
-                        # Reload the schedule from disk
-                        retrieve_schedule()
-
-                        # Send the updated schedule back
-                        with scheduleLock:
-                            response_dict = {"class": "schedule",
-                                             "updateTime": scheduleUpdateTime,
-                                             "schedule": scheduleList,
-                                             "nextEvent": nextEvent}
-
-                        json_string = json.dumps(response_dict, default=str)
-                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                elif action == "deleteSchedule":
-                    if "name" in data:
-                        with scheduleLock:
-                            sched_dir = os.path.join(config.APP_PATH, "schedules")
-                            os.remove(os.path.join(sched_dir, data["name"] + ".ini"))
-
-                        # Reload the schedule from disk
-                        retrieve_schedule()
-
-                        # Send the updated schedule back
-                        with scheduleLock:
-                            response_dict = {"class": "schedule",
-                                             "updateTime": scheduleUpdateTime,
-                                             "schedule": scheduleList,
-                                             "nextEvent": nextEvent}
-
-                        json_string = json.dumps(response_dict, default=str)
-                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                elif action == "deleteScheduleAction":
-                    if "from" in data and "time" in data:
-                        with scheduleLock:
-                            sched_dir = os.path.join(config.APP_PATH, "schedules")
-                            output_text = ""
-                            time_to_delete = dateutil.parser.parse(data['time']).time()
-
-                            schedule_path = os.path.join(sched_dir, data["from"] + ".ini")
-                            with open(schedule_path, 'r', encoding="UTF-8") as f:
-                                for line in f.readlines():
-                                    split = line.split("=")
-                                    if len(split) == 2:
-                                        # We have a valid ini line
-                                        if dateutil.parser.parse(split[0]).time() != time_to_delete:
-                                            # This line doesn't match, so add it for writing
-                                            output_text += line
-                                    else:
-                                        output_text += line
-
-                            path_to_write = os.path.join(sched_dir, data["from"] + ".ini")
-                            with open(path_to_write, 'w', encoding="UTF-8") as f:
-                                f.write(output_text)
+                    sched_dir = os.path.join(config.APP_PATH, "schedules")
+                    with config.scheduleLock:
+                        shutil.copy(os.path.join(sched_dir, data["from"].lower() + ".ini"),
+                                    os.path.join(sched_dir, data["date"] + ".ini"))
 
                     # Reload the schedule from disk
                     retrieve_schedule()
 
                     # Send the updated schedule back
-                    with scheduleLock:
-                        response_dict = {"class": "schedule",
+                    with config.scheduleLock:
+                        response_dict = {"success": True,
+                                         "class": "schedule",
+                                         "updateTime": scheduleUpdateTime,
+                                         "schedule": scheduleList,
+                                         "nextEvent": nextEvent}
+
+                    json_string = json.dumps(response_dict, default=str)
+                    self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                elif action == "deleteSchedule":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    with config.scheduleLock:
+                        sched_dir = os.path.join(config.APP_PATH, "schedules")
+                        os.remove(os.path.join(sched_dir, data["name"] + ".ini"))
+
+                    # Reload the schedule from disk
+                    retrieve_schedule()
+
+                    # Send the updated schedule back
+                    with config.scheduleLock:
+                        response_dict = {"success": True,
+                                         "class": "schedule",
+                                         "updateTime": scheduleUpdateTime,
+                                         "schedule": scheduleList,
+                                         "nextEvent": nextEvent}
+
+                    json_string = json.dumps(response_dict, default=str)
+                    self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                elif action == "deleteScheduleAction":
+                    if "from" not in data or "time" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'from' or 'time' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+
+                    schedule_path = os.path.join(config.APP_PATH, "schedules", data["from"] + ".ini")
+                    output_text = ""
+                    time_to_delete = dateutil.parser.parse(data['time']).time()
+                    with config.scheduleLock:
+                        with open(schedule_path, 'r', encoding="UTF-8") as f:
+                            for line in f.readlines():
+                                split = line.split("=")
+                                if len(split) == 2:
+                                    # We have a valid ini line
+                                    if dateutil.parser.parse(split[0]).time() != time_to_delete:
+                                        # This line doesn't match, so add it for writing
+                                        output_text += line
+                                else:
+                                    output_text += line
+
+                        with open(schedule_path, 'w', encoding="UTF-8") as f:
+                            f.write(output_text)
+
+                    # Reload the schedule from disk
+                    retrieve_schedule()
+
+                    # Send the updated schedule back
+                    with config.scheduleLock:
+                        response_dict = {"success": True,
+                                         "class": "schedule",
                                          "updateTime": scheduleUpdateTime,
                                          "schedule": scheduleList,
                                          "nextEvent": nextEvent}
@@ -827,26 +857,50 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "setExhibit":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
                     print("Changing exhibit to:", data["name"])
-
                     read_exhibit_configuration(data["name"], updateDefault=True)
 
                     # Update the components that the configuration has changed
                     for component in componentList:
                         component.update_configuration()
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "createExhibit":
-                    if "name" in data and data["name"] != "":
-                        clone = None
-                        if "cloneFrom" in data and data["cloneFrom"] != "":
-                            clone = data["cloneFrom"]
-                        create_new_exhibit(data["name"], clone)
+                    if "name" not in data or data["name"] == "":
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field or name is blank."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    clone = None
+                    if "cloneFrom" in data and data["cloneFrom"] != "":
+                        clone = data["cloneFrom"]
+                    create_new_exhibit(data["name"], clone)
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "deleteExhibit":
-                    if "name" in data and data["name"] != "":
-                        delete_exhibit(data["name"])
+                    if "name" not in data or data["name"] == "":
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field or name is empty."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    delete_exhibit(data["name"])
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "setComponentContent":
-                    if ("id" in data) and ("content" in data):
-                        print(f"Changing content for {data['id']}:", data['content'])
-                        set_component_content(data['id'], data['content'])
+                    if "id" not in data or "content" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'id' or 'content' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    print(f"Changing content for {data['id']}:", data['content'])
+                    set_component_content(data['id'], data['content'])
+                    response = {"success": True, "reason": ""}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "getHelpText":
                     try:
                         readme_path = os.path.join(config.APP_PATH,
@@ -855,13 +909,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             text = f.read()
                             self.wfile.write(bytes(text, encoding="UTF-8"))
                     except FileNotFoundError:
-                        with logLock:
+                        with config.logLock:
                             logging.error("Unable to read README.md")
                 elif action == "createIssue":
                     if "details" in data:
-                        with issueLock:
+                        with config.issueLock:
                             new_issue = Issue(data["details"])
-                            issueList.append(new_issue)
+                            config.issueList.append(new_issue)
                             save_issueList()
                         response_dict = {"success": True}
                     else:
@@ -883,67 +937,74 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if "id" in data:
                         remove_issue(data["id"])
                         save_issueList()
-                        response_dict = {"success": True}
+                        response_dict = {"success": True, "reason": ""}
                     else:
-                        response_dict = {"success": False,
-                                         "reason": "Must include field 'id'"}
+                        response_dict = {"success": False, "reason": "Must include field 'id'"}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "getIssueList":
-                    result_str = json.dumps([x.details for x in issueList])
+                    result_str = json.dumps([x.details for x in config.issueList])
                     self.wfile.write(bytes(result_str, encoding="UTF-8"))
                 elif action == 'updateMaintenanceStatus':
-                    if "id" in data and "status" in data and "notes" in data:
-                        file_path = os.path.join(config.APP_PATH,
-                                                 "maintenance-logs", data["id"] + ".txt")
-                        record = {"id": data["id"],
-                                  "date": datetime.datetime.now().isoformat(),
-                                  "status": data['status'],
-                                  "notes": data["notes"]}
-                        with maintenanceLock:
+                    if "id" not in data or "status" not in data or "notes" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'id', 'status', or 'notes' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    file_path = os.path.join(config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
+                    record = {"id": data["id"],
+                              "date": datetime.datetime.now().isoformat(),
+                              "status": data['status'],
+                              "notes": data["notes"]}
+                    with config.maintenanceLock:
+                        try:
                             with open(file_path, 'a', encoding='UTF-8') as f:
                                 f.write(json.dumps(record) + "\n")
-                        response_dict = {"success": True}
-                    else:
-                        response_dict = {
-                            "success": False,
-                            "reason": "Must include fields 'id', 'status', and 'notes'"
-                        }
+                            success = True
+                            reason = ""
+                        except FileNotFoundError:
+                            success = False
+                            reason = f"File path {file_path} does not exist"
+                        except PermissionError:
+                            success = False
+                            reason = f"You do not have write permission for the file {file_path}"
+                    response_dict = {"success": success, "reason": reason}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == 'getMaintenanceStatus':
-                    if "id" in data:
-                        file_path = os.path.join(config.APP_PATH,
-                                                 "maintenance-logs", data["id"] + ".txt")
-                        try:
-                            with maintenanceLock:
-                                with open(file_path, 'rb') as f:
-                                    # Seek to the end of the file and return the most recent entry
-                                    try:  # catch OSError in case of a one line file
-                                        f.seek(-2, os.SEEK_END)
-                                        while f.read(1) != b'\n':
-                                            f.seek(-2, os.SEEK_CUR)
-                                    except OSError:
-                                        f.seek(0)
-                                    last_line = f.readline().decode()
-                                    result = json.loads(last_line)
-                                    response_dict = {"success": True,
-                                                     "status": result["status"],
-                                                     "notes": result["notes"]}
-                        except FileNotFoundError:
-                            response_dict = {"success": False,
-                                             "reason": "No maintenance record exists",
-                                             "status": "On floor, working",
-                                             "notes": ""}
-                    else:
+                    if "id" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'id' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    file_path = os.path.join(config.APP_PATH,
+                                             "maintenance-logs", data["id"] + ".txt")
+                    try:
+                        with config.maintenanceLock:
+                            with open(file_path, 'rb') as f:
+                                # Seek to the end of the file and return the most recent entry
+                                try:  # catch OSError in case of a one line file
+                                    f.seek(-2, os.SEEK_END)
+                                    while f.read(1) != b'\n':
+                                        f.seek(-2, os.SEEK_CUR)
+                                except OSError:
+                                    f.seek(0)
+                                last_line = f.readline().decode()
+                                result = json.loads(last_line)
+                                response_dict = {"success": True,
+                                                 "status": result["status"],
+                                                 "notes": result["notes"]}
+                    except FileNotFoundError:
                         response_dict = {"success": False,
-                                         "reason": "Must include field 'id'"}
+                                         "reason": "No maintenance record exists",
+                                         "status": "On floor, working",
+                                         "notes": ""}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "getAllMaintenanceStatuses":
                     record_list = []
                     maintenance_path = os.path.join(config.APP_PATH,
                                                     "maintenance-logs")
                     for file in os.listdir(maintenance_path):
-                        if file.endswith(".txt"):
-                            with maintenanceLock:
+                        if file.lower().endswith(".txt"):
+                            with config.maintenanceLock:
                                 file_path = os.path.join(maintenance_path, file)
                                 with open(file_path, 'rb') as f:
                                     # Seek to the end of the file and return the most recent entry
@@ -960,7 +1021,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 else:
                     print(f"Error: Unknown webpage command received: {action}")
-                    with logLock:
+                    with config.logLock:
                         logging.error(f"Unknown webpage command received: {action}")
 
             elif pingClass == "exhibitComponent":
@@ -970,13 +1031,17 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     #     print(f"    id = {data['id']}")
                     # print(f"    action = {action}")
                     if action == "getUploadedFile":
-                        if "id" in data:
-                            component = get_exhibit_component(data["id"])
-                            if len(component.dataToUpload) > 0:
-                                upload = component.dataToUpload.pop(0)
-                                # json_string = json.dumps(upload)
-                                # self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                                self.wfile.write(upload)
+                        if "id" not in data:
+                            response = {"success": False,
+                                        "reason": "Request missing 'id' field."}
+                            self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                            return
+                        component = get_exhibit_component(data["id"])
+                        if len(component.dataToUpload) > 0:
+                            upload = component.dataToUpload.pop(0)
+                            # json_string = json.dumps(upload)
+                            # self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                            self.wfile.write(upload)
                     elif action == "beginSynchronization":
                         if "synchronizeWith" in data:
                             update_synchronization_list(data["id"], data["synchronizeWith"])
@@ -1002,105 +1067,88 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     update_exhibit_component_status(data, self.address_string())
                     self.send_current_configuration(id)
             elif pingClass == "tracker":
-                if "action" in data:
-                    action = data["action"]
-                    if action == "getLayoutDefinition":
-                        if "name" in data:
-                            layout = configparser.ConfigParser(delimiters=("="))
-                            layoutDefinition = {}
-                            success = True
-                            reason = ""
-                            try:
-                                template_path = os.path.join(config.APP_PATH,
-                                                             "flexible-tracker",
-                                                             "templates",
-                                                             data["name"] + ".ini")
-                                layout.read(template_path)
-                                layoutDefinition = {s: dict(layout.items(s)) for s in layout.sections()}
-                            except configparser.DuplicateSectionError:
-                                success = False
-                                reason = "There are two sections with the same name!"
-                            response = {"success": success,
-                                        "reason": reason,
-                                        "layout": layoutDefinition}
-                            self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                    elif action == "submitData":
-                        if "data" in data and "name" in data:
-                            with trackingDataWriteLock:
-                                file_path = os.path.join(config.APP_PATH,
-                                                         "flexible-tracker",
-                                                         "data", data["name"] + ".txt")
-                                with open(file_path, "a", encoding='UTF-8') as f:
-                                    try:
-                                        json_str = json.dumps(data["data"])
-                                        f.write(json_str + "\n")
-                                        self.wfile.write(bytes(json.dumps({"success": True}),
-                                                               encoding="UTF-8"))
-                                    except:
-                                        print("flexible-tracker: submitData: error: Not valid JSON")
-                                        self.wfile.write(bytes(json.dumps({"success": False}), encoding="UTF-8"))
-                    elif action == "submitRawText":
-                        if "text" in data and "name" in data:
-                            with trackingDataWriteLock:
-                                path_to_write = os.path.join(config.APP_PATH,
-                                                             "flexible-tracker",
-                                                             "data",
-                                                             data["name"] + ".txt")
-                                with open(path_to_write, "a", encoding="UTF-8") as f:
-                                    try:
-                                        f.write(data["text"] + "\n")
-                                        self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
-                                    except:
-                                        print("flexible-tracker: submitRawText: error: Could not write text")
-                                        self.wfile.write(bytes(json.dumps({"success": False}), encoding="UTF-8"))
-                    elif action == "retrieveRawText":
-                        if "name" in data:
-                            with trackingDataWriteLock:
-                                try:
-                                    with open(os.path.join(config.APP_PATH,
-                                                           "flexible-tracker", "data", data["name"] + ".txt"),
-                                              "r", encoding='UTF-8') as f:
-                                        result = f.read()
-                                        self.wfile.write(
-                                            bytes(json.dumps({"success": True, "text": result}), encoding="UTF-8"))
-                                except FileNotFoundError:
-                                    print(f"flexible-tracker: retrieveRawText: error: file {data['name']} not found!")
-                                    self.wfile.write(
-                                        bytes(json.dumps({"success": False, "text": ""}), encoding="UTF-8"))
-                                except:
-                                    print("flexible-tracker: retrieveRawText: error: Could not read text")
-                                    self.wfile.write(
-                                        bytes(json.dumps({"success": False, "text": ""}), encoding="UTF-8"))
-                    elif action == "submitAnalytics":
-                        if "data" in data and "name" in data:
-                            with trackingDataWriteLock:
-                                with open(os.path.join(config.APP_PATH,
-                                                       "analytics", data["name"] + ".txt"),
-                                          "a") as f:
-                                    try:
-                                        json_str = json.dumps(data["data"])
-                                        f.write(json_str + "\n")
-                                        self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
-                                    except:
-                                        print("submitAnalytics: error: Not valid JSON")
-                                        self.wfile.write(bytes(json.dumps({"success": False}), encoding="UTF-8"))
-                    elif action == "getAvailableDefinitions":
-                        definitionList = []
+                if "action" not in data:
+                    response = {"success": False,
+                                "reason": "Request missing 'action' field."}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
+                action = data["action"]
 
-                        template_path = os.path.join(config.APP_PATH,
-                                                     "flexible-tracker", "templates")
-                        for file in os.listdir(template_path):
-                            if file.endswith(".ini"):
-                                definitionList.append(file)
+                if action == "getLayoutDefinition":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
 
-                        self.wfile.write(bytes(json.dumps(definitionList), encoding="UTF-8"))
-                    elif action == "checkConnection":
-                        self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
+                    layout_definition, success, reason = c_track.get_layout_definition(data["name"] + ".ini",
+                                                                                       kind=kind)
+
+                    response = {"success": success,
+                                "reason": reason,
+                                "layout": layout_definition}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "submitData":
+                    if "data" not in data or "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'data' or 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    file_path = os.path.join(config.APP_PATH, kind, "data", data["name"] + ".txt")
+                    success, reason = c_track.write_JSON(data["data"], file_path)
+                    response = {"success": success, "reason": reason}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "submitRawText":
+                    if "text" not in data or "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'text' or 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind)
+                    response = {"success": success, "reason": reason}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "retrieveRawText":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    result, success, reason = c_track.get_raw_text(data["name"] + ".txt", kind)
+                    response = {"success": success, "reason": reason, "text": result}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "submitAnalytics":
+                    if "data" not in data or 'name' not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'data' or 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    file_path = os.path.join(config.APP_PATH, "analytics", data["name"] + ".txt")
+                    success, reason = c_track.write_JSON(data["data"], file_path)
+                    response = {"success": success, "reason": reason}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "getAvailableDefinitions":
+                    kind = data.get("kind", "flexible-tracker")
+                    definition_list = []
+                    template_path = os.path.join(config.APP_PATH, kind, "templates")
+                    for file in os.listdir(template_path):
+                        if file.lower().endswith(".ini"):
+                            definition_list.append(file)
+
+                    self.wfile.write(bytes(json.dumps(definition_list), encoding="UTF-8"))
+                elif action == "checkConnection":
+                    self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
             else:
                 print(f"Error: ping with unknown class '{pingClass}' received")
+                response = {"success": False,
+                            "reason": f"Unknown class {pingClass}"}
+                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 # print("END POST")
                 # print("===============")
-                return  # Bail out
+                return
         # print("END POST")
         # print("===============")
 
@@ -1110,7 +1158,7 @@ def set_component_content(id_, content_list):
 
     content = ", ".join(content_list)
 
-    with currentExhibitConfigurationLock:
+    with config.currentExhibitConfigurationLock:
         try:
             currentExhibitConfiguration.set(id_, "content", content)
         except configparser.NoSectionError:  # This exhibit does not have content for this component
@@ -1121,9 +1169,8 @@ def set_component_content(id_, content_list):
     get_exhibit_component(id_).update_configuration()
 
     # Write new configuration to file
-    with currentExhibitConfigurationLock:
-        with open(os.path.join(config.APP_PATH,
-                               "exhibits", currentExhibit),
+    with config.currentExhibitConfigurationLock:
+        with open(os.path.join(config.APP_PATH, "exhibits", currentExhibit),
                   'w', encoding="UTF-8") as f:
             currentExhibitConfiguration.write(f)
 
@@ -1168,7 +1215,7 @@ def check_if_schedule_time_exists(path, time_to_set):
     """Check the schedule given by `path` for an existing item with the same time as `time_to_set`.
     """
 
-    with scheduleLock:
+    with config.scheduleLock:
         with open(path, 'r', encoding="UTF-8") as f:
             for line in f.readlines():
                 split = line.split("=")
@@ -1183,11 +1230,9 @@ def poll_event_schedule():
     """Periodically check the event schedule in an independent thread.
     """
 
-    global pollingThreadDict
-
     check_event_schedule()
-    pollingThreadDict["eventSchedule"] = threading.Timer(10, poll_event_schedule)
-    pollingThreadDict["eventSchedule"].start()
+    config.polling_thread_dict["eventSchedule"] = threading.Timer(10, poll_event_schedule)
+    config.polling_thread_dict["eventSchedule"].start()
 
 
 def poll_projectors():
@@ -1199,23 +1244,22 @@ def poll_projectors():
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
 
-    pollingThreadDict["poll_projectors"] = threading.Timer(30, poll_projectors)
-    pollingThreadDict["poll_projectors"].start()
+    config.polling_thread_dict["poll_projectors"] = threading.Timer(30, poll_projectors)
+    config.polling_thread_dict["poll_projectors"].start()
 
 
 def poll_wake_on_LAN_devices():
     """Ask every Wake on LAN device to report its status at an interval.
     """
 
-    global pollingThreadDict
 
     for device in wakeOnLANList:
         new_thread = threading.Thread(target=device.update)
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
 
-    pollingThreadDict["poll_wake_on_LAN_devices"] = threading.Timer(30, poll_wake_on_LAN_devices)
-    pollingThreadDict["poll_wake_on_LAN_devices"].start()
+    config.polling_thread_dict["poll_wake_on_LAN_devices"] = threading.Timer(30, poll_wake_on_LAN_devices)
+    config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 
 def check_event_schedule():
@@ -1238,7 +1282,7 @@ def check_event_schedule():
                     action = action[0]
                 else:
                     print(f"Error: unrecognized event format: {action}")
-                    with logLock:
+                    with config.logLock:
                         logging.error("Unrecognized event format: %s", action)
                     queue_next_on_off_event()
                     return
@@ -1269,7 +1313,7 @@ def retrieve_schedule():
     global scheduleList
     global scheduleUpdateTime
 
-    with scheduleLock:
+    with config.scheduleLock:
         scheduleUpdateTime = (datetime.datetime.now() - datetime.datetime.utcfromtimestamp(0)).total_seconds()
         scheduleList = []  # Each entry is a dict for a day, in calendar order
 
@@ -1359,7 +1403,7 @@ def check_available_exhibits():
     EXHIBIT_LIST = []
     exhibits_path = os.path.join(config.APP_PATH, "exhibits")
 
-    with exhibitsLock:
+    with config.exhibitsLock:
         for file in os.listdir(exhibits_path):
             if file.lower().endswith(".exhibit"):
                 EXHIBIT_LIST.append(file)
@@ -1388,7 +1432,7 @@ def create_new_exhibit(name, clone):
 
     else:
         # Make a new file
-        with exhibitsLock:
+        with config.exhibitsLock:
             if not os.path.isfile(new_file):
                 # If this file does not exist, touch it so that it does.
                 with open(new_file, "w", encoding='UTF-8'):
@@ -1406,7 +1450,7 @@ def delete_exhibit(name):
 
     file_to_delete = os.path.join(config.APP_PATH, "exhibits", name)
 
-    with exhibitsLock:
+    with config.exhibitsLock:
         try:
             os.remove(file_to_delete)
         except FileNotFoundError:
@@ -1432,7 +1476,7 @@ def load_default_configuration():
     configReader.optionxform = str  # Override default, which is case in-sensitive
     cEC_path = os.path.join(config.APP_PATH,
                             "currentExhibitConfiguration.ini")
-    with currentExhibitConfigurationLock:
+    with config.currentExhibitConfigurationLock:
         configReader.read(cEC_path)
     current = configReader["CURRENT"]
     server_port = current.getint("server_port", 8080)
@@ -1559,7 +1603,7 @@ def load_default_configuration():
 
         for issue in issues:
             new_issue = Issue(issue)
-            issueList.append(new_issue)
+            config.issueList.append(new_issue)
         print(" done")
     except FileNotFoundError:
         print("No stored issues to read")
@@ -1614,7 +1658,7 @@ def read_exhibit_configuration(name, updateDefault=False):
         # Something bad has happened. Display an error and bail out
         print(
             f"Error: exhibit definition with name {name} does not appear to be properly formatted. This file should be located in the exhibits directory.")
-        with logLock:
+        with config.logLock:
             logging.error('Bad exhibit definition filename: %s', name)
         return
 
@@ -1628,7 +1672,7 @@ def read_exhibit_configuration(name, updateDefault=False):
         configReader.optionxform = str  # Override default, which is case in-sensitive
         cEC_path = os.path.join(config.APP_PATH,
                                 'currentExhibitConfiguration.ini')
-        with currentExhibitConfigurationLock:
+        with config.currentExhibitConfigurationLock:
             configReader.read(cEC_path)
             configReader.set("CURRENT", "current_exhibit", name)
             with open(cEC_path, "w", encoding="UTF-8") as f:
@@ -1644,23 +1688,21 @@ def get_exhibit_component(this_id):
 def get_issue(this_id):
     """Return an Issue with the given id, or None if no such Issue exists"""
 
-    return next((x for x in issueList if x.details["id"] == this_id), None)
+    return next((x for x in config.issueList if x.details["id"] == this_id), None)
 
 
 def remove_issue(this_id):
     """Remove an Issue with the given id from the issueList"""
 
-    global issueList
-
-    with issueLock:
-        issueList = [x for x in issueList if x.details["id"] != this_id]
+    with config.issueLock:
+        config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
 
 
 def edit_issue(details):
     """Edit issue with the id given in details dict"""
     if "id" in details:
         issue = get_issue(details["id"])
-        with issueLock:
+        with config.issueLock:
             issue.details["priority"] = details.get("priority", issue.details["priority"])
             issue.details["issueName"] = details.get("issueName", issue.details["issueName"])
             issue.details["issueDescription"] = details.get("issueDescription",
@@ -1678,7 +1720,7 @@ def save_issueList():
     issue_file = os.path.join(config.APP_PATH, "issues", "issues.json")
 
     with open(issue_file, "w", encoding="UTF-8") as file_object:
-        json.dump([x.details for x in issueList], file_object)
+        json.dump([x.details for x in config.issueList], file_object)
 
 
 def get_projector(this_id):
@@ -1706,7 +1748,7 @@ def command_all_exhibit_components(cmd):
     """Queue a command for every exhibit component"""
 
     print("Sending command to all components:", cmd)
-    with logLock:
+    with config.logLock:
         logging.info("command_all_exhibit_components: %s", cmd)
 
     for component in componentList:
@@ -1838,17 +1880,17 @@ def quit_handler(*args):
         # a = pickle.dumps(componentList)
 
     # print("Exit1")
-    for key in pollingThreadDict:
-        pollingThreadDict[key].cancel()
+    for key in config.polling_thread_dict:
+        config.polling_thread_dict[key].cancel()
     # print("Exit2")
-    with logLock:
+    with config.logLock:
         logging.info("Server shutdown")
     # print("Exit3")
-    with currentExhibitConfigurationLock:
+    with config.currentExhibitConfigurationLock:
         # print("Exit4")
-        with scheduleLock:
+        with config.scheduleLock:
             # print("Exit5")
-            with trackingDataWriteLock:
+            with config.trackingDataWriteLock:
                 sys.exit(exit_code)
 
 
@@ -1856,7 +1898,7 @@ def error_handler(*exc_info):
     """Catch errors and log them to file"""
 
     text = "".join(traceback.format_exception(*exc_info)).replace('"', "'").replace("\n", "<newline>")
-    with logLock:
+    with config.logLock:
         logging.error(f'"{text}"')
     print(f"Error: see control_server.log for more details ({datetime.datetime.now()})")
 
@@ -1903,7 +1945,6 @@ projectorList = []
 wakeOnLANList = []
 synchronizationList = []  # Holds sets of displays that are being synchronized
 componentDescriptions = {}  # Holds optional short descriptions of each component
-issueList = []
 
 currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
 EXHIBIT_LIST = []
@@ -1915,16 +1956,6 @@ scheduleList = []  # Will hold a list of scheduled actions in the next week
 scheduleUpdateTime = 0
 serverRebootTime = None
 rebooting = False  # This will be set to True from a background thread when it is time to reboot
-
-# threading resources
-pollingThreadDict = {}  # Holds references to the threads starting by various polling procedures
-logLock = threading.Lock()
-currentExhibitConfigurationLock = threading.Lock()
-trackingDataWriteLock = threading.Lock()
-scheduleLock = threading.Lock()
-issueLock = threading.Lock()
-exhibitsLock = threading.Lock()
-maintenanceLock = threading.Lock()
 
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")
@@ -1938,7 +1969,7 @@ sys.excepthook = error_handler
 # Dictionary to keep track of warnings we have already presented
 serverWarningDict = {}
 
-with logLock:
+with config.logLock:
     logging.info("Server started")
 
 # Try to reload the previous state from the pickle file current_state.dat
