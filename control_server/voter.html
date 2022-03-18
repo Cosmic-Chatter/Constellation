@@ -26,10 +26,34 @@
         src: url(Gotham-Book.otf);
       }
 
-      html {
+      html, body {
         touch-action: manipulation;
         word-wrap: break-word;
         font-size: 25px;
+        margin: 0px;
+        padding: 0px;
+        overflow: hidden;
+      }
+      .button-col {
+        max-height: 100%;
+      }
+      .card-body-full {
+        height: 15vh;
+      }
+      .card-body-empty {
+        height: 0vh;
+      }
+      .card-img-full {
+        height: 35vh;
+      }
+      .card-img-empty {
+        height: 0vh;
+      }
+      .card-img-top {
+        max-height: 50vh;
+        width: 100%;
+        object-fit: contain;
+        padding: 5%;
       }
       .card-text {
         font-size: 2vw;
@@ -38,17 +62,38 @@
         font-size: 3vw;
         text-align: center;
       }
+      #bottomRow {
+        height: 20vh;
+      }
+      #cardRow {
+        height: 60vh;
+      }
+      #footer {
+        text-align: center;
+        width: 100%;
+        font-size: 3vw;
+        font-weight: bold;
+      }
       #header {
         text-align: center;
         width: 100%;
         font-size: 5vw;
         font-weight: bold;
       }
+      #subfooter {
+        text-align: center;
+        width: 100%;
+        font-size: 2vw;
+        font-weight: lighter;
+      }
       #subheader {
         text-align: center;
         width: 100%;
         font-size: 2vw;
         font-weight: lighter;
+      }
+      #topRow {
+        height: 20vh;
       }
     </style>
 
@@ -57,13 +102,13 @@
   </head>
 
   <body>
-    <div class="container-fluid">
+    <div class="container-fluid mx-0 px-0 my-0 py-0">
 
       <div id="connectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
         <div class="alert alert-danger col-auto mx-auto" role="alert">Server Connection Lost</div>
       </div>
 
-      <div class="row mt-2">
+      <div id='topRow' class="row mt-0">
         <div class="col-12 text-center">
           <span id='header'>Call to Action</span>
         </div>
@@ -71,16 +116,36 @@
           <span id='subheader'>Touch an option below to make your choice!</span>
         </div>
       </div>
-      <div id="cardRow" class="row mt-4"></div>
-        <div class='col-4'>
-          <div class="card">
-            <!-- <img class="card-img-top" src="..." alt="Card image cap"> -->
-            <div class="card-body">
-              <h5 class="card-title">Card title</h5>
-              <p class="card-text">A brief description of the card's meaning.</p>
+      <div id="cardRow" class="row px-3 pt-4 align-items-center">
+        <div class='col button-col mx-1 px-0'>
+          <div class="card mb-0">
+            <img class="card-img-top card-img-full" src="flexible-voter/icons/thumbs-up_green.svg" alt="Card image cap">
+            <div class="card-body card-body-full">
+              <h5 class="card-title">Best</h5>
+              <p class="card-text"></p>
             </div>
           </div>
         </div>
+
+        <div class='col button-col mx-1 px-0'>
+          <div class="card mb-0">
+            <img class="card-img-top card-img-full" src="flexible-voter/icons/thumbs-down_red.svg" alt="Card image cap">
+            <div class="card-body card-body-full">
+              <h5 class="card-title">Worst</h5>
+              <p class="card-text"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='bottomRow' class="row pt-2 mb-0">
+        <div class="col-12 text-center">
+          <span id='footer'>Another call to action</span>
+        </div>
+        <div class="col-12 text-center">
+          <span id='subfooter'>Some more information about your decision.</span>
+        </div>
+      </div>
+
     </div>
 
   <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
