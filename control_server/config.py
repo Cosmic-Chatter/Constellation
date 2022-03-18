@@ -15,5 +15,15 @@ issueLock = threading.Lock()
 exhibitsLock = threading.Lock()
 maintenanceLock = threading.Lock()
 
-# Issues
+# Lists
 issueList = []
+componentList = []
+projectorList = []
+wakeOnLANList = []
+synchronizationList = []  # Holds sets of displays that are being synchronized
+componentDescriptions = {}  # Holds optional short descriptions of each component
+exhibit_list = []
+
+# Dictionary to keep track of warnings we have already presented
+serverWarningDict = {}
+

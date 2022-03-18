@@ -64,7 +64,7 @@ class Projector:
         self.connection_type = connection_type
         self.make = make
         self.config = {"allowed_actions": ["power_on", "power_off"],
-                       "description": componentDescriptions.get(id_, "")}
+                       "description": config.componentDescriptions.get(id_, "")}
 
         self.state = {"status": "OFFLINE"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -164,8 +164,6 @@ class ExhibitComponent:
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from currentExhibitConfiguration.ini
 
-        global wakeOnLANList
-
         self.id = id_
         self.type = this_type
         self.category = category
@@ -182,7 +180,7 @@ class ExhibitComponent:
 
         self.config = {"commands": [],
                        "allowed_actions": [],
-                       "description": componentDescriptions.get(id_, ""),
+                       "description": config.componentDescriptions.get(id_, ""),
                        "AnyDeskID": ""}
 
         if category != "static":
@@ -197,7 +195,7 @@ class ExhibitComponent:
                 self.config["allowed_actions"].append("power_on")
             if "shutdown" not in self.config["allowed_actions"]:
                 self.config["allowed_actions"].append("power_off")
-            wakeOnLANList = [x for x in wakeOnLANList if x.id != wol.id]
+            config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
     def seconds_since_last_contact(self):
 
@@ -316,12 +314,12 @@ class ExhibitComponent:
                 else:
                     status = "WAITING"
             except icmplib.exceptions.SocketPermissionError:
-                if "wakeOnLANPrivilege" not in serverWarningDict:
+                if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
                         "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
                     with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
-                    serverWarningDict["wakeOnLANPrivilege"] = True
+                    config.serverWarningDict["wakeOnLANPrivilege"] = True
         return status
 
 
@@ -337,7 +335,7 @@ class WakeOnLANDevice:
         self.port = 9
         self.ip = ip_address
         self.config = {"allowed_actions": ["power_on"],
-                       "description": componentDescriptions.get(id_, "")}
+                       "description": config.componentDescriptions.get(id_, "")}
 
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -383,12 +381,12 @@ class WakeOnLANDevice:
                 elif self.seconds_since_last_contact() > 60:
                     self.state["status"] = "OFFLINE"
             except icmplib.exceptions.SocketPermissionError:
-                if "wakeOnLANPrivilege" not in serverWarningDict:
+                if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
                         "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
                     with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
-                    serverWarningDict["wakeOnLANPrivilege"] = True
+                    config.serverWarningDict["wakeOnLANPrivilege"] = True
         else:
             self.state["status"] = "UNKNOWN"
 
@@ -417,7 +415,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         """Function to collect the current exhibit status, format it, and send it back to the web client to update the page"""
 
         component_dict_list = []
-        for item in componentList:
+        for item in config.componentList:
             temp = {"id": item.id,
                     "type": item.type}
             if "content" in item.config:
@@ -437,7 +435,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             temp["helperAddress"] = item.helperAddress
             component_dict_list.append(temp)
 
-        for item in projectorList:
+        for item in config.projectorList:
             temp = {"id": item.id,
                     "type": 'PROJECTOR',
                     "ip_address": item.ip}
@@ -449,7 +447,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             temp["status"] = item.state["status"]
             component_dict_list.append(temp)
 
-        for item in wakeOnLANList:
+        for item in config.wakeOnLANList:
             temp = {"id": item.id,
                     "type": 'WAKE_ON_LAN',
                     "ip_address": item.ip}
@@ -464,7 +462,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # Also include an object with the status of the overall gallery
         temp = {"class": "gallery",
                 "currentExhibit": currentExhibit,
-                "availableExhibits": EXHIBIT_LIST,
+                "availableExhibits": config.exhibit_list,
                 "galleryName": gallery_name,
                 "updateAvailable": str(software_update_available).lower()}
         component_dict_list.append(temp)
@@ -866,7 +864,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     read_exhibit_configuration(data["name"], updateDefault=True)
 
                     # Update the components that the configuration has changed
-                    for component in componentList:
+                    for component in config.componentList:
                         component.update_configuration()
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
@@ -1178,16 +1176,16 @@ def set_component_content(id_, content_list):
 def update_synchronization_list(this_id, other_ids):
     """Manage synchronization between components.
 
-    synchronizationList is a list of dictionaries, with one dictionary for every
+    config.synchronizationList is a list of dictionaries, with one dictionary for every
     set of synchronized components.
     """
 
     print(f"Received sync request from {this_id} to sync with {other_ids}")
-    print(f"Current synchronizationList: {synchronizationList}")
+    print(f"Current synchronizationList: {config.synchronizationList}")
     id_known = False
     index = 0
     match_index = -1
-    for item in synchronizationList:
+    for item in config.synchronizationList:
         if this_id in item["ids"]:
             id_known = True
             match_index = index
@@ -1198,17 +1196,17 @@ def update_synchronization_list(this_id, other_ids):
         temp = {"ids": [this_id] + other_ids}
         temp["checked_in"] = [False for _ in temp["ids"]]
         (temp["checked_in"])[0] = True  # Check in the current id
-        synchronizationList.append(temp)
+        config.synchronizationList.append(temp)
     else:
-        index = (synchronizationList[match_index])["ids"].index(this_id)
-        ((synchronizationList[match_index])["checked_in"])[index] = True
-        if all((synchronizationList[match_index])["checked_in"]):
+        index = (config.synchronizationList[match_index])["ids"].index(this_id)
+        ((config.synchronizationList[match_index])["checked_in"])[index] = True
+        if all((config.synchronizationList[match_index])["checked_in"]):
             print("All components have checked in. Dispatching sync command")
             time_to_start = str(round(time.time() * 1000) + 10000)
-            for item in (synchronizationList[match_index])["ids"]:
+            for item in (config.synchronizationList[match_index])["ids"]:
                 get_exhibit_component(item).queue_command(f"beginSynchronization_{time_to_start}")
             # Remove this sync from the list in case it happens again later.
-            synchronizationList.pop(match_index)
+            config.synchronizationList.pop(match_index)
 
 
 def check_if_schedule_time_exists(path, time_to_set):
@@ -1239,7 +1237,7 @@ def poll_projectors():
     """Ask each projector to send a status update at an interval.
     """
 
-    for projector in projectorList:
+    for projector in config.projectorList:
         new_thread = threading.Thread(target=projector.update)
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
@@ -1252,8 +1250,7 @@ def poll_wake_on_LAN_devices():
     """Ask every Wake on LAN device to report its status at an interval.
     """
 
-
-    for device in wakeOnLANList:
+    for device in config.wakeOnLANList:
         new_thread = threading.Thread(target=device.update)
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
@@ -1293,7 +1290,7 @@ def check_event_schedule():
                 read_exhibit_configuration(target, updateDefault=True)
 
                 # Update the components that the configuration has changed
-                for component in componentList:
+                for component in config.componentList:
                     component.update_configuration()
             else:
                 command_all_exhibit_components(action)
@@ -1398,15 +1395,13 @@ def queue_next_on_off_event():
 def check_available_exhibits():
     """Get a list of available "*.exhibit" configuration files"""
 
-    global EXHIBIT_LIST
-
-    EXHIBIT_LIST = []
+    config.exhibit_list = []
     exhibits_path = os.path.join(config.APP_PATH, "exhibits")
 
     with config.exhibitsLock:
         for file in os.listdir(exhibits_path):
             if file.lower().endswith(".exhibit"):
-                EXHIBIT_LIST.append(file)
+                config.exhibit_list.append(file)
 
 
 def create_new_exhibit(name, clone):
@@ -1466,9 +1461,6 @@ def load_default_configuration():
     global ip_address
     global gallery_name
     global assignable_staff
-    global projectorList
-    global wakeOnLANList
-    global componentDescriptions
     global serverRebootTime
 
     # First, retrieve the config filename that defines the desired exhibit
@@ -1488,17 +1480,17 @@ def load_default_configuration():
 
     retrieve_schedule()
 
-    projectorList = []
+    config.projectorList = []
 
     # Load the component descriptions. Do this first, so they are available when
     # creating the various components
     try:
         print("Reading component descriptions...", end="", flush=True)
-        componentDescriptions = dict(configReader["COMPONENT_DESCRIPTIONS"])
+        config.componentDescriptions = dict(configReader["COMPONENT_DESCRIPTIONS"])
         print(" done")
     except KeyError:
         print("None found")
-        componentDescriptions = {}
+        config.componentDescriptions = {}
 
     # Parse list of PJLink projectors
     try:
@@ -1530,7 +1522,7 @@ def load_default_configuration():
             else:
                 print("Invalid PJLink projector entry:", pjlink_projectors[key])
                 break
-            projectorList.append(new_proj)
+            config.projectorList.append(new_proj)
     print("Connecting to PJLink projectors... done                      ")
 
     # Parse list of serial projectors
@@ -1563,7 +1555,7 @@ def load_default_configuration():
             else:
                 print("Invalid serial projector entry:", serial_projectors[key])
                 break
-            projectorList.append(new_proj)
+            config.projectorList.append(new_proj)
     print("Connecting to serial projectors... done                      ")
 
     # Parse list of Wake on LAN devices
@@ -1588,11 +1580,11 @@ def load_default_configuration():
                 else:
                     print(f"Wake on LAN device specified with unknown format: {wol[key]}")
                     continue
-                wakeOnLANList.append(device)
+                config.wakeOnLANList.append(device)
         print(" done")
     except KeyError:
         print("No wake on LAN devices specified")
-        wakeOnLANList = []
+        config.wakeOnLANList = []
 
     # Build any existing issues
     try:
@@ -1632,7 +1624,7 @@ def load_default_configuration():
     read_exhibit_configuration(current["current_exhibit"])
 
     # Update the components that the configuration has changed
-    for component in componentList:
+    for component in config.componentList:
         component.update_configuration()
 
 
@@ -1682,7 +1674,7 @@ def read_exhibit_configuration(name, updateDefault=False):
 def get_exhibit_component(this_id):
     """Return a component with the given id, or None if no such component exists"""
 
-    return next((x for x in componentList if x.id == this_id), None)
+    return next((x for x in config.componentList if x.id == this_id), None)
 
 
 def get_issue(this_id):
@@ -1726,20 +1718,20 @@ def save_issueList():
 def get_projector(this_id):
     """Return a projector with the given id, or None if no such component exists"""
 
-    return next((x for x in projectorList if x.id == this_id), None)
+    return next((x for x in config.projectorList if x.id == this_id), None)
 
 
 def get_wake_on_LAN_component(this_id):
     """Return a WakeOnLan device with the given id, or None if no such component exists"""
 
-    return next((x for x in wakeOnLANList if x.id == this_id), None)
+    return next((x for x in config.wakeOnLANList if x.id == this_id), None)
 
 
 def add_exhibit_component(this_id, this_type, category="dynamic"):
-    """Create a new ExhibitComponent, add it to the componentList, and return it"""
+    """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
     component = ExhibitComponent(this_id, this_type, category)
-    componentList.append(component)
+    config.componentList.append(component)
 
     return component
 
@@ -1751,10 +1743,10 @@ def command_all_exhibit_components(cmd):
     with config.logLock:
         logging.info("command_all_exhibit_components: %s", cmd)
 
-    for component in componentList:
+    for component in config.componentList:
         component.queue_command(cmd)
 
-    for projector in projectorList:
+    for projector in config.projectorList:
         projector.queue_command(cmd)
 
 
@@ -1799,9 +1791,16 @@ def check_file_structure():
 
     schedules_dir = os.path.join(config.APP_PATH, "schedules")
     exhibits_dir = os.path.join(config.APP_PATH, "exhibits")
-    analytics_dir = os.path.join(config.APP_PATH, "analytics")
-    issues_dir = os.path.join(config.APP_PATH, "issues")
-    maintenance_dir = os.path.join(config.APP_PATH, "maintenance-logs")
+
+    misc_dirs = {"analytics": os.path.join(config.APP_PATH, "analytics"),
+                 "flexible-tracker": os.path.join(config.APP_PATH, "flexible-tracker"),
+                 "flexible-tracker/data": os.path.join(config.APP_PATH, "flexible-tracker", "data"),
+                 "flexible-tracker/templates": os.path.join(config.APP_PATH, "flexible-tracker", "templates"),
+                 "flexible-voter": os.path.join(config.APP_PATH, "flexible-voter"),
+                 "flexible-voter/data": os.path.join(config.APP_PATH, "flexible-voter", "data"),
+                 "flexible-voter/templates": os.path.join(config.APP_PATH, "flexible-voter", "templates"),
+                 "issues": os.path.join(config.APP_PATH, "issues"),
+                 "maintenance-logs": os.path.join(config.APP_PATH, "maintenance-logs")}
 
     try:
         os.listdir(schedules_dir)
@@ -1821,15 +1820,6 @@ def check_file_structure():
             print("Error: unable to create 'schedules' directory. Do you have write permission?")
 
     try:
-        os.listdir(analytics_dir)
-    except FileNotFoundError:
-        print("Missing analytics directory. Creating now...")
-        try:
-            os.mkdir(analytics_dir)
-        except PermissionError:
-            print("Error: unable to create 'analytics' directory. Do you have write permission?")
-
-    try:
         os.listdir(exhibits_dir)
     except FileNotFoundError:
         print("Missing exhibits directory. Creating now...")
@@ -1840,24 +1830,15 @@ def check_file_structure():
         except PermissionError:
             print("Error: unable to create 'exhibits' directory. Do you have write permission?")
 
-    try:
-        os.listdir(issues_dir)
-    except FileNotFoundError:
-        print("Missing issues directory. Creating now...")
+    for key in misc_dirs:
         try:
-            os.mkdir(issues_dir)
-        except PermissionError:
-            print("Error: unable to create 'exhibits' directory. Do you have write permission?")
-
-    try:
-        os.listdir(maintenance_dir)
-    except FileNotFoundError:
-        print("Missing maintenance-logs directory. Creating now...")
-        try:
-            os.mkdir(maintenance_dir)
-        except PermissionError:
-            print("Error: unable to create 'maintenance-logs' directory. Do you have write permission?")
-
+            os.listdir(misc_dirs[key])
+        except FileNotFoundError:
+            print(f"Missing {key} directory. Creating now...")
+            try:
+                os.mkdir(misc_dirs[key])
+            except PermissionError:
+                print(f"Error: unable to create '{key}' directory. Do you have write permission?")
 
 def quit_handler(*args):
     """Handle cleanly shutting down the server"""
@@ -1876,8 +1857,7 @@ def quit_handler(*args):
     # we can resume from the current state
     state_path = os.path.join(config.APP_PATH, "current_state.dat")
     with open(state_path, 'wb') as f:
-        pickle.dump(componentList, f)
-        # a = pickle.dumps(componentList)
+        pickle.dump(config.componentList, f)
 
     # print("Exit1")
     for key in config.polling_thread_dict:
@@ -1940,14 +1920,7 @@ gallery_name = ""
 SOFTWARE_VERSION = 1.0
 software_update_available = False
 
-componentList = []
-projectorList = []
-wakeOnLANList = []
-synchronizationList = []  # Holds sets of displays that are being synchronized
-componentDescriptions = {}  # Holds optional short descriptions of each component
-
 currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
-EXHIBIT_LIST = []
 currentExhibitConfiguration = None  # the configParser object holding the current config
 assignable_staff = []  # staff to whom issues can be assigned.
 
@@ -1966,9 +1939,6 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
 signal.signal(signal.SIGINT, quit_handler)
 sys.excepthook = error_handler
 
-# Dictionary to keep track of warnings we have already presented
-serverWarningDict = {}
-
 with config.logLock:
     logging.info("Server started")
 
@@ -1976,7 +1946,7 @@ with config.logLock:
 try:
     state_path = os.path.join(config.APP_PATH, "current_state.dat")
     with open(state_path, "rb") as previous_state:
-        componentList = pickle.load(previous_state)
+        config.componentList = pickle.load(previous_state)
         print("Previous server state loaded")
 except (FileNotFoundError, EOFError):
     print("Could not load previous server state")
