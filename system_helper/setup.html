@@ -12,19 +12,32 @@
     <link rel="stylesheet" href="css/bootstrap.min.css">
 
     <style>
+    /* .defaultCard {
+      border-style: none solid solid solid;
+      border-width: 1px;
+      border-top-left-radius: 0px;
+      border-top-right-radius: 0px;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+    } */
     </style>
 
-    <title>System Helper setup</title>
+    <title>Component Configuration</title>
 
   </head>
 
   <body>
     <div class="container-fluid">
       <div class='row'>
-        <div class='col'>
-          <H1>System Helper Configuration</H1>
+        <div class='col-12'>
+          <H1>Constellation Component Configuration</H1>
           This tool will help you set up the settings for your Constellation component.
         </div>
+        <div class="col-12 mt-3">
+          <button class='btn btn-primary'>Save changes</button>
+        </div>
+      </div>
+      <div id='cardRow' class='row mx-2 mb-5'>
       </div>
     </div>
 
@@ -34,12 +47,160 @@
   <script type="text/javascript" src="js/showdown.min.js"></script>
 
   <script>
-    function getCurrentDefaults() {
+  function askForDefaults() {
 
+    // Send a message to the local helper and ask for the latest configuration
+    // defaults, then use them.
 
-    }
+    var requestString = JSON.stringify({"action": "getDefaults"});
 
-    var helperIP = INSERT_HELPER_IP_HERE;
+    let xhr = new XMLHttpRequest();
+    xhr.timeout = 2000;
+    xhr.open("POST", helperAddress, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function () {
+
+      if (this.readyState != 4) return;
+
+      if (this.status == 200) {
+        readDefaults(this.responseText);
+      }
+    };
+    xhr.send(requestString);
+  }
+
+  function readDefaults(response) {
+
+    // Take a list of defaults and build the interface for editing them.
+
+    let defaultsList = JSON.parse(response);
+
+    // Remove keys that don't go into defaults.ini
+    let keysToIgnore = ["availableContent",
+                        "content",
+                        "contentPath",
+                        "dictionary",
+                        "helperAddress",
+                        "helperSoftwareUpdateAvailable", ]
+    keysToIgnore.forEach((key) => {
+      delete defaultsList[key];
+    });
+
+    let cardRow = document.getElementById("cardRow");
+
+    let defaultsKeys = Object.keys(defaultsList);
+    defaultsKeys.forEach((key, i) => {
+
+      // Look up and see if we know this key
+      let keyInfo = knownKeys.filter(function(knownKey){
+        return key == knownKey.key;
+      })[0];
+      if (keyInfo == undefined) {
+        keyInfo = {key: key, type: "text", description: ""};
+      }
+
+      let resetFunction = null; // The function to reset the date to what was passed.
+
+      let col = document.createElement("div");
+      col.classList.add("col-3", "my-2", "py-3", "px-1");
+
+      let title = document.createElement("div");
+      title.classList.add("bg-secondary", "w-100", 'px-1', 'py-1');
+      // Add a "required" badge, if appropriate
+      let name = document.createElement("span");
+      name.classList.add('h4', "pr-2", 'align-middle');
+      name.innerHTML = key;
+      title.append(name);
+      col.append(title);
+
+      let card = document.createElement("div");
+      card.classList.add("defaultCard", "px-2", "py-2", 'border', 'rounded-bottom', 'border-secondary', 'h-100', 'd-flex', 'flex-column');
+      col.append(card);
+
+      let description = document.createElement("div");
+      description.classList.add('mt-1');
+      description.innerHTML = keyInfo.description;
+      card.append(description);
+
+      if (["text", "number"].includes(keyInfo.type)) {
+        let input = document.createElement("input");
+        input.setAttribute("type", keyInfo.type);
+        input.setAttribute("value", defaultsList[key]);
+        resetFunction = function() {$(input).val(defaultsList[key]);};
+        input.classList.add("w-100", 'mt-3');
+        card.append(input)
+      } else if (keyInfo.type == "bool") {
+        let select = document.createElement("select");
+        select.classList.add("w-100", 'mt-3');
+        let optionTrue = document.createElement("option");
+        optionTrue.value = "true";
+        optionTrue.text = "True";
+        select.appendChild(optionTrue);
+        let optionFalse = document.createElement("option");
+        optionFalse.value = "false";
+        optionFalse.text = "False";
+        select.appendChild(optionFalse);
+        select.value = defaultsList[key].toLowerCase();
+        resetFunction = function() {$(select).val(defaultsList[key].toLowerCase());};
+        card.append(select);
+      }
+
+      let buttonRow = document.createElement("div");
+      buttonRow.classList.add("row", "mt-auto");
+      card.append(buttonRow);
+
+      let buttonCol1 = document.createElement('div');
+      buttonCol1.classList.add("col-6");
+      buttonRow.append(buttonCol1);
+
+      let resetButton = document.createElement("button");
+      resetButton.classList.add("btn", "btn-warning", 'w-100');
+      resetButton.innerHTML = "Reset";
+      resetButton.addEventListener("click", resetFunction);
+      buttonCol1.append(resetButton);
+
+      let buttonCol2 = document.createElement('div');
+      buttonCol2.classList.add("col-6");
+      buttonRow.append(buttonCol2);
+
+      let deleteButton = document.createElement("button");
+      deleteButton.classList.add("btn", "btn-danger", 'w-100');
+      deleteButton.innerHTML = "Delete";
+      buttonCol2.append(deleteButton);
+
+      if (keyInfo.required) {
+        deleteButton.innerHTML = "Required"
+        deleteButton.disabled = true;
+      }
+
+      cardRow.append(col);
+    });
+
+  }
+
+    var helperAddress = INSERT_HELPERIP_HERE ;
+
+    // For known keys, define their options
+    let knownKeys = [
+      {key: "allow_restart", type: "bool", required: false, description: "Allow the component to restart the PC."},
+      {key: "allow_shutdown", type: "bool", required: false, description: "Allow the component to shutdown the PC. This should only be enabled in Wake on LAN is set up."},
+      {key: "allow_sleep", type: "bool", required: false, description: "Allow the component to sleep the screen. This may not work on all devices."},
+      {key: "anydesk_id", type: "text", required: false, description: "If AnyDesk is configured for this device, you can add its ID, which enables a button in the web console."},
+      {key: "autoplay_audio", type: "bool", required: false, description: "Allow audio to play automatically. If this is set to true, you must have set up your web browser to allow automatic audio."},
+      {key: "current_exhibit", type: "text", required: true, description: "This will be managed automatically by Constellation."},
+      {key: "display_type", type: "text", required: false, description: "Set to 'screen' or 'projector'. This usually has no effect."},
+      {key: "helper_port", type: "text", required: true, description: "The port on which this helper is operating."},
+      {key: "id", type: "text", required: true, description: "A unique name that identifies this component."},
+      {key: "image_duration", type: "number", required: false, description: "The number of seconds that each image will be shown."},
+      {key: "kiosk_id", type: "text", required: false, description: "A unique name that identifies the kiosk. Must be unique from the main component."},
+      {key: "kiosk_type", type: "text", required: false, description: "A user-defined grouping for this component."},
+      {key: "server_ip_address", type: "text", required: true, description: "The IP address of the Constellation Control Server that this component should connect to."},
+      {key: "server_port", type: "number", required: true, description: "The port of the Constellation Control Server that this component should connect to."},
+      {key: "sos_ip_address", type: "text", required: false, description: "The IP address of the Science ona Sphere control computer."},
+      {key: "type", type: "text", required: true, description: "A user-defined grouping for this component."},
+    ]
+
+    askForDefaults();
   </script>
 
   </body>

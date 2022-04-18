@@ -105,11 +105,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # print("  ", self.path)
 
         print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
-        if self.path == "/":
-            pass
-        elif self.path.lower().endswith(".html"):
+        if self.path == "/" or self.path.lower().endswith(".html"):
             # print("  Handling HTML file", self.path)
-            if self.path[0] == '/':
+            if self.path == "/":
+                self.path = "setup.html"  # Load the setup webpage
+            elif self.path[0] == '/':
                 self.path = self.path[1:]
             config.HELPING_REMOTE_CLIENT = True
             try:
