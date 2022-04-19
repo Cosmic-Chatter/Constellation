@@ -302,7 +302,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                elif data["action"] == "setDefaults":
+                    if "defaults" not in data:
+                        return
+                    # Add the contents field, if it doesn't exist
+                    if "config" not in data["defaults"]:
+                        (data["defaults"])["content"] = config.defaults_dict["content"]
+                    set_defaults(data["defaults"])
                 elif data["action"] == "updateDefaults":
+                    # This action is for legacy support only. New applications should utilize the setDefaults action.
                     update_defaults(data)
                 elif data["action"] == "getAvailableContent":
                     active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
@@ -800,14 +808,20 @@ def checkEventSchedule():
     return content_to_retrun
 
 
-def read_default_configuration(checkDirectories=True):
+def read_default_configuration(checkDirectories=True, dictToRead=None):
     """Load configuration parameters from defaults.ini"""
 
-    # Read defaults.ini
-    # root = os.path.dirname(os.path.abspath(__file__))
-    defaults_path = os.path.join(config.application_path, "defaults.ini")
     config.defaults_object = configparser.ConfigParser(delimiters=("="))
-    config.defaults_object.read(defaults_path)
+
+    if dictToRead is not None:
+        # Build the meta-dict required by configparser
+        meta_dict = {"CURRENT": dictToRead}
+        config.defaults_object.read_dict(meta_dict)
+    else:
+        # Read defaults.ini
+        defaults_path = os.path.join(config.application_path, "defaults.ini")
+        config.defaults_object.read(defaults_path)
+
     default = config.defaults_object["CURRENT"]
     config.defaults_dict = dict(default.items())
 
@@ -823,10 +837,17 @@ def read_default_configuration(checkDirectories=True):
     # return(config_object, config_dict)
 
 
-def update_defaults(data):
+def set_defaults(defaults):
+    """Take a dictionary and write it to defaults.ini"""
+
+    print("TODO: write set_defaults")
+    read_default_configuration(checkDirectories=False, dictToRead=defaults)
+    update_defaults(config.defaults_dict, force=True)
+
+def update_defaults(data, force=False):
     """Take a dictionary 'data' and write relevant parameters to disk if they have changed."""
 
-    update_made = False
+    update_made = force
     if "content" in data:
         if isinstance(data["content"], str):
             content = data["content"]
