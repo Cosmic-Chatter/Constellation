@@ -18,6 +18,7 @@ import mimetypes
 import urllib
 import re
 import errno
+import webbrowser
 
 # Non-standard modules
 import psutil
@@ -271,8 +272,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         str(config.helper_software_update_available).lower()
 
                     # Reformat this content list as an array
-                    config_to_send['content'] = \
-                        [s.strip() for s in config_to_send['content'].split(",")]
+                    if "content" in config_to_send:
+                        config_to_send['content'] = \
+                            [s.strip() for s in config_to_send['content'].split(",")]
 
                     if config.dictionary_object is not None:
                         # If there are multiple sections, build a meta-dictionary
@@ -306,7 +308,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if "defaults" not in data:
                         return
                     # Add the contents field, if it doesn't exist
-                    if "config" not in data["defaults"]:
+                    if "config" not in data["defaults"] and "content" in config.defaults_dict:
                         (data["defaults"])["content"] = config.defaults_dict["content"]
                     set_defaults(data["defaults"])
                 elif data["action"] == "updateDefaults":
@@ -820,7 +822,13 @@ def read_default_configuration(checkDirectories=True, dictToRead=None):
     else:
         # Read defaults.ini
         defaults_path = os.path.join(config.application_path, "defaults.ini")
-        config.defaults_object.read(defaults_path)
+        if os.path.isfile(defaults_path):
+            config.defaults_object.read(defaults_path)
+        else:
+            handle_missing_defaults_file()
+            read_default_configuration(checkDirectories=checkDirectories, dictToRead=dictToRead)
+            webbrowser.open(f"http://localhost:{config.defaults_dict['helper_port']}")
+            return
 
     default = config.defaults_object["CURRENT"]
     config.defaults_dict = dict(default.items())
@@ -837,10 +845,43 @@ def read_default_configuration(checkDirectories=True, dictToRead=None):
     # return(config_object, config_dict)
 
 
+def handle_missing_defaults_file():
+
+    """Create a stub defautls.ini file and launch setup.html for configuration"""
+
+    # Determine an available port
+    port = 8000
+    port_available = False
+    while port_available is False:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.bind(("127.0.0.1", port))
+            port_available = True
+        except socket.error as e:
+            if e.errno == errno.EADDRINUSE:
+                port += 1
+            else:
+                # something else raised the socket.error exception
+                print(e)
+
+        s.close()
+
+    # Add bare-bones defaults to get things off the ground
+    config.defaults_dict = {
+        "id": "TEMP",
+        "type": "TEMP",
+        "current_exhibit": "default",
+        "helper_port": port,
+        "server_ip_address": "240.0.0.0",
+        "server_port": 8082
+    }
+    config.defaults_object.read_dict({"CURRENT": config.defaults_dict})
+    update_defaults(config.defaults_dict, force=True)
+
+
 def set_defaults(defaults):
     """Take a dictionary and write it to defaults.ini"""
 
-    print("TODO: write set_defaults")
     read_default_configuration(checkDirectories=False, dictToRead=defaults)
     update_defaults(config.defaults_dict, force=True)
 
@@ -923,7 +964,7 @@ if __name__ == "__main__":
     retrieve_schedule()
 
     # Check the GitHub server for an available software update
-    check_for_software_update()
+    # check_for_software_update()
 
     print(f'Launching server at address {get_local_address()} to serve {config.defaults_dict["id"]}.')
 
