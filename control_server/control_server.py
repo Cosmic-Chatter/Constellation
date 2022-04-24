@@ -22,6 +22,7 @@ import _thread
 import pickle
 import urllib.request
 import time
+import re
 
 # Non-standard modules
 import wakeonlan
@@ -492,6 +493,58 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         pass
 
+    def copy_byte_range(self, infile, start=None, stop=None, bufsize=16 * 1024):
+        """Like shutil.copyfileobj, but only copy a range of the streams.
+        Both start and stop are inclusive.
+        """
+
+        if start is not None:
+            infile.seek(start)
+        while 1:
+            to_read = min(bufsize, stop + 1 - infile.tell() if stop else bufsize)
+            buf = infile.read(to_read)
+            if not buf:
+                break
+            self.wfile.write(buf)
+
+    def handle_range_request(self, f):
+
+        """Handle a GET request using a byte range.
+
+        Inspired by https://github.com/danvk/RangeHTTPServer
+        """
+
+        try:
+            self.range = parse_byte_range(self.headers['Range'])
+        except ValueError:
+            self.send_error(400, 'Invalid byte range')
+            return
+        first, last = self.range
+
+        fs = os.fstat(f.fileno())
+        file_len = fs[6]
+        if first >= file_len:
+            self.send_error(416, 'Requested Range Not Satisfiable')
+            return None
+
+        ctype = self.guess_type(self.translate_path(self.path))
+
+        if last is None or last >= file_len:
+            last = file_len - 1
+        response_length = last - first + 1
+        try:
+            self.send_response(206)
+            self.send_header('Content-type', ctype)
+            self.send_header('Accept-Ranges', 'bytes')
+            self.send_header('Content-Range',
+                             'bytes %s-%s/%s' % (first, last, file_len))
+            self.send_header('Content-Length', str(response_length))
+            self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            self.copy_byte_range(f)
+        except IOError as e:
+            print(e)
+
     def do_GET(self):
 
         # Receive a GET request and respond with a console webpage
@@ -535,12 +588,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 # Strip out leading /, as it screws up os.path.join
                 self.path = self.path[1:]
             try:
-                self.send_response(200)
-                self.send_header('Content-type', mimetype)
-                self.end_headers()
-
                 with open(os.path.join(config.APP_PATH, self.path), 'rb') as f:
-                    self.wfile.write(f.read())
+                    if "Range" in self.headers:
+                        self.handle_range_request(f)
+                    else:
+                        try:
+                            self.send_response(200)
+                            self.send_header('Content-type', mimetype)
+                            self.end_headers()
+                            # print(f"    Writing data to client")
+                            self.wfile.write(f.read())
+                        except BrokenPipeError:
+                            print("Connection closed prematurely")
                 # print("END GET")
                 # print("+++++++++++++++")
                 return
@@ -1195,6 +1254,25 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 return
         # print("END POST")
         # print("===============")
+
+
+def parse_byte_range(byte_range):
+    """Returns the two numbers in 'bytes=123-456' or throws ValueError.
+    The last number or both numbers may be None.
+    """
+
+    BYTE_RANGE_RE = re.compile(r'bytes=(\d+)-(\d+)?$')
+    if byte_range.strip() == '':
+        return None, None
+
+    m = BYTE_RANGE_RE.match(byte_range)
+    if not m:
+        raise ValueError(f'Invalid byte range {byte_range}')
+
+    first, last = [x and int(x) for x in m.groups()]
+    if last and last < first:
+        raise ValueError(f'Invalid byte range {byte_range}')
+    return first, last
 
 
 def set_component_content(id_, content_list):
