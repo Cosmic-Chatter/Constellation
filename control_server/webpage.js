@@ -765,7 +765,6 @@ function uploadComponentContentFile() {
 
     xhr.send(formData);
   }
-
 }
 
 function submitComponentContentChange() {
@@ -1550,6 +1549,18 @@ function showIssueEditModal(issueType, target) {
     }
   }
 
+  // Clear file upload interface elements
+  $("#issueMediaUploadFilename").html("Choose file");
+  $("#issueMediaUploadEqualSignWarning").hide();
+  $("#issueMediaUploadSubmitButton").hide();
+  $("#issueMediaUploadProgressBarContainer").hide();
+
+  // Clone the cancel button to remove any lingering event listeners
+  let old_element = document.getElementById("issueEditCancelButton");
+  let new_element = old_element.cloneNode(true);
+  old_element.parentNode.replaceChild(new_element, old_element);
+
+
   if (issueType == "new") {
     // Clear inputs
     $("#issueTitleInput").val("");
@@ -1559,6 +1570,7 @@ function showIssueEditModal(issueType, target) {
 
     $("#issueEditModal").data("type", "new");
     $("#issueEditModalTitle").html("Create Issue");
+    issueMediaUploadedFile(false);
 
   } else if (target != null) {
       $("#issueEditModal").data("type", "edit");
@@ -1570,9 +1582,158 @@ function showIssueEditModal(issueType, target) {
       $("#issueDescriptionInput").val(targetIssue.issueDescription);
       $("#issueAssignedToSelector").val(targetIssue.assignedTo);
       $("#issueRelatedComponentsSelector").val(targetIssue.relatedComponentIDs);
+      if (targetIssue.media != null) {
+        issueMediaUploadedFile(true, targetIssue.media);
+      } else {
+        issueMediaUploadedFile(false);
+      }
   }
 
   $("#issueEditModal").modal("show");
+}
+
+function onIssueMediaUploadChange() {
+
+  // When a file is selected, check if it contains an equal sign (not allowed).
+  // If not, display it
+
+  $("#issueMediaUploadSubmitButton").show();
+  // Show the upload button (we may hide it later)
+  var fileInput = $("#issueMediaUpload")[0];
+  $("#issueMediaUploadFilename").html("File: " + fileInput.files[0].name);
+  // Check for = in filename
+  if (fileInput.files[0].name.includes("=")) {
+    $("#issueMediaUploadEqualSignWarning").show();
+    $("#issueMediaUploadSubmitButton").hide();
+  } else {
+    $("#issueMediaUploadEqualSignWarning").hide();
+  }
+}
+
+function uploadIssueMediaFile() {
+
+  var fileInput = $("#issueMediaUpload")[0];
+  if (fileInput.files[0] != null){
+
+    $("#issueMediaUploadSubmitButton").prop("disabled", true);
+    $("#issueMediaUploadSubmitButton").html("Working...");
+
+    var file = fileInput.files[0];
+    var formData = new FormData();
+    formData.append("action", "uploadIssueMedia");
+    formData.append("filename", file.name);
+    formData.append("mimetype", file.type);
+    formData.append("file", file);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", serverIP, true);
+    xhr.onreadystatechange = function () {
+      if (this.readyState != 4) return;
+      if (this.status == 200) {
+        var response = JSON.parse(this.responseText);
+
+        if ("success" in response) {
+          if (response["success"] == true) {
+            issueMediaUploadedFile(true, response.filename);
+            // If we cancel without saving, need to delete this file.
+            document.getElementById("issueEditCancelButton").addEventListener("click", function(){
+              issueMediaDelete(response.filename);
+            });
+          } else {
+            issueMediaUploadedFile(false);
+          }
+        }
+        $("#issueMediaUploadSubmitButton").prop("disabled", false);
+        $("#issueMediaUploadSubmitButton").html("Upload");
+        $("#issueMediaUploadProgressBarContainer").hide();
+        $("#issueMediaUploadSubmitButton").hide();
+        $("#issueMediaUploadFilename").html("Choose file");
+      }
+    };
+
+    xhr.upload.addEventListener("progress", function(evt) {
+      if (evt.lengthComputable) {
+        var percentComplete = evt.loaded / evt.total;
+        percentComplete = parseInt(percentComplete * 100);
+        $("#issueMediaUploadProgressBar").width(String(percentComplete) + "%");
+        if (percentComplete > 0) {
+          $("#issueMediaUploadProgressBarContainer").show();
+        }
+        else if (percentComplete == 100) {
+          $("#issueMediaUploadProgressBarContainer").hide();
+        }
+      }
+    }, false);
+
+    xhr.send(formData);
+  }
+}
+
+function issueMediaView(filename) {
+
+  const image_window = window.open("", "_blank");
+  image_window.document.write(`
+        <html>
+          <head>
+          <title>${filename}</title>
+          </head>
+          <body style="margin: 0px">
+            <img style="-webkit-user-select: none; display: block; margin: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); cursor: zoom-in;" src="issues/media/${filename}" height="100%">
+          </body>
+        </html>
+  `);
+}
+
+function issueMediaUploadedFile(fileExists, filename=null) {
+
+  // Configure the file upload/view interface depending on whether a file has
+  // been uploaded.
+
+  $('#issueMediaViewFromModal').data('filename', filename);
+
+  if (fileExists) {
+    $("#issueMediaUploadCol").hide();
+    $("#issueMediaViewCol").show();
+    $("#issueMediaModalLabel").html("Uploaded media file")
+  } else {
+    $("#issueMediaModalLabel").html("Add media file")
+    $("#issueMediaUploadCol").show();
+    $("#issueMediaViewCol").hide();
+  }
+}
+
+function issueMediaDelete(filename) {
+
+  // Send a message to the control server, asking for the file to be deleted.
+
+  let requestDict = {"class": "webpage",
+                     "action": "issueMediaDelete",
+                     "filename": $('#issueMediaViewFromModal').data('filename')};
+  // If this is an existing issue, we need to say what the issue id is
+  let issueType = $("#issueEditModal").data("type");
+  if (issueType == "edit"){
+   requestDict.id = $("#issueEditModal").data("target");
+  }
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result){
+          if (result.success == true) {
+            issueMediaUploadedFile(false);
+          }
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
 }
 
 function submitIssueFromModal() {
@@ -1586,6 +1747,9 @@ function submitIssueFromModal() {
   issueDict.relatedComponentIDs = $("#issueRelatedComponentsSelector").val();
   issueDict.assignedTo = $("#issueAssignedToSelector").val();
   issueDict.priority = $("#issuePrioritySelector").val();
+  if ($('#issueMediaViewFromModal').data('filename') != undefined) {
+    issueDict.media = $('#issueMediaViewFromModal').data('filename');
+  }
 
   let error = false;
   if (issueDict.issueName == "") {
@@ -1608,10 +1772,9 @@ function submitIssueFromModal() {
       action = "editIssue";
     }
     $("#issueEditModal").modal("hide");
-    requestDict = {"class": "webpage",
+    let requestDict = {"class": "webpage",
                    "action": action,
                    "details": issueDict};
-    console.log(requestDict)
     var xhr = new XMLHttpRequest();
     xhr.timeout = 2000;
     xhr.open("POST", serverIP, true);
@@ -1623,7 +1786,6 @@ function submitIssueFromModal() {
         if (this.responseText != "") {
           let result = JSON.parse(this.responseText);
           if ("success" in result && result.success == true) {
-            console.log("success!");
             getIssueList();
           }
         }
@@ -1685,7 +1847,6 @@ function deleteIssue(id) {
       if (this.responseText != "") {
         let result = JSON.parse(this.responseText);
         if ("success" in result && result.success == true) {
-          console.log("success!");
           getIssueList();
         }
       }
@@ -1744,6 +1905,14 @@ function rebuildIssueList(issues) {
     desc.setAttribute("class", "card-text");
     desc.innerHTML = issue.issueDescription;
     body.appendChild(desc);
+
+    if (issue.media != null) {
+      let mediaBut = document.createElement("button");
+      mediaBut.setAttribute("class", "btn btn-primary mr-1");
+      mediaBut.innerHTML = "View media";
+      mediaBut.setAttribute("onclick", `issueMediaView('${issue.media}')`);
+      body.appendChild(mediaBut);
+    }
 
     let editBut = document.createElement("button");
     editBut.setAttribute("class", "btn btn-info mr-1");

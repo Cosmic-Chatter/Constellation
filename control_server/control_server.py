@@ -50,6 +50,7 @@ class Issue:
         self.details["issueDescription"] = details.get("issueDescription", "")
         self.details["relatedComponentIDs"] = details.get("relatedComponentIDs", [])
         self.details["assignedTo"] = details.get("assignedTo", [])
+        self.details["media"] = details.get("media", None)
 
 
 class Projector:
@@ -593,7 +594,39 @@ class RequestHandler(SimpleHTTPRequestHandler):
             print(self.headers)
             return
 
-        if ctype == "application/json":
+        if ctype == "multipart/form-data":  # File upload
+            try:
+                pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
+                content_len = int(self.headers.get('Content-length'))
+                pdict['CONTENT-LENGTH'] = content_len
+                fields = cgi.parse_multipart(self.rfile, pdict)
+                file = fields.get('file')[0]
+
+                action = fields.get("action")[0]
+                if action == "uploadIssueMedia":
+                    content_path = os.path.join(config.APP_PATH, "issues", "media")
+                    _, extension = os.path.splitext(fields.get("filename")[0])
+                    # Create a new filename so we never have collisions
+                    new_filename = str(time.time()).replace(".", "") + extension
+                    filepath = os.path.join(content_path, new_filename)
+                    print(f"Saving uploaded file to {filepath}")
+                    with config.issueMediaLock:
+                        with open(filepath, "wb") as f:
+                            f.write(file)
+                else:
+                    print("Unknown file upload action:", action)
+                    return
+
+                json_string = json.dumps({"success": True, "filename": new_filename})
+            except:
+                json_string = json.dumps({"success": False})
+
+            try:
+                self.wfile.write(bytes(json_string, encoding="UTF-8"))
+            except BrokenPipeError:
+                pass
+
+        elif ctype == "application/json":
             # print("  application/json")
 
             # Unpack the data
@@ -942,6 +975,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == "getIssueList":
                     result_str = json.dumps([x.details for x in config.issueList])
                     self.wfile.write(bytes(result_str, encoding="UTF-8"))
+                elif action == "issueMediaDelete":
+                    if "filename" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'filename' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    delete_issue_media_file(data)
+                    response = {"success": True}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+
                 elif action == 'updateMaintenanceStatus':
                     if "id" not in data or "status" not in data or "notes" not in data:
                         response = {"success": False,
@@ -1454,6 +1497,30 @@ def delete_exhibit(name):
     check_available_exhibits()
 
 
+def delete_issue_media_file(data):
+    """Delete a media file from an issue"""
+
+    file = data["filename"]
+    file_path = os.path.join(config.APP_PATH, "issues", "media", file)
+    print("Deleting issue media file:", file)
+    with config.logLock:
+        logging.info("Deleting issue media file %s", file)
+    with config.issueMediaLock:
+        try:
+            os.remove(file_path)
+        except FileNotFoundError:
+            with config.logLock:
+                logging.error("Cannot delete requested issue media file %s: file not found", file)
+            print(f"Cannot delete requested issue media file {file}: file not found")
+
+    if "id" in data:
+        with config.issueLock:
+            issue = get_issue(data["id"])
+            issue.details["media"] = None
+            issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            save_issueList()
+
+
 def load_default_configuration():
     """Read the current exhibit configuration from file and initialize it in self.currentExhibitConfiguration"""
 
@@ -1704,6 +1771,7 @@ def edit_issue(details):
             issue.details["assignedTo"] = details.get("assignedTo",
                                                       issue.details["assignedTo"])
             issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            issue.details["media"] = details.get("media", issue.details["media"])
 
 
 def save_issueList():
@@ -1800,6 +1868,7 @@ def check_file_structure():
                  "flexible-voter/data": os.path.join(config.APP_PATH, "flexible-voter", "data"),
                  "flexible-voter/templates": os.path.join(config.APP_PATH, "flexible-voter", "templates"),
                  "issues": os.path.join(config.APP_PATH, "issues"),
+                 "issues/media": os.path.join(config.APP_PATH, "issues", "media"),
                  "maintenance-logs": os.path.join(config.APP_PATH, "maintenance-logs")}
 
     try:

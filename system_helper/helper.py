@@ -213,7 +213,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 fields = cgi.parse_multipart(self.rfile, pdict)
                 file = fields.get('file')[0]
 
-                # root = os.path.dirname(os.path.abspath(__file__))
                 content_path = os.path.join(config.application_path, "content")
                 filepath = os.path.join(content_path, fields.get("filename")[0])
                 print(f"Saving uploaded file to {filepath}")
@@ -572,7 +571,6 @@ def delete_file(file, absolute=False):
     if absolute:
         file_path = file
     else:
-        # root = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(config.application_path, "content", file)
     print("Deleting file:", file_path)
     with config.content_file_lock:

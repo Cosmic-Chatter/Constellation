@@ -14,6 +14,7 @@ scheduleLock = threading.Lock()
 issueLock = threading.Lock()
 exhibitsLock = threading.Lock()
 maintenanceLock = threading.Lock()
+issueMediaLock = threading.Lock()
 
 # Lists
 issueList = []
