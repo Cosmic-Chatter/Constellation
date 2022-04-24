@@ -1552,6 +1552,7 @@ function showIssueEditModal(issueType, target) {
   // Clear file upload interface elements
   $("#issueMediaUploadFilename").html("Choose file");
   $("#issueMediaUploadEqualSignWarning").hide();
+  $("#issueMediaUploadHEICWarning").hide();
   $("#issueMediaUploadSubmitButton").hide();
   $("#issueMediaUploadProgressBarContainer").hide();
 
@@ -1607,6 +1608,13 @@ function onIssueMediaUploadChange() {
     $("#issueMediaUploadSubmitButton").hide();
   } else {
     $("#issueMediaUploadEqualSignWarning").hide();
+  }
+  // Check for HEIC file
+  if (fileInput.files[0].type == "image/heic") {
+    $("#issueMediaUploadHEICWarning").show();
+    $("#issueMediaUploadSubmitButton").hide();
+  } else {
+      $("#issueMediaUploadHEICWarning").hide();
   }
 }
 
@@ -1675,11 +1683,48 @@ function issueMediaView(filename) {
   image_window.document.write(`
         <html>
           <head>
-          <title>${filename}</title>
+            <title>${filename}</title>
+            <style>
+              @media (orientation: landscape) {
+                .zoomedOut{
+                  display: block;
+                  height: 100%;
+                  margin: auto;
+                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                  cursor: zoom-in;
+                  -webkit-user-select: none;
+                }
+              }
+              @media (orientation: portrait) {
+                .zoomedOut{
+                  display: block;
+                  width: 100%;
+                  margin: auto;
+                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                  cursor: zoom-in;
+                  -webkit-user-select: none;
+                }
+              }
+
+              .zoomedIn{
+                display: block;
+                margin: auto;
+                padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                cursor: zoom-out;
+                -webkit-user-select: none;
+              }
+            </style>
           </head>
           <body style="margin: 0px">
-            <img style="-webkit-user-select: none; display: block; margin: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); cursor: zoom-in;" src="issues/media/${filename}" height="100%">
+            <img id="image" class='zoomedOut' src="issues/media/${filename}" onclick="toggleZoom()">
           </body>
+          <script>
+
+            function toggleZoom() {
+              document.getElementById("image").classList.toggle('zoomedIn');
+              document.getElementById("image").classList.toggle('zoomedOut');
+            }
+          </script>
         </html>
   `);
 }

@@ -981,7 +981,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                     "reason": "Request missing 'filename' field."}
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
-                    delete_issue_media_file(data)
+                    this_id = None
+                    if "id" in data:
+                        this_id = data["id"]
+                    delete_issue_media_file(data["filename"], this_id)
                     response = {"success": True}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
 
@@ -1497,10 +1500,9 @@ def delete_exhibit(name):
     check_available_exhibits()
 
 
-def delete_issue_media_file(data):
+def delete_issue_media_file(file, id=None):
     """Delete a media file from an issue"""
 
-    file = data["filename"]
     file_path = os.path.join(config.APP_PATH, "issues", "media", file)
     print("Deleting issue media file:", file)
     with config.logLock:
@@ -1513,9 +1515,9 @@ def delete_issue_media_file(data):
                 logging.error("Cannot delete requested issue media file %s: file not found", file)
             print(f"Cannot delete requested issue media file {file}: file not found")
 
-    if "id" in data:
+    if id is not None:
         with config.issueLock:
-            issue = get_issue(data["id"])
+            issue = get_issue(id)
             issue.details["media"] = None
             issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
             save_issueList()
@@ -1752,6 +1754,11 @@ def get_issue(this_id):
 
 def remove_issue(this_id):
     """Remove an Issue with the given id from the issueList"""
+
+    # First, if there is a media file, delete it
+    issue = get_issue(this_id)
+    if "media" in issue.details and issue.details["media"] is not None:
+        delete_issue_media_file(issue.details["media"])
 
     with config.issueLock:
         config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
