@@ -1679,54 +1679,115 @@ function uploadIssueMediaFile() {
 
 function issueMediaView(filename) {
 
-  const image_window = window.open("", "_blank");
-  image_window.document.write(`
-        <html>
-          <head>
-            <title>${filename}</title>
-            <style>
-              @media (orientation: landscape) {
-                .zoomedOut{
+  // Open the media file given by filename in a new browser tab
+
+  // First, determine if we have a picture or a video
+  const img_types = ["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"];
+  const vid_types = ["mp4", "mov", "webm"];
+
+  fileType = null;
+  img_types.forEach((ext) => {
+    if (filename.toLowerCase().endsWith(ext)){
+      fileType = "image";
+    }
+  });
+  vid_types.forEach((ext) => {
+    if (filename.toLowerCase().endsWith(ext)){
+      fileType = "video";
+    }
+  });
+
+  let html = null;
+  if (fileType == "image") {
+    html = `
+          <html>
+            <head>
+              <title>${filename}</title>
+              <style>
+                @media (orientation: landscape) {
+                  .zoomedOut{
+                    display: block;
+                    height: 100%;
+                    margin: auto;
+                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                    cursor: zoom-in;
+                    -webkit-user-select: none;
+                  }
+                }
+                @media (orientation: portrait) {
+                  .zoomedOut{
+                    display: block;
+                    width: 100%;
+                    margin: auto;
+                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                    cursor: zoom-in;
+                    -webkit-user-select: none;
+                  }
+                }
+
+                .zoomedIn{
                   display: block;
-                  height: 100%;
                   margin: auto;
                   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                  cursor: zoom-in;
+                  cursor: zoom-out;
                   -webkit-user-select: none;
                 }
+              </style>
+            </head>
+            <body style="margin: 0px">
+              <img id="image" class='zoomedOut' src="issues/media/${filename}" onclick="toggleZoom()">
+            </body>
+            <script>
+
+              function toggleZoom() {
+                document.getElementById("image").classList.toggle('zoomedIn');
+                document.getElementById("image").classList.toggle('zoomedOut');
               }
-              @media (orientation: portrait) {
-                .zoomedOut{
-                  display: block;
-                  width: 100%;
-                  margin: auto;
-                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                  cursor: zoom-in;
-                  -webkit-user-select: none;
+            </script>
+          </html>
+    `;
+  } else if (fileType == "video") {
+    html = `
+          <html>
+            <head>
+              <title>${filename}</title>
+              <style>
+                @media (orientation: landscape) {
+                  .zoomedOut{
+                    display: block;
+                    height: 100%;
+                    margin: auto;
+                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                    -webkit-user-select: none;
+                  }
                 }
-              }
+                @media (orientation: portrait) {
+                  .zoomedOut{
+                    display: block;
+                    width: 100%;
+                    margin: auto;
+                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+                    -webkit-user-select: none;
+                  }
+                }
+              </style>
+            </head>
+            <body style="margin: 0px">
+              <video class='zoomedOut' controls>
+                <source src="issues/media/${filename}">
+                This file is not playing.
+              </video>
+            </body>
+            <script>
+            </script>
+          </html>
+    `;
+  }
 
-              .zoomedIn{
-                display: block;
-                margin: auto;
-                padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                cursor: zoom-out;
-                -webkit-user-select: none;
-              }
-            </style>
-          </head>
-          <body style="margin: 0px">
-            <img id="image" class='zoomedOut' src="issues/media/${filename}" onclick="toggleZoom()">
-          </body>
-          <script>
-
-            function toggleZoom() {
-              document.getElementById("image").classList.toggle('zoomedIn');
-              document.getElementById("image").classList.toggle('zoomedOut');
-            }
-          </script>
-        </html>
-  `);
+  if (html != null) {
+    const image_window = window.open("", "_blank");
+    image_window.document.write(html);
+  }
 }
 
 function issueMediaUploadedFile(fileExists, filename=null) {
@@ -1739,9 +1800,9 @@ function issueMediaUploadedFile(fileExists, filename=null) {
   if (fileExists) {
     $("#issueMediaUploadCol").hide();
     $("#issueMediaViewCol").show();
-    $("#issueMediaModalLabel").html("Uploaded media file")
+    $("#issueMediaModalLabel").html("Uploaded image")
   } else {
-    $("#issueMediaModalLabel").html("Add media file")
+    $("#issueMediaModalLabel").html("Add image")
     $("#issueMediaUploadCol").show();
     $("#issueMediaViewCol").hide();
   }
@@ -1954,7 +2015,7 @@ function rebuildIssueList(issues) {
     if (issue.media != null) {
       let mediaBut = document.createElement("button");
       mediaBut.setAttribute("class", "btn btn-primary mr-1");
-      mediaBut.innerHTML = "View media";
+      mediaBut.innerHTML = "View image";
       mediaBut.setAttribute("onclick", `issueMediaView('${issue.media}')`);
       body.appendChild(mediaBut);
     }
@@ -1966,11 +2027,20 @@ function rebuildIssueList(issues) {
     body.appendChild(editBut);
 
     let deleteBut = document.createElement("button");
+    deleteBut.setAttribute("type", "button");
     deleteBut.setAttribute("class", "btn btn-danger");
-    deleteBut.setAttribute("onclick", `deleteIssue('${issue.id}')`);
+    deleteBut.setAttribute("data-toggle", "popover");
+    deleteBut.setAttribute("title", "Are you sure?");
+    deleteBut.setAttribute("data-content", `<a id="Popover${issue.id}" class='btn btn-danger w-100' onclick="deleteIssue('${issue.id}')">Confirm</a>`);
+    deleteBut.setAttribute("data-trigger", "focus");
+    deleteBut.setAttribute("data-html", "true");
+    $(document).on("click", `#Popover${issue.id}`, function() {
+        deleteIssue(issue.id);
+    });
+    deleteBut.addEventListener("click", function() {deleteBut.focus()})
     deleteBut.innerHTML = "Delete";
     body.appendChild(deleteBut);
-
+    $(deleteBut).popover();
 
     $("#issuesRow").append(col);
   });

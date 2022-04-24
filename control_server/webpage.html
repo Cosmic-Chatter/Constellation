@@ -404,17 +404,17 @@
                           </select>
                         </div>
                         <div class='col-12 mt-2'>
-                          <label id="issueMediaModalLabel" for="issueMediaUpload">Add media file</label>
+                          <label id="issueMediaModalLabel" for="issueMediaUpload">Add image</label>
                         </div>
                         <div id="issueMediaUploadCol" class='col-8'>
                           <label class="btn btn-outline-secondary text-wrap">
                             <span id="issueMediaUploadFilename">Choose file</span>
-                            <input hidden type="file" class="form-control-file" id="issueMediaUpload" onchange="onIssueMediaUploadChange()">
+                            <input hidden type="file" accept="image/*" class="form-control-file" id="issueMediaUpload" onchange="onIssueMediaUploadChange()">
                           </label>
                         </div>
                         <div id="issueMediaViewCol" class='col-8'>
-                          <button id="issueMediaViewFromModal" class='btn btn-outline-secondary' onclick="issueMediaView($('#issueMediaViewFromModal').data('filename'))">View media</button>
-                          <button class='btn btn-outline-danger' onclick="issueMediaDelete($('#issueMediaViewFromModal').data('filename'))">Remove media</button>
+                          <button id="issueMediaViewFromModal" class='btn btn-outline-secondary' onclick="issueMediaView($('#issueMediaViewFromModal').data('filename'))">View image</button>
+                          <button class='btn btn-outline-danger' onclick="issueMediaDelete($('#issueMediaViewFromModal').data('filename'))">Remove image</button>
                         </div>
                         <div class="col-4">
                           <button id="issueMediaUploadSubmitButton" class='btn btn-block btn-outline-primary' onclick="uploadIssueMediaFile()">Upload</button>
