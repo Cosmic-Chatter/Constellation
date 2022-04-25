@@ -1555,6 +1555,7 @@ function showIssueEditModal(issueType, target) {
   $("#issueMediaUploadHEICWarning").hide();
   $("#issueMediaUploadSubmitButton").hide();
   $("#issueMediaUploadProgressBarContainer").hide();
+  $("#issueMediaUpload").val(null);
 
   // Clone the cancel button to remove any lingering event listeners
   let old_element = document.getElementById("issueEditCancelButton");
@@ -1862,10 +1863,10 @@ function submitIssueFromModal() {
     console.log("Need issue name");
     error = true;
   }
-  if (issueDict.issueDescription == "") {
-    console.log("Need issue description");
-    error = true;
-  }
+  // if (issueDict.issueDescription == "") {
+  //   console.log("Need issue description");
+  //   error = true;
+  // }
 
   if (error == false) {
 
@@ -1965,11 +1966,25 @@ function rebuildIssueList(issues) {
 
   // Take an array of issue dictionaries and build the GUI representation.
 
+  // Gather the settings for the various filters
+  let filterPriority = $("#issueListFilterPrioritySelect").val();
+  let filterAssignedTo = $("#issueListFilterAssignedToSelect").val();
+
   $("#issuesRow").empty();
 
   issues.forEach((issue, i) => {
+
+    // Check against the filters
+    if (filterPriority != "all" && filterPriority != issue.priority) {
+      return
+    }
+    if (
+      (filterAssignedTo != "all" && filterAssignedTo != "unassigned" && !issue.assignedTo.includes(filterAssignedTo))
+      || (filterAssignedTo == "unassigned" && issue.assignedTo.length > 0)
+    ) return
+
     let col = document.createElement("div");
-    col.setAttribute("class", "col-12 col-sm-6 col-lg-4 col-xl-3 mt-2");
+    col.setAttribute("class", "col-12 col-sm-6 col-lg-4 mt-2");
 
     let card = document.createElement("div");
     // Color the border based on the priority
@@ -2009,26 +2024,27 @@ function rebuildIssueList(issues) {
 
     let desc = document.createElement("p");
     desc.setAttribute("class", "card-text");
+    desc.style.whiteSpace = "pre-wrap"; // To preserve new lines
     desc.innerHTML = issue.issueDescription;
     body.appendChild(desc);
 
     if (issue.media != null) {
       let mediaBut = document.createElement("button");
-      mediaBut.setAttribute("class", "btn btn-primary mr-1");
+      mediaBut.setAttribute("class", "btn btn-primary mr-1 mt-1");
       mediaBut.innerHTML = "View image";
       mediaBut.setAttribute("onclick", `issueMediaView('${issue.media}')`);
       body.appendChild(mediaBut);
     }
 
     let editBut = document.createElement("button");
-    editBut.setAttribute("class", "btn btn-info mr-1");
+    editBut.setAttribute("class", "btn btn-info mr-1 mt-1");
     editBut.innerHTML = "Edit";
     editBut.setAttribute("onclick", `showIssueEditModal('edit', '${issue.id}')`);
     body.appendChild(editBut);
 
     let deleteBut = document.createElement("button");
     deleteBut.setAttribute("type", "button");
-    deleteBut.setAttribute("class", "btn btn-danger");
+    deleteBut.setAttribute("class", "btn btn-danger mt-1");
     deleteBut.setAttribute("data-toggle", "popover");
     deleteBut.setAttribute("title", "Are you sure?");
     deleteBut.setAttribute("data-content", `<a id="Popover${issue.id}" class='btn btn-danger w-100' onclick="deleteIssue('${issue.id}')">Confirm</a>`);
@@ -2239,8 +2255,18 @@ function askForUpdate() {
               // Check for the time of the most recent update. If it is more
               // recent than our existing date, rebuild the issue list
               let currentLastDate = Math.max.apply(Math, issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
-              let updatedDate = Math.max.apply(Math, component.issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
-              assignableStaff = component.assignable_staff;
+              // let updatedDate = Math.max.apply(Math, component.issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
+              let updatedDate = new Date(component.lastUpdateDate)
+              if (!arraysEqual(assignableStaff, component.assignable_staff)) {
+                assignableStaff = component.assignable_staff;
+                // Populate the filter
+                $("#issueListFilterAssignedToSelect").empty()
+                $("#issueListFilterAssignedToSelect").append(new Option("All", "all"));
+                $("#issueListFilterAssignedToSelect").append(new Option("Unassigned", "unassigned"));
+                for (var i=0; i<assignableStaff.length; i++) {
+                  $("#issueListFilterAssignedToSelect").append(new Option(assignableStaff[i], assignableStaff[i]));
+                }
+              }
               if (updatedDate > currentLastDate) {
                 issueList = component.issueList;
                 rebuildIssueList(issueList);
@@ -2426,4 +2452,16 @@ function deleteExhibitFromModal(){
 
   deleteExhibit($("#exhibitDeleteSelector").val());
   $("#deleteExhibitModal").modal("hide");
+}
+
+function arraysEqual(a, b) {
+
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }

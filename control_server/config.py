@@ -1,6 +1,7 @@
 """Defines configuration variables that can be shared across classes, etc."""
 
 # Standard imports
+import datetime
 import threading
 
 APP_PATH = ""  # Path to the directory where the server is being launched from
@@ -27,4 +28,6 @@ exhibit_list = []
 
 # Dictionary to keep track of warnings we have already presented
 serverWarningDict = {}
+
+issueList_last_update_date = datetime.datetime.now().isoformat()
 

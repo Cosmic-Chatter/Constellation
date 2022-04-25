@@ -442,6 +442,20 @@
             <div class='col-12'>
               <button class='btn btn-primary' onclick='showIssueEditModal("new")'>Create issue</button>
             </div>
+            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
+              <label>Priority</label>
+              <select id="issueListFilterPrioritySelect" class='form-control' onchange="rebuildIssueList(issueList)">
+                <option value="all">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
+              <label>Assigned to</label>
+              <select id="issueListFilterAssignedToSelect" class='form-control' onchange="rebuildIssueList(issueList)">
+              </select>
+            </div>
             <div class='col-12'>
               <div id='issuesRow' class='row mt-3'></div>
             </div>

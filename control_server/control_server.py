@@ -53,6 +53,10 @@ class Issue:
         self.details["assignedTo"] = details.get("assignedTo", [])
         self.details["media"] = details.get("media", None)
 
+    def refresh_last_update_date(self):
+        self.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+        config.issueList_last_update_date = self.details["lastUpdateDate"]
+
 
 class Projector:
     """Holds basic data about a projector"""
@@ -472,6 +476,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # Also include an object containing the current issues
         temp = {"class": "issues",
                 "issueList": [x.details for x in config.issueList],
+                "lastUpdateDate": config.issueList_last_update_date,
                 "assignable_staff": assignable_staff}
         component_dict_list.append(temp)
 
@@ -1597,7 +1602,8 @@ def delete_issue_media_file(file, id=None):
         with config.issueLock:
             issue = get_issue(id)
             issue.details["media"] = None
-            issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            issue.refresh_last_update_date()
             save_issueList()
 
 
@@ -1855,7 +1861,8 @@ def edit_issue(details):
                                                                issue.details["relatedComponentIDs"])
             issue.details["assignedTo"] = details.get("assignedTo",
                                                       issue.details["assignedTo"])
-            issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
+            issue.refresh_last_update_date()
             issue.details["media"] = details.get("media", issue.details["media"])
 
 
