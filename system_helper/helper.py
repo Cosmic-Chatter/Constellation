@@ -314,7 +314,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # This action is for legacy support only. New applications should utilize the setDefaults action.
                     update_defaults(data)
                 elif data["action"] == "getAvailableContent":
-                    active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
+                    if "content" in config.defaults_dict:
+                        active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
+                    else:
+                        active_content = ""
                     response = {"all_exhibits": getAllDirectoryContents(),
                                 "active_content": active_content,
                                 "system_stats": getSystemStats()}
