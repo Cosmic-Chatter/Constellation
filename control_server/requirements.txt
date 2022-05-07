@@ -2,3 +2,4 @@ pypjlink2
 pyserial
 wakeonlan
 icmplib
+dateutil

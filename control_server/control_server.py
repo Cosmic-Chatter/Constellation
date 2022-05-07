@@ -33,6 +33,7 @@ import dateutil.parser
 import config
 import projector_control
 import constellation_tracker as c_track
+import constellation_maintenance as c_maint
 
 
 class Issue:
@@ -1077,6 +1078,26 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             reason = f"You do not have write permission for the file {file_path}"
                     response_dict = {"success": success, "reason": reason}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                elif action == 'deleteMaintenanceRecord':
+                    if "id" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'id' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    else:
+                        file_path = os.path.join(config.APP_PATH,
+                                                 "maintenance-logs", data["id"] + ".txt")
+                        with config.maintenanceLock:
+                            try:
+                                os.remove(file_path)
+                                response = {"success": True}
+                                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                                return
+                            except FileNotFoundError:
+                                response = {"success": False,
+                                            "reason": f"Record {data['id']}.txt does not exist"}
+                                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                                return
                 elif action == 'getMaintenanceStatus':
                     if "id" not in data:
                         response = {"success": False,
@@ -1085,26 +1106,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         return
                     file_path = os.path.join(config.APP_PATH,
                                              "maintenance-logs", data["id"] + ".txt")
-                    try:
-                        with config.maintenanceLock:
-                            with open(file_path, 'rb') as f:
-                                # Seek to the end of the file and return the most recent entry
-                                try:  # catch OSError in case of a one line file
-                                    f.seek(-2, os.SEEK_END)
-                                    while f.read(1) != b'\n':
-                                        f.seek(-2, os.SEEK_CUR)
-                                except OSError:
-                                    f.seek(0)
-                                last_line = f.readline().decode()
-                                result = json.loads(last_line)
-                                response_dict = {"success": True,
-                                                 "status": result["status"],
-                                                 "notes": result["notes"]}
-                    except FileNotFoundError:
-                        response_dict = {"success": False,
-                                         "reason": "No maintenance record exists",
-                                         "status": "On floor, working",
-                                         "notes": ""}
+                    with config.maintenanceLock:
+                        response_dict = c_maint.get_maintenance_report(file_path)
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "getAllMaintenanceStatuses":
                     record_list = []
@@ -1114,16 +1117,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         if file.lower().endswith(".txt"):
                             with config.maintenanceLock:
                                 file_path = os.path.join(maintenance_path, file)
-                                with open(file_path, 'rb') as f:
-                                    # Seek to the end of the file and return the most recent entry
-                                    try:  # catch OSError in case of a one line file
-                                        f.seek(-2, os.SEEK_END)
-                                        while f.read(1) != b'\n':
-                                            f.seek(-2, os.SEEK_CUR)
-                                    except OSError:
-                                        f.seek(0)
-                                    last_line = f.readline().decode()
-                            record_list.append(json.loads(last_line))
+                                record_list.append(c_maint.get_maintenance_report(file_path))
                     response_dict = {"success": True,
                                      "records": record_list}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))

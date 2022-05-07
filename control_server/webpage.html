@@ -186,7 +186,14 @@
                             </select>
                           </div>
                         </div>
-                        <div class='col-12'>
+                        <div class='col-12 col-md-6 mt-2'>
+                          <label>Maintenance history</label>
+                          <div class="progress" style="height: 35px;">
+                            <div id="maintenanceHistoryWorkingBar" class="progress-bar bg-success" role="progressbar" style="width: 80%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100">Working</div>
+                            <div id="maintenanceHistoryNotWorkingBar" class="progress-bar bg-danger" role="progressbar" style="width: 20%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">Not working</div>
+                          </div>
+                        </div>
+                        <div class='col-12 mt-2'>
                           <div class="form-group">
                             <label for="componentInfoModalMaintenanceNote">Notes</label>
                             <textarea class="form-control" id="componentInfoModalMaintenanceNote" rows="3" oninput="$('#componentInfoModalMaintenanceSaveButton').show()"></textarea>

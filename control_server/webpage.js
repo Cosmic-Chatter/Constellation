@@ -2123,6 +2123,10 @@ function setComponentInfoModalMaintenanceStatus(id) {
         if ("status" in result && "notes" in result) {
           $("#componentInfoModalMaintenanceStatusSelector").val(result.status);
           $("#componentInfoModalMaintenanceNote").val(result.notes);
+          $("#maintenanceHistoryWorkingBar").attr("ariaValueNow", result.working_pct);
+          $("#maintenanceHistoryWorkingBar").width(String(result.working_pct)+"%");
+          $("#maintenanceHistoryNotWorkingBar").attr("ariaValueNow", result.not_working_pct);
+          $("#maintenanceHistoryNotWorkingBar").width(String(result.not_working_pct)+"%");
           $('#componentInfoModalMaintenanceSaveButton').hide();
         }
       }
@@ -2172,8 +2176,25 @@ function refreshMaintenanceRecords() {
           title.innerHTML = record.id;
           body.appendChild(title);
 
+          let progress = document.createElement("div");
+          progress.setAttribute("class", "progress");
+          progress.style.height = "25px";
+          let working = document.createElement("div");
+          working.setAttribute("class", "progress-bar bg-success");
+          working.setAttribute("role", "progressbar");
+          working.style.width = String(record.working_pct) + "%";
+          working.innerHTML = "Working";
+          let not_working = document.createElement("div");
+          not_working.setAttribute("class", "progress-bar bg-danger");
+          not_working.setAttribute("role", "progressbar");
+          not_working.style.width = String(record.not_working_pct) + "%";
+          not_working.innerHTML = "Not working";
+          progress.appendChild(working);
+          progress.appendChild(not_working);
+          body.appendChild(progress);
+
           let notes = document.createElement("p");
-          notes.setAttribute("class", "card-text");
+          notes.setAttribute("class", "card-text mt-2");
           notes.innerHTML = record.notes;
           body.appendChild(notes);
 
