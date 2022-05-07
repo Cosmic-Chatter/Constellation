@@ -1916,8 +1916,14 @@ function getIssueList() {
 
     if (this.status == 200) {
       if (this.responseText != "") {
-        issueList = JSON.parse(this.responseText);
-        rebuildIssueList(issueList);
+        response = JSON.parse(this.responseText);
+        if ("success" in response) {
+          if (response.success == true) {
+            rebuildIssueList(response.issueList);
+          } else {
+            console.log("Error retrieving issueList: ", response.reason);
+          }
+        }
       }
     }
   };

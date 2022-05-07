@@ -31,32 +31,10 @@ import dateutil.parser
 
 # Constellation modules
 import config
-import projector_control
-import constellation_tracker as c_track
+import constellation_issues as c_issues
 import constellation_maintenance as c_maint
-
-
-class Issue:
-    """Contains information relevant for tracking an issue."""
-
-    def __init__(self, details):
-        """Populate the Issue with the information stored in a dictionary"""
-
-        self.details = {}
-        now_date = datetime.datetime.now().isoformat()
-        self.details["id"] = details.get("id", str(time.time()).replace(".", ""))
-        self.details["creationDate"] = details.get("creationDate", now_date)
-        self.details["lastUpdateDate"] = details.get("lastUpdateDate", now_date)
-        self.details["priority"] = details.get("priority", "medium")
-        self.details["issueName"] = details.get("issueName", "New Issue")
-        self.details["issueDescription"] = details.get("issueDescription", "")
-        self.details["relatedComponentIDs"] = details.get("relatedComponentIDs", [])
-        self.details["assignedTo"] = details.get("assignedTo", [])
-        self.details["media"] = details.get("media", None)
-
-    def refresh_last_update_date(self):
-        self.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
-        config.issueList_last_update_date = self.details["lastUpdateDate"]
+import constellation_tracker as c_track
+import projector_control
 
 
 class Projector:
@@ -1010,9 +988,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == "createIssue":
                     if "details" in data:
                         with config.issueLock:
-                            new_issue = Issue(data["details"])
+                            new_issue = c_issues.Issue(data["details"])
                             config.issueList.append(new_issue)
-                            save_issueList()
+                            c_issues.save_issueList()
                         response_dict = {"success": True}
                     else:
                         response_dict = {"success": False,
@@ -1020,8 +998,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "editIssue":
                     if "details" in data and "id" in data["details"]:
-                        edit_issue(data["details"])
-                        save_issueList()
+                        c_issues.edit_issue(data["details"])
+                        c_issues.save_issueList()
                         response_dict = {"success": True}
                     else:
                         response_dict = {
@@ -1031,15 +1009,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "deleteIssue":
                     if "id" in data:
-                        remove_issue(data["id"])
-                        save_issueList()
+                        c_issues.remove_issue(data["id"])
+                        c_issues.save_issueList()
                         response_dict = {"success": True, "reason": ""}
                     else:
                         response_dict = {"success": False, "reason": "Must include field 'id'"}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "getIssueList":
-                    result_str = json.dumps([x.details for x in config.issueList])
-                    self.wfile.write(bytes(result_str, encoding="UTF-8"))
+                    response = {
+                        "success": True,
+                        "issueList": [x.details for x in config.issueList]
+                    }
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "issueMediaDelete":
                     if "filename" not in data:
                         response = {"success": False,
@@ -1049,10 +1030,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     this_id = None
                     if "id" in data:
                         this_id = data["id"]
-                    delete_issue_media_file(data["filename"], this_id)
+                    c_issues.delete_issue_media_file(data["filename"], this_id)
                     response = {"success": True}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-
                 elif action == 'updateMaintenanceStatus':
                     if "id" not in data or "status" not in data or "notes" not in data:
                         response = {"success": False,
@@ -1577,30 +1557,6 @@ def delete_exhibit(name):
     check_available_exhibits()
 
 
-def delete_issue_media_file(file, id=None):
-    """Delete a media file from an issue"""
-
-    file_path = os.path.join(config.APP_PATH, "issues", "media", file)
-    print("Deleting issue media file:", file)
-    with config.logLock:
-        logging.info("Deleting issue media file %s", file)
-    with config.issueMediaLock:
-        try:
-            os.remove(file_path)
-        except FileNotFoundError:
-            with config.logLock:
-                logging.error("Cannot delete requested issue media file %s: file not found", file)
-            print(f"Cannot delete requested issue media file {file}: file not found")
-
-    if id is not None:
-        with config.issueLock:
-            issue = get_issue(id)
-            issue.details["media"] = None
-            # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
-            issue.refresh_last_update_date()
-            save_issueList()
-
-
 def load_default_configuration():
     """Read the current exhibit configuration from file and initialize it in self.currentExhibitConfiguration"""
 
@@ -1741,7 +1697,7 @@ def load_default_configuration():
         print("Reading stored issues...", end="", flush=True)
 
         for issue in issues:
-            new_issue = Issue(issue)
+            new_issue = c_issues.Issue(issue)
             config.issueList.append(new_issue)
         print(" done")
     except FileNotFoundError:
@@ -1822,51 +1778,6 @@ def get_exhibit_component(this_id):
     """Return a component with the given id, or None if no such component exists"""
 
     return next((x for x in config.componentList if x.id == this_id), None)
-
-
-def get_issue(this_id):
-    """Return an Issue with the given id, or None if no such Issue exists"""
-
-    return next((x for x in config.issueList if x.details["id"] == this_id), None)
-
-
-def remove_issue(this_id):
-    """Remove an Issue with the given id from the issueList"""
-
-    # First, if there is a media file, delete it
-    issue = get_issue(this_id)
-    if "media" in issue.details and issue.details["media"] is not None:
-        delete_issue_media_file(issue.details["media"])
-
-    with config.issueLock:
-        config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
-
-
-def edit_issue(details):
-    """Edit issue with the id given in details dict"""
-    if "id" in details:
-        issue = get_issue(details["id"])
-        with config.issueLock:
-            issue.details["priority"] = details.get("priority", issue.details["priority"])
-            issue.details["issueName"] = details.get("issueName", issue.details["issueName"])
-            issue.details["issueDescription"] = details.get("issueDescription",
-                                                            issue.details["issueDescription"])
-            issue.details["relatedComponentIDs"] = details.get("relatedComponentIDs",
-                                                               issue.details["relatedComponentIDs"])
-            issue.details["assignedTo"] = details.get("assignedTo",
-                                                      issue.details["assignedTo"])
-            # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
-            issue.refresh_last_update_date()
-            issue.details["media"] = details.get("media", issue.details["media"])
-
-
-def save_issueList():
-    """Write the current issueList to file"""
-
-    issue_file = os.path.join(config.APP_PATH, "issues", "issues.json")
-
-    with open(issue_file, "w", encoding="UTF-8") as file_object:
-        json.dump([x.details for x in config.issueList], file_object)
 
 
 def get_projector(this_id):

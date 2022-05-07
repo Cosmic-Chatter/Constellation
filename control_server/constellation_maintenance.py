@@ -5,7 +5,6 @@ import os
 
 
 def get_maintenance_report(file_path):
-
     """Retrieve key maintenance info from a maintenance record"""
 
     try:
