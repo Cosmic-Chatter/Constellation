@@ -1,6 +1,7 @@
 import datetime
 import dateutil.parser
 import json
+import logging
 import os
 
 
@@ -138,3 +139,10 @@ def summarize_segments(segments):
             "off_floor": off_floor_pct,
             "working": working_pct,
             "not_working": not_working_pct}
+
+# Set up log file
+log_path = os.path.join(config.APP_PATH, "control_server.log")
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.DEBUG)

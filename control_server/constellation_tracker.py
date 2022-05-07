@@ -3,6 +3,7 @@
 # Standard modules
 import configparser
 import json
+import logging
 import os
 
 # Constellation modules
@@ -93,3 +94,10 @@ def write_raw_text(data, name, kind="flexible-tracker"):
         reason = f"You do not have write permission for the file {file_path}"
 
     return success, reason
+
+# Set up log file
+log_path = os.path.join(config.APP_PATH, "control_server.log")
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.DEBUG)

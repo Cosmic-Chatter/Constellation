@@ -31,8 +31,10 @@ import dateutil.parser
 
 # Constellation modules
 import config
+import constellation_exhibit as c_exhibit
 import constellation_issues as c_issues
 import constellation_maintenance as c_maint
+import constellation_schedule as c_sched
 import constellation_tracker as c_track
 import projector_control
 
@@ -141,240 +143,6 @@ class Projector:
             print(e)
 
 
-class ExhibitComponent:
-    """Holds basic data about a component in the exhibit"""
-
-    def __init__(self, id_, this_type, category='dynamic'):
-
-        # category='dynamic' for components that are connected over the network
-        # category='static' for components added from currentExhibitConfiguration.ini
-
-        self.id = id_
-        self.type = this_type
-        self.category = category
-        self.ip = ""  # IP address of client
-        self.helperPort = 8000  # port of the localhost helper for this component DEPRECIATED
-        self.helperAddress = None  # full IP and port of helper
-
-        self.macAddress = None  # Added below if we have specified a Wake on LAN device
-        self.broadcastAddress = "255.255.255.255"
-        self.WOLPort = 9
-
-        self.last_contact_datetime = datetime.datetime.now()
-        self.lastInteractionDateTime = datetime.datetime(2020, 1, 1)
-
-        self.config = {"commands": [],
-                       "allowed_actions": [],
-                       "description": config.componentDescriptions.get(id_, ""),
-                       "AnyDeskID": ""}
-
-        if category != "static":
-            self.update_configuration()
-
-        # Check if we have specified a Wake on LAN device matching this id
-        # If yes, subsume it into this component
-        wol = get_wake_on_LAN_component(self.id)
-        if wol is not None:
-            self.macAddress = wol.macAddress
-            if "power_on" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_on")
-            if "shutdown" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_off")
-            config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
-
-    def seconds_since_last_contact(self):
-
-        """Return the number of seconds since a ping was received"""
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
-
-    def seconds_since_last_interaction(self):
-
-        """Return the number of seconds since an interaction was recorded"""
-
-        diff = datetime.datetime.now() - self.lastInteractionDateTime
-        return diff.total_seconds()
-
-    def update_last_contact_datetime(self):
-
-        # We've received a new ping from this component, so update its
-        # last_contact_datetime
-
-        self.last_contact_datetime = datetime.datetime.now()
-
-    def update_last_interaction_datetime(self):
-
-        # We've received a new interaction ping, so update its
-        # lastInteractionDateTime
-
-        self.lastInteractionDateTime = datetime.datetime.now()
-
-    def current_status(self):
-
-        """Return the current status of the component
-
-        Options: [OFFLINE, SYSTEM ON, ONLINE, ACTIVE, WAITING]
-        """
-
-        if self.category == "static":
-            return "STATIC"
-
-        status = 'OFFLINE'
-
-        if self.seconds_since_last_contact() < 30:
-            if self.seconds_since_last_interaction() < 10:
-                status = "ACTIVE"
-            else:
-                status = "ONLINE"
-        elif self.seconds_since_last_contact() < 60:
-            status = "WAITING"
-        else:
-            # If we haven't heard from the component, we might still be able
-            # to ping the PC and see if it is alive
-            status = self.update_PC_status()
-
-        return status
-
-    def update_configuration(self):
-
-        """Retrieve the latest configuration data from the configParser object"""
-        try:
-            file_config = dict(currentExhibitConfiguration.items(self.id))
-            for key in file_config:
-                if key == 'content':
-                    self.config[key] = [s.strip() for s in file_config[key].split(",")]
-                elif key == "description":
-                    pass  # This is specified elsewhere
-                else:
-                    self.config[key] = file_config[key]
-        except configparser.NoSectionError:
-            pass
-            # print(f"Warning: there is no configuration available for component with id={self.id}")
-            # with config.logLock:
-            #     logging.warning(f"there is no configuration available for component with id={self.id}")
-        self.config["current_exhibit"] = currentExhibit[0:-8]
-
-    def queue_command(self, command):
-
-        """Queue a command to be sent to the component on the next ping"""
-
-        if (command in ["power_on", "wakeDisplay"]) and (self.macAddress is not None):
-            self.wake_with_LAN()
-        else:
-            print(f"{self.id}: command queued: {command}")
-            self.config["commands"].append(command)
-            print(f"{self.id}: pending commands: {self.config['commands']}")
-
-    def wake_with_LAN(self):
-
-        # Function to send a magic packet waking the device
-
-        if self.macAddress is not None:
-
-            print(f"Sending wake on LAN packet to {self.id}")
-            with config.logLock:
-                logging.info(f"Sending wake on LAN packet to {self.id}")
-            try:
-                wakeonlan.send_magic_packet(self.macAddress,
-                                            ip_address=self.broadcastAddress,
-                                            port=self.WOLPort)
-            except ValueError as e:
-                print(f"Wake on LAN error for component {self.id}: {str(e)}")
-                with config.logLock:
-                    logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
-
-    def update_PC_status(self):
-
-        """If we have an IP address, ping the host to see if it is awake"""
-
-        status = "UNKNOWN"
-        if self.ip is not None:
-            try:
-                ping = icmplib.ping(self.ip, privileged=False, count=1, timeout=0.05)
-                if ping.is_alive:
-                    status = "SYSTEM ON"
-                elif self.seconds_since_last_contact() > 60:
-                    status = "OFFLINE"
-                else:
-                    status = "WAITING"
-            except icmplib.exceptions.SocketPermissionError:
-                if "wakeOnLANPrivilege" not in config.serverWarningDict:
-                    print(
-                        "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
-                    with config.logLock:
-                        logging.info(f"Need administrator privilege to check Wake on LAN status")
-                    config.serverWarningDict["wakeOnLANPrivilege"] = True
-        return status
-
-
-class WakeOnLANDevice:
-    """Holds basic information about a wake on LAN device and facilitates waking it"""
-
-    def __init__(self, id_, mac_address, ip_address=None):
-
-        self.id = id_
-        self.type = "WAKE_ON_LAN"
-        self.macAddress = mac_address
-        self.broadcastAddress = "255.255.255.255"
-        self.port = 9
-        self.ip = ip_address
-        self.config = {"allowed_actions": ["power_on"],
-                       "description": config.componentDescriptions.get(id_, "")}
-
-        self.state = {"status": "UNKNOWN"}
-        self.last_contact_datetime = datetime.datetime(2020, 1, 1)
-
-    def seconds_since_last_contact(self):
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
-
-    def queue_command(self, cmd):
-
-        """Wrapper function to match other exhibit components"""
-
-        if cmd in ["power_on", "wakeDisplay"]:
-            self.wake()
-
-    def wake(self):
-
-        """Function to send a magic packet waking the device"""
-
-        print(f"Sending wake on LAN packet to {self.id}")
-        with config.logLock:
-            logging.info(f"Sending wake on LAN packet to {self.id}")
-        try:
-            wakeonlan.send_magic_packet(self.macAddress,
-                                        ip_address=self.broadcastAddress,
-                                        port=self.port)
-        except ValueError as e:
-            print(f"Wake on LAN error for component {self.id}: {str(e)}")
-            with config.logLock:
-                logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
-
-    def update(self):
-
-        """If we have an IP address, ping the host to see if it is awake"""
-
-        if self.ip is not None:
-            try:
-                ping = icmplib.ping(self.ip, privileged=False, count=1)
-                if ping.is_alive:
-                    self.state["status"] = "SYSTEM ON"
-                    self.last_contact_datetime = datetime.datetime.now()
-                elif self.seconds_since_last_contact() > 60:
-                    self.state["status"] = "OFFLINE"
-            except icmplib.exceptions.SocketPermissionError:
-                if "wakeOnLANPrivilege" not in config.serverWarningDict:
-                    print(
-                        "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
-                    with config.logLock:
-                        logging.info(f"Need administrator privilege to check Wake on LAN status")
-                    config.serverWarningDict["wakeOnLANPrivilege"] = True
-        else:
-            self.state["status"] = "UNKNOWN"
-
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Stub which triggers dispatch of requests into individual threads."""
@@ -389,10 +157,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         """Function to respond to a POST with a string defining the current exhibit configuration"""
 
-        json_string = json.dumps(get_exhibit_component(id_).config)
-        if len(get_exhibit_component(id_).config["commands"]) > 0:
+        json_string = json.dumps(c_exhibit.get_exhibit_component(id_).config)
+        if len(c_exhibit.get_exhibit_component(id_).config["commands"]) > 0:
             # Clear the command list now that we have sent
-            get_exhibit_component(id_).config["commands"] = []
+            c_exhibit.get_exhibit_component(id_).config["commands"] = []
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
     def send_webpage_update(self):
@@ -446,7 +214,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         # Also include an object with the status of the overall gallery
         temp = {"class": "gallery",
-                "currentExhibit": currentExhibit,
+                "currentExhibit": config.currentExhibit,
                 "availableExhibits": config.exhibit_list,
                 "galleryName": gallery_name,
                 "updateAvailable": str(software_update_available).lower()}
@@ -456,15 +224,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
         temp = {"class": "issues",
                 "issueList": [x.details for x in config.issueList],
                 "lastUpdateDate": config.issueList_last_update_date,
-                "assignable_staff": assignable_staff}
+                "assignable_staff": config.assignable_staff}
         component_dict_list.append(temp)
 
         # Also include an object containing the current schedule
         with config.scheduleLock:
             temp = {"class": "schedule",
-                    "updateTime": scheduleUpdateTime,
-                    "schedule": scheduleList,
-                    "nextEvent": nextEvent}
+                    "updateTime": config.scheduleUpdateTime,
+                    "schedule": config.scheduleList,
+                    "nextEvent": config.nextEvent}
             component_dict_list.append(temp)
 
         json_string = json.dumps(component_dict_list, default=str)
@@ -728,7 +496,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     json_string = json.dumps({"result": "success", "success": True})
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "queueCommand":
-                    get_exhibit_component(data["id"]).queue_command(data["command"])
+                    c_exhibit.get_exhibit_component(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueProjectorCommand":
@@ -736,7 +504,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueWOLCommand":
-                    get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
+                    c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
                     response = {"success": True,"reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "updateSchedule":
@@ -762,7 +530,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                         if data["isAddition"]:
                             # Check if this time already exists
-                            error = check_if_schedule_time_exists(path, time_to_set)
+                            error = c_sched.check_if_schedule_time_exists(path, time_to_set)
 
                             if not error:
                                 with config.scheduleLock:
@@ -775,7 +543,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             time_to_replace = dateutil.parser.parse(data['timeToReplace']).time()
                             print("replacing schedule",
                                   time_to_replace, time_to_set,
-                                  check_if_schedule_time_exists(path, time_to_set))
+                                  c_sched.check_if_schedule_time_exists(path, time_to_set))
 
                             # We need to make sure we are not editing this entry to have
                             # the same time as another entry
@@ -783,7 +551,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             if time_to_set == time_to_replace:
                                 okay_to_edit = True
                             else:
-                                okay_to_edit = not check_if_schedule_time_exists(path, time_to_set)
+                                okay_to_edit = not c_sched.check_if_schedule_time_exists(path, time_to_set)
                             print(okay_to_edit)
                             if okay_to_edit:
                                 with config.scheduleLock:
@@ -814,14 +582,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response_dict = {}
                     if not error:
                         # Reload the schedule from disk
-                        retrieve_schedule()
+                        c_sched.retrieve_schedule()
 
                         # Send the updated schedule back
                         with config.scheduleLock:
                             response_dict["class"] = "schedule"
-                            response_dict["updateTime"] = scheduleUpdateTime
-                            response_dict["schedule"] = scheduleList
-                            response_dict["nextEvent"] = nextEvent
+                            response_dict["updateTime"] = config.scheduleUpdateTime
+                            response_dict["schedule"] = config.scheduleList
+                            response_dict["nextEvent"] = config.nextEvent
                             response_dict["success"] = True
                     else:
                         response_dict["success"] = False
@@ -832,15 +600,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == 'refreshSchedule':
                     # This command reloads the schedule from disk. Normal schedule
                     # changes are passed during fetchUpdate
-                    retrieve_schedule()
+                    c_sched.retrieve_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
-                                         "updateTime": scheduleUpdateTime,
-                                         "schedule": scheduleList,
-                                         "nextEvent": nextEvent}
+                                         "updateTime": config.scheduleUpdateTime,
+                                         "schedule": config.scheduleList,
+                                         "nextEvent": config.nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -857,15 +625,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                     os.path.join(sched_dir, data["date"] + ".ini"))
 
                     # Reload the schedule from disk
-                    retrieve_schedule()
+                    c_sched.retrieve_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
-                                         "updateTime": scheduleUpdateTime,
-                                         "schedule": scheduleList,
-                                         "nextEvent": nextEvent}
+                                         "updateTime": config.scheduleUpdateTime,
+                                         "schedule": config.scheduleList,
+                                         "nextEvent": config.nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -880,15 +648,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         os.remove(os.path.join(sched_dir, data["name"] + ".ini"))
 
                     # Reload the schedule from disk
-                    retrieve_schedule()
+                    c_sched.retrieve_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
-                                         "updateTime": scheduleUpdateTime,
-                                         "schedule": scheduleList,
-                                         "nextEvent": nextEvent}
+                                         "updateTime": config.scheduleUpdateTime,
+                                         "schedule": config.scheduleList,
+                                         "nextEvent": config.nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -918,15 +686,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             f.write(output_text)
 
                     # Reload the schedule from disk
-                    retrieve_schedule()
+                    c_sched.retrieve_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
-                                         "updateTime": scheduleUpdateTime,
-                                         "schedule": scheduleList,
-                                         "nextEvent": nextEvent}
+                                         "updateTime": config.scheduleUpdateTime,
+                                         "schedule": config.scheduleList,
+                                         "nextEvent": config.nextEvent}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -937,7 +705,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     print("Changing exhibit to:", data["name"])
-                    read_exhibit_configuration(data["name"], updateDefault=True)
+                    c_exhibit.read_exhibit_configuration(data["name"], updateDefault=True)
 
                     # Update the components that the configuration has changed
                     for component in config.componentList:
@@ -953,7 +721,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     clone = None
                     if "cloneFrom" in data and data["cloneFrom"] != "":
                         clone = data["cloneFrom"]
-                    create_new_exhibit(data["name"], clone)
+                    c_exhibit.create_new_exhibit(data["name"], clone)
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "deleteExhibit":
@@ -962,7 +730,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                     "reason": "Request missing 'name' field or name is empty."}
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
-                    delete_exhibit(data["name"])
+                    c_exhibit.delete_exhibit(data["name"])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "setComponentContent":
@@ -972,7 +740,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     print(f"Changing content for {data['id']}:", data['content'])
-                    set_component_content(data['id'], data['content'])
+                    c_exhibit.set_component_content(data['id'], data['content'])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "getHelpText":
@@ -1118,7 +886,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                         "reason": "Request missing 'id' field."}
                             self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                             return
-                        component = get_exhibit_component(data["id"])
+                        component = c_exhibit.get_exhibit_component(data["id"])
                         if len(component.dataToUpload) > 0:
                             upload = component.dataToUpload.pop(0)
                             # json_string = json.dumps(upload)
@@ -1126,7 +894,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             self.wfile.write(upload)
                     elif action == "beginSynchronization":
                         if "synchronizeWith" in data:
-                            update_synchronization_list(data["id"], data["synchronizeWith"])
+                            c_exhibit.update_synchronization_list(data["id"], data["synchronizeWith"])
                 else:  # it's a ping
                     try:
                         id = data["id"]
@@ -1146,7 +914,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # print(f"    id = {id}")
                     # print("    action = ping")
 
-                    update_exhibit_component_status(data, self.address_string())
+                    c_exhibit.update_exhibit_component_status(data, self.address_string())
                     self.send_current_configuration(id)
             elif pingClass == "tracker":
                 if "action" not in data:
@@ -1254,88 +1022,6 @@ def parse_byte_range(byte_range):
     return first, last
 
 
-def set_component_content(id_, content_list):
-    """Loop the content list and build a string to write to the config file"""
-
-    content = ", ".join(content_list)
-
-    with config.currentExhibitConfigurationLock:
-        try:
-            currentExhibitConfiguration.set(id_, "content", content)
-        except configparser.NoSectionError:  # This exhibit does not have content for this component
-            currentExhibitConfiguration.add_section(id_)
-            currentExhibitConfiguration.set(id_, "content", content)
-
-    # Update the component
-    get_exhibit_component(id_).update_configuration()
-
-    # Write new configuration to file
-    with config.currentExhibitConfigurationLock:
-        with open(os.path.join(config.APP_PATH, "exhibits", currentExhibit),
-                  'w', encoding="UTF-8") as f:
-            currentExhibitConfiguration.write(f)
-
-
-def update_synchronization_list(this_id, other_ids):
-    """Manage synchronization between components.
-
-    config.synchronizationList is a list of dictionaries, with one dictionary for every
-    set of synchronized components.
-    """
-
-    print(f"Received sync request from {this_id} to sync with {other_ids}")
-    print(f"Current synchronizationList: {config.synchronizationList}")
-    id_known = False
-    index = 0
-    match_index = -1
-    for item in config.synchronizationList:
-        if this_id in item["ids"]:
-            id_known = True
-            match_index = index
-        index += 1
-
-    if id_known is False:
-        # Create a new dictionary
-        temp = {"ids": [this_id] + other_ids}
-        temp["checked_in"] = [False for _ in temp["ids"]]
-        (temp["checked_in"])[0] = True  # Check in the current id
-        config.synchronizationList.append(temp)
-    else:
-        index = (config.synchronizationList[match_index])["ids"].index(this_id)
-        ((config.synchronizationList[match_index])["checked_in"])[index] = True
-        if all((config.synchronizationList[match_index])["checked_in"]):
-            print("All components have checked in. Dispatching sync command")
-            time_to_start = str(round(time.time() * 1000) + 10000)
-            for item in (config.synchronizationList[match_index])["ids"]:
-                get_exhibit_component(item).queue_command(f"beginSynchronization_{time_to_start}")
-            # Remove this sync from the list in case it happens again later.
-            config.synchronizationList.pop(match_index)
-
-
-def check_if_schedule_time_exists(path, time_to_set):
-    """Check the schedule given by `path` for an existing item with the same time as `time_to_set`.
-    """
-
-    with config.scheduleLock:
-        with open(path, 'r', encoding="UTF-8") as f:
-            for line in f.readlines():
-                split = line.split("=")
-                if len(split) == 2:
-                    # We have a valid ini line
-                    if dateutil.parser.parse(split[0]).time() == time_to_set:
-                        return True
-    return False
-
-
-def poll_event_schedule():
-    """Periodically check the event schedule in an independent thread.
-    """
-
-    check_event_schedule()
-    config.polling_thread_dict["eventSchedule"] = threading.Timer(10, poll_event_schedule)
-    config.polling_thread_dict["eventSchedule"].start()
-
-
 def poll_projectors():
     """Ask each projector to send a status update at an interval.
     """
@@ -1349,222 +1035,12 @@ def poll_projectors():
     config.polling_thread_dict["poll_projectors"].start()
 
 
-def poll_wake_on_LAN_devices():
-    """Ask every Wake on LAN device to report its status at an interval.
-    """
-
-    for device in config.wakeOnLANList:
-        new_thread = threading.Thread(target=device.update)
-        new_thread.daemon = True  # So it dies if we exit
-        new_thread.start()
-
-    config.polling_thread_dict["poll_wake_on_LAN_devices"] = threading.Timer(30, poll_wake_on_LAN_devices)
-    config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
-
-
-def check_event_schedule():
-    """Read the "Next event" tuple in schedule_dict and take action if necessary
-    Also check if it's time to reboot the server"""
-
-    global nextEvent
-    # global config
-    global rebooting
-
-    if nextEvent["date"] is not None:
-        if datetime.datetime.now() > nextEvent["date"]:
-            action = nextEvent["action"]
-            target = None
-            if isinstance(action, list):
-                if len(action) == 1:
-                    action = action[0]
-                elif len(action) == 2:
-                    target = action[1]
-                    action = action[0]
-                else:
-                    print(f"Error: unrecognized event format: {action}")
-                    with config.logLock:
-                        logging.error("Unrecognized event format: %s", action)
-                    queue_next_on_off_event()
-                    return
-            if action == 'reload_schedule':
-                retrieve_schedule()
-            elif action == 'set_exhibit' and target is not None:
-                print("Changing exhibit to:", target)
-                read_exhibit_configuration(target, updateDefault=True)
-
-                # Update the components that the configuration has changed
-                for component in config.componentList:
-                    component.update_configuration()
-            else:
-                command_all_exhibit_components(action)
-                # print(f"DEBUG: Event executed: {nextEvent['action']} -- THIS EVENT WAS NOT RUN")
-            queue_next_on_off_event()
-
-    # Check for server reboot time
-    if serverRebootTime is not None:
-        if datetime.datetime.now() > serverRebootTime:
-            rebooting = True
-            _thread.interrupt_main()
-
-
-def retrieve_schedule():
-    """Build a schedule for the next seven days based on the available schedule files"""
-
-    global scheduleList
-    global scheduleUpdateTime
-
-    with config.scheduleLock:
-        scheduleUpdateTime = (datetime.datetime.now() - datetime.datetime.utcfromtimestamp(0)).total_seconds()
-        scheduleList = []  # Each entry is a dict for a day, in calendar order
-
-        today = datetime.datetime.today().date()
-        upcoming_days = [today + datetime.timedelta(days=x) for x in range(21)]
-
-        for day in upcoming_days:
-            day_dict = {}
-            day_dict["date"] = day.isoformat()
-            day_dict["dayName"] = day.strftime("%A")
-            day_dict["source"] = "none"
-            reload_datetime = datetime.datetime.combine(day, datetime.time(0, 1))
-            # We want to make sure to reload the schedule at least once per day
-            day_schedule = [[reload_datetime,
-                             reload_datetime.strftime("%-I:%M %p"),
-                             ["reload_schedule"]]]
-
-            date_specific_filename = day.isoformat() + ".ini"  # e.g., 2021-04-14.ini
-            day_specific_filename = day.strftime("%A").lower() + ".ini"  # e.g., monday.ini
-
-            sources_to_try = [date_specific_filename, day_specific_filename, 'default.ini']
-            source_dir = os.listdir(os.path.join(config.APP_PATH, "schedules"))
-            schedule_to_read = None
-
-            for source in sources_to_try:
-                if source in source_dir:
-                    schedule_to_read = os.path.join(config.APP_PATH, "schedules", source)
-                    if source == date_specific_filename:
-                        day_dict["source"] = 'date-specific'
-                    elif source == day_specific_filename:
-                        day_dict["source"] = 'day-specific'
-                    elif source == "default.ini":
-                        day_dict["source"] = 'default'
-                    break
-
-            if schedule_to_read is not None:
-                parser = configparser.ConfigParser(delimiters=("="))
-                try:
-                    parser.read(schedule_to_read)
-                except configparser.DuplicateOptionError:
-                    print("Error: Schedule cannot contain two actions with identical times!")
-                if "SCHEDULE" in parser:
-                    sched = parser["SCHEDULE"]
-                    for key in sched:
-                        time_ = dateutil.parser.parse(key).time()
-                        event_time = datetime.datetime.combine(day, time_)
-                        action = [s.strip() for s in sched[key].split(",")]
-                        day_schedule.append([event_time, event_time.strftime("%-I:%M %p"), action])
-                else:
-                    print("retrieve_schedule: error: no INI section 'SCHEDULE' found!")
-            day_dict["schedule"] = sorted(day_schedule)
-            scheduleList.append(day_dict)
-    queue_next_on_off_event()
-
-
-def queue_next_on_off_event():
-    """Consult schedule_dict and set the next datetime that we should send an on or off command"""
-
-    now = datetime.datetime.now()  # Right now
-    next_event_datetime = None
-    next_action = None
-
-    for day in scheduleList:
-        sched = day["schedule"]
-        for item in sched:
-            if item[0] > now:
-                next_event_datetime = item[0]
-                next_action = item[2]
-                break
-        if next_event_datetime is not None:
-            break
-
-    if next_event_datetime is not None:
-        nextEvent["date"] = next_event_datetime
-        nextEvent["time"] = next_event_datetime.strftime("%-I:%M %p")
-        nextEvent["action"] = next_action
-        print(f"New event queued: {next_action}, {next_event_datetime}")
-    else:
-        print("No events to queue right now")
-
-
-def check_available_exhibits():
-    """Get a list of available "*.exhibit" configuration files"""
-
-    config.exhibit_list = []
-    exhibits_path = os.path.join(config.APP_PATH, "exhibits")
-
-    with config.exhibitsLock:
-        for file in os.listdir(exhibits_path):
-            if file.lower().endswith(".exhibit"):
-                config.exhibit_list.append(file)
-
-
-def create_new_exhibit(name, clone):
-    """Create a new exhibit file
-
-    Set clone=None to create a new file, or set it equal to the name of an
-    existing exhibit to clone that exhibit."""
-
-    # Make sure we have the proper extension
-    if not name.lower().endswith(".exhibit"):
-        name += ".exhibit"
-
-    new_file = os.path.join(config.APP_PATH, "exhibits", name)
-
-    if clone is not None:
-        # Copy an existing file
-
-        # Make sure we have the proper extension on the file we're copying from
-        if not clone.lower().endswith(".exhibit"):
-            clone += ".exhibit"
-        existing_file = os.path.join(config.APP_PATH, "exhibits", clone)
-        shutil.copyfile(existing_file, new_file)
-
-    else:
-        # Make a new file
-        with config.exhibitsLock:
-            if not os.path.isfile(new_file):
-                # If this file does not exist, touch it so that it does.
-                with open(new_file, "w", encoding='UTF-8'):
-                    pass
-
-    check_available_exhibits()
-
-
-def delete_exhibit(name):
-    """Delete the specified exhibit file"""
-
-    # Make sure we have the proper extension
-    if not name.lower().endswith(".exhibit"):
-        name += ".exhibit"
-
-    file_to_delete = os.path.join(config.APP_PATH, "exhibits", name)
-
-    with config.exhibitsLock:
-        try:
-            os.remove(file_to_delete)
-        except FileNotFoundError:
-            print(f"Error: Unable to delete exhibit {file_to_delete}. File not found!")
-
-    check_available_exhibits()
-
-
 def load_default_configuration():
     """Read the current exhibit configuration from file and initialize it in self.currentExhibitConfiguration"""
 
     global server_port
     global ip_address
     global gallery_name
-    global assignable_staff
-    global serverRebootTime
 
     # First, retrieve the config filename that defines the desired exhibit
     configReader = configparser.ConfigParser(delimiters=("="))
@@ -1579,9 +1055,9 @@ def load_default_configuration():
     gallery_name = current.get("gallery_name", "Constellation")
     staff_string = current.get("assignable_staff", [])
     if len(staff_string) > 0:
-        assignable_staff = [x.strip() for x in staff_string.split(",")]
+        config.assignable_staff = [x.strip() for x in staff_string.split(",")]
 
-    retrieve_schedule()
+    c_sched.retrieve_schedule()
 
     config.projectorList = []
 
@@ -1667,19 +1143,19 @@ def load_default_configuration():
         print("Collecting Wake on LAN devices...", end="", flush=True)
 
         for key in wol:
-            if get_exhibit_component(key) is None:
+            if c_exhibit.get_exhibit_component(key) is None:
                 # If 'get_exhibit_component' is not None, this key corresponds
                 # to a WoL device with a matching exhibit component ID and
                 # we have already loaded that component from the pickle file
                 value_split = wol[key].split(",")
                 if len(value_split) == 2:
                     # We have been given a MAC address and IP address
-                    device = WakeOnLANDevice(key,
+                    device = c_exhibit.WakeOnLANDevice(key,
                                              value_split[0].strip(),
                                              ip_address=value_split[1].strip())
                 elif len(value_split) == 1:
                     # We have been given only a MAC address
-                    device = WakeOnLANDevice(key, value_split[0].strip())
+                    device = c_exhibit.WakeOnLANDevice(key, value_split[0].strip())
                 else:
                     print(f"Wake on LAN device specified with unknown format: {wol[key]}")
                     continue
@@ -1710,7 +1186,7 @@ def load_default_configuration():
         for this_type in static_components:
             split = static_components[this_type].split(",")
             for this_id in split:
-                add_exhibit_component(this_id.strip(), this_type, category="static")
+                c_exhibit.add_exhibit_component(this_id.strip(), this_type, category="static")
         print("done")
     except KeyError:
         print("none specified")
@@ -1720,135 +1196,21 @@ def load_default_configuration():
         reboot_time = dateutil.parser.parse(current["reboot_time"])
         if reboot_time < datetime.datetime.now():
             reboot_time += datetime.timedelta(days=1)
-        serverRebootTime = reboot_time
-        print("Server will reboot at:", serverRebootTime.isoformat())
+        config.serverRebootTime = reboot_time
+        print("Server will reboot at:", config.serverRebootTime.isoformat())
 
     # Then, load the configuration for that exhibit
-    read_exhibit_configuration(current["current_exhibit"])
+    c_exhibit.read_exhibit_configuration(current["current_exhibit"])
 
     # Update the components that the configuration has changed
     for component in config.componentList:
         component.update_configuration()
 
 
-def read_exhibit_configuration(name, updateDefault=False):
-    global currentExhibitConfiguration
-    global currentExhibit
-
-    # We want the format of name to be "XXXX.exhibit", but it might be
-    # "exhibits/XXXX.exhibit"
-    error = False
-    split_path = os.path.split(name)
-    if len(split_path) == 2:
-        if split_path[0] == "exhibits":
-            name = split_path[1]
-        elif split_path[0] == "":
-            pass
-        else:
-            error = True
-    else:
-        error = True
-
-    if error:
-        # Something bad has happened. Display an error and bail out
-        print(
-            f"Error: exhibit definition with name {name} does not appear to be properly formatted. This file should be located in the exhibits directory.")
-        with config.logLock:
-            logging.error('Bad exhibit definition filename: %s', name)
-        return
-
-    currentExhibit = name
-    currentExhibitConfiguration = configparser.ConfigParser()
-    exhibit_path = os.path.join(config.APP_PATH, "exhibits")
-    currentExhibitConfiguration.read(exhibit_path)
-
-    if updateDefault:
-        configReader = configparser.ConfigParser(delimiters=("="))
-        configReader.optionxform = str  # Override default, which is case in-sensitive
-        cEC_path = os.path.join(config.APP_PATH,
-                                'currentExhibitConfiguration.ini')
-        with config.currentExhibitConfigurationLock:
-            configReader.read(cEC_path)
-            configReader.set("CURRENT", "current_exhibit", name)
-            with open(cEC_path, "w", encoding="UTF-8") as f:
-                configReader.write(f)
-
-
-def get_exhibit_component(this_id):
-    """Return a component with the given id, or None if no such component exists"""
-
-    return next((x for x in config.componentList if x.id == this_id), None)
-
-
 def get_projector(this_id):
     """Return a projector with the given id, or None if no such component exists"""
 
     return next((x for x in config.projectorList if x.id == this_id), None)
-
-
-def get_wake_on_LAN_component(this_id):
-    """Return a WakeOnLan device with the given id, or None if no such component exists"""
-
-    return next((x for x in config.wakeOnLANList if x.id == this_id), None)
-
-
-def add_exhibit_component(this_id, this_type, category="dynamic"):
-    """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
-
-    component = ExhibitComponent(this_id, this_type, category)
-    config.componentList.append(component)
-
-    return component
-
-
-def command_all_exhibit_components(cmd):
-    """Queue a command for every exhibit component"""
-
-    print("Sending command to all components:", cmd)
-    with config.logLock:
-        logging.info("command_all_exhibit_components: %s", cmd)
-
-    for component in config.componentList:
-        component.queue_command(cmd)
-
-    for projector in config.projectorList:
-        projector.queue_command(cmd)
-
-
-def update_exhibit_component_status(data, ip):
-    """Update an ExhibitComponent with the values in a dictionary."""
-
-    this_id = data["id"]
-    this_type = data["type"]
-
-    component = get_exhibit_component(this_id)
-    if component is None:  # This is a new id, so make the component
-        component = add_exhibit_component(this_id, this_type)
-
-    component.ip = ip
-    if "helperPort" in data:
-        component.helperPort = data["helperPort"]
-    if "helperAddress" in data:
-        component.helperAddress = data["helperAddress"]
-    component.update_last_contact_datetime()
-    if "AnyDeskID" in data:
-        component.config["AnyDeskID"] = data["AnyDeskID"]
-    if "currentInteraction" in data:
-        if data["currentInteraction"].lower() == "true":
-            component.update_last_interaction_datetime()
-    if "allowed_actions" in data:
-        allowed_actions = data["allowed_actions"]
-        for key in allowed_actions:
-            if allowed_actions[key].lower() in ["true", "yes", "1"]:
-                if key not in component.config["allowed_actions"]:
-                    component.config["allowed_actions"].append(key)
-            else:
-                component.config["allowed_actions"] = [x for x in component.config["allowed_actions"] if x != key]
-    if "error" in data:
-        component.config["error"] = data["error"]
-    else:
-        if "error" in component.config:
-            component.config.pop("error")
 
 
 def check_file_structure():
@@ -1986,14 +1348,6 @@ gallery_name = ""
 SOFTWARE_VERSION = 1.0
 software_update_available = False
 
-currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
-currentExhibitConfiguration = None  # the configParser object holding the current config
-assignable_staff = []  # staff to whom issues can be assigned.
-
-nextEvent = {}  # Will hold the datetime and action of the upcoming event
-scheduleList = []  # Will hold a list of scheduled actions in the next week
-scheduleUpdateTime = 0
-serverRebootTime = None
 rebooting = False  # This will be set to True from a background thread when it is time to reboot
 
 # Set up log file
@@ -2018,11 +1372,11 @@ except (FileNotFoundError, EOFError):
     print("Could not load previous server state")
 
 check_file_structure()
-check_available_exhibits()
+c_exhibit.check_available_exhibits()
 load_default_configuration()
-poll_event_schedule()
+c_sched.poll_event_schedule()
 poll_projectors()
-poll_wake_on_LAN_devices()
+c_exhibit.poll_wake_on_LAN_devices()
 # check_for_software_update()
 
 httpd = ThreadedHTTPServer((ADDR, server_port), RequestHandler)

@@ -6,7 +6,7 @@ import threading
 
 APP_PATH = ""  # Path to the directory where the server is being launched from
 
-# threading resources
+# Threading resources
 polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures
 logLock = threading.Lock()
 currentExhibitConfigurationLock = threading.Lock()
@@ -18,16 +18,27 @@ maintenanceLock = threading.Lock()
 issueMediaLock = threading.Lock()
 
 # Lists
-issueList = []
 componentList = []
 projectorList = []
 wakeOnLANList = []
 synchronizationList = []  # Holds sets of displays that are being synchronized
 componentDescriptions = {}  # Holds optional short descriptions of each component
-exhibit_list = []
 
 # Dictionary to keep track of warnings we have already presented
 serverWarningDict = {}
 
+# Issue stuff
 issueList_last_update_date = datetime.datetime.now().isoformat()
+issueList = []
 
+# Schedule stuff
+scheduleList = []
+nextEvent = {}
+scheduleUpdateTime = 0
+serverRebootTime = None
+
+# Exhibit stuff
+currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
+currentExhibitConfiguration = None  # the configParser object holding the current config
+assignable_staff = []  # staff to whom issues can be assigned.
+exhibit_list = []
