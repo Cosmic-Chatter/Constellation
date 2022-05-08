@@ -51,32 +51,39 @@ class ExhibitComponent {
 
       if (this.status == 200) {
         var response = JSON.parse(this.responseText);
-        if ("status" in response) {
-          if (response.status != "DELETE") {
-              thisInstance.setStatus(response.status);
-          } else {
-            thisInstance.remove();
-          }
-          if ("model" in response) {
-            thisInstance.state.model = response.model;
-          }
-          if ("power_state" in response) {
-            thisInstance.state.power_state = response.power_state;
-          }
-          if ("lamp_status" in response) {
-            thisInstance.state.lamp_status = response.lamp_status;
-          }
-          if ("error_status" in response) {
-            thisInstance.state.error_status = response.error_status;
-            let errorList = {};
-            Object.keys(response.error_status).forEach((item, i) => {
-              if ((response.error_status)[item] != "ok") {
-                errorList[item] = (response.error_status)[item];
-              }
-            });
-            errorDict[thisInstance.id] = errorList;
-            rebuildErrorList();
 
+        if ("success" in response) {
+          if (response.success == false) {
+            if ("status" in response  && response.status == "DELETE") {
+              thisInstance.remove();
+            } else {
+              console.log("checkProjector: Error:", response.reason);
+            }
+          } else {
+            if ("state" in response) {
+              let state = response.state;
+              thisInstance.setStatus(state.status);
+              if ("model" in state) {
+                thisInstance.state.model = state.model;
+              }
+              if ("power_state" in state) {
+                thisInstance.state.power_state = state.power_state;
+              }
+              if ("lamp_status" in state) {
+                thisInstance.state.lamp_status = state.lamp_status;
+              }
+              if ("error_status" in state) {
+                thisInstance.state.error_status = state.error_status;
+                let errorList = {};
+                Object.keys(state.error_status).forEach((item, i) => {
+                  if ((state.error_status)[item] != "ok") {
+                    errorList[item] = (state.error_status)[item];
+                  }
+                });
+                errorDict[thisInstance.id] = errorList;
+                rebuildErrorList();
+              }
+            }
           }
         }
       }
@@ -963,8 +970,8 @@ function reloadConfiguration() {
     if (this.status == 200) {
       var response = JSON.parse(this.responseText);
 
-      if ("result" in response) {
-        if (response.result == "success") {
+      if ("success" in response) {
+        if (response.success == true) {
           $("#reloadConfigurationButton").html("Success!");
           setTimeout(function() { $("#reloadConfigurationButton").html("Reload Config"); }, 2000);
         }

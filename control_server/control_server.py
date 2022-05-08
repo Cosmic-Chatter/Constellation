@@ -31,113 +31,9 @@ import config
 import constellation_exhibit as c_exhibit
 import constellation_issues as c_issues
 import constellation_maintenance as c_maint
+import constellation_projector as c_proj
 import constellation_schedule as c_sched
 import constellation_tracker as c_track
-import projector_control
-
-
-class Projector:
-    """Holds basic data about a projector"""
-
-    def __init__(self, id_, ip, connection_type, mac_address=None, make=None, password=None):
-
-        self.id = id_
-        self.ip = ip  # IP address of the projector
-        self.password = password  # Password to access PJLink
-        self.mac_address = mac_address  # For use with Wake on LAN
-        self.connection_type = connection_type
-        self.make = make
-        self.config = {"allowed_actions": ["power_on", "power_off"],
-                       "description": config.componentDescriptions.get(id_, "")}
-
-        self.state = {"status": "OFFLINE"}
-        self.last_contact_datetime = datetime.datetime(2020, 1, 1)
-
-        self.update(full=True)
-
-    def seconds_since_last_contact(self):
-
-        """Calculate the number of seconds since the component last checked in."""
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
-
-    def update(self, full=False):
-
-        """Contact the projector to get the latest state"""
-
-        error = False
-        try:
-            if self.connection_type == 'pjlink':
-                connection = projector_control.pjlink_connect(self.ip, password=self.password)
-                if full:
-                    self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
-                self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
-                self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
-                self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip, make=self.make)
-                if full:
-                    self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
-                self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
-                                                                                  make=self.make)
-                self.state["lamp_status"] = projector_control.serial_send_command(connection, "lamp_status",
-                                                                                  make=self.make)
-                self.state["error_status"] = projector_control.serial_send_command(connection, "error_status",
-                                                                                   make=self.make)
-
-            self.last_contact_datetime = datetime.datetime.now()
-        except Exception as e:
-            # print(e)
-            error = True
-
-        if error and (self.seconds_since_last_contact() > 60):
-            self.state = {"status": "OFFLINE"}
-        else:
-            if self.state["power_state"] == "on":
-                self.state["status"] = "ONLINE"
-            else:
-                self.state["status"] = "STANDBY"
-
-    def queue_command(self, cmd):
-
-        """Function to spawn a thread that sends a command to the projector.
-
-        Named "queue_command" to match what is used for exhibitComponents
-        """
-
-        print(f"Queuing command {cmd} for {self.id}")
-        thread_ = threading.Thread(target=self.send_command, args=[cmd])
-        thread_.daemon = True
-        thread_.start()
-
-    def send_command(self, cmd):
-
-        """Connect to a PJLink projector and send a command"""
-
-        # Translate commands for projector_control
-        cmd_dict = {
-            "shutdown": "power_off",
-            "sleepDisplay": "power_off",
-            "wakeDisplay": "power_on"
-        }
-
-        try:
-            if self.connection_type == "pjlink":
-                connection = projector_control.pjlink_connect(self.ip, password=self.password)
-                if cmd in cmd_dict:
-                    projector_control.pjlink_send_command(connection, cmd_dict[cmd])
-                else:
-                    projector_control.pjlink_send_command(connection, cmd)
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip, make=self.make)
-                if cmd in cmd_dict:
-                    projector_control.serial_send_command(connection, cmd_dict[cmd], make=self.make)
-                else:
-                    projector_control.serial_send_command(connection, cmd, make=self.make)
-
-        except Exception as e:
-            print(e)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -475,31 +371,49 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     self.send_webpage_update()
                 elif action == "fetchProjectorUpdate":
                     if "id" not in data:
-                        response = {"success": True,
-                                    "reason": "Missing required field 'id'."}
-                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        response_dict = {"success": False,
+                                         "reason": "Missing required field 'id'.",
+                                         "status": None}
+                        self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                         return
-                    proj = get_projector(data["id"])
+                    proj = c_proj.get_projector(data["id"])
                     if proj is not None:
-                        json_string = json.dumps(proj.state)
-                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                        response_dict = {"success": True,
+                                         "state": proj.state}
                     else:
-                        json_string = json.dumps({"status": "DELETE"})
-                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                        response_dict = {"success": False,
+                                         "reason": f"Projector {data['id']} does not exist",
+                                         "status": "DELETE"}
+                    self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "reloadConfiguration":
                     load_default_configuration()
 
-                    json_string = json.dumps({"result": "success", "success": True})
+                    json_string = json.dumps({"success": True})
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "queueCommand":
+                    if "command" not in data or "id" not in data:
+                        response_dict = {"success": False,
+                                         "reason": "Missing required field 'id' or 'command'."}
+                        self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                        return
                     c_exhibit.get_exhibit_component(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueProjectorCommand":
-                    get_projector(data["id"]).queue_command(data["command"])
+                    if "command" not in data or "id" not in data:
+                        response_dict = {"success": False,
+                                         "reason": "Missing required field 'id' or 'command'."}
+                        self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                        return
+                    c_proj.get_projector(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueWOLCommand":
+                    if "command" not in data or "id" not in data:
+                        response_dict = {"success": False,
+                                         "reason": "Missing required field 'id' or 'command'."}
+                        self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                        return
                     c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
@@ -1000,19 +914,6 @@ def parse_byte_range(byte_range):
     return first, last
 
 
-def poll_projectors():
-    """Ask each projector to send a status update at an interval.
-    """
-
-    for projector in config.projectorList:
-        new_thread = threading.Thread(target=projector.update)
-        new_thread.daemon = True  # So it dies if we exit
-        new_thread.start()
-
-    config.polling_thread_dict["poll_projectors"] = threading.Timer(30, poll_projectors)
-    config.polling_thread_dict["poll_projectors"].start()
-
-
 def load_default_configuration():
     """Read the current exhibit configuration from file and initialize it in self.currentExhibitConfiguration"""
 
@@ -1061,7 +962,7 @@ def load_default_configuration():
     for key in pjlink_projectors:
         cur_proj += 1
         print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if get_projector(key) is None:
+        if c_proj.get_projector(key) is None:
             # Try to split on a comma. If we get two elements back, that means
             # we have the form "ip, password"
             split = pjlink_projectors[key].split(",")
@@ -1071,10 +972,10 @@ def load_default_configuration():
                 password = split[1].strip()
                 if password == "":
                     password = None
-                new_proj = Projector(key, ip, "pjlink", password=password)
+                new_proj = c_proj.Projector(key, ip, "pjlink", password=password)
             elif len(split) == 1:
                 # We have an IP address only
-                new_proj = Projector(key, pjlink_projectors[key], "pjlink")
+                new_proj = c_proj.Projector(key, pjlink_projectors[key], "pjlink")
             else:
                 print("Invalid PJLink projector entry:", pjlink_projectors[key])
                 break
@@ -1094,7 +995,7 @@ def load_default_configuration():
     for key in serial_projectors:
         cur_proj += 1
         print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if get_projector(key) is None:
+        if c_proj.get_projector(key) is None:
             # Try to split on a comma. If we get two elements back, that means
             # we have the form "ip, password"
             split = serial_projectors[key].split(",")
@@ -1104,10 +1005,10 @@ def load_default_configuration():
                 make = split[1].strip()
                 if make == "":
                     make = None
-                new_proj = Projector(key, ip, "serial", make=make)
+                new_proj = c_proj.Projector(key, ip, "serial", make=make)
             elif len(split) == 1:
                 # We have an IP address only
-                new_proj = Projector(key, serial_projectors[key], "serial")
+                new_proj = c_proj.Projector(key, serial_projectors[key], "serial")
             else:
                 print("Invalid serial projector entry:", serial_projectors[key])
                 break
@@ -1128,8 +1029,8 @@ def load_default_configuration():
                 if len(value_split) == 2:
                     # We have been given a MAC address and IP address
                     device = c_exhibit.WakeOnLANDevice(key,
-                                             value_split[0].strip(),
-                                             ip_address=value_split[1].strip())
+                                                       value_split[0].strip(),
+                                                       ip_address=value_split[1].strip())
                 elif len(value_split) == 1:
                     # We have been given only a MAC address
                     device = c_exhibit.WakeOnLANDevice(key, value_split[0].strip())
@@ -1182,12 +1083,6 @@ def load_default_configuration():
     # Update the components that the configuration has changed
     for component in config.componentList:
         component.update_configuration()
-
-
-def get_projector(this_id):
-    """Return a projector with the given id, or None if no such component exists"""
-
-    return next((x for x in config.projectorList if x.id == this_id), None)
 
 
 def check_file_structure():
@@ -1261,8 +1156,8 @@ def quit_handler(*args):
 
     # Save the current component lists to a pickle file so that
     # we can resume from the current state
-    state_path = os.path.join(config.APP_PATH, "current_state.dat")
-    with open(state_path, 'wb') as f:
+    path_to_write = os.path.join(config.APP_PATH, "current_state.dat")
+    with open(path_to_write, 'wb') as f:
         pickle.dump(config.componentList, f)
 
     for key in config.polling_thread_dict:
@@ -1348,7 +1243,7 @@ check_file_structure()
 c_exhibit.check_available_exhibits()
 load_default_configuration()
 c_sched.poll_event_schedule()
-poll_projectors()
+c_proj.poll_projectors()
 c_exhibit.poll_wake_on_LAN_devices()
 # check_for_software_update()
 

@@ -81,14 +81,14 @@ def serial_send_command(connection, command, char_to_read=None, debug=False, mak
             "optoma": (lambda x: {'other': "ok"}),
             "viewsonic": (lambda x: {'other': "ok"}),
         },
-        "get_source": {
-            "barco": serial_barco_get_source,
-        },
         "get_model": {
             "barco": (lambda x: "Barco"),
             "christie": (lambda x: "Christie"),
             "optoma": (lambda x: "Optoma"),
             "viewsonic": (lambda x: "Viewsonic"),
+        },
+        "get_source": {
+            "barco": serial_barco_get_source,
         },
         "lamp_status": {
             "barco": serial_barco_lamp_status,
