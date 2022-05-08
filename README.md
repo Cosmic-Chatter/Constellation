@@ -23,6 +23,7 @@ A responsive web console provides system administrators with an easy way to cont
 | Media Player | Robust digital signage solution with an optional kiosk for interaction. |
 | SOS Kiosk | A public-facing interface for NOAA Science on a Sphere for use on an iPad or other touchscreen. |
 | SOS Screen Player | Display additional images or video corresponding to the current dataset displayed on NOAA Science on a Sphere. |
+| Timelapse viewer | Cycle through sets of images using a variety of input methods. **This component is in progress** |
 | Voter | Collect visitor feedback with a voting kiosk. *Distributed as part of Control Server*. **This component is in progress** |
 | Word Cloud | Display a word cloud with an optional user input kiosk. **This component is in progress** |
 
