@@ -16,9 +16,6 @@ def check_event_schedule():
     """Read the "Next event" tuple in schedule_dict and take action if necessary
     Also check if it's time to reboot the server"""
 
-    # global config
-    global rebooting
-
     if config.nextEvent["date"] is not None:
         if datetime.datetime.now() > config.nextEvent["date"]:
             action = config.nextEvent["action"]
@@ -52,7 +49,7 @@ def check_event_schedule():
     # Check for server reboot time
     if config.serverRebootTime is not None:
         if datetime.datetime.now() > config.serverRebootTime:
-            rebooting = True
+            config.rebooting = True
             _thread.interrupt_main()
 
 
@@ -69,6 +66,28 @@ def check_if_schedule_time_exists(path, time_to_set):
                     if dateutil.parser.parse(split[0]).time() == time_to_set:
                         return True
     return False
+
+
+def delete_schedule_action(schedule, time_to_delete):
+    """Delete an action from the specified schedule"""
+
+    schedule_path = os.path.join(config.APP_PATH, "schedules", schedule + ".ini")
+    output_text = ""
+    time_to_delete = dateutil.parser.parse(time_to_delete).time()
+    with config.scheduleLock:
+        with open(schedule_path, 'r', encoding="UTF-8") as f:
+            for line in f.readlines():
+                split = line.split("=")
+                if len(split) == 2:
+                    # We have a valid ini line
+                    if dateutil.parser.parse(split[0]).time() != time_to_delete:
+                        # This line doesn't match, so add it for writing
+                        output_text += line
+                else:
+                    output_text += line
+
+        with open(schedule_path, 'w', encoding="UTF-8") as f:
+            f.write(output_text)
 
 
 def poll_event_schedule():
@@ -119,7 +138,7 @@ def retrieve_schedule():
                     break
 
             if schedule_to_read is not None:
-                parser = configparser.ConfigParser(delimiters=("="))
+                parser = configparser.ConfigParser(delimiters="=")
                 try:
                     parser.read(schedule_to_read)
                 except configparser.DuplicateOptionError:

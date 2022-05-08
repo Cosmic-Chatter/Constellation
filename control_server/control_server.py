@@ -18,15 +18,12 @@ import sys
 import shutil
 import traceback
 import threading
-import _thread
 import pickle
 import urllib.request
 import time
 import re
 
 # Non-standard modules
-import wakeonlan
-import icmplib
 import dateutil.parser
 
 # Constellation modules
@@ -143,7 +140,6 @@ class Projector:
             print(e)
 
 
-
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Stub which triggers dispatch of requests into individual threads."""
 
@@ -155,7 +151,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def send_current_configuration(self, id_):
 
-        """Function to respond to a POST with a string defining the current exhibit configuration"""
+        """Function to respond to a POST with a dictionary defining the current exhibit configuration"""
 
         json_string = json.dumps(c_exhibit.get_exhibit_component(id_).config)
         if len(c_exhibit.get_exhibit_component(id_).config["commands"]) > 0:
@@ -453,7 +449,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     split2 = seg.split("=")
                     data[split2[0]] = split2[1]
             try:
-                pingClass = data["class"]
+                ping_class = data["class"]
             except KeyError:
                 print("Error: ping received without class field")
                 response = {"success": False,
@@ -461,9 +457,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 return
 
-            # print(f"  class = {pingClass}")
+            # print(f"  class = {ping_class}")
 
-            if pingClass == "webpage":
+            if ping_class == "webpage":
                 try:
                     action = data["action"]
                 except KeyError:
@@ -505,7 +501,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueWOLCommand":
                     c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
-                    response = {"success": True,"reason": ""}
+                    response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "updateSchedule":
                     # This command handles both adding a new scheduled action
@@ -547,12 +543,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                             # We need to make sure we are not editing this entry to have
                             # the same time as another entry
-                            okay_to_edit = False
+
                             if time_to_set == time_to_replace:
                                 okay_to_edit = True
                             else:
                                 okay_to_edit = not c_sched.check_if_schedule_time_exists(path, time_to_set)
-                            print(okay_to_edit)
+
                             if okay_to_edit:
                                 with config.scheduleLock:
                                     # Iterate the file to replace the line we are changing
@@ -667,25 +663,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
 
-                    schedule_path = os.path.join(config.APP_PATH, "schedules", data["from"] + ".ini")
-                    output_text = ""
-                    time_to_delete = dateutil.parser.parse(data['time']).time()
-                    with config.scheduleLock:
-                        with open(schedule_path, 'r', encoding="UTF-8") as f:
-                            for line in f.readlines():
-                                split = line.split("=")
-                                if len(split) == 2:
-                                    # We have a valid ini line
-                                    if dateutil.parser.parse(split[0]).time() != time_to_delete:
-                                        # This line doesn't match, so add it for writing
-                                        output_text += line
-                                else:
-                                    output_text += line
-
-                        with open(schedule_path, 'w', encoding="UTF-8") as f:
-                            f.write(output_text)
-
-                    # Reload the schedule from disk
+                    c_sched.delete_schedule_action(data["from"], data["time"])
                     c_sched.retrieve_schedule()
 
                     # Send the updated schedule back
@@ -874,7 +852,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     with config.logLock:
                         logging.error(f"Unknown webpage command received: {action}")
 
-            elif pingClass == "exhibitComponent":
+            elif ping_class == "exhibitComponent":
                 if "action" in data:  # not a ping
                     action = data["action"]
                     # if "id" in data:
@@ -916,7 +894,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     c_exhibit.update_exhibit_component_status(data, self.address_string())
                     self.send_current_configuration(id)
-            elif pingClass == "tracker":
+            elif ping_class == "tracker":
                 if "action" not in data:
                     response = {"success": False,
                                 "reason": "Request missing 'action' field."}
@@ -992,9 +970,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == "checkConnection":
                     self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
             else:
-                print(f"Error: ping with unknown class '{pingClass}' received")
+                print(f"Error: ping with unknown class '{ping_class}' received")
                 response = {"success": False,
-                            "reason": f"Unknown class {pingClass}"}
+                            "reason": f"Unknown class {ping_class}"}
                 self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 # print("END POST")
                 # print("===============")
@@ -1045,17 +1023,16 @@ def load_default_configuration():
     # First, retrieve the config filename that defines the desired exhibit
     configReader = configparser.ConfigParser(delimiters=("="))
     configReader.optionxform = str  # Override default, which is case in-sensitive
-    cEC_path = os.path.join(config.APP_PATH,
-                            "currentExhibitConfiguration.ini")
+    cEC_path = os.path.join(config.APP_PATH, "currentExhibitConfiguration.ini")
     with config.currentExhibitConfigurationLock:
         configReader.read(cEC_path)
     current = configReader["CURRENT"]
     server_port = current.getint("server_port", 8080)
     ip_address = current.get("server_ip_address", "localhost")
     gallery_name = current.get("gallery_name", "Constellation")
-    staff_string = current.get("assignable_staff", [])
-    if len(staff_string) > 0:
-        config.assignable_staff = [x.strip() for x in staff_string.split(",")]
+    staff_list = current.get("assignable_staff", [])
+    if len(staff_list) > 0:
+        config.assignable_staff = [x.strip() for x in staff_list.split(",")]
 
     c_sched.retrieve_schedule()
 
@@ -1268,18 +1245,19 @@ def check_file_structure():
             except PermissionError:
                 print(f"Error: unable to create '{key}' directory. Do you have write permission?")
 
+
 def quit_handler(*args):
     """Handle cleanly shutting down the server"""
 
     try:
-        if rebooting is True:
+        if config.rebooting is True:
             exit_code = 1
             print("\nRebooting server...")
         else:
             exit_code = 0
             print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
     except RuntimeError:
-        pass
+        exit_code = 0
 
     # Save the current component lists to a pickle file so that
     # we can resume from the current state
@@ -1287,17 +1265,14 @@ def quit_handler(*args):
     with open(state_path, 'wb') as f:
         pickle.dump(config.componentList, f)
 
-    # print("Exit1")
     for key in config.polling_thread_dict:
         config.polling_thread_dict[key].cancel()
-    # print("Exit2")
+
     with config.logLock:
         logging.info("Server shutdown")
-    # print("Exit3")
+
     with config.currentExhibitConfigurationLock:
-        # print("Exit4")
         with config.scheduleLock:
-            # print("Exit5")
             with config.trackingDataWriteLock:
                 sys.exit(exit_code)
 
@@ -1347,8 +1322,6 @@ ADDR = ""  # Accept connections from all interfaces
 gallery_name = ""
 SOFTWARE_VERSION = 1.0
 software_update_available = False
-
-rebooting = False  # This will be set to True from a background thread when it is time to reboot
 
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")

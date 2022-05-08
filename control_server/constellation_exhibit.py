@@ -14,6 +14,7 @@ import wakeonlan
 # Constellation imports
 import config
 
+
 class ExhibitComponent:
     """Holds basic data about a component in the exhibit"""
 
@@ -93,8 +94,6 @@ class ExhibitComponent:
         if self.category == "static":
             return "STATIC"
 
-        status = 'OFFLINE'
-
         if self.seconds_since_last_contact() < 30:
             if self.seconds_since_last_interaction() < 10:
                 status = "ACTIVE"
@@ -158,7 +157,6 @@ class ExhibitComponent:
                     logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
 
     def update_PC_status(self):
-
         """If we have an IP address, ping the host to see if it is awake"""
 
         status = "UNKNOWN"
@@ -315,6 +313,7 @@ def create_new_exhibit(name, clone):
 
     check_available_exhibits()
 
+
 def delete_exhibit(name):
     """Delete the specified exhibit file"""
 
@@ -331,6 +330,7 @@ def delete_exhibit(name):
             print(f"Error: Unable to delete exhibit {file_to_delete}. File not found!")
 
     check_available_exhibits()
+
 
 def get_exhibit_component(this_id):
     """Return a component with the given id, or None if no such component exists"""
