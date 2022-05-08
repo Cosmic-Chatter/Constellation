@@ -331,7 +331,70 @@ Control Server does not search for new `component`s. Rather, each `component` mu
 | class | String | "exhibitComponent" | Yes | - |
 | id | String | A unique, user-defined value| Yes | - |
 | type | String | A user-defined value | Yes | - |
-| helperAddress | String | An HTTP address, including the port, of a server capable of responding to requests | No | This is required for the `component` to respond to certain commands, such as shutting down or restarting. |
+| AnyDeskID | String | The ID corresponding to an AnyDesk entry running on the host PC | No | - |
 | allowed_actions | array of strings | Any subset of ["restart", "shutdown", "sleep"] | No | Sending these values indicates that the `component` is able and willing to respond to their corresponding commands. Don't send an action if you have not implemented a method of responding to it. |
 | currentInteraction | String | "true" or "false" | No | Send "true" if the `component` has been interacted with in the last 30 seconds. Send "false" if it has not. For a `component` with an attractor, you can also send "true" if the attractor is not displayed. |
 | error | JSON object | The keys of the object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
+| helperAddress | String | An HTTP address, including the port, of a server capable of responding to requests | No | This is required for the `component` to respond to certain commands, such as shutting down or restarting. |
+
+
+#### Commands
+
+Your system should implement as many of these commands as makes sense for your use case. These actions enable **_Constellation_** to remotely control your `component` and integrate it into schedules.
+
+Commands are passed to the `component` as responses to a ping. The returned JSON object will have a `commands` field containing a list of string commands. If you implement any of `power_on`, `power_off`, `restart`, `shutdown`, or `sleepDisplays`, make sure you have indicated this in the `allowed_actions` field of every ping.
+
+| Command | Intended action | Notes |
+| ------- | --------------- | ----- |
+| `disableAutoplay` | Stop any automatic cycling of the `content` | - |
+| `enableAutoplay` | Resume any automatic cycling of the `content` | - |
+| `pauseVideo` | Pause any currently playing video | -|
+| `playVideo` | Start or resume play of a video | - |
+| `power_off` | Alias of `shutdown` | - |
+| `power_on` | Alias of `wakeDisplay` | If you want to wake the PC from a shutdown, make sure it is capable of wake on LAN and add the MAC address to the `[WAKE_ON_LAN]` section of  `currentExhibitConfiguration` |
+| `refresh_page` | Refresh the browser window or reset the current screen | - |
+| `reloadDefaults` | Reset the `component` to its initial condition | - |
+| `restart` | Initiate a restart of the PC | - |
+| `seekVideo_[back\|forward]_X` | Seek video X% in the given directoni | For example, `seekVideo_back_10` will rewind by amount equal to 10% of the video's length. |
+| `shutdown` | Shutdown the PC | This command should only be implemented if the PC can be woken by wake on LAN. If `shutdown` is not implemented, but `sleep` is, then make `shutdown` an alias of `sleep` so that the display can be put to sleep on a `shutdown` command. |
+| `sleepDisplay` | Put the PC's display to sleep | - |
+| `toggleAutoplay` | If `content` is automatically cycling, stop that. If not, start it | - |
+| `wakeDisplay` | Wake the PC's display | - |
+
+#### Example
+
+To send a ping, you create a JSON object as shown below and send it to the IP address and port of the Control Server.
+
+```json
+{
+  "class": "exhibitComponent",
+  "id": "YOUR_ID",
+  "type": "YOUR_TYPE",
+  "helperAddress": "10.8.0.12:8082",
+  "allowed_actions": ["sleep", "restart"],
+  "AnyDeskID": "123456678"
+ };
+```
+
+Control Server will send a response to this request with the following form:
+
+```json
+{
+  "commands": ["wakeDisplay"]
+}
+```
+
+### Optional actions
+
+Your `component` may also send commands to Control Server to manipulate the state of the server or other `component`s. These commands are sent as HTTP POST requests. There are two main categories of these commands. _Webpage commands_ send and receive the data that are reflected in the Control Server web console. _Tracker commands_ send an receive analytics data.
+
+When Control Server receives a command, it will response with an acknowledgement in the form of a JSON object. Check the `success` field to determine if the command ran successfully. It will be either `true` or `false`. If `success = false`, there will be a `reason` field indicating why.
+
+#### Webpage actions
+
+##### `fetchProjectorUpdate`
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `fetchProjectorUpdate` <p> `id`: (String) The projector to query | - | - | - | 
+
+#### Tracker actions
