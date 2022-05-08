@@ -386,15 +386,146 @@ Control Server will send a response to this request with the following form:
 
 ### Optional actions
 
-Your `component` may also send commands to Control Server to manipulate the state of the server or other `component`s. These commands are sent as HTTP POST requests. There are two main categories of these commands. _Webpage commands_ send and receive the data that are reflected in the Control Server web console. _Tracker commands_ send an receive analytics data.
+Your `component` may also send commands to Control Server to manipulate the state of the server or other `component`s. These commands are sent as HTTP POST requests. There are two main categories of these commands. _Webpage commands_ send and receive the data that are reflected in the Control Server web console. _Tracker commands_ send and receive analytics data.
 
-When Control Server receives a command, it will response with an acknowledgement in the form of a JSON object. Check the `success` field to determine if the command ran successfully. It will be either `true` or `false`. If `success = false`, there will be a `reason` field indicating why.
+When Control Server receives a command, it will respond with an acknowledgement in the form of a JSON object. Check the `success` field to determine if the command ran successfully. It will be either `true` or `false`. If `success == false`, there will be a `reason` field indicating why the operation failed.
 
 #### Webpage actions
 
 ##### `fetchProjectorUpdate`
+
+Retrieve the current state of the specified projector.
+
 | Required fields | Optional fields | Response fields | Notes |
 | --------------- | --------------- | --------------------- | ----- |
-| `action`: `fetchProjectorUpdate` <p> `id`: (String) The projector to query | - | - | - | 
+| `class`: `webpage` <p> `action`: `fetchProjectorUpdate` <p> `id`: (string) The projector to query | - | `reason`: string <p> `state`: A JSON object of projector properties <p> `status`: [`"DELETE"` \| `null`] <p>`success`: [`true` \| `false`] | If `status  == "DELETE"`, the projector no longer exists and should be removed. |
+
+##### `reloadConfiguration`
+
+Instruct Control Server to reload its state from `currentExhibitConfiguration.ini`.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `reloadConfiguration` <p> `class`: `webpage` | - | `success`: [`true` \| `false`] | - |
+
+##### `queueCommand`
+
+Send a command to a specific `component`. The _Commands_ section above defines commands that should be widely available in **_Constellation_**. In addition, you can specify custom commands as a single string that your custom `component` can understand. Control Server will route them without needing to understand them.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `queueCommand` <p> `class`: `webpage` <p> `command`: (string) The command to queue <p> `id`: (string) The component the command should be sent to| - | `reason`: String <p> `success`: [`true` \| `false`] | - |
+
+##### `queueProjectorCommand`
+
+Send a command to a specific projector.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `queueCommand` <p> `class`: `webpage` <p> `command`: (string) The command to queue <p> `id`: (string) The projector the command should be sent to| - | `reason`: String <p> `success`: [`true` \| `false`] | - |
+
+For projectors that support PJLink, the following commands are supported:
+* `error_status`
+* `get_model`
+* `lamp_status`
+* `power_off`
+* `power_on`
+* `power_state`
+
+For projectors connected via serial commands over Ethernet, command support is manufacturer dependent. Even for supported manufacturers, every model may not be supported.
+
+| Command | Manufacturer support |
+| ------- | -------------------- |
+| `error_status` | Barco, Christie, Optoma, Viewsonic |
+| `get_model` | Barco, Christie, Optoma, Viewsonic |
+| `get_source` | Barco |
+| `lamp_status` | Barco, Christie |
+| `power_off` | Barco, Christie, Optoma, Viewsonic |
+| `power_on` | Barco, Christie, Optoma, Viewsonic |
+| `power_state` | Barco, Christie, Optoma, Viewsonic |
+| `set_dvi_1` | Barco |
+| `set_dvi_2` | Barco |
+| `set_hdmi_1` | Barco |
+| `set_hdmi_2` | Barco |
+| `set_vga_1` | Barco |
+| `set_vga_2` | Barco |
+| `shutter_close` | Christie |
+| `shutter_open` | Christie |
+| `shutter_state` | Christie |
+| `video_mute` | Christie |
+| `video_mute_state` | Christie |
+| `video_unmute` | Christie |
+
+##### `updateSchedule`
+
+Create a new schedule entry or update an existing one.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `updateSchedule` <p> `action_to_set`: (string) the name of the scheduled action <p> `class`: `webpage` <p> `isAddition`: [`true` \| `false`] <p> `timeToSet`: (string) The time for the scheduled action | `targetToSet`: (string) Some commands, such as "set_exhibit" need to specify a value to be set. | `class`: `"schedule"` <p> `nextEvent`: (JSON object) The next scheduled event <p> `reason`: String <p> `schedule`: (array) The updated schedule <p> `success`: [`true` \| `false`] <p> `updateTime`: (int) A time value to check the order of schedule changes | No two items on the same schedule can have the same time. |
+
+##### `refreshSchedule`
+
+Retrieve the current schedule.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `refreshSchedule` <p> `class`: `webpage` | - | `class`: `"schedule"` <p> `nextEvent`: (JSON object) The next scheduled event <p> `schedule`: (array) The updated schedule <p> `success`: [`true` \| `false`] <p> `updateTime`: (int) A time value to check the order of schedule changes | - |
+
+##### `convertSchedule`
+
+Convert a recurring schedule to a date-specific schedule. Converting a schedule is non-destructive; a date-specific schedule is created that supercedes the recurring schedule, but the existing recurring schedule is not altered.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `convertSchedule` <p> `class`: `webpage` <p> `date`: (string) The date of the requested date-specific schedule <p> `from`: (string) The recurring schedule that should be converted. | - | `class`: `"schedule"` <p> `nextEvent`: (JSON object) The next scheduled event <p> `reason`: String <p> `schedule`: (array) The updated schedule <p> `success`: [`true` \| `false`] <p> `updateTime`: (int) A time value to check the order of schedule changes | - |
+
+##### `deleteSchedule`
+
+Delete a specific schedule.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `deleteSchedule` <p> `class`: `webpage` <p> `name`: (string) The name of the schedule that should be deleted | - | `class`: `"schedule"` <p> `nextEvent`: (JSON object) The next scheduled event <p> `reason`: String <p> `schedule`: (array) The updated schedule <p> `success`: [`true` \| `false`] <p> `updateTime`: (int) A time value to check the order of schedule changes | - |
+
+##### `deleteScheduleAction`
+
+Delete an action from a specified schedule. The action is identified by its scheduled time.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `deleteScheduleAction` <p> `class`: `webpage` <p> `from`: (string) The  schedule from which the action should be deleted. <p> `time`: (string) The time of the action that should be deleted| - | `class`: `"schedule"` <p> `nextEvent`: (JSON object) The next scheduled event <p> `reason`: String <p> `schedule`: (array) The updated schedule <p> `success`: [`true` \| `false`] <p> `updateTime`: (int) A time value to check the order of schedule changes | - |
+
+##### `setExhibit`
+
+Instruct Control Server to change the `exhibit`.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `setExhibit` <p> `class`: `webpage` <p> `name`: (string) The exhibit that should be set | - | `reason`: (string) <p> `success`: [`true` \| `false`] | - |
+
+##### `createExhibit`
+
+Create a new `exhibit` definition. This can be created as an empty file or cloned from an existing `exhibit`.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `createExhibit` <p> `class`: `webpage` <p> `name`: (string) The name of the exhibit to be created | `cloneFrom`: (string) The name of an exhibit that should be cloned. | `reason`: (string) <p> `success`: [`true` \| `false`] | - |
+
+##### `deleteExhibit`
+
+Instruct Control Server to delete an `exhibit`.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `deleteExhibit` <p> `class`: `webpage` <p> `name`: (string) The exhibit that should be deleted | - | `reason`: (string) <p> `success`: [`true` \| `false`] | - |
+
+##### `setComponentContent`
+
+Change the active `content` for a `component`.
+
+| Required fields | Optional fields | Response fields | Notes |
+| --------------- | --------------- | --------------------- | ----- |
+| `action`: `setComponentContent` <p> `class`: `webpage` <p> `content`: (array of strings) The `content` to set <p> `id`: (string) The `component` that is being changed | - | `reason`: (string) <p> `success`: [`true` \| `false`] | - |
 
 #### Tracker actions
