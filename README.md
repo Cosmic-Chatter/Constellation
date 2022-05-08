@@ -19,6 +19,7 @@ A responsive web console provides system administrators with an easy way to cont
 | ----------- | ----------- |
 | Flexible Tracker | Build simple touch interfaces to help evaluators or other staff collect information. *Distributed as part of Control Server*. |
 | Heartbeat | Provides basic **_Constellation_** monitoring for clients not running another `component`. |
+| InfoStation | Create custom touchscreen interfaces for text and media content. **This component is in progress** |
 | Media Browser | Browse and view a collection of images and videos with a touchscreen interface.|
 | Media Player | Robust digital signage solution with an optional kiosk for interaction. |
 | SOS Kiosk | A public-facing interface for NOAA Science on a Sphere for use on an iPad or other touchscreen. |
