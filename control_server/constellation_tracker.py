@@ -2,12 +2,44 @@
 
 # Standard modules
 import configparser
+import csv
+import io
 import json
 import logging
 import os
 
 # Constellation modules
 import config
+
+
+def create_CSV(file_path, filename=""):
+    """Load a tracker text file and convert it to a CSV"""
+
+    dict_list = []
+    with open(file_path, 'r', encoding="UTF-8") as f:
+        for line in f.readlines():
+            dict_list.append(json.loads(line))
+    return JSON_list_to_CSV(dict_list, filename=filename)
+
+
+def create_template(name, kind="flexible-tracker"):
+    """Create a new tracker template with the given name."""
+
+    if not name.lower().endswith(".ini"):
+        name += ".ini"
+
+    file_path = os.path.join(config.APP_PATH, kind, "templates", name)
+    if os.path.isfile(file_path):
+        # Template already exists, so don't overwrite
+        return False
+
+    with config.trackerTemplateWriteLock:
+        try:
+            with open(file_path, "w", encoding="UTF-8") as f:
+                f.write("")
+            return True
+        except PermissionError:
+            return False
 
 
 def get_layout_definition(name, kind="flexible-tracker"):
@@ -48,6 +80,69 @@ def get_raw_text(name, kind='flexible-tracker'):
         reason = f"You do not have read permission for the file {file_path}"
 
     return result, success, reason
+
+
+def get_unique_keys(dict_list):
+    """Return a set of unique keys from a list of dicts"""
+
+    return list(set().union(*(d.keys() for d in dict_list)))
+
+
+def get_unique_values(dict_list, key):
+    """For a given key, search the list of dicts for all unique values, expanding lists."""
+
+    unique_values = set()
+
+    for this_dict in dict_list:
+        if isinstance(this_dict[key], list):
+            for value in this_dict[key]:
+                unique_values.add(value)
+
+    return list(unique_values)
+
+
+def JSON_list_to_CSV(dict_list, filename=""):
+    """Convert a list JSON dicts to a comma-separated string"""
+
+    # First, identify any keys that have lists as their value
+    all_keys = {}
+    keys = get_unique_keys(dict_list)
+    for key in keys:
+        # This function will return an empty list if the value is not a list,
+        # and a list of all unique values if it is.
+        unique_keys = get_unique_values(dict_list, key)
+        if len(unique_keys) > 0:
+            all_keys[key] = unique_keys
+        else:
+            all_keys[key] = None
+
+    # Next, reformat the dict_list so that keys with a list have those values
+    # flattened into the main dict level
+    reformed_dict_list = []
+    for this_dict in dict_list:
+        new_dict = {}
+        for key, value in this_dict.items():
+            if all_keys[key] is None:  # Simple key
+                value_to_write = this_dict[key]
+                if isinstance(value_to_write, str):
+                    value_to_write = value_to_write.replace("\n", " ")
+                new_dict[key] = value_to_write
+            else:
+                for sub_key in all_keys[key]:
+                    new_dict[key + " - " + sub_key] = sub_key in this_dict[key]
+        reformed_dict_list.append(new_dict)
+
+    # Build the CSV, optionally write it to disk, and then return it
+    with io.StringIO(newline='') as f:
+        csv_writer = csv.DictWriter(f, reformed_dict_list[0].keys())
+        csv_writer.writeheader()
+        csv_writer.writerows(reformed_dict_list)
+        result = f.getvalue()
+
+    if filename != "":
+        with open(filename, 'w', encoding="UTF-8", newline="") as f:
+            f.write(result)
+    return result
 
 
 def write_JSON(data, file_path):
@@ -94,6 +189,7 @@ def write_raw_text(data, name, kind="flexible-tracker"):
         reason = f"You do not have write permission for the file {file_path}"
 
     return success, reason
+
 
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")

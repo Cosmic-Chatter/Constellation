@@ -11,6 +11,7 @@ polling_thread_dict = {}  # Holds references to the threads starting by various 
 logLock = threading.Lock()
 currentExhibitConfigurationLock = threading.Lock()
 trackingDataWriteLock = threading.Lock()
+trackerTemplateWriteLock = threading.Lock()
 scheduleLock = threading.Lock()
 issueLock = threading.Lock()
 exhibitsLock = threading.Lock()

@@ -539,7 +539,25 @@
             </div>
           </div>
 
+          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerTemplateModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting a template cannot be undone.
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" onclick="deleteTrackerTemplate()">Delete template</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <H3 class='mt-4'>Exhibits</H3>
+          <i>Exhibits enable you to define a set of content for your gallery.</i>
           <div class="row mt-3">
             <div class="col-6 col-md-3 col-lg-2">
               <button type="button" class="btn btn-primary" id="reloadConfigurationButton" onclick="reloadConfiguration()">Reload Config</button>
@@ -583,31 +601,35 @@
               </div>
             </div>
           </div>
+          <hr>
           <H3 class='mt-2'>Flexible Tracker</H3>
-          <i>Coming soon! For now, you may edit tracker templates directly on the server.</i>
+          <i>With Flexible Tracker, you can create custom interfaces for surveys and evaluations.</i>
           <div class="row mt-3">
-            <div class='col-12 col-md-5 col-lg-4 col-xl-3'>
-              <input type="text" id='createExhibitNameInput' class='form-control' placeholder="Enter template name"></input>
+            <div class='col-6 col-md-5 col-lg-4 col-xl-3'>
+              <input type="text" id='createTrackerTemplateName' class='form-control' placeholder="Enter template name"></input>
             </div>
-            <div class="col-12 col-md-3 col-lg-3 col-xl-2">
-              <button class='btn btn-primary w-100'>Create template</button>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
+              <button class='btn btn-primary w-100' onclick='createTrackerTemplate();'>Create template</button>
             </div>
           </div>
           <div class="row mt-3">
-            <div class="col-12 col-md-3 col-lg-3 col-xl-2">
+            <!-- <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button class='btn btn-primary w-100' onclick="getAvailableDefinitions(populateTrackerTemplateSelect)">Refresh templates</button>
-            </div>
-            <div class="col-6 col-md-3">
+            </div> -->
+            <div class="col-6 col-md-3 mt-2">
               <select id="trackerTemplateSelect" class="form-control"></select>
             </div>
-            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
-              <button class='btn btn-primary w-100'>Download data</button>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
+              <button class='btn btn-primary w-100' onclick="launchTracker();">Launch</button>
             </div>
-            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
-              <button class='btn btn-info w-100'>Edit template</button>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
+              <button class='btn btn-info w-100' onclick="downloadTrackerData();">Download data</button>
             </div>
-            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
-              <button class='btn btn-danger w-100'>Delete template</button>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
+              <button class='btn btn-info w-100' disabled>Edit</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
+              <button class='btn btn-danger w-100' onclick="$('#deleteTrackerTemplateModal').modal('show');">Delete</button>
             </div>
           </div>
         </div>
@@ -657,6 +679,7 @@
       populateHelpTab();
       refreshMaintenanceRecords();
       parseQueryString();
+      getAvailableDefinitions(populateTrackerTemplateSelect);
     </script>
 
   </body>

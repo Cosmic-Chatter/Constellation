@@ -728,16 +728,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         file_path = os.path.join(config.APP_PATH,
                                                  "maintenance-logs", data["id"] + ".txt")
                         with config.maintenanceLock:
-                            try:
-                                os.remove(file_path)
-                                response = {"success": True}
-                                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                                return
-                            except FileNotFoundError:
-                                response = {"success": False,
-                                            "reason": f"Record {data['id']}.txt does not exist"}
-                                self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                                return
+                            response = delete_file(file_path)
+                            self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == 'getMaintenanceStatus':
                     if "id" not in data:
                         response = {"success": False,
@@ -881,6 +873,45 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             definition_list.append(file)
 
                     self.wfile.write(bytes(json.dumps(definition_list), encoding="UTF-8"))
+                elif action == "downloadTrackerData":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    name = data["name"]
+                    if not name.lower().endswith(".txt"):
+                        name += ".txt"
+                    data_path = os.path.join(config.APP_PATH, kind, "data", name)
+                    result = c_track.create_CSV(data_path)
+                    response = {"success": True,
+                                "csv": result}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "createTemplate":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+
+                    kind = data.get("kind", "flexible-tracker")
+                    success = c_track.create_template(data["name"], kind)
+                    response = {"success": success}
+                    if not success:
+                        response["reason"] = "File already exists or you don't have write permission"
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "deleteTemplate":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    file_path = os.path.join(config.APP_PATH, kind, "templates", data["name"] + ".ini")
+                    with config.trackerTemplateWriteLock:
+                        response = delete_file(file_path)
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "checkConnection":
                     self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
             else:
@@ -893,6 +924,20 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 return
         # print("END POST")
         # print("===============")
+
+
+def delete_file(file_path):
+    """Delete the specified file and return a dictionary with the result"""
+
+    response = {"success": False}
+    try:
+        os.remove(file_path)
+        response["success"] = True
+    except FileNotFoundError:
+        response["reason"] = f"File {file_path} does not exist"
+    except PermissionError:
+        response["reason"] = f"You do not have permission for the file f{file_path}"
+    return response
 
 
 def parse_byte_range(byte_range):
@@ -922,7 +967,7 @@ def load_default_configuration():
     global gallery_name
 
     # First, retrieve the config filename that defines the desired exhibit
-    configReader = configparser.ConfigParser(delimiters=("="))
+    configReader = configparser.ConfigParser(delimiters="=")
     configReader.optionxform = str  # Override default, which is case in-sensitive
     cEC_path = os.path.join(config.APP_PATH, "currentExhibitConfiguration.ini")
     with config.currentExhibitConfigurationLock:

@@ -77,10 +77,10 @@
             <div class="col-6 col-sm-4 col-md-3 col-lg-2">
               <button class="btn btn-block btn-danger" onclick="clearInput()">Clear</button>
             </div>
-            <div class="col-8 col-sm-5 col-md-4 col-lg-3">
+            <div class="col-12 col-md-5 mt-2">
               <div class="input-group">
                 Select Defintion:
-                <select id="definitionListDropdown" class="form-select" onchange="loadLayout()">
+                <select id="definitionListDropdown" class="form-select ml-3" style="width: 40%;" onchange="loadLayout()">
                   <option value=""></option>
                 </select>
               </div>
@@ -106,7 +106,8 @@
 
       constructor(name, exclusive=false) {
 
-        this.name = name;
+        this.displayName = name;
+        this.name = name.replace(/\s/g,'') // Strip spaces
         this.exclusive = exclusive; // Exclusive timers will stop all other exclusive timers when started
         this.elapsedTime = 0;
         this.timerRunning = false;
@@ -232,7 +233,8 @@
 
       for (var i=0; i<keys.length; i++) {
         var item = definition[keys[i]];
-        var item_id = keys[i].replace(/\s/g,'');
+        var item_id = keys[i].replace(/\s/g,''); // Replace spacess, but leave commas
+        var item_name = keys[i].replace(/,/g,''); // Replace commas, but leave spaces
         if (!("type" in item)) {
           console.log(`buildLayout: Error: item ${keys[i]} does not have a type!`)
           continue
@@ -260,7 +262,7 @@
                         </div>
                         <div class="col-4">
                           <div class="w-100 h-100 justify-content-center d-flex">
-                            <span id="${item_id}_counter" data-name="${item_id}" class="align-self-center justify-content-center" style="font-size:50px;">0</span>
+                            <span id="${item_id}_counter" data-name="${item_name}" class="align-self-center justify-content-center" style="font-size:50px;">0</span>
                           </div>
                         </div>
                         <div class="col-4">
@@ -281,7 +283,7 @@
 
               var split = item["options"].split(",");
 
-              html += `<select ${multiple} id="${item_id}_input" data-name="${item_id}" class="form-select w-100">`;
+              html += `<select ${multiple} id="${item_id}_input" data-name="${item_name}" class="form-select w-100">`;
 
               // If we do not have a multiple selector, add a blank entry first
               // so that it doesn't look like anything has been selected.
@@ -299,7 +301,7 @@
             break;
 
           case "number":
-            html += `<input type="number" id="${item_id}_input" data-name="${item_id}">`;
+            html += `<input type="number" id="${item_id}_input" data-name="${item_name}">`;
             break;
 
           case "slider":
@@ -331,7 +333,7 @@
             html += `
                       <div class="row w-100">
                         <div class="col-9">
-                          <input type="range" id="${item_id}_input" data-name="${item_id}" data-start="${start}" min="${min}" max="${max}" step="${step}" value=${start} oninput="updateValue('${item_id}_input', '${item_id}_input_label')" class="w-100">
+                          <input type="range" id="${item_id}_input" data-name="${item_name}" data-start="${start}" min="${min}" max="${max}" step="${step}" value=${start} oninput="updateValue('${item_id}_input', '${item_id}_input_label')" class="w-100">
                         </div>
                         <div class="col-3">
                           <span id="${item_id}_input_label">${start}</span>
@@ -345,7 +347,7 @@
             if ("lines" in item) {
               rows = Math.round(item.lines)
             }
-            html += `<textarea id="${item_id}_input" data-name="${item_id}" class="form-control w-100" rows="${rows}"></textarea>`;
+            html += `<textarea id="${item_id}_input" data-name="${item_name}" class="form-control w-100" rows="${rows}"></textarea>`;
             break;
 
           case "timer":
@@ -355,7 +357,7 @@
                 exclusive = true;
               }
             }
-            var timer = new TimingObject(item_id, exclusive);
+            var timer = new TimingObject(item_name, exclusive);
 
             html += timer.createWidget();
 
@@ -448,7 +450,7 @@
 
       sliderList.forEach(item => {
         item.value = $(item).data('start');
-        document.getElementById($(item).data("name") + "_input_label").innerHTML = $(item).data('start');
+        document.getElementById(item.id + "_label").innerHTML = $(item).data('start');
       });
 
       textList.forEach(item => {
@@ -491,11 +493,11 @@
       // Do timers first to make sure they stop as close to immediately as possible
       timerList.forEach(item => {
         item.stopTimer();
-        resultDict[item.name] = item.elapsedTime/1000;
+        resultDict[item.displayName] = item.elapsedTime/1000;
       });
-
       counterList.forEach(item => {
         resultDict[$(item).data("name")] = parseInt(item.innerHTML);
+
       });
       dropdownList.forEach(item => {
         resultDict[$(item).data("name")] = $(item).val(); // To support getting multiple values
@@ -576,6 +578,23 @@
       loadLayoutDefinition(name, buildLayout);
     }
 
+    function parseQueryString() {
+
+      // Read the query string to determine what options to set
+
+      var queryString = decodeURIComponent(window.location.search);
+
+      var searchParams = new URLSearchParams(queryString);
+
+      if (searchParams.has("layout")) {
+        let layout = searchParams.get("layout");
+        loadLayout(name=layout);
+        $("#definitionListDropdown").val(layout);
+        // Clear the query string so it reloads clean on refresh
+        history.pushState(null, "", location.href.split("?")[0]);
+      }
+    }
+
     var serverIP;
     try {
       serverIP = INSERT_SERVERIP_HERE // This will be automatically inserted by the server before being sent to the client
@@ -593,6 +612,7 @@
     var timerList = [];
 
     getAvailableDefinitions(populateLayoutDropdown);
+    setTimeout(parseQueryString, 300);
     setInterval(checkConnection, 500);
 
   </script>

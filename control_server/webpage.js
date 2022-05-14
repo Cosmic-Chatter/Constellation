@@ -1975,6 +1975,123 @@ function deleteIssue(id) {
   xhr.send(JSON.stringify(requestDict));
 }
 
+function downloadTrackerData() {
+
+  // Ask the server to send the data for the currently selected tracker as a CSV
+  // and initiate a download.
+
+  let name = $("#trackerTemplateSelect").val();
+
+  requestDict = {"class": "tracker",
+                 "action": "downloadTrackerData",
+                 "name": name};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result && result.success == true) {
+          // Convert the text to a file and initiate download
+          let fileBlob = new Blob([result.csv], {
+            type: 'text/plain'
+          });
+          let a = document.createElement("a");
+          a.href = window.URL.createObjectURL(fileBlob);;
+          a.download = name + ".csv";
+          a.click();
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+}
+
+function launchTracker() {
+
+  // Open the tracker in a new tab with the currently selected layout
+
+  let name = $("#trackerTemplateSelect").val();
+
+  let url = serverIP + "/tracker.html";
+  if (name != null) {
+    url += "?layout=" + name;
+  }
+  window.open(url, '_blank').focus();
+}
+
+function createTrackerTemplate(name="") {
+
+  // Ask the server to create a template with the name provided in the text entry
+  // field.
+
+
+  if (name == "") {
+    name = $("#createTrackerTemplateName").val();
+  }
+
+  requestDict = {"class": "tracker",
+                 "action": "createTemplate",
+                 "name": name};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result && result.success == true) {
+          $("#createTrackerTemplateName").val("");
+          getAvailableDefinitions(populateTrackerTemplateSelect);
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+}
+
+function deleteTrackerTemplate(name="") {
+
+  // Ask the server to delete the specified tracker template
+
+
+  if (name == "") {
+    name = $("#trackerTemplateSelect").val();
+  }
+
+  requestDict = {"class": "tracker",
+                 "action": "deleteTemplate",
+                 "name": name};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result && result.success == true) {
+          getAvailableDefinitions(populateTrackerTemplateSelect);
+          $("#deleteTrackerTemplateModal").modal("hide");
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+}
+
 function rebuildIssueList(issues) {
 
   // Take an array of issue dictionaries and build the GUI representation.
@@ -2138,8 +2255,10 @@ function setComponentInfoModalMaintenanceStatus(id) {
           $("#componentInfoModalMaintenanceNote").val(result.notes);
           $("#maintenanceHistoryWorkingBar").attr("ariaValueNow", result.working_pct);
           $("#maintenanceHistoryWorkingBar").width(String(result.working_pct)+"%");
+          $("#maintenanceHistoryWorkingBar").attr("title", "Working: " + String(result.working_pct)+"%");
           $("#maintenanceHistoryNotWorkingBar").attr("ariaValueNow", result.not_working_pct);
           $("#maintenanceHistoryNotWorkingBar").width(String(result.not_working_pct)+"%");
+          $("#maintenanceHistoryNotWorkingBar").attr("title", "Not working: " + String(result.not_working_pct)+"%");
           $('#componentInfoModalMaintenanceSaveButton').hide();
         }
       }
@@ -2196,11 +2315,13 @@ function refreshMaintenanceRecords() {
           working.setAttribute("class", "progress-bar bg-success");
           working.setAttribute("role", "progressbar");
           working.style.width = String(record.working_pct) + "%";
+          working.title = "Working: " + String(record.working_pct) + "%";
           working.innerHTML = "Working";
           let not_working = document.createElement("div");
           not_working.setAttribute("class", "progress-bar bg-danger");
           not_working.setAttribute("role", "progressbar");
           not_working.style.width = String(record.not_working_pct) + "%";
+          not_working.title = "Not working: " + String(record.not_working_pct) + "%";
           not_working.innerHTML = "Not working";
           progress.appendChild(working);
           progress.appendChild(not_working);
