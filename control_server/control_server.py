@@ -889,17 +889,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                 "csv": result}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "createTemplate":
-                    if "name" not in data:
+                    if "name" not in data or "template" not in data:
                         response = {"success": False,
-                                    "reason": "Request missing 'name' field."}
+                                    "reason": "Request missing 'name' or 'template' field."}
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
-
                     kind = data.get("kind", "flexible-tracker")
-                    success = c_track.create_template(data["name"], kind)
+                    name = data["name"]
+                    if not name.lower().endswith(".ini"):
+                        name += ".ini"
+                    file_path = os.path.join(config.APP_PATH, kind, "templates", name)
+                    success = c_track.create_template(file_path, data["template"])
                     response = {"success": success}
-                    if not success:
-                        response["reason"] = "File already exists or you don't have write permission"
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "deleteTemplate":
                     if "name" not in data:

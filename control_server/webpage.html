@@ -577,20 +577,21 @@
                     </div>
                     <div class='col-4 col-sm-5 col-md-6 border-right border-left h-100'>
                       <H3>Current layout</H3>
-                      <div id='editTrackerTemplateModalCurrentLayout' class='row' style="max-height: 95%; overflow-y: auto;">
+                      <i>The number of widgets per row will depend on which device Flexible Tracker is used on.</i>
+                      <div id='editTrackerTemplateModalCurrentLayout' class='row' style="max-height: 85%; overflow-y: auto;">
                       </div>
                     </div>
-                    <div class='col-4 border-left h-100' style="max-height: 100%; overflow-y: auto;">
+                    <div class='col-4 border-left h-100 d-flex flex-column' style="max-height: 100%; overflow-y: auto;">
                       <H3>Edit properties</H3>
                       <div id='editTrackerTemplateNameInputGroup'>
                         <label for='editTrackerTemplateNameInput'>Name</label>
-                        <input id="editTrackerTemplateNameInput" type="text" class='form-control'></input>
+                        <input id="editTrackerTemplateNameInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                       </div>
 
                       <div id='editTrackerTemplateLabelInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateLabelInput'>Label</label>
-                        <input id="editTrackerTemplateLabelInput" type="text" class='form-control'></input>
+                        <input id="editTrackerTemplateLabelInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                       </div>
 
                       <div id='editTrackerTemplateMultipleInputGroup' class='editTrackerTemplateInputGroup'>
@@ -598,11 +599,11 @@
                         <label>Multiple</label>
                         <br>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputTrue" value="true">
+                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputTrue" value="true" oninput="editTrackerTemplateModalUpdateFromInput()">
                           <label class="form-check-label" for="editTrackerTemplateMultipleInputTrue">True</label>
                         </div>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputFalse" value="false" checked>
+                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputFalse" value="false" checked oninput="editTrackerTemplateModalUpdateFromInput()">
                           <label class="form-check-label" for="editTrackerTemplateMultipleInputFalse">False</label>
                         </div>
                         <p><i>Allow more than one option to be selected.</i></p>
@@ -611,7 +612,7 @@
                       <div id='editTrackerTemplateOptionsInputGroup' class='editTrackerTemplateInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateOptionsInput'>Options</label>
-                        <input id="editTrackerTemplateOptionsInput" type="text" class='form-control'></input>
+                        <input id="editTrackerTemplateOptionsInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                         <p><i>Separate each option with a comma.</i></p>
                       </div>
 
@@ -621,19 +622,19 @@
                         <div class='row no-gutters'>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputMin'>Min</label>
-                            <input id="editTrackerTemplateSliderInputMin" type="number" class='form-control' value=1></input>
+                            <input id="editTrackerTemplateSliderInputMin" type="number" class='form-control' value=1 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputMax'>Max</label>
-                            <input id="editTrackerTemplateSliderInputMax" type="number" class='form-control' value=5></input>
+                            <input id="editTrackerTemplateSliderInputMax" type="number" class='form-control' value=5 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputStep'>Step</label>
-                            <input id="editTrackerTemplateSliderInputStep" type="number" class='form-control' value=1></input>
+                            <input id="editTrackerTemplateSliderInputStep" type="number" class='form-control' value=1 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputStart'>Start</label>
-                            <input id="editTrackerTemplateSliderInputStart" type="number" class='form-control' value=3></input>
+                            <input id="editTrackerTemplateSliderInputStart" type="number" class='form-control' value=3 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                           </div>
                         </div>
                       </div>
@@ -643,11 +644,11 @@
                         <label>Exclusive</label>
                         <br>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputTrue" value="true">
+                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputTrue" value="true" oninput="editTrackerTemplateModalUpdateFromInput()">
                           <label class="form-check-label" for="editTrackerTemplateExclusiveInputTrue">True</label>
                         </div>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputFalse" value="false" checked>
+                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputFalse" value="false" checked oninput="editTrackerTemplateModalUpdateFromInput()">
                           <label class="form-check-label" for="editTrackerTemplateExclusiveInputFalse">False</label>
                         </div>
                         <p><i>Starting an exclusive timer stops the others.</i></p>
@@ -656,14 +657,15 @@
                       <div id='editTrackerTemplateLinesInputGroup' class='editTrackerTemplateInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateLinesInput'>Lines</label>
-                        <input id="editTrackerTemplateLinesInput" type="number" class='form-control' value=5></input>
+                        <input id="editTrackerTemplateLinesInput" type="number" class='form-control' value=5 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
                         <p><i>Number of lines visible.</i></p>
                       </div>
+                      <button id="editTrackerTemplateModalDeleteWidgetButton" class='btn btn-danger w-100 mt-4 mt-auto' onclick='editTrackerTemplateModalDeleteWidget();'>Delete</button>
                     </div>
                   </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-primary" onclick="editTrackerTemplateModalSubmitChanges();">Save</button>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>

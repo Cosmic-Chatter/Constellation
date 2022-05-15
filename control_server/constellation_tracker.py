@@ -22,21 +22,15 @@ def create_CSV(file_path, filename=""):
     return JSON_list_to_CSV(dict_list, filename=filename)
 
 
-def create_template(name, kind="flexible-tracker"):
-    """Create a new tracker template with the given name."""
+def create_template(file_path, template):
+    """Given a template dictionary, write it to file"""
 
-    if not name.lower().endswith(".ini"):
-        name += ".ini"
-
-    file_path = os.path.join(config.APP_PATH, kind, "templates", name)
-    if os.path.isfile(file_path):
-        # Template already exists, so don't overwrite
-        return False
-
+    parser = configparser.ConfigParser()
+    parser.read_dict(template)
     with config.trackerTemplateWriteLock:
         try:
             with open(file_path, "w", encoding="UTF-8") as f:
-                f.write("")
+                parser.write(f)
             return True
         except PermissionError:
             return False

@@ -2037,7 +2037,8 @@ function createTrackerTemplate(name="") {
 
   requestDict = {"class": "tracker",
                  "action": "createTemplate",
-                 "name": name};
+                 "name": name,
+                 "template": {}};
 
   var xhr = new XMLHttpRequest();
   xhr.timeout = 2000;
@@ -2542,6 +2543,18 @@ function configureEditTrackerTemplateModal(key) {
   // Read the layout for the given key and set the appropriate divs visible to
   // support editing it.
 
+  $(".editTrackerTemplateInputGroup").hide();
+  if (key == undefined) {
+    $("#editTrackerTemplateNameInputGroup").hide();
+    $("#editTrackerTemplateLabelInputGroup").hide();
+    $("#editTrackerTemplateModalDeleteWidgetButton").hide();
+    return;
+  } else {
+    $("#editTrackerTemplateNameInputGroup").show();
+    $("#editTrackerTemplateLabelInputGroup").show();
+    $("#editTrackerTemplateModalDeleteWidgetButton").show();
+  }
+
   let template = $("#editTrackerTemplateModal").data("template")[key];
 
   $("#editTrackerTemplateModal").data("currentWidget", key);
@@ -2562,13 +2575,13 @@ function configureEditTrackerTemplateModal(key) {
     }
     $("#editTrackerTemplateMultipleInputGroup").show();
   } else if (template.type == "slider") {
-    $("#editTrackerTemplateSliderInputMin").val(template.min);
-    $("#editTrackerTemplateSliderInputMax").val(template.max);
-    $("#editTrackerTemplateSliderInputStep").val(template.step);
-    $("#editTrackerTemplateSliderInputStart").val(template.start);
+    $("#editTrackerTemplateSliderInputMin").val(template.min || 1);
+    $("#editTrackerTemplateSliderInputMax").val(template.max || 5);
+    $("#editTrackerTemplateSliderInputStep").val(template.step || 1);
+    $("#editTrackerTemplateSliderInputStart").val(template.start || 3);
     $("#editTrackerTemplateSliderInputGroup").show();
   } else if (template.type == "text") {
-    $("#editTrackerTemplateLinesInput").val(template.lines);
+    $("#editTrackerTemplateLinesInput").val(template.lines || 5);
     $("#editTrackerTemplateLinesInputGroup").show();
   } else if (template.type == "timer") {
     if (template.exclusive == "true") {
@@ -2585,6 +2598,7 @@ function populateEditTrackerTemplateCurrentLayout() {
   // Take the current template dictionary and render a set of buttons
 
   let template = $("#editTrackerTemplateModal").data("template");
+  let numItems = Object.keys(template).length;
 
   $("#editTrackerTemplateModalCurrentLayout").empty();
   Object.keys(template).forEach((key, i) => {
@@ -2625,6 +2639,7 @@ function populateEditTrackerTemplateCurrentLayout() {
     left.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex';
     left.innerHTML = '◀'
     left.style.cursor = "pointer";
+
     left.addEventListener("click", function(){editTrackerTemplateModalMoveWidget(key, -1);});
     leftCol.appendChild(left);
 
@@ -2648,6 +2663,11 @@ function editTrackerTemplateModalMoveWidget(key, dir) {
 
   // Reorder the dictionary of widgets, moving the given key the specified number
   // of places
+
+  if (dir == 0) {
+    populateEditTrackerTemplateCurrentLayout();
+    return;
+  }
 
   let template = $("#editTrackerTemplateModal").data("template");
   let keys = Object.keys(template);
@@ -2712,8 +2732,98 @@ function editTrackerTemplateModalAddWidget(name, type) {
   template[name] = {type: type};
   $("#editTrackerTemplateModal").data("template", template);
   configureEditTrackerTemplateModal(name);
+  editTrackerTemplateModalUpdateFromInput();
   populateEditTrackerTemplateCurrentLayout();
+}
 
+function editTrackerTemplateModalDeleteWidget() {
+
+  // Delete the given widget and shift focus to the neighboring one
+
+  let template = $("#editTrackerTemplateModal").data("template");
+  let currentWidgetName = $("#editTrackerTemplateModal").data("currentWidget");
+  let originalPosition = Object.keys(template).indexOf(currentWidgetName);
+
+
+  delete template[currentWidgetName];
+  $("#editTrackerTemplateModal").data("template", template);
+  let newPosition = Math.max(0, originalPosition-1);
+  let newCurrentWidget = Object.keys(template)[newPosition];
+  $("#editTrackerTemplateModal").data("currentWidget", newCurrentWidget);
+
+  configureEditTrackerTemplateModal(newCurrentWidget);
+  populateEditTrackerTemplateCurrentLayout();
+}
+
+function editTrackerTemplateModalUpdateFromInput() {
+
+  // Fired when a change is made to a widget property. Write the new data into
+  // the template
+
+  let template = $("#editTrackerTemplateModal").data("template");
+  let originalWidgetName = $("#editTrackerTemplateModal").data("currentWidget");
+  let originalPosition = Object.keys(template).indexOf(originalWidgetName);
+  let currentWidget = template[originalWidgetName];
+
+  let currentWidgetName = $("#editTrackerTemplateNameInput").val();
+  currentWidget.label = $("#editTrackerTemplateLabelInput").val();
+  if (["counter", "number"].includes(currentWidget.type)) {
+    // Only name and label
+  } else if (currentWidget.type == "dropdown") {
+    currentWidget.options = $("#editTrackerTemplateOptionsInput").val();
+    currentWidget.multiple = String($("#editTrackerTemplateMultipleInputTrue").prop("checked"));
+  } else if (currentWidget.type == "slider") {
+    currentWidget.min = $("#editTrackerTemplateSliderInputMin").val();
+    currentWidget.max = $("#editTrackerTemplateSliderInputMax").val();
+    currentWidget.step = $("#editTrackerTemplateSliderInputStep").val();
+    currentWidget.start = $("#editTrackerTemplateSliderInputStart").val();
+  } else if (currentWidget.type == "text") {
+    currentWidget.lines = $("#editTrackerTemplateLinesInput").val();
+  } else if (currentWidget.type == "timer") {
+    currentWidget.exclusive = String($("#editTrackerTemplateExclusiveInputTrue").prop("checked"));
+  }
+  delete template[originalWidgetName];
+  template[currentWidgetName] = currentWidget;
+
+  $("#editTrackerTemplateModal").data("template", template);
+  $("#editTrackerTemplateModal").data("currentWidget", currentWidget.name);
+  // We have changed the name and need to move it back to the right place
+  editTrackerTemplateModalMoveWidget(currentWidgetName, originalPosition - Object.keys(template).length + 1);
+}
+
+function editTrackerTemplateModalSubmitChanges() {
+
+  // Send a message to the server with the updated template
+
+  let template = $("#editTrackerTemplateModal").data("template");
+  let templateName = $("#editTrackerTemplateModal").data("templateName");
+
+  var requestDict = {"class": "tracker",
+                     "action": "createTemplate",
+                     "name": templateName,
+                     "template": template};
+
+  requestString = JSON.stringify(requestDict);
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let response = JSON.parse(this.responseText);
+        if ("success" in response && response.success == true) {
+          console.log("here")
+          $("#editTrackerTemplateModal").modal("hide");
+        }
+      }
+    }
+  };
+  xhr.send(requestString);
 }
 
 function parseQueryString() {
