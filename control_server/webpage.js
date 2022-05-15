@@ -2502,6 +2502,220 @@ function populateTrackerTemplateSelect(definitionList) {
   });
 }
 
+function showEditTrackerTemplateModal() {
+
+  // Retrieve the currently-selected layout and use it to configure the
+  // editTrackerTemplateModal
+
+  let layoutToLoad = $("#trackerTemplateSelect").val();
+  let lamda = function(template){_showEditTrackerTemplateModal(layoutToLoad, template)};
+  loadLayoutDefinition(layoutToLoad, lamda);
+}
+
+function _showEditTrackerTemplateModal(name, template) {
+
+  // Set the provided template in the data attributes, reset all the fields,
+  // and show the modal
+
+  // Set default values
+  $("#editTrackerTemplateNameInput").val("");
+  $("#editTrackerTemplateLabelInput").val("");
+  $("#editTrackerTemplateMultipleInputFalse").prop("checked", true)
+  $("#editTrackerTemplateExclusiveInputFalse").prop("checked", true)
+  $("#editTrackerTemplateSliderInputMin").val(1);
+  $("#editTrackerTemplateSliderInputMax").val(5);
+  $("#editTrackerTemplateSliderInputStep").val(1);
+  $("#editTrackerTemplateSliderInputStart").val(3);
+  $("#editTrackerTemplateLinesInput").val(5);
+  $("#editTrackerTemplateModalTitle").html("Edit template: " + name);
+
+  $("#editTrackerTemplateModal").data("template", template);
+  $("#editTrackerTemplateModal").data("templateName", name);
+
+  populateEditTrackerTemplateCurrentLayout();
+  configureEditTrackerTemplateModal(Object.keys(template)[0]);
+  $("#editTrackerTemplateModal").modal("show");
+}
+
+function configureEditTrackerTemplateModal(key) {
+
+  // Read the layout for the given key and set the appropriate divs visible to
+  // support editing it.
+
+  let template = $("#editTrackerTemplateModal").data("template")[key];
+
+  $("#editTrackerTemplateModal").data("currentWidget", key);
+  $(".editTrackerTemplateInputGroup").hide();
+
+  $("#editTrackerTemplateNameInput").val(key);
+  $("#editTrackerTemplateLabelInput").val(template.label);
+
+  if (["counter", "number"].includes(template.type)) {
+    // Only name and label
+  } else if (template.type == "dropdown") {
+    $("#editTrackerTemplateOptionsInput").val(template.options);
+    $("#editTrackerTemplateOptionsInputGroup").show();
+    if (template.multiple == "true") {
+      $("#editTrackerTemplateMultipleInputTrue").prop("checked", true)
+    } else {
+      $("#editTrackerTemplateMultipleInputFalse").prop("checked", true)
+    }
+    $("#editTrackerTemplateMultipleInputGroup").show();
+  } else if (template.type == "slider") {
+    $("#editTrackerTemplateSliderInputMin").val(template.min);
+    $("#editTrackerTemplateSliderInputMax").val(template.max);
+    $("#editTrackerTemplateSliderInputStep").val(template.step);
+    $("#editTrackerTemplateSliderInputStart").val(template.start);
+    $("#editTrackerTemplateSliderInputGroup").show();
+  } else if (template.type == "text") {
+    $("#editTrackerTemplateLinesInput").val(template.lines);
+    $("#editTrackerTemplateLinesInputGroup").show();
+  } else if (template.type == "timer") {
+    if (template.exclusive == "true") {
+      $("#editTrackerTemplateExclusiveInputTrue").prop("checked", true)
+    } else {
+      $("#editTrackerTemplateExclusiveInputFalse").prop("checked", true)
+    }
+    $("#editTrackerTemplateExclusiveInputGroup").show();
+  }
+}
+
+function populateEditTrackerTemplateCurrentLayout() {
+
+  // Take the current template dictionary and render a set of buttons
+
+  let template = $("#editTrackerTemplateModal").data("template");
+
+  $("#editTrackerTemplateModalCurrentLayout").empty();
+  Object.keys(template).forEach((key, i) => {
+    let col = document.createElement("div");
+    col.classList = 'col-12 col-md-6 col-lg-4 mt-2 w-100';
+
+    let widget = document.createElement("div");
+    widget.classList = 'mx-1'
+    let row1 = document.createElement("div");
+    row1.classList = "row";
+    widget.appendChild(row1);
+    let nameCol = document.createElement('div');
+    nameCol.classList = "col-12 bg-secondary rounded-top";
+    row1.appendChild(nameCol);
+    let name = document.createElement("div");
+    name.classList = ' text-light w-100 text-center font-weight-bold';
+    name.innerHTML = key;
+    nameCol.appendChild(name);
+    let row2 = document.createElement("div");
+    row2.classList = "row";
+    widget.appendChild(row2);
+
+    let editCol = document.createElement("div");
+    editCol.classList = "col-6 mx-0 px-0";
+    row2.appendChild(editCol);
+    let edit = document.createElement('div');
+    edit.classList = "text-light bg-info w-100 h-100 justify-content-center d-flex pl-1";
+    edit.style.borderBottomLeftRadius = '0.25rem';
+    edit.innerHTML = "Edit"
+    edit.style.cursor = "pointer";
+    edit.addEventListener("click", function(){configureEditTrackerTemplateModal(key);});
+    editCol.appendChild(edit)
+
+    let leftCol = document.createElement("div");
+    leftCol.classList = "col-3 mx-0 px-0";
+    row2.appendChild(leftCol);
+    let left = document.createElement("div");
+    left.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex';
+    left.innerHTML = '◀'
+    left.style.cursor = "pointer";
+    left.addEventListener("click", function(){editTrackerTemplateModalMoveWidget(key, -1);});
+    leftCol.appendChild(left);
+
+    let rightCol = document.createElement("div");
+    rightCol.classList = "col-3 mx-0 px-0";
+    row2.appendChild(rightCol);
+    let right = document.createElement("div");
+    right.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex pr-1';
+    right.style.borderBottomRightRadius = '0.25rem';
+    right.innerHTML = '▶'
+    right.style.cursor = "pointer";
+    right.addEventListener("click", function(){editTrackerTemplateModalMoveWidget(key, 1);});
+    rightCol.appendChild(right);
+
+    col.appendChild(widget)
+    $("#editTrackerTemplateModalCurrentLayout").append(col);
+  });
+}
+
+function editTrackerTemplateModalMoveWidget(key, dir) {
+
+  // Reorder the dictionary of widgets, moving the given key the specified number
+  // of places
+
+  let template = $("#editTrackerTemplateModal").data("template");
+  let keys = Object.keys(template);
+  let loc = keys.indexOf(key)
+  let newLoc = loc + dir;
+  newLoc = Math.max(newLoc, 0);
+  newLoc = Math.min(newLoc, keys.length-1);
+
+  // Iterate through the keys, inserting key into its new place
+  newArray = []
+  keys.forEach((item, i) => {
+    if (dir < 0) {
+      if (i == newLoc) {
+        newArray.push(key);
+      }
+    }
+    if (item != key) {
+      newArray.push(item);
+    }
+    if (dir > 0) {
+      if (item != key) {
+        newArray.push(item);
+      }
+      if (i == newLoc) {
+        newArray.push(key);
+      }
+    }
+  });
+
+  // Build a new dictionary with the new order
+  let newDict = {}
+  newArray.forEach((item, i) => {
+    newDict[item] = template[item]
+  });
+
+  // Update the data attribute with the new dictionary
+  $("#editTrackerTemplateModal").data("template", newDict);
+  populateEditTrackerTemplateCurrentLayout();
+}
+
+function editTrackerTemplateModalAddWidget(name, type) {
+
+  // Create a new widget with the given name and add it to the template.
+  // If the name already exists, append a number
+
+  let template = $("#editTrackerTemplateModal").data("template");
+  let names = Object.keys(template);
+
+  // Check if name exists
+  let i = 2;
+  let workingName = name;
+  while (true) {
+    if (names.includes(workingName)) {
+      workingName = name + " " + String(i);
+      i++;
+    } else {
+      name = workingName;
+      break;
+    }
+  }
+
+  template[name] = {type: type};
+  $("#editTrackerTemplateModal").data("template", template);
+  configureEditTrackerTemplateModal(name);
+  populateEditTrackerTemplateCurrentLayout();
+
+}
+
 function parseQueryString() {
 
   // Read the query string to determine what options to set

@@ -37,7 +37,7 @@ scheduleList = []
 nextEvent = {}
 scheduleUpdateTime = 0
 serverRebootTime = None
-rebooting = False # This will be set to True from a background thread when it is time to reboot
+rebooting = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
 currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
