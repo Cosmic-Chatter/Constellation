@@ -14,6 +14,7 @@ import os
 import mimetypes
 import cgi
 import signal
+import socket
 import sys
 import shutil
 import traceback
@@ -987,22 +988,80 @@ def parse_byte_range(byte_range):
     return first, last
 
 
+def clear_terminal():
+    """Clear the terminal"""
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def command_line_setup():
+    """Prompt the user for several pieces of information on first-time setup"""
+
+    settings_dict = {}
+
+    clear_terminal()
+    print("##########################################################")
+    print("Welcome to Constellation Control Server!")
+    print("")
+    print("This appears to be your first time running Control Server.")
+    print("In order to set up your configuration, you will be asked")
+    print("a few questions. If you don't know the answer, or wish to")
+    print("accept the default, just press the enter key.")
+    print("")
+    gallery_name = input("Enter a name for the gallery (default: Constellation): ").strip()
+    if gallery_name == "":
+        gallery_name = "Constellation"
+    settings_dict["gallery_name"] = gallery_name
+
+    default_ip = socket.gethostbyname(socket.gethostname())
+    ip_address = input(f"Enter this computer's static IP address (default: {default_ip}): ").strip()
+    if ip_address == "":
+        ip_address = default_ip
+    settings_dict["ip_address"] = ip_address
+
+    default_port = 8082
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex((ip_address, default_port)) != 0:
+                # Port is free
+                break
+            else:
+                default_port += 1
+    port = input(f"Enter the desired port (default: {default_port}): ").strip()
+    if port == "":
+        port = default_port
+    else:
+        port = int(port)
+    settings_dict["server_port"] = port
+
+    settings_dict["current_exhibit"] = "default.exhibit"
+
+    return {"CURRENT": settings_dict}
+
+
 def load_default_configuration():
-    """Read the current exhibit configuration from file and initialize it in self.currentExhibitConfiguration"""
+    """Read the current exhibit configuration from file and initialize it"""
 
     global server_port
     global ip_address
     global gallery_name
 
-    # First, retrieve the config filename that defines the desired exhibit
-    configReader = configparser.ConfigParser(delimiters="=")
-    configReader.optionxform = str  # Override default, which is case in-sensitive
-    cEC_path = os.path.join(config.APP_PATH, "currentExhibitConfiguration.ini")
-    with config.currentExhibitConfigurationLock:
-        configReader.read(cEC_path)
-    current = configReader["CURRENT"]
+    # First, retrieve the config filename that defines the desired gallery
+    config_reader = configparser.ConfigParser(delimiters="=")
+    config_reader.optionxform = str  # Override default, which is case in-sensitive
+    gal_path = os.path.join(config.APP_PATH, "galleryConfiguration.ini")
+    with config.galleryConfigurationLock:
+        config_reader.read(gal_path)
+    try:
+        current = config_reader["CURRENT"]
+    except KeyError:
+        # We don't have a config file, so let's get info from the user to create one
+        settings_dict = command_line_setup()
+        config_reader.read_dict(settings_dict)
+        with open(os.path.join(config.APP_PATH, "galleryConfiguration.ini"), "w", encoding="UTF-8") as f:
+            config_reader.write(f)
+        current = config_reader["CURRENT"]
     server_port = current.getint("server_port", 8080)
-    ip_address = current.get("server_ip_address", "localhost")
+    ip_address = current.get("server_ip_address", socket.gethostbyname(socket.gethostname()))
     gallery_name = current.get("gallery_name", "Constellation")
     staff_list = current.get("assignable_staff", [])
     if len(staff_list) > 0:
@@ -1016,7 +1075,7 @@ def load_default_configuration():
     # creating the various components
     try:
         print("Reading component descriptions...", end="", flush=True)
-        config.componentDescriptions = dict(configReader["COMPONENT_DESCRIPTIONS"])
+        config.componentDescriptions = dict(config_reader["COMPONENT_DESCRIPTIONS"])
         print(" done")
     except KeyError:
         print("None found")
@@ -1024,7 +1083,7 @@ def load_default_configuration():
 
     # Parse list of PJLink projectors
     try:
-        pjlink_projectors = configReader["PJLINK_PROJECTORS"]
+        pjlink_projectors = config_reader["PJLINK_PROJECTORS"]
         print("Connecting to PJLink projectors...", end="\r", flush=True)
     except KeyError:
         print("No PJLink projectors specified")
@@ -1057,7 +1116,7 @@ def load_default_configuration():
 
     # Parse list of serial projectors
     try:
-        serial_projectors = configReader["SERIAL_PROJECTORS"]
+        serial_projectors = config_reader["SERIAL_PROJECTORS"]
         print("Connecting to serial projectors...", end="\r", flush=True)
     except KeyError:
         print("No serial projectors specified")
@@ -1090,7 +1149,7 @@ def load_default_configuration():
 
     # Parse list of Wake on LAN devices
     try:
-        wol = configReader["WAKE_ON_LAN"]
+        wol = config_reader["WAKE_ON_LAN"]
         print("Collecting Wake on LAN devices...", end="", flush=True)
 
         for key in wol:
@@ -1132,7 +1191,7 @@ def load_default_configuration():
 
     # Parse list of static components
     try:
-        static_components = configReader["STATIC_COMPONENTS"]
+        static_components = config_reader["STATIC_COMPONENTS"]
         print("Adding static components... ", end="\r", flush=True)
         for this_type in static_components:
             split = static_components[this_type].split(",")
@@ -1239,7 +1298,7 @@ def quit_handler(*args):
     with config.logLock:
         logging.info("Server shutdown")
 
-    with config.currentExhibitConfigurationLock:
+    with config.galleryConfigurationLock:
         with config.scheduleLock:
             with config.trackingDataWriteLock:
                 sys.exit(exit_code)
@@ -1262,7 +1321,7 @@ def check_for_software_update():
     print("Checking for update... ", end="")
     try:
         for line in urllib.request.urlopen(
-                "https://raw.githubusercontent.com/FWMSH/Constellation/main/control_server/version.txt"):
+                "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/version.txt"):
             if float(line.decode('utf-8')) > SOFTWARE_VERSION:
                 software_update_available = True
                 break
@@ -1275,7 +1334,7 @@ def check_for_software_update():
         print("the server is up to date.")
 
 
-# Check whether we have packaged with Pyinstaller and set teh appropriate root path.
+# Check whether we have packaged with Pyinstaller and set the appropriate root path.
 if getattr(sys, 'frozen', False):
     # If the application is run as a --onefile bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True and sets the app
@@ -1285,7 +1344,7 @@ else:
     config.APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
 server_port = 8080  # Default; should be set in currentExhibitConfiguration.ini
-ip_address = "localhost"  # Default; should be set in currentExhibitConfiguration.ini
+ip_address = socket.gethostbyname(socket.gethostname())  # Default; should be set in currentExhibitConfiguration.ini
 ADDR = ""  # Accept connections from all interfaces
 gallery_name = ""
 SOFTWARE_VERSION = 1.0
@@ -1318,7 +1377,7 @@ load_default_configuration()
 c_sched.poll_event_schedule()
 c_proj.poll_projectors()
 c_exhibit.poll_wake_on_LAN_devices()
-# check_for_software_update()
+check_for_software_update()
 
 httpd = ThreadedHTTPServer((ADDR, server_port), RequestHandler)
 httpd.serve_forever()

@@ -391,7 +391,7 @@ def read_exhibit_configuration(name, updateDefault=False):
         configReader.optionxform = str  # Override default, which is case in-sensitive
         cEC_path = os.path.join(config.APP_PATH,
                                 'currentExhibitConfiguration.ini')
-        with config.currentExhibitConfigurationLock:
+        with config.galleryConfigurationLock:
             configReader.read(cEC_path)
             configReader.set("CURRENT", "current_exhibit", name)
             with open(cEC_path, "w", encoding="UTF-8") as f:
@@ -403,7 +403,7 @@ def set_component_content(id_, content_list):
 
     content = ", ".join(content_list)
 
-    with config.currentExhibitConfigurationLock:
+    with config.galleryConfigurationLock:
         try:
             config.currentExhibitConfiguration.set(id_, "content", content)
         except configparser.NoSectionError:  # This exhibit does not have content for this component
@@ -414,7 +414,7 @@ def set_component_content(id_, content_list):
     get_exhibit_component(id_).update_configuration()
 
     # Write new configuration to file
-    with config.currentExhibitConfigurationLock:
+    with config.galleryConfigurationLock:
         with open(os.path.join(config.APP_PATH, "exhibits", config.currentExhibit),
                   'w', encoding="UTF-8") as f:
             config.currentExhibitConfiguration.write(f)

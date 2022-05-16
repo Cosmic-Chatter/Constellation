@@ -9,7 +9,7 @@ APP_PATH = ""  # Path to the directory where the server is being launched from
 # Threading resources
 polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures
 logLock = threading.Lock()
-currentExhibitConfigurationLock = threading.Lock()
+galleryConfigurationLock = threading.Lock()
 trackingDataWriteLock = threading.Lock()
 trackerTemplateWriteLock = threading.Lock()
 scheduleLock = threading.Lock()
