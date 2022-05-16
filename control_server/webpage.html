@@ -539,6 +539,26 @@
             </div>
           </div>
 
+          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerDataModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting the data cannot be undone. To continue, please retype the name of the data to be deleted:
+                  <center><div id='deleteTrackerDataModalDeletedName' class='h4 mt-1'>TEST</div></center>
+                  <center><input type="text" id='deleteTrackerDataModalDeletedInput'></input></center>
+                  <p id='deleteTrackerDataModalSpellingError' class='text-danger mt-2'>Your typed name does not match. Are you sure you want to delete these data?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" onclick="deleteTrackerDataFromModal()">Delete data</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerTemplateModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
@@ -732,17 +752,20 @@
             <!-- <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button class='btn btn-primary w-100' onclick="getAvailableDefinitions(populateTrackerTemplateSelect)">Refresh templates</button>
             </div> -->
-            <div class="col-6 col-md-3 mt-2">
+            <div class="col-6 col-md-2 mt-2">
               <select id="trackerTemplateSelect" class="form-control"></select>
             </div>
             <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button class='btn btn-primary w-100' onclick="launchTracker();">Launch</button>
             </div>
             <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
+              <button class='btn btn-info w-100' onclick="showEditTrackerTemplateModal();">Edit</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button class='btn btn-info w-100' onclick="downloadTrackerData();">Download data</button>
             </div>
             <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
-              <button class='btn btn-info w-100' onclick="showEditTrackerTemplateModal();">Edit</button>
+              <button class='btn btn-warning w-100' onclick="showDeleteTrackerDataModal();">Clear data</button>
             </div>
             <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button class='btn btn-danger w-100' onclick="$('#deleteTrackerTemplateModal').modal('show');">Delete</button>

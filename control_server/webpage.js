@@ -2012,6 +2012,64 @@ function downloadTrackerData() {
   xhr.send(JSON.stringify(requestDict));
 }
 
+function showDeleteTrackerDataModal() {
+
+  // Show a modal confirming the request to delete a specific dataset. To be sure
+  // populate the modal with data for a test.
+
+  let name = $("#trackerTemplateSelect").val();
+
+  $("#deleteTrackerDataModalDeletedName").html(name);
+  $("#deleteTrackerDataModalDeletedInput").val("");
+  $("#deleteTrackerDataModalSpellingError").hide();
+  $("#deleteTrackerDataModal").modal("show");
+}
+
+function deleteTrackerDataFromModal() {
+
+  // Check inputed answer and confirm it is correct. If so, ask for the data to
+  // be deleted.
+
+  let name = $("#deleteTrackerDataModalDeletedName").html();
+  let input = $("#deleteTrackerDataModalDeletedInput").val();
+
+  if (name == input) {
+    deleteTrackerData();
+  } else {
+    $("#deleteTrackerDataModalSpellingError").show(); 
+  }
+}
+
+function deleteTrackerData() {
+
+  // Send a message to the server asking it to delete the data for the currently
+  // selected template
+
+  let name = $("#trackerTemplateSelect").val();
+
+  requestDict = {"class": "tracker",
+                 "action": "clearTrackerData",
+                 "name": name};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result && result.success == true) {
+          $("#deleteTrackerDataModal").modal("hide");
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+}
+
 function launchTracker() {
 
   // Open the tracker in a new tab with the currently selected layout

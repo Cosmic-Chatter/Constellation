@@ -888,6 +888,33 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response = {"success": True,
                                 "csv": result}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                elif action == "clearTrackerData":
+                    if "name" not in data:
+                        response = {"success": False,
+                                    "reason": "Request missing 'name' field."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    kind = data.get("kind", "flexible-tracker")
+                    name = data["name"]
+                    if not name.lower().endswith(".txt"):
+                        name += ".txt"
+                    data_path = os.path.join(config.APP_PATH, kind, "data", name)
+                    success = True
+                    reason = ""
+                    with config.trackingDataWriteLock:
+                        try:
+                            os.remove(data_path)
+                        except PermissionError:
+                            success = False
+                            reason = f"You do not have write permission for the file {data_path}"
+                        except FileNotFoundError:
+                            success = True  # This error results in the user's desired action!
+                            reason = f"File does not exist: {data_path}"
+                    if reason != "":
+                        print(reason)
+                    response = {"success": success,
+                                "reason": reason}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "createTemplate":
                     if "name" not in data or "template" not in data:
                         response = {"success": False,

@@ -589,6 +589,7 @@
       if (searchParams.has("layout")) {
         let layout = searchParams.get("layout");
         loadLayout(name=layout);
+        configurationName = layout;
         $("#definitionListDropdown").val(layout);
         // Clear the query string so it reloads clean on refresh
         history.pushState(null, "", location.href.split("?")[0]);
