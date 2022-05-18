@@ -24,8 +24,8 @@ This application requires Python 3.6 or later. To install, follow these steps:
 
 1. Download the files from GitHub and place them somewhere permanent.
 2. From a terminal within the directory, run `python3 -m pip install --upgrade -r requirements.txt` or ensure you have the below requirements satisfied.
-3. Edit `currentExhibitConfiguration.ini` to update the required parameters as described [here](#basic-configuration).
-4. Run `python3 control_server.py` to start the server
+3. Run `python3 start_control_server.py` to start the server.
+4. If this is your first time launching Control Server, a setup wizard will ask you several questions in the terminal. These questions will generate a starter `galleryConfiguration.ini` file.
 5. To use the web console, open a browser and go to `http://<control_server_ip>:<control_server_port>`.
 
 If you wish to run multiple control servers so you can manage separate galleries independently, you must create a separate directory and instance of the server files for each server you wish to instantiate. Each server will need its own port, but they can all share the same IP address.
@@ -34,19 +34,21 @@ If you wish to run multiple control servers so you can manage separate galleries
 
 The following packages are required to install the control server. For `pip`, they are listed in `requirements.txt`.
 
+* [`dateutil`](https://github.com/dateutil/dateutil)
 * [`icmplib`](https://github.com/ValentinBELYN/icmplib)
 * [`pypjlink2`](https://github.com/benoitlouy/pypjlink)
+* [`pyserial`](https://github.com/pyserial/pyserial)
 * [`pywakeonlan`](https://github.com/remcohaszing/pywakeonlan)
 
 
 ### Configuration
 
-#### currentExhibitConfiguration.ini
+#### galleryConfiguration.ini
 
-A `currentExhibitConfiguration.ini` file should be placed in the same directory as `control_server.py`. It contains the basic setup parameters for the server. The delimiter for this INI file is the equals sign (=).
+When you launch Control Server for the first time, a setup wizard will ask several questions. This will generate your first `galleryConfiguration.ini` file, which contains the basic setup parameters for the server. The delimiter for this INI file is the equals sign (=).
 
 ##### Basic configuration
-The following keywords are required in your `currentExhibitConfiguration.ini`:
+The following keywords are required in your `galleryConfiguration.ini`:
 
 * `server_ip_address`: This is the public IP address of the control server. Note that a static IP address needs to be set at the OS or network level—this value merely records what that address is for distribution to remote clients.
 * `server_port`: The port you wish the control server to be accessible at. This port must not already be in use. Make sure that this port is not being blocked by a firewall.
@@ -58,29 +60,8 @@ The following keywords are optional:
 * `reboot_time`: A time (e.g., "3 AM", "23:59") at which the server will be automatically restarted every day. This helps prevent memory leaks and long-term instability, but is not strictly necessary.
 * `assignable_staff`: A comma-separated list of names to whom issues can be assigned in the `Issues` tab.
 
-##### Scheduling exhibit startup and shutdown
-
-The contorl server can send commands to wake or sleep displays connected to every `component` and `projector` it controls. These are defined in `currentExhibitConfiguration.ini` and the keywords have the form `<day>_on` and `<day>_off`. The value for each keyword should be a time of day. These times can be specified in any common format, such as "2 PM", "2:00 PM", or "14:00". To omit a scheduled action, do not specify the keyword. An example schedule is below:
-
-```
-tuesday_on = 9 AM
-tuesday_off = 5:00 PM
-wednesday_on = 9 am
-wednesday_off = 5:00 PM
-thursday_on = 9 AM
-thursday_off = 5:00 PM
-friday_on = 9 AM
-friday_off = 8 pm
-saturday_on = 9 AM
-saturday_off = 17:00
-sunday_on = 12 PM
-sunday_off = 5 PM
-```
-
-The easiest and best way to manage the schedule is through the web console's [Schedule Tab](#schedule-tab).
-
 ##### Controlling projectors
-The control server can manage projectors over IP using the PJLink protocol or serial commands. Since this happens independently of whatever device is actually connected to the projector, projectors are not considered a `component` and do not have `content`. All projectors are assigned the `type` of "PROJECTOR".
+Control Server can manage projectors over IP using the PJLink protocol or serial commands. Since this happens independently of whatever device is actually connected to the projector, projectors are not considered a `component` and do not have `content`. All projectors are assigned the `type` of "PROJECTOR".
 
 ###### PJLink
 The PJLink protocol returns a defined set of information about the state of the connected projector. Each manufacturer implements the protocol slightly differently, so the available information may vary marginally.
@@ -95,9 +76,9 @@ secureProjector = 10.8.1.235, thePassword
 Each line defines one projector, in which the keyword becomes the `id`. If a projector has a password for access to PJLink, specify it with a comma after the IP address.
 
 ###### Serial (RS-232)
-The control server can also manage projectors that implement a serial-over-IP interface. You can also use a wireless serial adapter for projectors that do not implement serial-over-IP. Because every manufacturer implements a different set of functionality, the returned information is much more variable than over PJLink. **If PJLink is available, it is highly recommended.**
+Control Server can also manage projectors that implement a serial-over-IP interface. You can also use a wireless serial adapter for projectors that do not implement serial-over-IP. Because every manufacturer implements a different set of functionality, the returned information is much more variable than over PJLink. **If PJLink is available, it is highly recommended.**
 
-PJLink projectors are defined in the `[SERIAL_PROJECTORS]` section as such:
+Serial projectors are defined in the `[SERIAL_PROJECTORS]` section as such:
 
 ```
 [SERIAL_PROJECTORS]
@@ -116,7 +97,7 @@ In addition to their IP address, you must specify the manufacturer of your devic
 
 ##### Wake on LAN
 
-The control server can send Wake on LAN magic packets to power on machines connected to its network. These devices are specified using the MAC addresses, as such:
+Control Server can send Wake on LAN magic packets to power on machines connected to its network. These devices are specified using MAC addresses, as such:
 
 ```
 [WAKE_ON_LAN]
@@ -129,7 +110,7 @@ If the given machine has a static IP address, you can specify it on the same lin
 
 In order to view the real-time status of a `component`, it must be either  running a **_Constellation_** software system, or sending pings that conform to the API. However, non-**_Constellation_** `component`s can be added to the system in order to make use of the maintenance tracking system.
 
-To add such a `component`, create a `[STATIC_COMPONENTS]` section in `currentExhibitConfiguration.ini`. The keys will be the `type` and the values will be the `id`s of the components. For example,
+To add such a `component`, create a `[STATIC_COMPONENTS]` section in `galleryConfiguration.ini`. The keys will be the `type` and the values will be the `id`s of the components. For example,
 
 ```
 [STATIC_COMPONENTS]
@@ -180,7 +161,7 @@ The components tab lists every managed `component` and `projector`. Each receive
 | ONLINE  | Component is responding | Projector is responding, and powered on | - |
 | OFFLINE | Component is not responding | Projector is not responding | WoL system is not responding |
 | STANDBY | - | Projector is responding, but powered off | - |
-| STATIC | Component has been added for maintenance tracking purposes through currentExhibitConfiguration.ini. | - | - |
+| STATIC | Component has been added for maintenance tracking purposes through galleryConfiguration.ini. | - | - |
 | SYSTEM ON | The computer is on, but no **_Constellation_** software is responding. | - | The WoL system is responding to pings |
 | WAITING | The component was recently ONLINE. There may only be a temporary connectivity issue.  This is common if a display is sleeping. | - | - |
 | UNKONWN | - | - | No IP address was supplied for this WoL system, so we cannot ping it to check its status. |
@@ -211,7 +192,7 @@ The content management area allows you to manipulate the displayed `content` for
 
 New `content` can be uploaded using the bottom part of the Content pane. Click the "Choose file" button and select a file you wish to upload.
 
-**Note that uploaded files cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing `content`, the old file will be overwritten.
+**Note that uploaded filenames cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing `content`, the old file will be overwritten.
 
 #### Maintenance pane
 
@@ -242,7 +223,26 @@ Note that sending power off and power on commands may affect different `componen
 
 ### Issues tab
 
-The issues tab allows you to track issues with the gallery. Issues are not tied to a specific `exhibit`, but are a property of the overall space.
+<img src="images/issue_creation_modal.jpg" style="width: 50%; float: left; border: 2px solid gray; margin: 5px;"></img>
+
+The issues tab organizes information about the current state of the `gallery` and its `component`s. It provides an easy interface for non-technical users to alert maintenance staff about a problem, as well as to see a summary of the overall `gallery` health.
+
+#### Issues
+
+Issues are not tied to a specific `exhibit`, but are a property of the overall space. They can be connected to a **_Constellation_** `component` or simply a note about the state of the facilty. When creating an issue, you can give it a priority, assign it to a specific person, and connect it with a `component`. You can also upload a photo for reference. If you're using the web console on a mobile device, you can even take the picture directly from within the interface.
+
+Known issues can be filtered by priority and who they are assigned to.
+
+#### Maintenance overview
+
+The maintenance overview summarizes the current state of the `component`s. From the component status view on the components tab, maintenance staff can enter notes about various pieces, as well as categorize them into one of four groups:
+
+- On the floor and working
+- On the floor and not working
+- Off the floor and working
+- Off the floor and not working
+
+The various `component`s are grouped into these categories on the maintenance overview. The status bar underneath each `id` shows the fraction of time the `component` has been working or not working.
 
 ### Settings tab
 
@@ -254,9 +254,9 @@ Use the "Set current exhibit" dropdown box to change the `exhibit` being display
 
 You can create and delete `exhibit`s from the settings tab. When creating an `exhibit`, you can either create an empty `exhibit` (no content for any `component`), or you can clone the existing `exhibit`.
 
-#### Reloading currentExhibitConfiguration.ini
+#### Reloading galleryConfiguration.ini
 
-If you make a manual change to `currentExhibitConfiguration.ini`, pressing the "Reload Config" button will cause the control server to reload it and parse the new configuration as if it were starting up. This means you do not have to stop and restart the server process to make an update.
+If you make a manual change to `galleryConfiguration.ini`, pressing the "Reload Config" button will cause the control server to reload it and parse the new configuration as if it were starting up. This means you do not have to stop and restart the server process to make an update.
 
 ### Hiding tabs
 
@@ -265,6 +265,9 @@ The Schedule, Settings, and Help tabs can be hidden from view by modifying the U
 Hiding tabs can be useful when creating a status console for frontline staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
 
 ## Using the flexible tracker
+
+<img src="images/tracker_example.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
+
 The `flexible tracker` enables the collection of a wide variety of quantitative and qualitative data using the control server. Collected data is stored as a list of JSON objects, one object per line, in a plain text document on the server.
 
 ### Collection types
@@ -275,15 +278,25 @@ The tracker can collect a variety of data types. Each type provides a widget tha
 | `counter` | Count by whole numbers, like a traditional "clicker" counter. | - | `label`: string |
 | `dropdown` | Select one or more options from a list | `options`: comma-separated list of strings. | `multiple`: true/false (default: false) `label`: string |
 | `number` | Record a single number, including decimals | - | `label`: string |
-| `slider` | Record a single number, bounded in a user-defined range. The value is selected using a slider. | - | `min`: number (default: 1) <br> `max`: number (default: 100) <br> `step`: number (default: 1) <br> `start`: Inital slider position (default: `min`) <br> `label`: string |
+| `slider` | Record a single number, bounded in a user-defined range. The value is selected using a slider. | - | `min`: number (default: 1) <br> `max`: number (default: 100) <br> `step`: number (default: 1) <br> `start`: Inital slider position (default: `(min + max)/2`) <br> `label`: string |
 | `text` | A textbox for inputting any text | - | `lines`: The height of the box in lines (default: 5) <br> `label`: string |
 | `timer` | Records the number of seconds. Can be started and stopped by the user. "Exclusive" timers pause all other timers when started. | - | `exclusive`: true/false (default: false) <br> `label`: string |
 
 ### Creating a template
 
-<img src="images/tracker_example.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
+<img src="images/tracker_template_edit.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-A `template` defines the collection types available for a given session. It allows you to customize the Flexible Tracker for your specific needs. Each template is an INI file located within Control Server in the directory `flexible-tracker/templates/<your template>.ini`. Within the `template`, each section header is the name of the item. Under each header, add keywords (one per line) to specify the desired collection. Keywords and values should be separated by an equals sign (`=`). The keyword `type` must appear in each section and **each section must have a unique name**. For example, the following `example.ini` will produce the displayed Flexible Tracker session.
+A `template` defines the collection types available for a given session. It allows you to customize Flexible Tracker for your specific needs. The recommended way to create a template is through the web console.
+
+#### Using the web console
+
+To create a `template` via the web console, navigate to the settings view. In the Flexible Tracker section, select the `template` you want to edit, first creating it if necessary. Then, click the edit button to pop up the template editor. The left column contains the possible collection type widgets. Click on one to add it to the current layout, and customize its parameters using the fields in the right column.
+
+With the left and right arrows, you can reorder how the widgets will appear. Because Flexible Tracker is a responsive web page, the exact arrangement of the widgets will depend on your device's screen size and shape.
+
+#### Creating a template manually
+
+Each template is an INI file located within Control Server in the directory `flexible-tracker/templates/<your template>.ini`. Within the `template`, each section header is the name of the item. Under each header, add keywords (one per line) to specify the desired collection. Keywords and values should be separated by an equals sign (`=`). The keyword `type` must appear in each section and **each section must have a unique name**. For example, the following `example.ini` will produce the displayed Flexible Tracker session.
 
 ```
 [Visitor type]
@@ -312,9 +325,15 @@ Adding or modifying a `template` does not require restarting the Control Server;
 
 ### Recording data
 
-To use Flexible Tracker for data collection, navigate to `<server address>:<server port>/tracker.html`. All available `template`s will be available from the dropdown list. Once you are ready to send a session (one set of observations), press the Record button. This will transmit the data to Control Server for storage. Please note that a network connection to the server is required to send data; if such a connection is not available, a popup will appear and the Record button will be disabled.
+To use Flexible Tracker for data collection, select yoru desired `template` from the web console settings view and click the "Launch" button. All available `template`s will be available from the dropdown list. Once you are ready to send a session (one set of observations), press the Record button. This will transmit the data to Control Server for storage. Please note that a network connection to the server is required to send data; if such a connection is not available, a popup will appear and the Record button will be disabled.
 
 Data are stored in the Control Server under `flexible-tracker/data/<template name>.txt`. Each row is a single JSON object representing one session.
+
+### Downloading and managing data
+
+Once you have collected some data, you can easily download it as a comma-separated values (CSV) file that cane be read by Microsoft Excel or another data analysis app. To do so, go to the settings view from the web console and select the appropriate `template`. Then, click the "Download data" button and a CSV download will be initiated in your browser.
+
+By clicking the "Clear data" button, you can erase the existing data. This action cannot be undone.
 
 ## Integrating with **_Constellation_**
 The control server communicates with `component`s using HTTP requests. Connecting a custom `component` is as simple as sending and receiving the appropriate requests.
@@ -402,7 +421,7 @@ Retrieve the current state of the specified projector.
 
 ##### `reloadConfiguration`
 
-Instruct Control Server to reload its state from `currentExhibitConfiguration.ini`.
+Instruct Control Server to reload its state from `galleryConfiguration.ini`.
 
 | Required fields | Optional fields | Response fields | Notes |
 | --------------- | --------------- | --------------------- | ----- |
