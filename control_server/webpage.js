@@ -2036,7 +2036,7 @@ function deleteTrackerDataFromModal() {
   if (name == input) {
     deleteTrackerData();
   } else {
-    $("#deleteTrackerDataModalSpellingError").show(); 
+    $("#deleteTrackerDataModalSpellingError").show();
   }
 }
 
@@ -2582,9 +2582,9 @@ function _showEditTrackerTemplateModal(name, template) {
   $("#editTrackerTemplateMultipleInputFalse").prop("checked", true)
   $("#editTrackerTemplateExclusiveInputFalse").prop("checked", true)
   $("#editTrackerTemplateSliderInputMin").val(1);
-  $("#editTrackerTemplateSliderInputMax").val(5);
+  $("#editTrackerTemplateSliderInputMax").val(100);
   $("#editTrackerTemplateSliderInputStep").val(1);
-  $("#editTrackerTemplateSliderInputStart").val(3);
+  $("#editTrackerTemplateSliderInputStart").val(50);
   $("#editTrackerTemplateLinesInput").val(5);
   $("#editTrackerTemplateModalTitle").html("Edit template: " + name);
 
@@ -2634,9 +2634,9 @@ function configureEditTrackerTemplateModal(key) {
     $("#editTrackerTemplateMultipleInputGroup").show();
   } else if (template.type == "slider") {
     $("#editTrackerTemplateSliderInputMin").val(template.min || 1);
-    $("#editTrackerTemplateSliderInputMax").val(template.max || 5);
+    $("#editTrackerTemplateSliderInputMax").val(template.max || 100);
     $("#editTrackerTemplateSliderInputStep").val(template.step || 1);
-    $("#editTrackerTemplateSliderInputStart").val(template.start || 3);
+    $("#editTrackerTemplateSliderInputStart").val(template.start || 50);
     $("#editTrackerTemplateSliderInputGroup").show();
   } else if (template.type == "text") {
     $("#editTrackerTemplateLinesInput").val(template.lines || 5);
