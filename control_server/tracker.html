@@ -327,7 +327,7 @@
             if ("start" in item) {
               start = item.start;
             } else {
-              start = min;
+              start = Math.round((max - min)/2);
             }
 
             html += `
