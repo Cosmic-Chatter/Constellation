@@ -56,14 +56,14 @@ class ExhibitComponent:
                 self.config["allowed_actions"].append("power_off")
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
-    def seconds_since_last_contact(self):
+    def seconds_since_last_contact(self) -> float:
 
         """Return the number of seconds since a ping was received"""
 
         diff = datetime.datetime.now() - self.last_contact_datetime
         return diff.total_seconds()
 
-    def seconds_since_last_interaction(self):
+    def seconds_since_last_interaction(self) -> float:
 
         """Return the number of seconds since an interaction was recorded"""
 
@@ -84,7 +84,7 @@ class ExhibitComponent:
 
         self.lastInteractionDateTime = datetime.datetime.now()
 
-    def current_status(self):
+    def current_status(self) -> str:
 
         """Return the current status of the component
 
@@ -196,7 +196,7 @@ class WakeOnLANDevice:
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
 
-    def seconds_since_last_contact(self):
+    def seconds_since_last_contact(self) -> float:
 
         diff = datetime.datetime.now() - self.last_contact_datetime
         return diff.total_seconds()
@@ -247,7 +247,7 @@ class WakeOnLANDevice:
             self.state["status"] = "UNKNOWN"
 
 
-def add_exhibit_component(this_id, this_type, category="dynamic"):
+def add_exhibit_component(this_id, this_type, category="dynamic") -> ExhibitComponent:
     """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
     component = ExhibitComponent(this_id, this_type, category)
@@ -280,6 +280,9 @@ def command_all_exhibit_components(cmd):
 
     for projector in config.projectorList:
         projector.queue_command(cmd)
+
+    for device in config.wakeOnLANList:
+        device.queue_command(cmd)
 
 
 def create_new_exhibit(name, clone):
@@ -332,13 +335,13 @@ def delete_exhibit(name):
     check_available_exhibits()
 
 
-def get_exhibit_component(this_id):
+def get_exhibit_component(this_id) -> ExhibitComponent:
     """Return a component with the given id, or None if no such component exists"""
 
     return next((x for x in config.componentList if x.id == this_id), None)
 
 
-def get_wake_on_LAN_component(this_id):
+def get_wake_on_LAN_component(this_id) -> WakeOnLANDevice:
     """Return a WakeOnLan device with the given id, or None if no such component exists"""
 
     return next((x for x in config.wakeOnLANList if x.id == this_id), None)

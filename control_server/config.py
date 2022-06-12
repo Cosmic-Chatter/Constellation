@@ -40,7 +40,7 @@ serverRebootTime = None
 rebooting = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
-currentExhibit = None  # The INI file defining the current exhibit "name.exhibit"
+currentExhibit: str = None  # The INI file defining the current exhibit "name.exhibit"
 currentExhibitConfiguration = None  # the configParser object holding the current config
-assignable_staff = []  # staff to whom issues can be assigned.
-exhibit_list = []
+assignable_staff: list[str] = []  # staff to whom issues can be assigned.
+exhibit_list: list[str] = []

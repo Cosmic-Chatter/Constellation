@@ -15,6 +15,7 @@ class Projector:
     def __init__(self, id_, ip, connection_type, mac_address=None, make=None, password=None):
 
         self.id = id_
+        self.type = "PROJECTOR"
         self.ip = ip  # IP address of the projector
         self.password = password  # Password to access PJLink
         self.mac_address = mac_address  # For use with Wake on LAN
@@ -28,7 +29,7 @@ class Projector:
 
         self.update(full=True)
 
-    def seconds_since_last_contact(self):
+    def seconds_since_last_contact(self) -> float:
 
         """Calculate the number of seconds since the component last checked in."""
 
@@ -113,7 +114,7 @@ class Projector:
             print(e)
 
 
-def get_projector(this_id):
+def get_projector(this_id) -> Projector:
     """Return a projector with the given id, or None if no such projector exists"""
 
     return next((x for x in config.projectorList if x.id == this_id), None)
