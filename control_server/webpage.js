@@ -1171,32 +1171,18 @@ function populateSchedule(schedule) {
 
       // Loop through the schedule elements and add a row for each
       day.schedule.forEach((item) => {
-
         var description = null;
         var action = null;
         var target = null;
         if (item[2].length == 1) {
           action = (item[2])[0];
-          switch (action) {
-            case "power_off":
-              description = "Power off";
-              break;
-            case "power_on":
-              description = "Power on";
-              break;
-            case "refresh_page":
-              description = "Refresh components";
-              break;
-            case "restart":
-              description = "Restart components";
-              break;
-            default:
-              break;
-          }
         } else if (item[2].length == 2) {
           action = (item[2])[0];
           target = (item[2])[1];
-          if (action == "set_exhibit") {
+
+          if (["power_off", "power_on", "refresh_page", "restart"].includes(action)) {
+            description = populateScheduleDescriptionHelper(action, target);
+          } else if (action == "set_exhibit") {
             description = `Set exhibit: ${target}`;
           }
         }
@@ -1223,43 +1209,111 @@ function populateSchedule(schedule) {
   });
 
   var nextEvent = schedule.nextEvent;
-  var html = '';
-  var action;
-  if (nextEvent.action.length == 1) {
-    action = (nextEvent.action)[0];
-    if (action == "reload_schedule") {
-      html = "No more actions today";
-    } else if (action == "power_on") {
-      html = `Power on at ${nextEvent.time}`;
-    } else if (action == "power_off") {
-      html = `Power off at ${nextEvent.time}`;
-    } else if (action == "refresh_page") {
-      html = `Refresh components at ${nextEvent.time}`;
-    } else if (action == "restart") {
-      html = `Restart components at ${nextEvent.time}`;
-    }
-  } else if (nextEvent.action.length == 2) {
-    action = nextEvent.action[0];
-    var target = nextEvent.action[1];
-    if (action == 'set_exhibit') {
-      html = `Set exhibit to ${target} at ${nextEvent.time}`;
-    }
+  // var html = '';
+  // var action;
+  // if (nextEvent.action.length == 1) {
+  //    else if (action == "power_on") {
+  //     html = `Power on at ${nextEvent.time}`;
+  //   } else if (action == "power_off") {
+  //     html = `Power off at ${nextEvent.time}`;
+  //   } else if (action == "refresh_page") {
+  //     html = `Refresh components at ${nextEvent.time}`;
+  //   } else if (action == "restart") {
+  //     html = `Restart components at ${nextEvent.time}`;
+  //   }
+  // } else if (nextEvent.action.length == 2) {
+  //   action = nextEvent.action[0];
+  //   var target = nextEvent.action[1];
+  //   if (action == 'set_exhibit') {
+  //     html = `Set exhibit to ${target} at ${nextEvent.time}`;
+  //   }
+  // }
+  let action = (nextEvent.action)[0];
+  let target = nextEvent.action[1];
+  if (action == "reload_schedule") {
+    html = "No more actions today";
+  } else {
+    html = populateScheduleDescriptionHelper(action, target, nextEvent.time);
   }
   $("#Schedule_next_event").html(html);
 }
 
-function toggleScheduleActionTargetSelector() {
+function populateScheduleDescriptionHelper(action, target, time=null) {
+
+  // Helper function to format strings that describe the nature of a scheduled
+  // action.
+
+  let description = "";
+
+  switch (action) {
+    case "power_off":
+      description = "Power off";
+      break;
+    case "power_on":
+      description = "Power on";
+      break;
+    case "refresh_page":
+      description = "Refresh";
+      break;
+    case "restart":
+      description = "Restart";
+      break;
+    default:
+      break;
+  }
+
+  if (target == "__all") {
+    description += " all components";
+  } else if (target.startsWith("__type_")) {
+    description += " all " + target.slice(7);
+  } else if (target.startsWith("__id_")) {
+    description += " " + target.slice(5);
+  }
+  if (time != null) {
+    description += " at " + time;
+  }
+  return description;
+}
+
+function setScheduleActionTargetSelector() {
 
   // Helper function to show/hide the select element for picking the target
   // of an action when appropriate
 
-  if ($("#scheduleActionSelector").val() == "set_exhibit") {
-    $("#scheduleTargetSelector").show();
+  let action = $("#scheduleActionSelector").val();
+  let targetSelector = $("#scheduleTargetSelector");
+
+  if (action == "set_exhibit") {
+    // Fill the target selector with a list of available exhiits
+    targetSelector.empty();
+    var availableExhibits = $.makeArray($("#exhibitSelect option"));
+    availableExhibits.forEach((item) => {
+      targetSelector.append(new Option(item.value, item.value));
+    });
+    targetSelector.show();
+    $("#scheduleTargetSelectorLabel").show();
+  } else if (["power_on", "power_off", "refresh_page", "restart"].includes(action)) {
+    // Fill the target selector with the list of types and ids, plus an option for all.
+    targetSelector.empty();
+    targetSelector.append(new Option("All", "__all"));
+    var sep = new Option("Types", null);
+    sep.setAttribute("disabled", true);
+    targetSelector.append(sep);
+    componentGroups.forEach((item) => {
+      targetSelector.append(new Option(item.type, "__type_" + item.type));
+    });
+    var sep = new Option("IDs", null);
+    sep.setAttribute("disabled", true);
+    targetSelector.append(sep);
+    exhibitComponents.forEach((item) => {
+      targetSelector.append(new Option(item.id, "__id_" + item.id));
+    });
+    targetSelector.show();
     $("#scheduleTargetSelectorLabel").show();
   } else {
-    $("#scheduleTargetSelector").hide();
+    targetSelector.hide();
     $("#scheduleTargetSelectorLabel").hide();
-    $("#scheduleTargetSelector").val(null);
+    targetSelector.val(null);
   }
 }
 
@@ -1305,21 +1359,15 @@ function scheduleConfigureEditModal(scheduleName,
       break;
   }
 
-  // Fill the target selector with a list of available exhiits
-  $("#scheduleTargetSelector").empty();
-  var availableExhibits = $.makeArray($("#exhibitSelect option"));
-  availableExhibits.forEach((item) => {
-    $("#scheduleTargetSelector").append(new Option(item.value, item.value));
-  });
-
 
   // If we're editing an existing action, pre-fill the current options
   if (isAddition == false) {
     $("#scheduleActionTimeInput").val(currentTime);
     $("#scheduleActionSelector").val(currentAction);
-    $("#scheduleTargetSelector").val(currentTarget);
 
-    if (currentAction == 'set_exhibit') {
+    if (currentTarget != null) {
+      setScheduleActionTargetSelector();
+      $("#scheduleTargetSelector").val(currentTarget)
       $("#scheduleTargetSelector").show();
       $("#scheduleTargetSelectorLabel").show();
     }
@@ -1352,26 +1400,21 @@ function sendScheduleUpdateFromModal() {
   } else if (action == "set_exhibit" && target == null) {
     $("#scheduleEditErrorAlert").html("You must specifiy an exhibit to set").show();
     return;
+  } else if (["power_on", "power_off", "refresh_page", "restart"].includes(action) && target == null) {
+    $("#scheduleEditErrorAlert").html("You must specifiy a target for this action").show();
+    return;
   }
 
-  var requestDict;
-  if (isAddition) {
-    requestDict = {"class": "webpage",
-                       "action": "updateSchedule",
-                       "name": scheduleName,
-                       "timeToSet": time,
-                       "actionToSet": action,
-                       "targetToSet": target,
-                       "isAddition": true};
-  } else {
-    requestDict = {"class": "webpage",
-                   "action": "updateSchedule",
-                   "name": scheduleName,
-                   "timeToSet": time,
-                   "actionToSet": action,
-                   "targetToSet": target,
-                   "isAddition": false,
-                   "timeToReplace": $("#scheduleEditModal").data("currentTime")};
+  let requestDict = {"class": "webpage",
+                     "action": "updateSchedule",
+                     "name": scheduleName,
+                     "timeToSet": time,
+                     "actionToSet": action,
+                     "targetToSet": target,
+                     "isAddition": isAddition};
+
+  if (isAddition == false) {
+    requestDict.timeToReplace = $("#scheduleEditModal").data("currentTime");
   }
 
   requestString = JSON.stringify(requestDict);

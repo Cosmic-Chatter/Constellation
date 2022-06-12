@@ -18,20 +18,22 @@ def check_event_schedule():
 
     if config.nextEvent["date"] is not None:
         if datetime.datetime.now() > config.nextEvent["date"]:
-            action = config.nextEvent["action"]
+            # Execute action
+            next_action = config.nextEvent["action"]
             target = None
-            if isinstance(action, list):
-                if len(action) == 1:
-                    action = action[0]
-                elif len(action) == 2:
-                    target = action[1]
-                    action = action[0]
+            if isinstance(next_action, list):
+                if len(next_action) == 1:
+                    action = next_action[0]
+                elif len(next_action) == 2:
+                    action = next_action[0]
+                    target = next_action[1]
                 else:
-                    print(f"Error: unrecognized event format: {action}")
+                    print(f"Error: unrecognized event format: {next_action}")
                     with config.logLock:
-                        logging.error("Unrecognized event format: %s", action)
+                        logging.error("Unrecognized event format: %s", next_action)
                     queue_next_on_off_event()
                     return
+
             if action == 'reload_schedule':
                 retrieve_schedule()
             elif action == 'set_exhibit' and target is not None:
@@ -41,6 +43,23 @@ def check_event_schedule():
                 # Update the components that the configuration has changed
                 for component in config.componentList:
                     component.update_configuration()
+            elif target is not None:
+                if target == "__all":
+                    c_exhibit.command_all_exhibit_components(action)
+                elif target.startswith("__type"):
+                    this_type = target[7:]
+                    if this_type == "PROJECTOR":
+                        for projector in config.projectorList:
+                            projector.queue_command(action)
+                    elif this_type == "WAKE_ON_LAN":
+                        for device in config.wakeOnLANList:
+                            device.queue_command(action)
+                    else:
+                        for component in config.componentList:
+                            if component.type == this_type:
+                                component.queue_command(action)
+                elif target.startswith("__id"):
+                    c_exhibit.get_exhibit_component(target[5:]).queue_command(action)
             else:
                 c_exhibit.command_all_exhibit_components(action)
                 # print(f"DEBUG: Event executed: {config.nextEvent['action']} -- THIS EVENT WAS NOT RUN")

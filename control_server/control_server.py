@@ -421,74 +421,81 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == "updateSchedule":
                     # This command handles both adding a new scheduled action
                     # and editing an existing action
+
+                    if "name" not in data or "timeToSet" not in data or "actionToSet" not in data or "targetToSet" not in data or "isAddition" not in data:
+                        response_dict = {"success": False,
+                                         "reason": "Missing one or more required keys"}
+                        json_string = json.dumps(response_dict, default=str)
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                        return
+
+                    try:
+                        time_to_set = dateutil.parser.parse(data['timeToSet']).time()
+                    except dateutil.parser._parser.ParserError:
+                        response_dict = {"success": False,
+                                         "reason": "Unknown date format"}
+                        json_string = json.dumps(response_dict, default=str)
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                        return
+
                     error = False
                     error_message = ""
 
-                    if ("name" in data and
-                            "timeToSet" in data and
-                            "actionToSet" in data and
-                            "targetToSet" in data and
-                            "isAddition" in data):
-                        line_to_set = f"{data['timeToSet']} = {data['actionToSet']}"
-                        if data["targetToSet"] is None:
-                            line_to_set += "\n"
-                        else:
-                            line_to_set += f", {data['targetToSet']}\n"
-
-                        sched_dir = os.path.join(config.APP_PATH, "schedules")
-                        path = os.path.join(sched_dir, data["name"] + ".ini")
-                        time_to_set = dateutil.parser.parse(data['timeToSet']).time()
-
-                        if data["isAddition"]:
-                            # Check if this time already exists
-                            error = c_sched.check_if_schedule_time_exists(path, time_to_set)
-
-                            if not error:
-                                with config.scheduleLock:
-                                    with open(path, 'a', encoding="UTF-8") as f:
-                                        f.write(line_to_set)
-                            else:
-                                error_message = "An action with this time already exists"
-                        elif "timeToReplace" in data:
-                            output_text = ""
-                            time_to_replace = dateutil.parser.parse(data['timeToReplace']).time()
-                            print("replacing schedule",
-                                  time_to_replace, time_to_set,
-                                  c_sched.check_if_schedule_time_exists(path, time_to_set))
-
-                            # We need to make sure we are not editing this entry to have
-                            # the same time as another entry
-
-                            if time_to_set == time_to_replace:
-                                okay_to_edit = True
-                            else:
-                                okay_to_edit = not c_sched.check_if_schedule_time_exists(path, time_to_set)
-
-                            if okay_to_edit:
-                                with config.scheduleLock:
-                                    # Iterate the file to replace the line we are changing
-                                    with open(path, 'r', encoding='UTF-8') as f:
-                                        for line in f.readlines():
-                                            split = line.split("=")
-                                            if len(split) == 2:
-                                                # We have a valid ini line
-                                                if dateutil.parser.parse(split[0]).time() != time_to_replace:
-                                                    # This line doesn't match, so keep it as is
-                                                    output_text += line
-                                                else:
-                                                    output_text += line_to_set
-                                            else:
-                                                output_text += line
-
-                                    with open(path, 'w', encoding='UTF-8') as f:
-                                        f.write(output_text)
-                            else:
-                                error = True
-                                error_message = "An action with this time already exists"
-
+                    line_to_set = f"{data['timeToSet']} = {data['actionToSet']}"
+                    if data["targetToSet"] is None:
+                        line_to_set += "\n"
                     else:
-                        error = True
-                        error_message = "Missing one or more required keys"
+                        line_to_set += f", {data['targetToSet']}\n"
+
+                    sched_dir = os.path.join(config.APP_PATH, "schedules")
+                    path = os.path.join(sched_dir, data["name"] + ".ini")
+
+                    if data["isAddition"]:
+                        # Check if this time already exists
+                        error = c_sched.check_if_schedule_time_exists(path, time_to_set)
+
+                        if not error:
+                            with config.scheduleLock:
+                                with open(path, 'a', encoding="UTF-8") as f:
+                                    f.write(line_to_set)
+                        else:
+                            error_message = "An action with this time already exists"
+                    elif "timeToReplace" in data:
+                        output_text = ""
+                        time_to_replace = dateutil.parser.parse(data['timeToReplace']).time()
+                        print("replacing schedule",
+                              time_to_replace, time_to_set,
+                              c_sched.check_if_schedule_time_exists(path, time_to_set))
+
+                        # We need to make sure we are not editing this entry to have
+                        # the same time as another entry
+
+                        if time_to_set == time_to_replace:
+                            okay_to_edit = True
+                        else:
+                            okay_to_edit = not c_sched.check_if_schedule_time_exists(path, time_to_set)
+
+                        if okay_to_edit:
+                            with config.scheduleLock:
+                                # Iterate the file to replace the line we are changing
+                                with open(path, 'r', encoding='UTF-8') as f:
+                                    for line in f.readlines():
+                                        split = line.split("=")
+                                        if len(split) == 2:
+                                            # We have a valid ini line
+                                            if dateutil.parser.parse(split[0]).time() != time_to_replace:
+                                                # This line doesn't match, so keep it as is
+                                                output_text += line
+                                            else:
+                                                output_text += line_to_set
+                                        else:
+                                            output_text += line
+
+                                with open(path, 'w', encoding='UTF-8') as f:
+                                    f.write(output_text)
+                        else:
+                            error = True
+                            error_message = "An action with this time already exists"
 
                     response_dict = {}
                     if not error:
