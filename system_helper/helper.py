@@ -514,15 +514,12 @@ def shutdown():
 
 def sleep_display():
     if strToBool(config.defaults_dict.get("allow_sleep", True)):
-        if config.defaults_dict["display_type"] == "screen":
-            if sys.platform == "darwin":  # MacOS
-                os.system("pmset displaysleepnow")
-            elif sys.platform == "linux":
-                os.system("xset dpms force off")
-            elif sys.platform == "win32":
-                os.system("nircmd.exe monitor async_off")
-        elif config.defaults_dict["display_type"] == "projector":
-            commandProjector("off")
+        if sys.platform == "darwin":  # MacOS
+            os.system("pmset displaysleepnow")
+        elif sys.platform == "linux":
+            os.system("xset dpms force off")
+        elif sys.platform == "win32":
+            os.system("nircmd.exe monitor async_off")
 
 
 def wake_display():
