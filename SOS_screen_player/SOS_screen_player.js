@@ -218,7 +218,8 @@ function sendPing() {
                    "allowed_actions": allowedActionsDict,
                    "AnyDeskID": AnyDeskID};
 
-    if (errorString != null) {
+    if (if errorDict.length > 0) {
+      let errorString = JSON.stringify(errorDict);
       requestDict.error = errorString;
     }
     requestString = JSON.stringify(requestDict);
@@ -272,7 +273,7 @@ function pollSOS() {
         changeMedia("playlists/default/" + dictionary["default"]);
       }
       currentObject = null;
-      errorString = "SOS connection offline";
+      errorDict.connectionError = "SOS connection offline";
     }
     pollSOSErrorTicks += 1;
   };
@@ -294,7 +295,7 @@ function pollSOS() {
 
         changeMedia("playlists/default/" + filename);
         currentObject = this.response;
-        errorString = null;
+        delete errorDict.connectionError;
       }
 
     }

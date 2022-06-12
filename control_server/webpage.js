@@ -863,7 +863,13 @@ function updateComponentFromServer(component) {
       obj.AnyDeskID = component.AnyDeskID;
     }
     if ("error" in component) {
-      errorDict[obj.id] = JSON.parse(component.error);
+      try {
+        newError = JSON.parse(component.error);
+        errorDict[obj.id] = newError;
+      } catch (e) {
+        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", component.error);
+        console.log(e)
+      }
       rebuildErrorList();
     }
   } else {
