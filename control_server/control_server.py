@@ -204,11 +204,20 @@ class RequestHandler(SimpleHTTPRequestHandler):
         self.path = self.path.split("?")[0]
         if self.path.lower().endswith("html") or self.path == "/":
             if self.path == "/":
-                f = open(os.path.join(config.APP_PATH, "webpage.html"), "r", encoding='UTF-8')
+                file_path = os.path.join(config.APP_PATH, "webpage.html")
+                if not os.path.isfile(file_path):
+                    # Handle the case of a Pyinstaller --onefile binary
+                    file_path = os.path.join(config.EXEC_PATH, "webpage.html")
+                f = open(file_path, "r", encoding='UTF-8')
             else:
                 if self.path.startswith("/"):
                     self.path = self.path[1:]
-                f = open(os.path.join(config.APP_PATH, self.path), "r", encoding='UTF-8')
+
+                file_path = os.path.join(config.APP_PATH, self.path)
+                if not os.path.isfile(file_path):
+                    # Handle the case of a Pyinstaller --onefile binary
+                    file_path = os.path.join(config.EXEC_PATH, self.path)
+                f = open(file_path, "r", encoding='UTF-8')
 
             page = str(f.read())
 
@@ -233,7 +242,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 # Strip out leading /, as it screws up os.path.join
                 self.path = self.path[1:]
             try:
-                with open(os.path.join(config.APP_PATH, self.path), 'rb') as f:
+                file_path = os.path.join(config.APP_PATH, self.path)
+                if not os.path.isfile(file_path):
+                    # Handle the case of a Pyinstaller --onefile binary
+                    file_path = os.path.join(config.EXEC_PATH, self.path)
+                with open(file_path, 'rb') as f:
                     if "Range" in self.headers:
                         self.handle_range_request(f)
                     else:
@@ -605,7 +618,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     print("Changing exhibit to:", data["name"])
-                    c_exhibit.read_exhibit_configuration(data["name"], updateDefault=True)
+                    c_exhibit.read_exhibit_configuration(data["name"], update_default=True)
 
                     # Update the components that the configuration has changed
                     for component in config.componentList:
@@ -639,8 +652,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                     "reason": "Request missing 'id' or 'content' field."}
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
-                    print(f"Changing content for {data['id']}:", data['content'])
-                    c_exhibit.set_component_content(data['id'], data['content'])
+                    content_to_set = data["content"]
+                    print(f"Changing content for {data['id']}:", content_to_set)
+                    if not isinstance(content_to_set, list):
+                        content_to_set = [data["content"]]
+                    c_exhibit.set_component_content(data['id'], content_to_set)
                     response = {"success": True, "reason": ""}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "getHelpText":
@@ -698,7 +714,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     this_id = None
                     if "id" in data:
                         this_id = data["id"]
-                    c_issues.delete_issue_media_file(data["filename"], this_id)
+                    c_issues.delete_issue_media_file(data["filename"], owner=this_id)
                     response = {"success": True}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == 'updateMaintenanceStatus':
@@ -962,7 +978,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # print("===============")
 
 
-def delete_file(file_path):
+def delete_file(file_path) -> dict:
     """Delete the specified file and return a dictionary with the result"""
 
     response = {"success": False}
@@ -1342,23 +1358,24 @@ def check_for_software_update():
 
 
 # Check whether we have packaged with Pyinstaller and set the appropriate root path.
+config.EXEC_PATH = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
     # If the application is run as a --onefile bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True and sets the app
     # path into variable sys.executable.
     config.APP_PATH = os.path.dirname(sys.executable)
 else:
-    config.APP_PATH = os.path.dirname(os.path.abspath(__file__))
+    config.APP_PATH = config.EXEC_PATH
 
-server_port = 8080  # Default; should be set in currentExhibitConfiguration.ini
-ip_address = socket.gethostbyname(socket.gethostname())  # Default; should be set in currentExhibitConfiguration.ini
-ADDR = ""  # Accept connections from all interfaces
-gallery_name = ""
+server_port: int = 8080  # Default; should be set in currentExhibitConfiguration.ini
+ip_address: str = socket.gethostbyname(socket.gethostname())  # Default; should be set in galleryConfiguration.ini
+ADDR: str = ""  # Accept connections from all interfaces
+gallery_name: str = ""
 SOFTWARE_VERSION = 1.0
-software_update_available = False
+software_update_available: bool = False
 
 # Set up log file
-log_path = os.path.join(config.APP_PATH, "control_server.log")
+log_path: str = os.path.join(config.APP_PATH, "control_server.log")
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

@@ -1,22 +1,26 @@
 """Defines configuration variables that can be shared across classes, etc."""
 
 # Standard imports
+import configparser
 import datetime
 import threading
 
-APP_PATH = ""  # Path to the directory where the server is being launched from
+# Path to the directory where the server is being launched from
+APP_PATH: str = ""
+# Path to the directory the code is actually running from (different from APP_PATH when using Pyinstaller)
+EXEC_PATH: str = ""
 
 # Threading resources
 polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures
-logLock = threading.Lock()
-galleryConfigurationLock = threading.Lock()
-trackingDataWriteLock = threading.Lock()
-trackerTemplateWriteLock = threading.Lock()
-scheduleLock = threading.Lock()
-issueLock = threading.Lock()
-exhibitsLock = threading.Lock()
-maintenanceLock = threading.Lock()
-issueMediaLock = threading.Lock()
+logLock: threading.Lock = threading.Lock()
+galleryConfigurationLock: threading.Lock = threading.Lock()
+trackingDataWriteLock: threading.Lock = threading.Lock()
+trackerTemplateWriteLock: threading.Lock = threading.Lock()
+scheduleLock: threading.Lock = threading.Lock()
+issueLock: threading.Lock = threading.Lock()
+exhibitsLock: threading.Lock = threading.Lock()
+maintenanceLock: threading.Lock = threading.Lock()
+issueMediaLock: threading.Lock = threading.Lock()
 
 # Lists
 componentList = []
@@ -35,12 +39,12 @@ issueList = []
 # Schedule stuff
 scheduleList = []
 nextEvent = {}
-scheduleUpdateTime = 0
+scheduleUpdateTime: float = 0
 serverRebootTime = None
-rebooting = False  # This will be set to True from a background thread when it is time to reboot
+rebooting: bool = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
 currentExhibit: str = None  # The INI file defining the current exhibit "name.exhibit"
-currentExhibitConfiguration = None  # the configParser object holding the current config
+currentExhibitConfiguration: configparser.ConfigParser = None  # the configParser object holding the current config
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
