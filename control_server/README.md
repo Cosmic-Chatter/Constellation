@@ -20,7 +20,7 @@ The control server coordinates communication between **_Constellation_** compone
 
 ### Installation
 
-This application requires Python 3.6 or later. To install, follow these steps:
+This application requires Python 3.9 or later. To install, follow these steps:
 
 1. Download the files from GitHub and place them somewhere permanent.
 2. From a terminal within the directory, run `python3 -m pip install --upgrade -r requirements.txt` or ensure you have the below requirements satisfied.
