@@ -113,8 +113,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
             elif self.path[0] == '/':
                 self.path = self.path[1:]
             config.HELPING_REMOTE_CLIENT = True
+
+            file_path = os.path.join(config.application_path, self.path)
+            if not os.path.isfile(file_path):
+                # Handle the case of a Pyinstaller --onefile binary
+                file_path = os.path.join(config.exec_path, self.path)
+
             try:
-                with open(os.path.join(config.application_path, self.path), "r", encoding='UTF-8') as f:
+                with open(file_path, "r", encoding='UTF-8') as f:
 
                     page = str(f.read())
                     # Build the address that the webpage should contact to reach this helper
@@ -148,9 +154,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print(f"  Handling {mimetype}")
             if self.path[0] == '/':
                 self.path = self.path[1:]
+            file_path = os.path.join(config.application_path, self.path)
+            if not os.path.isfile(file_path):
+                # Handle the case of a Pyinstaller --onefile binary
+                file_path = os.path.join(config.exec_path, self.path)
             try:
                 # print(f"  Opening file {self.path}")
-                with open(os.path.join(config.application_path, self.path), 'rb') as f:
+                with open(file_path, 'rb') as f:
                     # print(f"    File opened")
                     if "Range" in self.headers:
                         self.handle_range_request(f)
@@ -942,13 +952,14 @@ def load_dictionary():
 if __name__ == "__main__":
 
     # Check whether we have packaged with Pyinstaller and set teh appropriate root path.
+    config.exec_path = os.path.dirname(os.path.abspath(__file__))
     if getattr(sys, 'frozen', False):
         # If the application is run as a --onefile bundle, the PyInstaller bootloader
         # extends the sys module by a flag frozen=True and sets the app
         # path into variable sys.executable.
         config.application_path = os.path.dirname(sys.executable)
     else:
-        config.application_path = os.path.dirname(os.path.abspath(__file__))
+        config.application_path = config.exec_path
 
     signal.signal(signal.SIGINT, quit_handler)
 

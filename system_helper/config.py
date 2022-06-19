@@ -2,7 +2,10 @@
 
 import threading
 
-application_path = "" # The path to where the 'helper.py' file is located.
+# Path to the directory where the server is being launched from
+application_path: str = ""
+# Path to the directory the code is actually running from (different from APP_PATH when using Pyinstaller)
+exec_path: str = ""
 
 clipList = {} # Dict of currently-loaded content. E.g., for the media player
 commandList = [] # List of queued commands to send to the client
