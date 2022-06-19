@@ -90,6 +90,8 @@ def remove_issue(this_id):
 
         with config.issueLock:
             config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
+            issue.refresh_last_update_date()
+            save_issueList()
 
 
 def save_issueList():

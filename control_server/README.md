@@ -20,7 +20,7 @@ The control server coordinates communication between **_Constellation_** compone
 
 ### Installation
 
-This application requires Python 3.6 or later. To install, follow these steps:
+This application requires Python 3.9 or later. To install, follow these steps:
 
 1. Download the files from GitHub and place them somewhere permanent.
 2. From a terminal within the directory, run `python3 -m pip install --upgrade -r requirements.txt` or ensure you have the below requirements satisfied.
@@ -353,7 +353,7 @@ Control Server does not search for new `component`s. Rather, each `component` mu
 | AnyDeskID | String | The ID corresponding to an AnyDesk entry running on the host PC | No | - |
 | allowed_actions | array of strings | Any subset of ["restart", "shutdown", "sleep"] | No | Sending these values indicates that the `component` is able and willing to respond to their corresponding commands. Don't send an action if you have not implemented a method of responding to it. |
 | currentInteraction | String | "true" or "false" | No | Send "true" if the `component` has been interacted with in the last 30 seconds. Send "false" if it has not. For a `component` with an attractor, you can also send "true" if the attractor is not displayed. |
-| error | JSON object | The keys of the object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
+| error | JSON object string | The keys of the stringified object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
 | helperAddress | String | An HTTP address, including the port, of a server capable of responding to requests | No | This is required for the `component` to respond to certain commands, such as shutting down or restarting. |
 
 
