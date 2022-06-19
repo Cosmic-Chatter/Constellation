@@ -209,32 +209,105 @@ function createImageTab(content, tabName) {
   createButton(tabName, id);
 }
 
-function createTextTab(content, tabName) {
+function createTextTab(content, tabName, update="") {
 
   // Create a pane that displays Markdown-formatted text and images
+  // Set update="" when instantiating the text tab for the first time.
+  // When localizing, set update to the id to be updated
 
-  // First, create the pane
-  const id = "textTab_"+String(Date.now());
-  const overlayId = id + "_overlay";
-  let pane = document.createElement("div");
-  pane.setAttribute("id", id);
-  pane.setAttribute("class", "tab-pane fade show active");
-  $(pane).data("user-content", content);
-  $(pane).data("user-tabName", tabName);
-  $("#nav-tabContent").append(pane);
+  let tabId, col;
+  if (update == "") {
+    // First, create the pane
+    tabId = "textTab_"+String(Date.now());
+    const overlayId = tabId + "_overlay";
+    let pane = document.createElement("div");
+    pane.setAttribute("id", tabId);
+    pane.setAttribute("class", "tab-pane fade show active");
+    $(pane).data("user-content", content);
+    $(pane).data("user-tabName", tabName);
+    $("#nav-tabContent").append(pane);
 
-  let row = document.createElement("div");
-  row.setAttribute("class", "row mx-1 align-items-center");
-  $("#"+id).append(row);
+    let row = document.createElement("div");
+    row.setAttribute("class", "row mx-1 align-items-center");
+    $("#"+tabId).append(row);
 
-  let col = document.createElement("div");
-  col.setAttribute("class", "col-12 textCol mt-3");
-  col.setAttribute("id", id + "Content");
-  row.append(col);
+    col = document.createElement("div");
+    col.setAttribute("class", "col-12 textCol mt-3");
+    col.setAttribute("id", tabId + "Content");
+    row.append(col);
+  } else {
+    col = document.getElementById(update + "Content");
+    tabId = update;
+  }
 
-  localizeTextTab(id);
+  let converter = new showdown.Converter({parseImgDimensions: true});
+  let html = converter.makeHtml(content["text_" + currentLang]);
+  // Parse the HTML
+  var el = $("<div></div>");
+  el.html(html);
 
-  textTabs.push(id);
+  // Find img tags and format them appropriately
+  el.children().each(function(i,tag){
+    if (tag.tagName == "P") {
+      $(tag).children().each(function(j, child){
+        if (child.tagName == "IMG") {
+          child.classList += "image";
+          let parent = $(child).parent();
+          let div = document.createElement("div");
+          div.append(child);
+          div.append(child.title);
+          parent.empty();
+          parent.append(div);
+
+          // Parse the alt text for a user-indicated formatting preference.
+          let format = child.alt.toLowerCase();
+          if (format == "left") {
+            div.classList = "float-left";
+          } else if (format == "right") {
+            div.classList = "float-right";
+          } else if (format == "full") {
+            div.classList = "full";
+          } else {
+            div.classList = "full";
+          }
+        }
+      })
+    }
+  })
+
+  // Group the elements by H1 elements. We will enclose each set in a box
+  let boxes = [];
+  var curBox = [];
+  el.children().each(function(i,tag){
+    if(tag.tagName == "H1") {
+      if (curBox.length > 0) {
+        boxes.push(curBox);
+      }
+      curBox = [];
+      curBox.push(tag);
+    } else {
+      curBox.push(tag)
+    }
+  })
+  if (curBox.length > 0) {
+    boxes.push(curBox);
+  }
+  boxes.forEach(function(divList){
+    let box = document.createElement("div");
+    box.setAttribute("class", "box");
+    let html = ""
+    divList.forEach(function(div){
+      box.append(div);
+    })
+    col.append(box);
+  })
+
+  // Create button for this tab
+  createButton(tabName[currentLang], tabId);
+
+  if (update == "") {
+    textTabs.push(tabId);
+  }
 }
 
 function localizeTextTab(id) {
@@ -244,14 +317,9 @@ function localizeTextTab(id) {
   let content = $("#" + id).data("user-content");
   let tabName = $("#" + id).data("user-tabName");
 
-  // Convert the Markdown to HTML
-  let converter = new showdown.Converter({parseImgDimensions: true});
-  let html = converter.makeHtml(content["text_" + currentLang]);
-  $("#" + id + "Content").html(html);
-
-  // Create button for this tab
-  createButton(tabName[currentLang], id);
-
+  // Clear the pane and rebuild
+  document.getElementById(id + "Content").innerHTML = "";
+  createTextTab(content, tabName, id);
 }
 
 function createVideoTab(content, tabName) {
@@ -729,10 +797,10 @@ var current_exhibit = "";
 
 $(document).bind("touchstart", resetActivityTimer);
 
-askForDefaults();
+// askForDefaults();
 checkForSoftwareUpdate();
 sendPing();
-setInterval(sendPing, 5000);
+// setInterval(sendPing, 5000);
 
 // var videoContent = [{video: 'videos/test_video.mp4', thumb: 'thumbs/test_video.jpg', caption_en: 'This is a test video.', caption_es: "Ésta es una imagen de prueba.", title_en: "Test 1", credit_en: "Public Domain."},];
 // createVideoTab(videoContent, "Videos");

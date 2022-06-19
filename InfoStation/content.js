@@ -1,62 +1,25 @@
-/*jshint esversion: 6 */
+let remembering = {text_en: `# Header 1 text
+Some sample text
 
-let remembering = {text_en: `# Remembering
-<img class='w-100' src='images/remembering_header.jpeg'>
+## Header 2 text
+Some more sample text
 
-<div markdown"1" class='box'>
-## Key Ideas
+![right](images/test_1.jpeg "This is a caption")
 
-* Remembering the past is important for improving the future.
-* Popular history doesn’t reflect the achievements and struggles of Black Americans as well as their white counterparts.
-* Fort Worth citizens like Opal Lee have been persistent in reminding us the importance of remembering Black History.
-</div>
+### Header 3 text
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-<div markdown"1" class='box'>
-## Good to Know
+#### Header 4 text
+Test text
 
-In many ways, the story of the Green Book encapsulates our nation’s continued struggles around issues of race. Victor Green represents the essence of the American Dream: a working-class man who used his entrepreneurial spirit to improve his community and better his own life. He identified a problem, worked hard to solve it, and made a profit along the way—what could be more American than that? So, why isn’t Victor Green a household name?
+##### Header 5 text
+Some more text to read.
 
-Because history is largely written by those in power, our general understanding of the past often reflects only a slice of our true history. And, since we often look to the past to guide the future, this incomplete view is being carried forward into the world of today. Black Americans are still underrepresented in fields such as tourism, writing, publishing, and more, despite the fact that they have always made important contributions to this work.
-
-Many Fort Worth neighborhoods and schools today still don’t reflect the diversity of our city. It can be easy to think that this reality is simply the result of people’s personal preferences playing out on a large scale; yet, only by remembering the history of legally-enforced segregation can we come to a full understanding of why this might be.
-</div>
-
-<div markdown"1" class='box'>
-## Questions to Consider
-
-* Was this exhibit the first time that you heard about Jim Crow? Do we talk enough about this topic in school? What about at our kitchen tables?
-* Have you ever felt excluded? If so, how did it make you feel?  How do we as a society process the feelings of so many who were excluded for so long during Jim Crow?
-* What are some of the ways that the City of Fort Worth remembers the accomplishments and contributions of its Black residents?
-</div>
+# A new Header 1 text
+Some text
 `,
-text_es: `# Recordando
-<img class='w-100' src='images/remembering_header.jpeg'>
-
-<div markdown"1" class='box'>
-## Ideas claves
-
-* Recordar el pasado es importante para mejorar el futuro.
-* La historia popular no refleja los logros y las luchas de los afroamericanos ni de sus homólogos blancos.
-* Los ciudadanos de Fort Worth como Opal Lee han insistido en recordarnos la importancia de recordar la Historia Negra.
-</div>
-
-<div markdown"1" class='box'>
-## Bueno saber
-
-En muchos sentidos, la historia del Libro Verde resume las continuas luchas de nuestra nación en torno a cuestiones raciales. Victor Green representa la esencia del Sueño Americano: un hombre de clase trabajadora que usó su espíritu empresarial para mejorar su comunidad y mejorar su propia vida. Identificó un problema, trabajó arduamente para resolverlo y obtuvo ganancias en el camino. ¿Qué podría ser más estadounidense que eso? Entonces, ¿por qué Victor Green no es un nombre familiar?
-
-Debido a que la historia está escrita en gran parte por quienes están en el poder, nuestra comprensión general del pasado a menudo refleja solo una porción de nuestra verdadera historia. Y, dado que a menudo miramos al pasado para guiar el futuro, esta visión incompleta se traslada al mundo de hoy. Los estadounidenses negros todavía están subrepresentados en campos como el turismo, la escritura, la publicación y más, a pesar de que siempre han hecho contribuciones importantes a este trabajo.
-
-Muchos vecindarios y escuelas de Fort Worth todavía no reflejan la diversidad de nuestra ciudad. Puede ser fácil pensar que esta realidad es simplemente el resultado de las preferencias personales de las personas a gran escala; sin embargo, solo recordando la historia de la segregación impuesta legalmente podemos llegar a una comprensión completa de por qué esto podría ser.
-</div>
-
-<div markdown"1" class='box'>
-## Preguntas a considerar
-
-* ¿Fue esta exposición la primera vez que oyó hablar de Jim Crow? ¿Hablamos lo suficiente sobre este tema en la escuela? ¿Y en las mesas de nuestra cocina?
-* ¿Alguna vez te has sentido excluido? Si es así, ¿cómo te hizo sentir? ¿Cómo procesamos como sociedad los sentimientos de tantos que fueron excluidos durante tanto tiempo durante Jim Crow?
-* ¿Cuáles son algunas de las formas en que la ciudad de Fort Worth recuerda los logros y las contribuciones de sus residentes negros?
-</div>
+text_es: `# Spanish text
+Some Spanish text.
 `};
 
 let reconciliation = {text_en: `
@@ -237,7 +200,7 @@ Nuestra cultura también ha aceptado el éxito de los negros de manera desigual.
 setLanguages({default: "en", en: "English", es: "Español"});
 
 createTextTab(remembering, {en:"Remembering", es:"Recordando"});
-createTextTab(reconciliation, {en:"Reconciliation", es: "Reconciliación"});
-createTextTab(reform, {en:"Reform", es: "Reforma"});
-createTextTab(racism, {en:"Racism", es: "Racismo"});
-setMasthead({en:"Are We There Yet?", es: "¿Ya llegamos?"});
+// createTextTab(reconciliation, {en:"Reconciliation", es: "Reconciliación"});
+// createTextTab(reform, {en:"Reform", es: "Reforma"});
+// createTextTab(racism, {en:"Racism", es: "Racismo"});
+setMasthead({en:"Title Text", es: "Texto del Título"});

@@ -1,47 +1,51 @@
 body, html {
   margin: 0px;
   padding: 0px;
-  background: #719abf;
+  background: var(--background-color);
   overscroll-behavior-x: none;
   user-select: none;
   /* cursor: none; */
   overflow: hidden;
 }
 H1 {
-  color: white;
+  color: var(--text-color);
   font-size: 3.7vh;
   text-align: center;
 }
 H2 {
-  color: white;
+  color: var(--text-color);
   font-size: 3.2vh;
 }
 H3 {
-  color: white;
+  color: var(--text-color);
   font-size: 2.9vh;
 }
 H4 {
-  color: white;
+  color: var(--text-color);
   font-size: 2.6vh;
 }
 H5 {
-  color: white;
+  color: var(--text-color);
   font-size: 2.3vh;
 }
 H6 {
-  color: white;
+  color: var(--text-color);
   font-size: 2vh;
 }
 p {
-  color: white;
+  color: var(--text-color);
   font-size: 1.6vh;
 }
 li {
-  color: white;
+  color: var(--text-color);
   font-size: 1.6vh;
 }
 ::-webkit-scrollbar {
   width: 0;
+}
+.bg-primary {
+  background-color: var(--button-color)!important;
+  border-color: var(--button-color)!important;
 }
 .bigImage {
   object-fit: contain;
@@ -49,17 +53,19 @@ li {
   max-width: 100%;
 }
 .box {
-  background-color: #308446;
+  background-color: var(--primary-color);
   padding: 3vw;
   margin-top: 2vw;
   margin-bottom: 2vw;
   border-style: solid;
   border-radius: 20px;
-  border-color: white;
+  border-color: #E9E9E9;
   border-width: 10px;
-  box-shadow: 1vw 1vw RGBA(0,0,0, .5);
+  box-shadow: 1vw 1vw RGBA(34,34,46, .5);
 }
-.card {
+.btn-primary {
+  background-color: var(--button-color)!important;
+  border-color: var(--button-color)!important;
 }
 .card-img-top {
   object-fit: contain;
@@ -67,6 +73,30 @@ li {
 }
 .card-title {
   font-size: 2.3vh;
+}
+.float-left {
+  float: left;
+  width: 50%;
+  padding-right: 2%;
+  padding-bottom: 2%;
+  padding-top: 2%;
+  text-align: center;
+}
+.float-right {
+  float: right;
+  padding-left: 2%;
+  padding-bottom: 2%;
+  padding-top: 2%;
+  text-align: center;
+}
+
+.full {
+  text-align: center;
+  padding-bottom: 2%;
+  padding-top: 2%;
+}
+.image {
+  width: 100%;
 }
 .overlay {
   position: absolute;
@@ -126,7 +156,8 @@ li {
   font-size: 5vh;
   height: 10vh;
   line-height: 10vh;
-  color: white;
+  color: var(--text-color);
+  background-color: var(--accent-color);
   z-index: 1;
 }
 #nav-tabContent {
@@ -136,7 +167,19 @@ li {
   overflow-y: scroll;
 }
 #toolbar {
-  background-color: gray;
+  background-color: var(--accent-color);
   height: 5vh;
   z-index: 1;
+}
+
+@media (orientation: portrait) {
+  .float-right, .float-left {
+    width: 50%;
+  }
+}
+
+@media (orientation: landscape) {
+  .float-right, .float-left {
+    width: 35%;
+  }
 }
