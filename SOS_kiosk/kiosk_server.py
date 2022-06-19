@@ -440,7 +440,7 @@ DEBUG = False
 PING_THREAD = None
 defaultWriteLock = threading.Lock()
 
-helper.read_default_configuration(checkDirectories=False)
+helper.read_default_configuration(check_directories=False)
 helper.load_dictionary()
 
 SOS_SOCKET = connect_to_SOS()
