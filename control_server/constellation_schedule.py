@@ -38,7 +38,7 @@ def check_event_schedule():
                 retrieve_schedule()
             elif action == 'set_exhibit' and target is not None:
                 print("Changing exhibit to:", target)
-                c_exhibit.read_exhibit_configuration(target, updateDefault=True)
+                c_exhibit.read_exhibit_configuration(target, update_default=True)
 
                 # Update the components that the configuration has changed
                 for component in config.componentList:
@@ -72,7 +72,7 @@ def check_event_schedule():
             _thread.interrupt_main()
 
 
-def check_if_schedule_time_exists(path, time_to_set):
+def check_if_schedule_time_exists(path: str, time_to_set) -> bool:
     """Check the schedule given by `path` for an existing item with the same time as `time_to_set`.
     """
 
@@ -87,7 +87,7 @@ def check_if_schedule_time_exists(path, time_to_set):
     return False
 
 
-def delete_schedule_action(schedule, time_to_delete):
+def delete_schedule_action(schedule: str, time_to_delete):
     """Delete an action from the specified schedule"""
 
     schedule_path = os.path.join(config.APP_PATH, "schedules", schedule + ".ini")

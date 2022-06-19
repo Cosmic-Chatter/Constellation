@@ -7,13 +7,13 @@ import platform
 import serial
 import pypjlink
 
-def serial_connect_with_url(ip,
-                            baudrate=9600,
-                            make=None,
-                            port=None,
-                            protocol='socket',
-                            timeout=4):
 
+def serial_connect_with_url(ip: str,
+                            baudrate: int = 9600,
+                            make: str = None,
+                            port: int = None,
+                            protocol: str = 'socket',
+                            timeout: float = 4) -> serial.Serial:
     """Establish a serial connection over TCP/IP"""
 
     if (port is None) and (make is None):
@@ -29,20 +29,19 @@ def serial_connect_with_url(ip,
 
     try:
         connection = serial.serial_for_url(protocol + "://" + ip + ":" + str(port),
-                                    baudrate=baudrate,
-                                    timeout=timeout)
+                                           baudrate=baudrate,
+                                           timeout=timeout)
         return connection
     except serial.serialutil.SerialException:
         return None
 
 
-def serial_connect(baudrate=9600,
+def serial_connect(baudrate: int = 9600,
                    bytesize=serial.EIGHTBITS,
                    parity=serial.PARITY_NONE,
-                   port=None,
+                   port: str = None,
                    stopbits=serial.STOPBITS_ONE,
-                   timeout=2):
-
+                   timeout: float = 2) -> serial.Serial:
     """Connect to a serial device connected to the machine"""
 
     if port is None:
@@ -51,7 +50,7 @@ def serial_connect(baudrate=9600,
         system = platform.system()
         if system == "Linux":
             port = "/dev/ttyUSB0"
-        elif system == "Darwin": # MacOS
+        elif system == "Darwin":  # MacOS
             port = "/dev/ttyUSB0"
         elif system == "Windows":
             port = "COM1"
@@ -70,8 +69,11 @@ def serial_connect(baudrate=9600,
         return None
 
 
-def serial_send_command(connection, command, char_to_read=None, debug=False, make=None):
-
+def serial_send_command(connection: serial.Serial,
+                        command: str,
+                        char_to_read: int = None,
+                        debug: bool = False,
+                        make: str = None) -> dict:
     """Send a command to a projector, wait for a response and return that response"""
 
     command_dict = {
@@ -224,8 +226,7 @@ def serial_send_command(connection, command, char_to_read=None, debug=False, mak
     return response
 
 
-def serial_barco_lamp_status(connection):
-
+def serial_barco_lamp_status(connection: serial.Serial) -> list:
     """Build the lamp status list for a Barco projector
     This list has format [(lamp1_hours, lamp1_on), (lamp2_hours, lamp2_on)]"""
 
@@ -233,11 +234,11 @@ def serial_barco_lamp_status(connection):
 
     # True means lamp is on (or warming up)
     lamp_status_codes = {
-    "0": False,
-    "1": True,
-    "2": True,
-    "3": False,
-    "4": False,
+        "0": False,
+        "1": True,
+        "2": True,
+        "3": False,
+        "4": False,
     }
 
     lamp_status = []
@@ -259,16 +260,15 @@ def serial_barco_lamp_status(connection):
     return lamp_status
 
 
-def serial_barco_get_source(connection):
-
+def serial_barco_get_source(connection: serial.Serial) -> str:
     """Iterate through the Barco inputs to find the one that is active"""
 
     connection.reset_input_buffer()
 
     # (Barco name, English name, number)
-    inputs = [("IDVI", "DVI"),("IHDM", "HDMI"), ("IVGA", "VGA"),("IDHD", "Dual Head DVI"),
-                ("IDHH", "Dual Head HDMI"),("IDHX", "Dual Head XP2"), ("IXP2", "XP2"),
-                ("IYPP", "Component")]
+    inputs = [("IDVI", "DVI"), ("IHDM", "HDMI"), ("IVGA", "VGA"), ("IDHD", "Dual Head DVI"),
+              ("IDHH", "Dual Head HDMI"), ("IDHX", "Dual Head XP2"), ("IXP2", "XP2"),
+              ("IYPP", "Component")]
 
     for this_input in inputs:
         code, name = this_input
@@ -281,8 +281,7 @@ def serial_barco_get_source(connection):
     return ""
 
 
-def serial_christie_lamp_status(connection):
-
+def serial_christie_lamp_status(connection: serial.Serial) -> list:
     """Build the lamp status list for a Christie projector
     This list has format [(lamp1_hours, lamp1_on), (lamp2_hours, lamp2_on)]"""
 
@@ -299,8 +298,7 @@ def serial_christie_lamp_status(connection):
     return [(l1_hours, None)]
 
 
-def serial_christie_power_state(connection):
-
+def serial_christie_power_state(connection: serial.Serial) -> str:
     """Ask a Christie projector for its power state and parse the response"""
 
     connection.reset_input_buffer()
@@ -319,8 +317,7 @@ def serial_christie_power_state(connection):
     return result
 
 
-def serial_christie_shutter_state(connection):
-
+def serial_christie_shutter_state(connection: serial.Serial) -> str:
     """Ask a Christie projector for the status of its shutter"""
 
     connection.reset_input_buffer()
@@ -334,8 +331,7 @@ def serial_christie_shutter_state(connection):
     return result
 
 
-def serial_christie_video_mute_state(connection):
-
+def serial_christie_video_mute_state(connection: serial.Serial) -> str:
     """Ask a Christie projector for the status of its video mute"""
 
     connection.reset_input_buffer()
@@ -349,8 +345,7 @@ def serial_christie_video_mute_state(connection):
     return result
 
 
-def pjlink_connect(ip, password=None, timeout=2):
-
+def pjlink_connect(ip: str, password: str = None, timeout: float = 2):
     """Connect to a PJLink projector using pypjlink"""
 
     projector = pypjlink.Projector.from_address(ip, timeout=timeout)
@@ -359,8 +354,7 @@ def pjlink_connect(ip, password=None, timeout=2):
     return projector
 
 
-def pjlink_send_command(connection, command):
-
+def pjlink_send_command(connection: serial.Serial, command: str):
     """Send a command using the PJLink protocol"""
 
     result = None

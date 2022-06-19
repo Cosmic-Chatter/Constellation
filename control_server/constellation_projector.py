@@ -12,7 +12,13 @@ import projector_control
 class Projector:
     """Holds basic data about a projector"""
 
-    def __init__(self, id_, ip, connection_type, mac_address=None, make=None, password=None):
+    def __init__(self,
+                 id_: str,
+                 ip: str,
+                 connection_type: str,
+                 mac_address: str = None,
+                 make: str = None,
+                 password: str = None):
 
         self.id = id_
         self.type = "PROJECTOR"
@@ -36,7 +42,7 @@ class Projector:
         diff = datetime.datetime.now() - self.last_contact_datetime
         return diff.total_seconds()
 
-    def update(self, full=False):
+    def update(self, full: bool = False):
 
         """Contact the projector to get the latest state"""
 
@@ -73,7 +79,7 @@ class Projector:
             else:
                 self.state["status"] = "STANDBY"
 
-    def queue_command(self, cmd):
+    def queue_command(self, cmd: str):
 
         """Function to spawn a thread that sends a command to the projector.
 
@@ -85,7 +91,7 @@ class Projector:
         thread_.daemon = True
         thread_.start()
 
-    def send_command(self, cmd):
+    def send_command(self, cmd: str):
 
         """Connect to a PJLink projector and send a command"""
 
@@ -114,7 +120,7 @@ class Projector:
             print(e)
 
 
-def get_projector(this_id) -> Projector:
+def get_projector(this_id: str) -> Projector:
     """Return a projector with the given id, or None if no such projector exists"""
 
     return next((x for x in config.projectorList if x.id == this_id), None)

@@ -4,12 +4,13 @@ import dateutil.parser
 import json
 import logging
 import os
+from typing import Union
 
 # Constellation imports
 import config
 
 
-def get_maintenance_report(file_path):
+def get_maintenance_report(file_path: Union[str, os.PathLike]) -> dict:
     """Retrieve key maintenance info from a maintenance record"""
 
     try:
@@ -42,7 +43,7 @@ def get_maintenance_report(file_path):
     return response_dict
 
 
-def get_last_entry(path):
+def get_last_entry(path: Union[str, os.PathLike]) -> dict:
     """Retrieve the last json entry from the given file"""
 
     with open(path, 'rb') as f:
@@ -65,8 +66,8 @@ def get_last_entry(path):
         return result
 
 
-def load_file(path):
-    """Read the file into an list of dictionaries"""
+def load_file(path: Union[str, os.PathLike]) -> list[dict]:
+    """Read the file into a list of dictionaries"""
     entries = []
     with open(path, "r", encoding="UTF-8") as f:
         for line in f.readlines():
@@ -76,7 +77,7 @@ def load_file(path):
     return entries
 
 
-def segment_entries(entries):
+def segment_entries(entries: list[dict]) -> list[dict]:
     """Break the file into time intervals for the various sections"""
 
     num_entries = len(entries)
@@ -120,7 +121,7 @@ def segment_entries(entries):
     return segments
 
 
-def summarize_segments(segments):
+def summarize_segments(segments: list[dict]) -> dict[str, float]:
     """Take a list of segments and create a simple summary"""
 
     if len(segments) > 0:

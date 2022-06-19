@@ -663,6 +663,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     try:
                         readme_path = os.path.join(config.APP_PATH,
                                                    "README.md")
+                        if not os.path.isfile(readme_path):
+                            # Handle the case of a Pyinstaller --onefile binary
+                            readme_path = os.path.join(config.EXEC_PATH, "README.md")
                         with open(readme_path, 'r', encoding='UTF-8') as f:
                             text = f.read()
                             self.wfile.write(bytes(text, encoding="UTF-8"))
