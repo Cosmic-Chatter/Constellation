@@ -21,11 +21,11 @@ class TestHelperMethods(unittest.TestCase):
 
     def test_strToBool(self):
 
-        self.assertEqual(helper.strToBool("false"), False)
-        self.assertEqual(helper.strToBool("False"), False)
-        self.assertEqual(helper.strToBool("true"), True)
-        self.assertEqual(helper.strToBool("TRUE"), True)
-        self.assertEqual(helper.strToBool("xyz"), False)
+        self.assertEqual(helper.str_to_bool("false"), False)
+        self.assertEqual(helper.str_to_bool("False"), False)
+        self.assertEqual(helper.str_to_bool("true"), True)
+        self.assertEqual(helper.str_to_bool("TRUE"), True)
+        self.assertEqual(helper.str_to_bool("xyz"), False)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,4 @@
-"""A small server to communicate with user-facing interfaces and handle interacting with the system (since the browser cannot)"""
+"""A small server to communicate with user-facing interfaces and handle interacting with the system"""
 
 # Standard modules
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -11,6 +11,7 @@ import json
 import sys
 import os
 import signal
+from typing import Union
 import cgi
 import shutil
 import socket
@@ -37,7 +38,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
-    """Respond to requests from the client"""
+    """Respond to request from the client"""
 
     def log_request(self, code='-', size='-'):
 
@@ -60,7 +61,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.wfile.write(buf)
 
     def handle_range_request(self, f):
-
         """Handle a GET request using a byte range.
 
         Inspired by https://github.com/danvk/RangeHTTPServer
@@ -98,8 +98,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
             print("Connection ended prematurely", e)
 
     def do_GET(self):
-
         """Receive a GET request and respond with a console webpage"""
+
         # print("do_GET: ENTER")
         self.path = self.path.replace("%20", " ")
         # root_path = os.path.dirname(os.path.abspath(__file__))
@@ -190,7 +190,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # print("do_OPTIONS: EXIT")
 
     def do_POST(self):
-
         """Receives pings from client devices and respond with any updated information"""
 
         print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
@@ -211,8 +210,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if ctype == "multipart/form-data":  # File upload
             try:
                 pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-                content_len = int(self.headers.get('Content-length'))
-                pdict['CONTENT-LENGTH'] = content_len
+                pdict['CONTENT-LENGTH'] = self.headers.get('Content-length')
                 fields = cgi.parse_multipart(self.rfile, pdict)
                 file = fields.get('file')[0]
 
@@ -262,7 +260,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     wake_display()
                 elif data["action"] == "commandProjector":
                     if "command" in data:
-                        commandProjector(data["command"])
+                        command_projector(data["command"])
                 elif data["action"] == "getDefaults":
                     config_to_send = config.defaults_dict.copy()
                     if "allow_restart" not in config_to_send:
@@ -289,7 +287,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             config_to_send["dictionary"] = \
                                 dict(config.dictionary_object.items("CURRENT"))
                     config_to_send["availableContent"] = \
-                        {"all_exhibits": getAllDirectoryContents()}
+                        {"all_exhibits": get_all_directory_contents()}
 
                     if config.HELPING_REMOTE_CLIENT:
                         # Files will be dispatched by the server
@@ -320,9 +318,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
                     else:
                         active_content = ""
-                    response = {"all_exhibits": getAllDirectoryContents(),
+                    response = {"all_exhibits": get_all_directory_contents(),
                                 "active_content": active_content,
-                                "system_stats": getSystemStats()}
+                                "system_stats": get_system_stats()}
 
                     json_string = json.dumps(response)
                     try:
@@ -436,7 +434,7 @@ def check_for_software_update():
     print("Checking for update... ", end="")
     try:
         for line in urllib.request.urlopen(
-                "https://raw.githubusercontent.com/FWMSH/Constellation/main/system_helper/version.txt", timeout=1):
+                "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/system_helper/version.txt", timeout=1):
             if float(line.decode('utf-8')) > config.HELPER_SOFTWARE_VERSION:
                 config.helper_software_update_available = True
                 break
@@ -512,7 +510,7 @@ def shutdown():
 
 
 def sleep_display():
-    if strToBool(config.defaults_dict.get("allow_sleep", True)):
+    if str_to_bool(config.defaults_dict.get("allow_sleep", True)):
         if sys.platform == "darwin":  # MacOS
             os.system("pmset displaysleepnow")
         elif sys.platform == "linux":
@@ -533,10 +531,10 @@ def wake_display():
             # os.system("nircmd.exe monitor async_on")
             os.system("nircmd sendkeypress ctrl")
     elif config.defaults_dict["display_type"] == "projector":
-        commandProjector("on")
+        command_projector("on")
 
 
-def commandProjector(cmd: str):
+def command_projector(cmd: str):
     """Send commands to a locally-connected projector"""
 
     make = "Optoma"
@@ -553,7 +551,7 @@ def commandProjector(cmd: str):
         if cmd == "on":
             ser.write(b"~0000 1\r")
         elif cmd == "off":
-            if strToBool(config.defaults_dict.get("allow_sleep", True)):
+            if str_to_bool(config.defaults_dict.get("allow_sleep", True)):
                 ser.write(b"~0000 0\r")
         elif cmd == "checkState":
             ser.write(b"~00124 1\r")
@@ -577,7 +575,7 @@ def delete_file(file: str, absolute: bool = False):
         os.remove(file_path)
 
 
-def getAllDirectoryContents() -> list:
+def get_all_directory_contents() -> list:
     """Recursively search for files in the content directory and its subdirectories"""
 
     content_path = get_path(["content"], user_file=True)
@@ -586,7 +584,7 @@ def getAllDirectoryContents() -> list:
     return [x for x in result if x.find(".DS_Store") == -1]
 
 
-def getDirectoryContents(path: str, absolute: bool = False) -> list:
+def get_directory_contents(path: str, absolute: bool = False) -> list:
     """Return the contents of an exhibit directory
 
     if absolute == False, the path is appended to the default content directory
@@ -621,7 +619,7 @@ def get_local_address() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0)
     try:
-        # doesn't even have to be reachable
+        # Doesn't even have to be reachable
         s.connect(('10.255.255.255', 1))
         IP = s.getsockname()[0]
     except:
@@ -632,7 +630,7 @@ def get_local_address() -> str:
     return "http://" + IP + ":" + str(config.defaults_dict["helper_port"])
 
 
-def strToBool(val: str) -> bool:
+def str_to_bool(val: str) -> bool:
     """Take a string value like "false" and convert it to a bool"""
 
     if isinstance(val, bool):
@@ -649,10 +647,8 @@ def strToBool(val: str) -> bool:
     return val_to_return
 
 
-def getSystemStats() -> dict:
-    # Function to return a dictionary with the total and free space available
-    # on the disk where we are storing files, as well as the current CPU and RAM
-    # load
+def get_system_stats() -> dict[str, Union[int, float]]:
+    """Return a dictionary with disk space, CPU load, and RAM amount"""
 
     result = {}
 
@@ -827,7 +823,7 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
     config.defaults_dict = dict(default.items())
 
     if "autoplay_audio" in config.defaults_dict \
-            and strToBool(config.defaults_dict["autoplay_audio"]) is True:
+            and str_to_bool(config.defaults_dict["autoplay_audio"]) is True:
         print(
             "Warning: You have enabled audio. Make sure the file is whitelisted in the browser or media will not play.")
 
@@ -850,7 +846,6 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
 
 
 def handle_missing_defaults_file():
-
     """Create a stub defaults.ini file and launch setup.html for configuration"""
 
     # Determine an available port
@@ -865,7 +860,7 @@ def handle_missing_defaults_file():
             if e.errno == errno.EADDRINUSE:
                 port += 1
             else:
-                # something else raised the socket.error exception
+                # Something else raised the socket.error exception
                 print(e)
 
         s.close()
@@ -968,7 +963,7 @@ if __name__ == "__main__":
     retrieve_schedule()
 
     # Check the GitHub server for an available software update
-    # check_for_software_update()
+    check_for_software_update()
 
     print(f'Launching server at address {get_local_address()} to serve {config.defaults_dict["id"]}.')
 
