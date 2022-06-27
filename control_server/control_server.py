@@ -1354,6 +1354,9 @@ def check_for_software_update():
     except urllib.error.HTTPError:
         print("cannot connect to update server")
         return
+    except urllib.error.URLError:
+        print("cannot connect to update server")
+        return
     if software_update_available:
         print("update available!")
     else:
