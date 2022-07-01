@@ -1042,7 +1042,7 @@ def command_line_setup():
     ip_address = input(f"Enter this computer's static IP address (default: {default_ip}): ").strip()
     if ip_address == "":
         ip_address = default_ip
-    settings_dict["ip_address"] = ip_address
+    settings_dict["server_ip_address"] = ip_address
 
     default_port = 8082
     while True:
