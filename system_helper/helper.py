@@ -516,21 +516,25 @@ def sleep_display():
         elif sys.platform == "linux":
             os.system("xset dpms force off")
         elif sys.platform == "win32":
-            os.system("nircmd.exe monitor async_off")
+            nircmd_path = get_path(["nircmd.exe"])
+            os.system(nircmd_path + " monitor async_off")
 
 
 def wake_display():
     """Wake the display up or power it on"""
 
-    if config.defaults_dict["display_type"] == "screen":
+    display_type = config.defaults_dict.get("display_type", "screen")
+
+    if display_type == "screen":
         if sys.platform == "darwin":  # MacOS
             os.system("caffeinate -u -t 2")
         elif sys.platform == "linux":
             os.system("xset dpms force on")
         elif sys.platform == "win32":
             # os.system("nircmd.exe monitor async_on")
-            os.system("nircmd sendkeypress ctrl")
-    elif config.defaults_dict["display_type"] == "projector":
+            nircmd_path = get_path(["nircmd.exe"])
+            os.system(nircmd_path + " sendkeypress ctrl")
+    elif display_type == "projector":
         command_projector("on")
 
 
