@@ -118,7 +118,14 @@ def send_ping():
     except json.decoder.JSONDecodeError:
         print("send_ping(): Did not receive valid JSON. Content received: ", result.text)
 
+print("=======================")
+print("Constellation Heartbeat")
+print("=======================")
+print("Loading defaults... ", end="")
 if get_defaults():
+    print("done")
     while True:
         send_ping()
         time.sleep(5)
+else:
+    print("Could not connect to helper at address " + config.helper_address)
