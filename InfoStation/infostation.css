@@ -121,6 +121,9 @@ li {
 .tabButton {
   font-size: 2.5vh;
 }
+#attractorImage {
+  width: 100%;
+}
 #attractorOverlay {
   position: fixed;
   display: flex;

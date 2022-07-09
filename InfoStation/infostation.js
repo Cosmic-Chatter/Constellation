@@ -1,5 +1,3 @@
-/*jshint esversion: 6 */
-
 function askForDefaults() {
 
   // Send a message to the local helper and ask for the latest configuration
@@ -73,6 +71,128 @@ function checkForSoftwareUpdate() {
   // xhr.send(null);
 }
 
+function updateContent(definition) {
+
+  // Parse the current content file and build the interface correspondingly.
+
+  if (!"SETTINGS" in definition) {
+    console.log("Error: The INI file must include a [SETTINGS]section!");
+    return;
+  }
+
+  // Clear the existing content
+  fontSizeReset();
+  $("#nav-tabContent").empty();
+  $("#buttonRow").empty();
+  textTabs = [];
+  imageTabs = [];
+  videoTabs = [];
+
+  // Set up the available languages
+  let langDef = {default: ""};
+  let headerDict = {};
+  if ("languages" in definition.SETTINGS) {
+    let langs = definition.SETTINGS.languages.split(",")
+    langs.forEach((val, i) => {
+      let lang = val.trim()
+      langDef[lang] = definition.SETTINGS["language_"+lang];
+      headerDict[lang] = definition.SETTINGS["title_"+lang];
+      if (i == 0) {
+        langDef.default = val;
+      }
+    })
+  }
+  setLanguages(langDef);
+  setMasthead(headerDict);
+
+  // Configure the attractor
+  if ("attractor" in definition.SETTINGS) {
+    let fileType = getFileType(definition.SETTINGS.attractor);
+    if (["image", "video"].includes(fileType)) {
+      setAttractor(definition.SETTINGS.attractor, fileType);
+    }
+  }
+  if ("timeout" in definition.SETTINGS) {
+    timeoutDuration = parseFloat(definition.SETTINGS.timeout)*1000;
+  }
+
+  // Extract tab order
+  let tabs_to_create = definition.SETTINGS.order.split(",")
+  tabs_to_create.forEach((val, i, theArray) => {
+    theArray[i] = val.trim()
+  })
+
+  // Create the tabs
+  tabs_to_create.forEach((val, i) => {
+    if (!val in definition) {
+      console.log("Error, no deinintion found for", val);
+      return;
+    }
+    let tabId;
+    let tabType = definition[val].type;
+    if (tabType == "text") {
+      tabId = createTextTab(definition[val])
+    } else if (tabType == "image") {
+      tabId = createImageTab(definition[val])
+    } else if (tabType == "video") {
+      tabId = createVideoTab(definition[val])
+    }
+    if (i == 0) {
+      firstTab = tabId;
+    }
+  });
+  gotoTab(firstTab);
+}
+
+function getFileType(filename) {
+
+  // Return one of ['image', 'video', 'other'] for a given filename based on its extension
+
+  let ext = filename.split(".").slice(-1)[0].toLowerCase();
+  
+  if (["mp4", "mov", "m4v", "avi", "webm", "mpeg", "mpg"].includes(ext)) {
+    return "video";
+  }
+  if (["jpeg", "jpg", "png", "bmp", "tiff", "tif", "webp"].includes(ext)) {
+    return "image";
+  }
+  return "other";
+}
+
+function parseINIString(data) {
+
+  // Take an INI file and return an object with the settings
+  // From https://stackoverflow.com/questions/3870019/javascript-parser-for-a-string-which-contains-ini-data
+
+  var regex = {
+      section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+      param: /^\s*([^=]+?)\s*=\s*(.*?)\s*$/,
+      comment: /^\s*;.*$/
+  };
+  var value = {};
+  var lines = data.split(/[\r\n]+/);
+  var section = null;
+  lines.forEach(function(line){
+      if(regex.comment.test(line)){
+          return;
+      }else if(regex.param.test(line)){
+          var match = line.match(regex.param);
+          if(section){
+              value[section][match[1]] = match[2];
+          }else{
+              value[match[1]] = match[2];
+          }
+      }else if(regex.section.test(line)){
+          var match = line.match(regex.section);
+          value[match[1]] = {};
+          section = match[1];
+      }else if(line.length == 0 && section){
+          section = null;
+      };
+  });
+  return value;
+}
+
 function createButton(title, id) {
 
   // Create a button in the bottom bar that shows the pane with the given id
@@ -109,7 +229,8 @@ function createButton(title, id) {
 
   let button = document.createElement("button");
   button.setAttribute("class", "btn btn-secondary tabButton w-100 h-100");
-  button.setAttribute("onclick", `gotoTab("${id}", this)`);
+  button.setAttribute("onclick", `gotoTab("${id}")`);
+  button.setAttribute("id", id + "Button");
   $(button).html(title);
   col.append(button);
 }
@@ -133,38 +254,72 @@ function createCard(content) {
 
   let title = document.createElement("div");
   title.setAttribute("class", "card-title text-center");
-  $(title).html(content.title_en);
+  $(title).html(content.title);
   body.append(title);
 
   return card;
 }
 
-function createImageTab(content, tabName) {
+function createImageTab(definition, update="") {
 
-  // Create a pane that displays a grid of images. 'content' should be an array
-  // of objects with the following properties:
-  // 'image', 'thumb', 'title_en', 'title_es', 'caption_en', 'caption_es', 'credit_en', 'credit_es'
+  // Create a pane that displays a grid of images.
+  // Set update="" when instantiating the video tab for the first time.
+  // When localizing, set update to the id to be updated
 
-  // First, create the pane
-  const id = "imageTab_"+String(Date.now());
-  const overlayId = id + "_overlay";
-  let pane = document.createElement("div");
-  pane.setAttribute("id", id);
-  pane.setAttribute("class", "tab-pane fade show active");
-  $("#nav-tabContent").append(pane);
+  let tabId;
+  if (update == "") {
+    // First, create the pane
+    tabId = "imageTab_"+String(Date.now());
+    let pane = document.createElement("div");
+    pane.setAttribute("id", tabId);
+    pane.setAttribute("class", "tab-pane fade show active");
+    $(pane).data("user-definition", definition);
+    $("#nav-tabContent").append(pane);
+  } else {
+    tabId = update;
+  }
+
+  // Send a GET request for the content and then build the tab
+  var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() { 
+        if (xhr.readyState == 4 && xhr.status == 200) {
+          _createImageTabContent(tabId, xhr.responseText);
+        }
+    }
+    xhr.open("GET", helperAddress + "/" + definition["content_" + currentLang], true);
+    xhr.send(null);
+
+  // Create button for this tab
+  createButton(definition["title_" + currentLang], tabId);
+
+  if (update == "") {
+    imageTabs.push(tabId);
+  }
+  return tabId;
+}
+
+function _createImageTabContent(tabId, contentStr) {
+
+  // Helper function to actually populate the tab with content.
 
   let row = document.createElement("div");
   row.setAttribute("class", "row mx-1 align-items-center");
-  $("#"+id).append(row);
+  $("#"+tabId).append(row);
+  const overlayId = tabId + "_overlay";
+
+  let content = parseINIString(contentStr);
+  let images = Object.keys(content);
 
   // Then, iterate through the content and build a card for each image
-  content.forEach((item, i) => {
+  images.forEach((item, i) => {
+    let imageDef = content[item];
+
     let col = document.createElement("div");
     col.setAttribute("class", "col-4 mt-3");
     row.append(col);
 
-    let card = createCard(item);
-    card.setAttribute("onclick", `imageOverlayShow("${id}", this)`);
+    let card = createCard(imageDef);
+    card.setAttribute("onclick", `imageOverlayShow("${tabId}", this)`);
     col.append(card);
 
   });
@@ -173,8 +328,8 @@ function createImageTab(content, tabName) {
   let overlay = document.createElement("div");
   overlay.setAttribute("class", "row overlay mx-0 align-items-center");
   overlay.setAttribute("id", overlayId);
-  overlay.setAttribute("onclick", `imageOverlayHide("${id}")`);
-  $("#"+id).append(overlay);
+  overlay.setAttribute("onclick", `imageOverlayHide("${tabId}")`);
+  $("#"+tabId).append(overlay);
   $(overlay).hide();
 
   let bigImgCol = document.createElement("div");
@@ -183,33 +338,41 @@ function createImageTab(content, tabName) {
 
   let bigImg = document.createElement("img");
   bigImg.setAttribute("class", "bigImage");
-  bigImg.setAttribute("id", id+"_image");
-  bigImg.src = content[0].image;
+  bigImg.setAttribute("id", tabId+"_image");
+  bigImg.src = content[images[0]].image;
   bigImgCol.append(bigImg);
 
   let title = document.createElement("p");
   title.setAttribute('class', "overlayTitle text-center");
-  title.setAttribute("id", id+"_title");
-  $(title).html(content[0].title_en);
+  title.setAttribute("id", tabId+"_title");
+  $(title).html(content[images[0]].title);
   bigImgCol.append(title);
 
   let caption = document.createElement("p");
   caption.setAttribute("class", "overlayCaption text-start");
-  caption.setAttribute("id", id+"_caption");
-  $(caption).html(content[0].caption_en);
+  caption.setAttribute("id", tabId+"_caption");
+  $(caption).html(content[images[0]].caption);
   bigImgCol.append(caption);
 
   let credit = document.createElement("p");
   credit.setAttribute("class", "overlayCredit fst-italic text-start");
-  credit.setAttribute("id", id+"_credit");
-  $(credit).html(content[0].credit_en);
+  credit.setAttribute("id", tabId+"_credit");
+  $(credit).html(content[images[0]].credit);
   bigImgCol.append(credit);
-
-  // Create button for this tab
-  createButton(tabName, id);
 }
 
-function createTextTab(content, tabName, update="") {
+function localizeImageTab(id) {
+
+  // Use the user-supplied data to supply the content in the current langauge;
+
+  let definition = $("#" + id).data("user-definition");
+
+  // Clear the pane and rebuild
+  document.getElementById(id).innerHTML = "";
+  createImageTab(definition, id);
+}
+
+function createTextTab(definition, update="") {
 
   // Create a pane that displays Markdown-formatted text and images
   // Set update="" when instantiating the text tab for the first time.
@@ -223,8 +386,7 @@ function createTextTab(content, tabName, update="") {
     let pane = document.createElement("div");
     pane.setAttribute("id", tabId);
     pane.setAttribute("class", "tab-pane fade show active");
-    $(pane).data("user-content", content);
-    $(pane).data("user-tabName", tabName);
+    $(pane).data("user-definition", definition);
     $("#nav-tabContent").append(pane);
 
     let row = document.createElement("div");
@@ -239,9 +401,34 @@ function createTextTab(content, tabName, update="") {
     col = document.getElementById(update + "Content");
     tabId = update;
   }
+  
+  // Send a GET request for the content and then build the tab
+  var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() { 
+        if (xhr.readyState == 4 && xhr.status == 200) {
+          _createTextTabContent(tabId, xhr.responseText);
+        }
+    }
+    xhr.open("GET", helperAddress + "/" + definition["content_" + currentLang], true);
+    xhr.send(null);
+
+  // Create button for this tab
+  createButton(definition["title_" + currentLang], tabId);
+
+  if (update == "") {
+    textTabs.push(tabId);
+  }
+  return tabId;
+}
+
+function _createTextTabContent(tabId, content) {
+
+  // Helper function that actually creates and formats the tab content.
+
+  let col = document.getElementById(tabId + "Content");
 
   let converter = new showdown.Converter({parseImgDimensions: true});
-  let html = converter.makeHtml(content["text_" + currentLang]);
+  let html = converter.makeHtml(content);
   // Parse the HTML
   var el = $("<div></div>");
   el.html(html);
@@ -301,53 +488,80 @@ function createTextTab(content, tabName, update="") {
     })
     col.append(box);
   })
-
-  // Create button for this tab
-  createButton(tabName[currentLang], tabId);
-
-  if (update == "") {
-    textTabs.push(tabId);
-  }
+  tabsUpdated += 1;
 }
 
 function localizeTextTab(id) {
 
   // Use the user-supplied data to supply the content in the current langauge;
 
-  let content = $("#" + id).data("user-content");
-  let tabName = $("#" + id).data("user-tabName");
+  let definition = $("#" + id).data("user-definition");
 
   // Clear the pane and rebuild
   document.getElementById(id + "Content").innerHTML = "";
-  createTextTab(content, tabName, id);
+  createTextTab(definition, id);
 }
 
-function createVideoTab(content, tabName) {
+function createVideoTab(definition, update="") {
 
-  // Create a pane that displays a grid of video. 'content' should be an array
-  // of objects with the following properties:
-  // 'video', 'thumb', 'title_en', 'title_es', 'caption_en', 'caption_es', 'credit_en', 'credit_es'
+  // Create a pane that displays a grid of video. 
+  // Set update="" when instantiating the video tab for the first time.
+  // When localizing, set update to the id to be updated
 
-  // First, create the pane
-  const id = "videoTab_"+String(Date.now());
-  const overlayId = id + "_overlay";
-  let pane = document.createElement("div");
-  pane.setAttribute("id", id);
-  pane.setAttribute("class", "tab-pane fade show active");
-  $("#nav-tabContent").append(pane);
+  let tabId;
+  if (update == "") {
+    // First, create the pane
+    tabId = "videoTab_"+String(Date.now());
+    let pane = document.createElement("div");
+    pane.setAttribute("id", tabId);
+    pane.setAttribute("class", "tab-pane fade show active");
+    $(pane).data("user-definition", definition);
+    $("#nav-tabContent").append(pane);
+  } else {
+    tabId = update;
+  }
+
+  // Send a GET request for the content and then build the tab
+  var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() { 
+        if (xhr.readyState == 4 && xhr.status == 200) {
+          _createVideoTabContent(tabId, xhr.responseText);
+        }
+    }
+    xhr.open("GET", helperAddress + "/" + definition["content_" + currentLang], true);
+    xhr.send(null);
+
+  // Create button for this tab
+  createButton(definition["title_" + currentLang], tabId);
+
+  if (update == "") {
+    videoTabs.push(tabId);
+  }
+  return tabId;
+}
+
+function _createVideoTabContent(tabId, contentStr) {
+
+  // Helper function to actually populate the tab with content.
 
   let row = document.createElement("div");
   row.setAttribute("class", "row mx-1 align-items-center");
-  $("#"+id).append(row);
+  $("#"+tabId).append(row);
+  const overlayId = tabId + "_overlay";
 
-  // Then, iterate through the content and build a card for each image
-  content.forEach((item, i) => {
+  let content = parseINIString(contentStr);
+  let videos = Object.keys(content);
+
+  // Iterate through the content and build a card for each image
+  videos.forEach((item, i) => {
+    let videoDef = content[item];
+
     let col = document.createElement("div");
     col.setAttribute("class", "col-4 mt-3");
     row.append(col);
 
-    let card = createCard(item);
-    card.setAttribute("onclick", `videoOverlayShow("${id}", this)`);
+    let card = createCard(videoDef);
+    card.setAttribute("onclick", `videoOverlayShow("${tabId}", this)`);
     col.append(card);
 
   });
@@ -356,8 +570,8 @@ function createVideoTab(content, tabName) {
   let overlay = document.createElement("div");
   overlay.setAttribute("class", "row overlay mx-0 align-items-center");
   overlay.setAttribute("id", overlayId);
-  overlay.setAttribute("onclick", `videoOverlayHide("${id}")`);
-  $("#"+id).append(overlay);
+  overlay.setAttribute("onclick", `videoOverlayHide("${tabId}")`);
+  $("#"+tabId).append(overlay);
   $(overlay).hide();
 
   let bigVidCol = document.createElement("div");
@@ -366,31 +580,39 @@ function createVideoTab(content, tabName) {
 
   let bigVid = document.createElement("video");
   bigVid.setAttribute("class", "bigImage");
-  bigVid.setAttribute("id", id+"_video");
-  bigVid.setAttribute("onended", `videoOverlayHide("${id}")`);
-  bigVid.src = content[0].video;
+  bigVid.setAttribute("id", tabId+"_video");
+  bigVid.setAttribute("onended", `videoOverlayHide("${tabId}")`);
+  bigVid.src = content[videos[0]].video;
   bigVidCol.append(bigVid);
 
   let title = document.createElement("p");
   title.setAttribute('class', "overlayTitle text-center");
-  title.setAttribute("id", id+"_title");
-  $(title).html(content[0].title_en);
+  title.setAttribute("id", tabId+"_title");
+  $(title).html(content[videos[0]].title);
   bigVidCol.append(title);
 
   let caption = document.createElement("p");
   caption.setAttribute("class", "overlayCaption text-start");
-  caption.setAttribute("id", id+"_caption");
-  $(caption).html(content[0].caption_en);
+  caption.setAttribute("id", tabId+"_caption");
+  $(caption).html(content[videos[0]].caption);
   bigVidCol.append(caption);
 
   let credit = document.createElement("p");
   credit.setAttribute("class", "overlayCredit fst-italic text-start");
-  credit.setAttribute("id", id+"_credit");
-  $(credit).html(content[0].credit_en);
+  credit.setAttribute("id", tabId+"_credit");
+  $(credit).html(content[videos[0]].credit);
   bigVidCol.append(credit);
+}
 
-  // Create button for this tab
-  createButton(tabName, id);
+function localizeVideoTab(id) {
+
+  // Use the user-supplied data to supply the content in the current langauge;
+
+  let definition = $("#" + id).data("user-definition");
+
+  // Clear the pane and rebuild
+  document.getElementById(id).innerHTML = "";
+  createVideoTab(definition, id);
 }
 
 function fontSizeDecrease(animate=false) {
@@ -442,7 +664,7 @@ function fontSizeIncreaseButtonPressed() {
   }
 }
 
-function gotoTab(id, button) {
+function gotoTab(id) {
 
   // Swap the active tab
 
@@ -453,16 +675,20 @@ function gotoTab(id, button) {
 
   // Chance button color
   $(".tabButton").removeClass("btn-primary").addClass("btn-secondary");
-  $(button).removeClass("btn-secondary").addClass("btn-primary");
+  $("#"+id+"Button").removeClass("btn-secondary").addClass("btn-primary");
 }
 
 function hideAttractor() {
 
   // Make the attractor layer invisible
 
-    $("#attractorOverlay").fadeOut(100, result => {
-    document.getElementById("attractorVideo").pause();
     currentlyActive = true;
+
+    $("#attractorOverlay").fadeOut(100, result => {
+      if (document.getElementById("attractorVideo").style.display == "block") {
+        // The attractor is a video, so pause it
+        document.getElementById("attractorVideo").pause();
+      }
     resetActivityTimer();
   });
 }
@@ -478,18 +704,18 @@ function imageOverlayShow(id, card) {
 
   // Use the details to fill out the overlay
   $("#"+id+"_image").attr("src", details.image);
-  if (details.title_en != null) {
-    $("#"+id+"_title").html(details.title_en);
+  if (details.title != null) {
+    $("#"+id+"_title").html(details.title);
   } else {
     $("#"+id+"_title").html("");
   }
-  if (details.caption_en != null) {
-    $("#"+id+"_caption").html(details.caption_en);
+  if (details.caption != null) {
+    $("#"+id+"_caption").html(details.caption);
   } else {
     $("#"+id+"_caption").html("");
   }
-  if (details.credit_en != null) {
-    $("#"+id+"_credit").html(details.credit_en);
+  if (details.credit != null) {
+    $("#"+id+"_credit").html(details.credit);
   } else {
     $("#"+id+"_credit").html("");
   }
@@ -526,6 +752,23 @@ function readUpdate(responseText) {
       } else {
           console.log(`Command not recognized: ${cmd}`);
       }
+    }
+  }
+  if ("content" in update) {
+    if (!arrays_equal(update.content, currentContent)) {
+      currentContent = update.content;
+
+      // Get the file from the helper and build the interface
+      let definition = currentContent[0]; // Only one INI file at a time
+
+      var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function() { 
+          if (xhr.readyState == 4 && xhr.status == 200) {
+            updateContent(parseINIString(xhr.responseText));
+          }
+      }
+      xhr.open("GET", helperAddress + "/content/" + definition, true);
+      xhr.send(null);
     }
   }
   if ("id" in update) {
@@ -565,8 +808,9 @@ function resetActivityTimer() {
 
   // Cancel the existing activity timer and set a new one
 
+    currentlyActive = true;
   clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(showAttractor, 30000);
+  inactivityTimer = setTimeout(showAttractor, timeoutDuration);
 }
 
 function sendConfigUpdate(update) {
@@ -648,19 +892,59 @@ function localizeMasthead() {
   $("#masthead").html(dataDict[currentLang]);
 }
 
+function setAttractor(filename, fileType) {
+  attractorAvailable = true;
+  if (fileType == "video") {
+    document.getElementById("attractorVideo").src = filename;
+    document.getElementById("attractorImage").style.display = "none";
+    document.getElementById("attractorVideo").style.display = "block";
+  } else if (fileType == "image") {
+    document.getElementById("attractorImage").src = filename;
+    document.getElementById("attractorImage").style.display = "block";
+    document.getElementById("attractorVideo").style.display = "none";
+  } else {
+    attractorAvailable = false;
+  }
+}
+
 function showAttractor() {
 
   // Make the attractor layer visible
 
-  document.getElementById("attractorVideo").play()
-  .then(result => {
-    $("#attractorOverlay").fadeIn(100);
-    currentlyActive = false;
-  }).then(result => {
-    toggleLang(languageDict.default);
+  // We don't want to show the attractor while a video is playing
+  if (videoPlaying) {
+    resetActivityTimer();
+    return;
+  }
+
+  currentlyActive = false;
+
+  if (attractorAvailable) {
+    if (document.getElementById("attractorVideo").style.display == "block") {
+      // The attractor is a video, so play the video
+      document.getElementById("attractorVideo").play()
+      .then(result => {
+        $("#attractorOverlay").fadeIn(100);
+        
+      }).then(result => {
+        fontSizeReset();
+        toggleLang(languageDict.default);
+        gotoTab(firstTab);
+        $("#nav-tabContent").scrollTop(0);
+      });
+    } else {
+      $("#attractorOverlay").fadeIn(100);
+      fontSizeReset();
+      toggleLang(languageDict.default);
+      gotoTab(firstTab);
+      $("#nav-tabContent").scrollTop(0);
+    }
+  } else {
+    $("#attractorOverlay").fadeOut(100);
     fontSizeReset();
+    toggleLang(languageDict.default);
     $("#nav-tabContent").scrollTop(0);
-  });
+  }
 }
 
 function sleepDisplays() {
@@ -702,7 +986,7 @@ function toggleLang(lang) {
     $("#langToggleButton").html(languageDict.en);
     $("#langToggleButton").attr("onclick", "toggleLang('en')");
   }
-
+  tabsUpdated = 0;
   textTabs.forEach((item, i) => {
     localizeTextTab(item);
   });
@@ -713,9 +997,21 @@ function toggleLang(lang) {
     localizeImageTab(item);
   });
 
+
   // Finally, update all elements to the previous text size.
-  fontSizeIncrease(false, 3*sizeToSet);
-  fontTicks = sizeToSet;
+  // Add a delay since the tabs are built using async requests
+  let tabsToUpdate = textTabs.length + videoTabs.length + imageTabs.length;
+
+  let tempFunc = function() {
+    if (tabsUpdated == tabsToUpdate) {
+      fontSizeIncrease(false, 3*sizeToSet);
+      fontTicks = sizeToSet;
+    } else {
+      setTimeout(tempFunc, 5);
+    }
+  }
+  tempFunc();
+
 }
 
 function videoOverlayHide(id) {
@@ -731,21 +1027,21 @@ function videoOverlayShow(id, card) {
 
   // Retreive the details from the card data
   let details = $(card).data("details");
-
+  
   // Use the details to fill out the overlay
   $("#"+id+"_video").attr("src", details.video);
-  if (details.title_en != null) {
-    $("#"+id+"_title").html(details.title_en);
+  if (details.title != null) {
+    $("#"+id+"_title").html(details.title);
   } else {
     $("#"+id+"_title").html("");
   }
-  if (details.caption_en != null) {
-    $("#"+id+"_caption").html(details.caption_en);
+  if (details.caption != null) {
+    $("#"+id+"_caption").html(details.caption);
   } else {
     $("#"+id+"_caption").html("");
   }
-  if (details.credit_en != null) {
-    $("#"+id+"_credit").html(details.credit_en);
+  if (details.credit != null) {
+    $("#"+id+"_credit").html(details.credit);
   } else {
     $("#"+id+"_credit").html("");
   }
@@ -774,6 +1070,19 @@ function wakeDisplays() {
   xhr.send(requestString);
 }
 
+function arrays_equal(arr1, arr2) {
+  
+  if (arr1.length != arr2.length) {
+    return false;
+  }
+  for (var i=0; i<arr1.length; i++) {
+    if (arr1[i] != arr2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 
 var videoPlaying = false; // Is a video currently playing?
 var errorDict = {};
@@ -783,9 +1092,13 @@ var currentlyActive = false;
 var fontTicks = 0; // Number of times we have increased the font size
 var languageDict = {default: "en"};
 var currentLang = "en";
+var attractorAvailable = false;
+var timeoutDuration = 30000; // ms of no activity before the attractor is shown.
 var textTabs = []; // Holds ids of textTabs.
 var videoTabs = [];
 var imageTabs = [];
+var firstTab = "";
+var tabsUpdated = 0; // Async tab updates check in here during toggleLang()
 
 // These will be replaced by values from the helper upon loading
 var id = "UNKNOWN";
@@ -794,19 +1107,13 @@ var serverAddress = ""; // The address of the main control server
 var allowedActionsDict = {"refresh": "true"};
 var contentPath = "";
 var current_exhibit = "";
+var currentContent = [];
 
 $(document).bind("touchstart", resetActivityTimer);
 
-// askForDefaults();
+askForDefaults();
 checkForSoftwareUpdate();
 sendPing();
-// setInterval(sendPing, 5000);
+setInterval(sendPing, 5000);
 
-// var videoContent = [{video: 'videos/test_video.mp4', thumb: 'thumbs/test_video.jpg', caption_en: 'This is a test video.', caption_es: "Ésta es una imagen de prueba.", title_en: "Test 1", credit_en: "Public Domain."},];
-// createVideoTab(videoContent, "Videos");
-//
-// var imageContent = [
-//   {image: 'images/test_1.jpeg', thumb: 'thumbs/test_1.jpeg', caption_en: 'This is a test image.', caption_es: "Ésta es una imagen de prueba.", title_en: "Test 1", credit_en: "Public Domain."},
-//   {image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "Test 2"},{image: 'images/test_2.jpeg', thumb: 'thumbs/test_2.jpeg', caption_en: 'This is another test image.', caption_es: "Esta es otra imagen de prueba.", title_en: "A very long title with words."},{image: 'images/test_3.jpeg', thumb: 'thumbs/test_3.jpeg', caption_en: 'Very Wide Image is here.', caption_es: "Esta es otra imagen de prueba.", title_en: "Very Wide Image"},{image: 'images/test_4.jpeg', thumb: 'thumbs/test_4.jpeg', caption_en: 'This is another test image that is very tall.', caption_es: "Esta es otra imagen de prueba.", title_en: "Very Tall Image"},
-// ];
-// createImageTab(imageContent, "Images");
+hideAttractor();
