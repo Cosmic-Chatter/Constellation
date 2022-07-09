@@ -108,13 +108,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
         print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
         if self.path == "/" or self.path.lower().endswith(".html"):
             # print("  Handling HTML file", self.path)
+            user_file = True
             if self.path == "/":
                 self.path = "setup.html"  # Load the setup webpage
+                user_file = False
             elif self.path[0] == '/':
                 self.path = self.path[1:]
             config.HELPING_REMOTE_CLIENT = True
 
-            file_path = get_path([self.path])
+            file_path = get_path([self.path], user_file=user_file)
             try:
                 with open(file_path, "r", encoding='UTF-8') as f:
 
@@ -131,6 +133,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     try:
                         self.send_response(200)
                         self.send_header("Content-type", "text/html")
+                        self.send_header("Access-Control-Allow-Origin", "*")
+                        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+                        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+                        self.send_header('Access-Control-Allow-Credentials', 'true')
                         self.end_headers()
                         self.wfile.write(bytes(page, encoding="UTF-8"))
                     except BrokenPipeError:
@@ -139,6 +145,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # print("do_GET: EXIT")
             except IOError:
                 print(f"GET for unexpected file {self.path}")
+                print("Cannot find it at:", file_path)
                 try:
                     self.send_error(404, f"File Not Found: {self.path}")
                 except BrokenPipeError:
@@ -150,7 +157,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print(f"  Handling {mimetype}")
             if self.path[0] == '/':
                 self.path = self.path[1:]
-            file_path = get_path([self.path])
+            file_path = get_path([self.path], user_file=True)
             try:
                 # print(f"  Opening file {self.path}")
                 with open(file_path, 'rb') as f:
@@ -161,6 +168,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         try:
                             self.send_response(200)
                             self.send_header('Content-type', mimetype)
+                            self.send_header("Access-Control-Allow-Origin", "*")
+                            self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+                            self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+                            self.send_header('Access-Control-Allow-Credentials', 'true')
                             self.end_headers()
                             # print(f"    Writing data to client")
                             self.wfile.write(f.read())
@@ -294,7 +305,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         content_path = "content"
                     else:
                         # Files will be loaded directly by the client
-                        # root = os.path.dirname(os.path.abspath(__file__))
                         content_path = get_path(["content"], user_file=True)
                     config_to_send["contentPath"] = content_path
                     config_to_send["helperAddress"] = get_local_address()
@@ -434,7 +444,8 @@ def check_for_software_update():
     print("Checking for update... ", end="")
     try:
         for line in urllib.request.urlopen(
-                "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/system_helper/version.txt", timeout=1):
+                "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/system_helper/version.txt",
+                timeout=1):
             if float(line.decode('utf-8')) > config.HELPER_SOFTWARE_VERSION:
                 config.helper_software_update_available = True
                 break
@@ -926,7 +937,11 @@ def update_defaults(data: dict, force: bool = False):
 
 def quit_handler(sig, frame):
     """Called when a user presses ctrl-c to shut down gracefully"""
-    print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
+    try:
+        print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
+    except RuntimeError:
+        # Handle race condition with print and shutdown
+        pass
     with config.defaults_file_lock:
         with config.content_file_lock:
             sys.exit(0)

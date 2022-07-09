@@ -16,7 +16,7 @@ dictionary_object = None  # Optionally-loaded configparser object from dictionar
 missingContentWarningList: list[dict] = []  # Holds a list of warning about missing content
 NEXT_EVENT: tuple[datetime.time, list[str]] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
-HELPER_SOFTWARE_VERSION: float = 1.0
+HELPER_SOFTWARE_VERSION: float = 1.1
 
 helper_software_update_available: bool = False
 # If we are serving the HTML file from over the network, this will be set
