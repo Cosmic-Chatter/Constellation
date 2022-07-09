@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from typing import Union
 
 # Constellation imports
 import config
@@ -32,7 +33,7 @@ class Issue:
         config.issueList_last_update_date = self.details["lastUpdateDate"]
 
 
-def delete_issue_media_file(file, id=None):
+def delete_issue_media_file(file: str, owner: str = None):
     """Delete a media file from an issue"""
 
     file_path = os.path.join(config.APP_PATH, "issues", "media", file)
@@ -47,16 +48,16 @@ def delete_issue_media_file(file, id=None):
                 logging.error("Cannot delete requested issue media file %s: file not found", file)
             print(f"Cannot delete requested issue media file {file}: file not found")
 
-    if id is not None:
+    if owner is not None:
         with config.issueLock:
-            issue = get_issue(id)
+            issue = get_issue(owner)
             issue.details["media"] = None
             # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
             issue.refresh_last_update_date()
             save_issueList()
 
 
-def edit_issue(details):
+def edit_issue(details: dict):
     """Edit issue with the id given in details dict"""
     if "id" in details:
         issue = get_issue(details["id"])
@@ -73,13 +74,13 @@ def edit_issue(details):
             issue.details["media"] = details.get("media", issue.details["media"])
 
 
-def get_issue(this_id):
+def get_issue(this_id: str) -> Issue:
     """Return an Issue with the given id, or None if no such Issue exists"""
 
     return next((x for x in config.issueList if x.details["id"] == this_id), None)
 
 
-def remove_issue(this_id):
+def remove_issue(this_id: str):
     """Remove an Issue with the given id from the issueList"""
 
     # First, if there is a media file, delete it

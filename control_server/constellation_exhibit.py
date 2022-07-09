@@ -18,7 +18,7 @@ import config
 class ExhibitComponent:
     """Holds basic data about a component in the exhibit"""
 
-    def __init__(self, id_, this_type, category='dynamic'):
+    def __init__(self, id_: str, this_type: str, category: str = 'dynamic'):
 
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from currentExhibitConfiguration.ini
@@ -127,7 +127,7 @@ class ExhibitComponent:
             #     logging.warning(f"there is no configuration available for component with id={self.id}")
         self.config["current_exhibit"] = config.currentExhibit[0:-8]
 
-    def queue_command(self, command):
+    def queue_command(self, command: str):
 
         """Queue a command to be sent to the component on the next ping"""
 
@@ -182,7 +182,7 @@ class ExhibitComponent:
 class WakeOnLANDevice:
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
-    def __init__(self, id_, mac_address, ip_address=None):
+    def __init__(self, id_: str, mac_address: str, ip_address: str = None):
 
         self.id = id_
         self.type = "WAKE_ON_LAN"
@@ -201,7 +201,7 @@ class WakeOnLANDevice:
         diff = datetime.datetime.now() - self.last_contact_datetime
         return diff.total_seconds()
 
-    def queue_command(self, cmd):
+    def queue_command(self, cmd: str):
 
         """Wrapper function to match other exhibit components"""
 
@@ -247,7 +247,7 @@ class WakeOnLANDevice:
             self.state["status"] = "UNKNOWN"
 
 
-def add_exhibit_component(this_id, this_type, category="dynamic") -> ExhibitComponent:
+def add_exhibit_component(this_id: str, this_type: str, category: str = "dynamic") -> ExhibitComponent:
     """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
     component = ExhibitComponent(this_id, this_type, category)
@@ -268,7 +268,7 @@ def check_available_exhibits():
                 config.exhibit_list.append(file)
 
 
-def command_all_exhibit_components(cmd):
+def command_all_exhibit_components(cmd: str):
     """Queue a command for every exhibit component"""
 
     print("Sending command to all components:", cmd)
@@ -285,7 +285,7 @@ def command_all_exhibit_components(cmd):
         device.queue_command(cmd)
 
 
-def create_new_exhibit(name, clone):
+def create_new_exhibit(name: str, clone: str):
     """Create a new exhibit file
 
     Set clone=None to create a new file, or set it equal to the name of an
@@ -317,7 +317,7 @@ def create_new_exhibit(name, clone):
     check_available_exhibits()
 
 
-def delete_exhibit(name):
+def delete_exhibit(name: str):
     """Delete the specified exhibit file"""
 
     # Make sure we have the proper extension
@@ -335,13 +335,13 @@ def delete_exhibit(name):
     check_available_exhibits()
 
 
-def get_exhibit_component(this_id) -> ExhibitComponent:
+def get_exhibit_component(this_id: str) -> ExhibitComponent:
     """Return a component with the given id, or None if no such component exists"""
 
     return next((x for x in config.componentList if x.id == this_id), None)
 
 
-def get_wake_on_LAN_component(this_id) -> WakeOnLANDevice:
+def get_wake_on_LAN_component(this_id: str) -> WakeOnLANDevice:
     """Return a WakeOnLan device with the given id, or None if no such component exists"""
 
     return next((x for x in config.wakeOnLANList if x.id == this_id), None)
@@ -360,7 +360,7 @@ def poll_wake_on_LAN_devices():
     config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 
-def read_exhibit_configuration(name, updateDefault=False):
+def read_exhibit_configuration(name: str, update_default: bool = False):
 
     # We want the format of name to be "XXXX.exhibit", but it might be
     # "exhibits/XXXX.exhibit"
@@ -389,7 +389,7 @@ def read_exhibit_configuration(name, updateDefault=False):
     exhibit_path = os.path.join(config.APP_PATH, "exhibits")
     config.currentExhibitConfiguration.read(exhibit_path)
 
-    if updateDefault:
+    if update_default:
         configReader = configparser.ConfigParser(delimiters="=")
         configReader.optionxform = str  # Override default, which is case in-sensitive
         cEC_path = os.path.join(config.APP_PATH,
@@ -401,7 +401,7 @@ def read_exhibit_configuration(name, updateDefault=False):
                 configReader.write(f)
 
 
-def set_component_content(id_, content_list):
+def set_component_content(id_: str, content_list: list[str]):
     """Loop the content list and build a string to write to the config file"""
 
     content = ", ".join(content_list)
@@ -423,7 +423,7 @@ def set_component_content(id_, content_list):
             config.currentExhibitConfiguration.write(f)
 
 
-def update_synchronization_list(this_id, other_ids):
+def update_synchronization_list(this_id: str, other_ids: list[str]):
     """Manage synchronization between components.
 
     config.synchronizationList is a list of dictionaries, with one dictionary for every
@@ -459,7 +459,7 @@ def update_synchronization_list(this_id, other_ids):
             config.synchronizationList.pop(match_index)
 
 
-def update_exhibit_component_status(data, ip):
+def update_exhibit_component_status(data, ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
     this_id = data["id"]

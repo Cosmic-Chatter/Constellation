@@ -102,13 +102,30 @@ def send_ping():
         result = requests.post(config.server_address, headers=headers, json=request_dict, timeout=1)
         read_update(result.json())
     except ConnectionRefusedError:
-        print("Connection refused")
+        print("send_ping(): Control Server connection refused")
+    except requests.exceptions.ConnectTimeout:
+        print("send_ping(): Response from Control Server timed out (requests.exceptions.ConnectionTimeout)")
     except requests.exceptions.ConnectionError:
-        print("Unable to connect")
+        print("send_ping(): Unable to connect to Control Server")
+    except requests.exceptions.HTTPError:
+        print("send_ping(): An HTTP error occured")
+    except requests.exceptions.ReadTimeout:
+        print("send_ping(): Ping to Control Server timed out (requests.exceptions.ReadTimeout)")
+    except requests.exceptions.Timeout:
+        print("send_ping(): Request timed out")
+    except requests.exceptions.RequestException:
+        print("send_ping(): An unknown error occured.")
     except json.decoder.JSONDecodeError:
-        print("Did not receive valid JSON. Content received: ", result.text)
+        print("send_ping(): Did not receive valid JSON. Content received: ", result.text)
 
+print("=======================")
+print("Constellation Heartbeat")
+print("=======================")
+print("Loading defaults... ", end="")
 if get_defaults():
+    print("done")
     while True:
         send_ping()
         time.sleep(5)
+else:
+    print("Could not connect to helper at address " + config.helper_address)

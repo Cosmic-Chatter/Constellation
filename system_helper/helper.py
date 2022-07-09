@@ -1,4 +1,4 @@
-"""A small server to communicate with user-facing interfaces and handle interacting with the system (since the browser cannot)"""
+"""A small server to communicate with user-facing interfaces and handle interacting with the system"""
 
 # Standard modules
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -11,6 +11,7 @@ import json
 import sys
 import os
 import signal
+from typing import Union
 import cgi
 import shutil
 import socket
@@ -37,7 +38,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
-    """Respond to requests from the client"""
+    """Respond to request from the client"""
 
     def log_request(self, code='-', size='-'):
 
@@ -60,7 +61,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.wfile.write(buf)
 
     def handle_range_request(self, f):
-
         """Handle a GET request using a byte range.
 
         Inspired by https://github.com/danvk/RangeHTTPServer
@@ -94,12 +94,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
             self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
             self.end_headers()
             self.copy_byte_range(f)
-        except:
-            print("Connection ended prematurely")
+        except Exception as e:
+            print("Connection ended prematurely", e)
 
     def do_GET(self):
-
         """Receive a GET request and respond with a console webpage"""
+
         # print("do_GET: ENTER")
         self.path = self.path.replace("%20", " ")
         # root_path = os.path.dirname(os.path.abspath(__file__))
@@ -113,8 +113,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
             elif self.path[0] == '/':
                 self.path = self.path[1:]
             config.HELPING_REMOTE_CLIENT = True
+
+            file_path = get_path([self.path])
             try:
-                with open(os.path.join(config.application_path, self.path), "r", encoding='UTF-8') as f:
+                with open(file_path, "r", encoding='UTF-8') as f:
 
                     page = str(f.read())
                     # Build the address that the webpage should contact to reach this helper
@@ -148,9 +150,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print(f"  Handling {mimetype}")
             if self.path[0] == '/':
                 self.path = self.path[1:]
+            file_path = get_path([self.path])
             try:
                 # print(f"  Opening file {self.path}")
-                with open(os.path.join(config.application_path, self.path), 'rb') as f:
+                with open(file_path, 'rb') as f:
                     # print(f"    File opened")
                     if "Range" in self.headers:
                         self.handle_range_request(f)
@@ -187,7 +190,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
         # print("do_OPTIONS: EXIT")
 
     def do_POST(self):
-
         """Receives pings from client devices and respond with any updated information"""
 
         print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
@@ -208,16 +210,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if ctype == "multipart/form-data":  # File upload
             try:
                 pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-                content_len = int(self.headers.get('Content-length'))
-                pdict['CONTENT-LENGTH'] = content_len
+                pdict['CONTENT-LENGTH'] = self.headers.get('Content-length')
                 fields = cgi.parse_multipart(self.rfile, pdict)
                 file = fields.get('file')[0]
 
-                content_path = os.path.join(config.application_path, "content")
-                filepath = os.path.join(content_path, fields.get("filename")[0])
-                print(f"Saving uploaded file to {filepath}")
+                file_path = get_path(["content", fields.get("filename")[0]], user_file=True)
+                print(f"Saving uploaded file to {file_path}")
                 with config.content_file_lock:
-                    with open(filepath, "wb") as f:
+                    with open(file_path, "wb") as f:
                         f.write(file)
 
                 json_string = json.dumps({"success": True})
@@ -260,7 +260,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     wake_display()
                 elif data["action"] == "commandProjector":
                     if "command" in data:
-                        commandProjector(data["command"])
+                        command_projector(data["command"])
                 elif data["action"] == "getDefaults":
                     config_to_send = config.defaults_dict.copy()
                     if "allow_restart" not in config_to_send:
@@ -287,7 +287,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             config_to_send["dictionary"] = \
                                 dict(config.dictionary_object.items("CURRENT"))
                     config_to_send["availableContent"] = \
-                        {"all_exhibits": getAllDirectoryContents()}
+                        {"all_exhibits": get_all_directory_contents()}
 
                     if config.HELPING_REMOTE_CLIENT:
                         # Files will be dispatched by the server
@@ -295,7 +295,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     else:
                         # Files will be loaded directly by the client
                         # root = os.path.dirname(os.path.abspath(__file__))
-                        content_path = os.path.join(config.application_path, "content")
+                        content_path = get_path(["content"], user_file=True)
                     config_to_send["contentPath"] = content_path
                     config_to_send["helperAddress"] = get_local_address()
                     json_string = json.dumps(config_to_send)
@@ -318,9 +318,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
                     else:
                         active_content = ""
-                    response = {"all_exhibits": getAllDirectoryContents(),
+                    response = {"all_exhibits": get_all_directory_contents(),
                                 "active_content": active_content,
-                                "system_stats": getSystemStats()}
+                                "system_stats": get_system_stats()}
 
                     json_string = json.dumps(response)
                     try:
@@ -374,7 +374,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response_dict = {"commands": config.commandList,
                                      "missingContentWarnings": config.missingContentWarningList}
 
-                    event_content = checkEventSchedule()
+                    event_content = check_event_schedule()
                     if event_content is not None:
                         response_dict["content"] = event_content
 
@@ -407,12 +407,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     else:
                         lang = "en"
                     if "name" in data:
-                        # root = os.path.dirname(os.path.abspath(__file__))
-                        label_path = os.path.join(config.application_path,
-                                                  "labels",
-                                                  config.defaults_dict["current_exhibit"],
-                                                  lang,
-                                                  data["name"])
+                        label_path = get_path(["labels", config.defaults_dict["current_exhibit"], lang, data["name"]],
+                                              user_file=True)
+
                         try:
                             with open(label_path, "r", encoding='UTF-8') as f:
                                 label = f.read()
@@ -432,12 +429,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
 
 def check_for_software_update():
-    """Download the version.txt file from Github and check if there is an update"""
+    """Download the version.txt file from GitHub and check if there is an update"""
 
     print("Checking for update... ", end="")
     try:
         for line in urllib.request.urlopen(
-                "https://raw.githubusercontent.com/FWMSH/Constellation/main/system_helper/version.txt", timeout=1):
+                "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/system_helper/version.txt", timeout=1):
             if float(line.decode('utf-8')) > config.HELPER_SOFTWARE_VERSION:
                 config.helper_software_update_available = True
                 break
@@ -453,7 +450,7 @@ def check_for_software_update():
         print("up to date.")
 
 
-def parse_byte_range(byte_range):
+def parse_byte_range(byte_range: str) -> tuple[int, int]:
     """Returns the two numbers in 'bytes=123-456' or throws ValueError.
     The last number or both numbers may be None.
     """
@@ -513,31 +510,35 @@ def shutdown():
 
 
 def sleep_display():
-    if strToBool(config.defaults_dict.get("allow_sleep", True)):
+    if str_to_bool(config.defaults_dict.get("allow_sleep", True)):
         if sys.platform == "darwin":  # MacOS
             os.system("pmset displaysleepnow")
         elif sys.platform == "linux":
             os.system("xset dpms force off")
         elif sys.platform == "win32":
-            os.system("nircmd.exe monitor async_off")
+            nircmd_path = get_path(["nircmd.exe"])
+            os.system(nircmd_path + " monitor async_off")
 
 
 def wake_display():
     """Wake the display up or power it on"""
 
-    if config.defaults_dict["display_type"] == "screen":
+    display_type = config.defaults_dict.get("display_type", "screen")
+
+    if display_type == "screen":
         if sys.platform == "darwin":  # MacOS
             os.system("caffeinate -u -t 2")
         elif sys.platform == "linux":
             os.system("xset dpms force on")
         elif sys.platform == "win32":
             # os.system("nircmd.exe monitor async_on")
-            os.system("nircmd sendkeypress ctrl")
-    elif config.defaults_dict["display_type"] == "projector":
-        commandProjector("on")
+            nircmd_path = get_path(["nircmd.exe"])
+            os.system(nircmd_path + " sendkeypress ctrl")
+    elif display_type == "projector":
+        command_projector("on")
 
 
-def commandProjector(cmd):
+def command_projector(cmd: str):
     """Send commands to a locally-connected projector"""
 
     make = "Optoma"
@@ -554,7 +555,7 @@ def commandProjector(cmd):
         if cmd == "on":
             ser.write(b"~0000 1\r")
         elif cmd == "off":
-            if strToBool(config.defaults_dict.get("allow_sleep", True)):
+            if str_to_bool(config.defaults_dict.get("allow_sleep", True)):
                 ser.write(b"~0000 0\r")
         elif cmd == "checkState":
             ser.write(b"~00124 1\r")
@@ -565,29 +566,29 @@ def commandProjector(cmd):
             print(f"commandProjector: Error: Unknown command: {cmd}")
 
 
-def delete_file(file, absolute=False):
+def delete_file(file: str, absolute: bool = False):
     """Delete a file"""
 
     if absolute:
         file_path = file
     else:
-        file_path = os.path.join(config.application_path, "content", file)
+        file_path = get_path(["content", file], user_file=True)
+
     print("Deleting file:", file_path)
     with config.content_file_lock:
         os.remove(file_path)
 
 
-def getAllDirectoryContents():
+def get_all_directory_contents() -> list:
     """Recursively search for files in the content directory and its subdirectories"""
 
-    # root = os.path.dirname(os.path.abspath(__file__))
-    content_path = os.path.join(config.application_path, "content")
+    content_path = get_path(["content"], user_file=True)
     result = [os.path.relpath(os.path.join(dp, f), content_path) for dp, dn, fn in os.walk(content_path) for f in fn]
 
     return [x for x in result if x.find(".DS_Store") == -1]
 
 
-def getDirectoryContents(path, absolute=False):
+def get_directory_contents(path: str, absolute: bool = False) -> list:
     """Return the contents of an exhibit directory
 
     if absolute == False, the path is appended to the default content directory
@@ -596,8 +597,7 @@ def getDirectoryContents(path, absolute=False):
     if absolute:
         contents = os.listdir(path)
     else:
-        # root = os.path.dirname(os.path.abspath(__file__))
-        content_path = os.path.join(config.application_path, "content")
+        content_path = get_path(["content"], user_file=True)
         contents = os.listdir(os.path.join(content_path, path))
     return [x for x in contents if x[0] != "."]  # Don't return hidden files
 
@@ -605,8 +605,7 @@ def getDirectoryContents(path, absolute=False):
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    # root = os.path.dirname(os.path.abspath(__file__))
-    content_path = os.path.join(config.application_path, "content")
+    content_path = get_path(["content"], user_file=True)
     try:
         os.listdir(content_path)
     except FileNotFoundError:
@@ -618,13 +617,13 @@ def check_directory_structure():
             print("Error: unable to create directory. Do you have write permission?")
 
 
-def get_local_address():
+def get_local_address() -> str:
     """Return the IP address and port of this helper"""
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0)
     try:
-        # doesn't even have to be reachable
+        # Doesn't even have to be reachable
         s.connect(('10.255.255.255', 1))
         IP = s.getsockname()[0]
     except:
@@ -635,7 +634,7 @@ def get_local_address():
     return "http://" + IP + ":" + str(config.defaults_dict["helper_port"])
 
 
-def strToBool(val):
+def str_to_bool(val: str) -> bool:
     """Take a string value like "false" and convert it to a bool"""
 
     if isinstance(val, bool):
@@ -652,10 +651,8 @@ def strToBool(val):
     return val_to_return
 
 
-def getSystemStats():
-    # Function to return a dictionary with the total and free space available
-    # on the disk where we are storing files, as well as the current CPU and RAM
-    # load
+def get_system_stats() -> dict[str, Union[int, float]]:
+    """Return a dictionary with disk space, CPU load, and RAM amount"""
 
     result = {}
 
@@ -678,7 +675,7 @@ def getSystemStats():
     return result
 
 
-def performManualContentUpdate(content):
+def perform_manual_content_update(content: list[str]):
     """Take the given list of content and update the control server"""
 
     # First, update the control server
@@ -704,7 +701,7 @@ def retrieve_schedule():
     schedule_to_read = None
 
     for source in sources_to_try:
-        sched_path = os.path.join(config.application_path, "schedules", source)
+        sched_path = get_path(["schedules", source], user_file=True)
         try:
             schedules = os.listdir(sched_path)
             if today_filename in schedules:
@@ -723,27 +720,26 @@ def retrieve_schedule():
             pass
 
     if schedule_to_read is not None:
-        parser = configparser.ConfigParser(delimiters=("="))
+        parser = configparser.ConfigParser(delimiters="=")
         parser.read(schedule_to_read)
         if "SCHEDULE" in parser:
-            readSchedule(parser["SCHEDULE"])
+            read_schedule(parser["SCHEDULE"])
         else:
             print("retrieve_schedule: error: no INI section 'SCHEDULE' found!")
     else:
         # Check again tomorrow
         config.schedule = []
-        config.schedule.append((datetime.time(0, 1), "reload_schedule"))
+        config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
         print("No schedule for today. Checking again tomorrow...")
 
 
-def readSchedule(schedule_input):
+def read_schedule(schedule_input):
     """Parse the configParser section provided in schedule and convert it for later use"""
 
     config.schedule = []
     config.missingContentWarningList = []
 
-    # root = os.path.dirname(os.path.abspath(__file__))
-    content_path = os.path.join(config.application_path, "content")
+    content_path = get_path(["content"], user_file=True)
 
     for key in schedule_input:
         event_time = dateutil.parser.parse(key).time()
@@ -756,12 +752,12 @@ def readSchedule(schedule_input):
         config.schedule.append((event_time, content))
 
     # Add an event at 12:01 AM to retrieve the new schedule
-    config.schedule.append((datetime.time(0, 1), "reload_schedule"))
+    config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
 
-    queueNextScheduledEvent()
+    queue_next_scheduled_event()
 
 
-def queueNextScheduledEvent():
+def queue_next_scheduled_event():
     """Cycle through the schedule and queue the next event"""
 
     config.NEXT_EVENT = None
@@ -770,8 +766,7 @@ def queueNextScheduledEvent():
         sorted_sched = sorted(config.schedule)
         now = datetime.datetime.now().time()
 
-        # root = os.path.dirname(os.path.abspath(__file__))
-        content_path = os.path.join(config.application_path, "content")
+        content_path = get_path(["content"], user_file=True)
 
         for event in sorted_sched:
             event_time, content = event
@@ -787,35 +782,35 @@ def queueNextScheduledEvent():
                 break
 
 
-def checkEventSchedule():
+def check_event_schedule():
     """Check the NEXT_EVENT and see if it is time. If so, set the content"""
 
-    content_to_retrun = None
+    content_to_return = None
     if config.NEXT_EVENT is not None:
         event_time, content = config.NEXT_EVENT
         # print("Checking for scheduled event:", content)
         # print(f"Now: {datetime.now().time()}, Event time: {time}, Time for event: {datetime.now().time() > time}")
         if datetime.datetime.now().time() > event_time:  # It is time for this event!
             print("Scheduled event occurred:", event_time, content)
-            if content == "reload_schedule":
+            if content == ["reload_schedule"]:
                 retrieve_schedule()
             else:
-                performManualContentUpdate(content)
-                content_to_retrun = content
+                perform_manual_content_update(content)
+                content_to_return = content
             config.NEXT_EVENT = None
 
-    queueNextScheduledEvent()
-    return content_to_retrun
+    queue_next_scheduled_event()
+    return content_to_return
 
 
-def read_default_configuration(checkDirectories=True, dictToRead=None):
+def read_default_configuration(check_directories: bool = True, dict_to_read: dict = None):
     """Load configuration parameters from defaults.ini"""
 
-    config.defaults_object = configparser.ConfigParser(delimiters=("="))
+    config.defaults_object = configparser.ConfigParser(delimiters="=")
 
-    if dictToRead is not None:
+    if dict_to_read is not None:
         # Build the meta-dict required by configparser
-        meta_dict = {"CURRENT": dictToRead}
+        meta_dict = {"CURRENT": dict_to_read}
         config.defaults_object.read_dict(meta_dict)
     else:
         # Read defaults.ini
@@ -824,7 +819,7 @@ def read_default_configuration(checkDirectories=True, dictToRead=None):
             config.defaults_object.read(defaults_path)
         else:
             handle_missing_defaults_file()
-            read_default_configuration(checkDirectories=checkDirectories, dictToRead=dictToRead)
+            read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)
             webbrowser.open(f"http://localhost:{config.defaults_dict['helper_port']}")
             return
 
@@ -832,20 +827,30 @@ def read_default_configuration(checkDirectories=True, dictToRead=None):
     config.defaults_dict = dict(default.items())
 
     if "autoplay_audio" in config.defaults_dict \
-            and strToBool(config.defaults_dict["autoplay_audio"]) is True:
+            and str_to_bool(config.defaults_dict["autoplay_audio"]) is True:
         print(
             "Warning: You have enabled audio. Make sure the file is whitelisted in the browser or media will not play.")
 
     # Make sure we have the appropriate file system set up
-    if checkDirectories:
+    if check_directories:
         check_directory_structure()
 
     # return(config_object, config_dict)
 
 
-def handle_missing_defaults_file():
+def get_path(path_list: list[str], user_file: bool = False) -> str:
+    """Return a path that takes into account whether the app has been packaged by Pyinstaller"""
 
-    """Create a stub defautls.ini file and launch setup.html for configuration"""
+    _path = os.path.join(config.application_path, *path_list)
+    if getattr(sys, 'frozen', False) and not user_file:
+        # Handle the case of a Pyinstaller --onefile binary
+        _path = os.path.join(config.exec_path, *path_list)
+
+    return _path
+
+
+def handle_missing_defaults_file():
+    """Create a stub defaults.ini file and launch setup.html for configuration"""
 
     # Determine an available port
     port = 8000
@@ -859,7 +864,7 @@ def handle_missing_defaults_file():
             if e.errno == errno.EADDRINUSE:
                 port += 1
             else:
-                # something else raised the socket.error exception
+                # Something else raised the socket.error exception
                 print(e)
 
         s.close()
@@ -877,13 +882,14 @@ def handle_missing_defaults_file():
     update_defaults(config.defaults_dict, force=True)
 
 
-def set_defaults(defaults):
+def set_defaults(defaults: dict):
     """Take a dictionary and write it to defaults.ini"""
 
-    read_default_configuration(checkDirectories=False, dictToRead=defaults)
+    read_default_configuration(check_directories=False, dict_to_read=defaults)
     update_defaults(config.defaults_dict, force=True)
 
-def update_defaults(data, force=False):
+
+def update_defaults(data: dict, force: bool = False):
     """Take a dictionary 'data' and write relevant parameters to disk if they have changed."""
 
     update_made = force
@@ -913,8 +919,7 @@ def update_defaults(data, force=False):
     # Update file
     if update_made:
         with config.defaults_file_lock:
-            defaults_path = os.path.join(config.application_path,
-                                         'defaults.ini')
+            defaults_path = get_path(['defaults.ini'], user_file=True)
             with open(defaults_path, 'w', encoding='UTF-8') as f:
                 config.defaults_object.write(f)
 
@@ -930,25 +935,25 @@ def quit_handler(sig, frame):
 def load_dictionary():
     """Look for a file called dictionary.ini and load it if it exists"""
 
-    # root_path = os.path.dirname(os.path.abspath(__file__))
-    dictionary_path = os.path.join(config.application_path, "dictionary.ini")
+    dict_path = get_path(["dictionary.ini"], user_file=True)
 
-    if "dictionary.ini" in os.listdir(config.application_path):
-        config.dictionary_object = configparser.ConfigParser(delimiters=("="))
+    if os.path.isfile(dict_path):
+        config.dictionary_object = configparser.ConfigParser(delimiters="=")
         config.dictionary_object.optionxform = str  # Override the default, which is case-insensitive
-        config.dictionary_object.read(dictionary_path)
+        config.dictionary_object.read(dict_path)
 
 
 if __name__ == "__main__":
 
     # Check whether we have packaged with Pyinstaller and set teh appropriate root path.
+    config.exec_path = os.path.dirname(os.path.abspath(__file__))
     if getattr(sys, 'frozen', False):
         # If the application is run as a --onefile bundle, the PyInstaller bootloader
         # extends the sys module by a flag frozen=True and sets the app
         # path into variable sys.executable.
         config.application_path = os.path.dirname(sys.executable)
     else:
-        config.application_path = os.path.dirname(os.path.abspath(__file__))
+        config.application_path = config.exec_path
 
     signal.signal(signal.SIGINT, quit_handler)
 
@@ -958,11 +963,11 @@ if __name__ == "__main__":
     # If it exists, load the dictionary that maps one value into another
     load_dictionary()
 
-    # Look for an availble schedule and load it
+    # Look for an available schedule and load it
     retrieve_schedule()
 
     # Check the GitHub server for an available software update
-    # check_for_software_update()
+    check_for_software_update()
 
     print(f'Launching server at address {get_local_address()} to serve {config.defaults_dict["id"]}.')
 

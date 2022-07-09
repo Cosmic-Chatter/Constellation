@@ -581,9 +581,6 @@ function showExhibitComponentInfo(id) {
                     <span class="sr-only">Toggle Dropdown</span>
                   </button>
                   <div class="dropdown-menu">
-                    <a class="dropdown-item disabled text-secondary">Rename</a>
-                    <a class="dropdown-item disabled"></a>
-                    <div class="dropdown-divider"></div>
                     <a class="dropdown-item text-danger" onclick="deleteRemoteFile('${id}', '${contentList[i]}')">Delete</a>
                   </div>
                 </div>
@@ -2873,6 +2870,7 @@ function editTrackerTemplateModalUpdateFromInput() {
   let currentWidget = template[originalWidgetName];
 
   let currentWidgetName = $("#editTrackerTemplateNameInput").val();
+
   currentWidget.label = $("#editTrackerTemplateLabelInput").val();
   if (["counter", "number"].includes(currentWidget.type)) {
     // Only name and label
@@ -2891,6 +2889,7 @@ function editTrackerTemplateModalUpdateFromInput() {
   }
   delete template[originalWidgetName];
   template[currentWidgetName] = currentWidget;
+  $("#editTrackerTemplateModal").data("currentWidget", currentWidgetName);
 
   $("#editTrackerTemplateModal").data("template", template);
   $("#editTrackerTemplateModal").data("currentWidget", currentWidget.name);
@@ -2924,7 +2923,6 @@ function editTrackerTemplateModalSubmitChanges() {
       if (this.responseText != "") {
         let response = JSON.parse(this.responseText);
         if ("success" in response && response.success == true) {
-          console.log("here")
           $("#editTrackerTemplateModal").modal("hide");
         }
       }

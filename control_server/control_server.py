@@ -663,6 +663,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     try:
                         readme_path = os.path.join(config.APP_PATH,
                                                    "README.md")
+                        if not os.path.isfile(readme_path):
+                            # Handle the case of a Pyinstaller --onefile binary
+                            readme_path = os.path.join(config.EXEC_PATH, "README.md")
                         with open(readme_path, 'r', encoding='UTF-8') as f:
                             text = f.read()
                             self.wfile.write(bytes(text, encoding="UTF-8"))
@@ -1039,7 +1042,7 @@ def command_line_setup():
     ip_address = input(f"Enter this computer's static IP address (default: {default_ip}): ").strip()
     if ip_address == "":
         ip_address = default_ip
-    settings_dict["ip_address"] = ip_address
+    settings_dict["server_ip_address"] = ip_address
 
     default_port = 8082
     while True:
@@ -1349,6 +1352,9 @@ def check_for_software_update():
                 software_update_available = True
                 break
     except urllib.error.HTTPError:
+        print("cannot connect to update server")
+        return
+    except urllib.error.URLError:
         print("cannot connect to update server")
         return
     if software_update_available:

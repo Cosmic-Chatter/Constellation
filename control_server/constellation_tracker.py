@@ -7,12 +7,13 @@ import io
 import json
 import logging
 import os
+from typing import Union
 
 # Constellation modules
 import config
 
 
-def create_CSV(file_path, filename=""):
+def create_CSV(file_path: Union[str, os.PathLike], filename: str = ""):
     """Load a tracker text file and convert it to a CSV"""
 
     dict_list = []
@@ -22,7 +23,7 @@ def create_CSV(file_path, filename=""):
     return JSON_list_to_CSV(dict_list, filename=filename)
 
 
-def create_template(file_path, template):
+def create_template(file_path: Union[str, os.PathLike], template: dict):
     """Given a template dictionary, write it to file"""
 
     parser = configparser.ConfigParser()
@@ -36,7 +37,7 @@ def create_template(file_path, template):
             return False
 
 
-def get_layout_definition(name, kind="flexible-tracker"):
+def get_layout_definition(name: str, kind: str = "flexible-tracker") -> tuple[dict, bool, str]:
     """Load a given INI file and return a dictionary defining a tracker template."""
 
     layout = configparser.ConfigParser(delimiters="=")
@@ -54,7 +55,7 @@ def get_layout_definition(name, kind="flexible-tracker"):
     return layout_definition, success, reason
 
 
-def get_raw_text(name, kind='flexible-tracker'):
+def get_raw_text(name: str, kind: str = 'flexible-tracker') -> tuple[str, bool, str]:
     """Return the contents of a text file."""
 
     file_path = os.path.join(config.APP_PATH, kind, "data", name)
@@ -76,13 +77,13 @@ def get_raw_text(name, kind='flexible-tracker'):
     return result, success, reason
 
 
-def get_unique_keys(dict_list):
+def get_unique_keys(dict_list: list) -> list:
     """Return a set of unique keys from a list of dicts"""
 
     return list(set().union(*(d.keys() for d in dict_list)))
 
 
-def get_unique_values(dict_list, key):
+def get_unique_values(dict_list: list, key: str) -> list:
     """For a given key, search the list of dicts for all unique values, expanding lists."""
 
     unique_values = set()
@@ -95,7 +96,7 @@ def get_unique_values(dict_list, key):
     return list(unique_values)
 
 
-def JSON_list_to_CSV(dict_list, filename=""):
+def JSON_list_to_CSV(dict_list: list, filename: str = "") -> str:
     """Convert a list JSON dicts to a comma-separated string"""
 
     # First, identify any keys that have lists as their value
@@ -139,8 +140,8 @@ def JSON_list_to_CSV(dict_list, filename=""):
     return result
 
 
-def write_JSON(data, file_path):
-    """Take an object, convert it to JSON and append it to the appropriate file."""
+def write_JSON(data: dict, file_path: Union[str, os.PathLike]) -> tuple[bool, str]:
+    """Take a dictionary, convert it to JSON and append it to the appropriate file."""
 
     # file_path = os.path.join(config.APP_PATH, kind, "data", name)
     success = True
@@ -164,7 +165,7 @@ def write_JSON(data, file_path):
     return success, reason
 
 
-def write_raw_text(data, name, kind="flexible-tracker"):
+def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker") -> tuple[bool, str]:
     """Write an un-formatted string to file"""
 
     file_path = os.path.join(config.APP_PATH, kind, "data", name)

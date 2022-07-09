@@ -307,7 +307,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 all_content = list(Path("/home/sos/sosrc/").rglob("*.[sS][oO][sS]"))
                 response = {"all_exhibits": [str(os.path.relpath(x, '/home/sos/sosrc/')) for x in all_content],
                             "active_content": active_content,
-                            "system_stats": helper.getSystemStats()}
+                            "system_stats": helper.get_system_stats()}
                 json_string = json.dumps(response)
                 try:
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -440,7 +440,7 @@ DEBUG = False
 PING_THREAD = None
 defaultWriteLock = threading.Lock()
 
-helper.read_default_configuration(checkDirectories=False)
+helper.read_default_configuration(check_directories=False)
 helper.load_dictionary()
 
 SOS_SOCKET = connect_to_SOS()
