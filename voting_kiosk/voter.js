@@ -9,9 +9,9 @@ function buildLayout(definition) {
   let buttons = Object.keys(definition);
   let buttonClasses;
   if (buttons.length-1 < 6) {
-    buttonClasses = 'col button-col mx-1 px-0';
+    buttonClasses = 'col button-col mx-0 px-1';
   } else {
-    buttonClasses = 'col-3 button-col mx-1 px-0';
+    buttonClasses = 'col-3 button-col mx-0 px-1';
   }
 
   // Iterate through the buttons and build their HTML
@@ -42,11 +42,11 @@ function buildLayout(definition) {
     }
 
     let text = document.createElement("div");
-    text.classList = "card-body card-body-full";
+    text.classList = "card-body card-body-full d-flex align-items-center justify-content-center";
     card.appendChild(text);
 
     let title = document.createElement("div");
-    title.classList = "card-title";
+    title.classList = "card-title my-0";
     if ("title" in buttonDef) {
       numText += 1;
       title.innerHTML = buttonDef.title;
@@ -55,8 +55,18 @@ function buildLayout(definition) {
   });
 
   if (numText == 0) {
-    $(".card-body").hide();
+    $(".card-body").remove();
   }
+
+  // Make sure all the buttons are the same height
+  let heights = $(".card-body").map(function ()
+    {
+        return $(this).height();
+    }).get();
+  let maxHeight = Math.max.apply(null, heights);
+  $(".card-body").each(function() {
+    $(this).height(maxHeight);
+  } )
 
 }
 
@@ -274,18 +284,29 @@ function updateContent(name, definition) {
     configurationName = name;
   }
 
+  // Clear the vote categories
+  voteCounts = {};
+
   // Parse the settings and make the appropriate changes
   if ("header" in definition.SETTINGS) {
     document.getElementById("header").innerHTML = definition.SETTINGS.header;
+  } else {
+    document.getElementById("header").innerHTML = "";
   }
   if ("subheader" in definition.SETTINGS) {
     document.getElementById("subheader").innerHTML = definition.SETTINGS.subheader;
+  } else {
+    document.getElementById("subheader").innerHTML = "";
   }
   if ("footer" in definition.SETTINGS) {
     document.getElementById("footer").innerHTML = definition.SETTINGS.footer;
+  } else {
+    document.getElementById("footer").innerHTML = "";
   }
   if ("subfooter" in definition.SETTINGS) {
     document.getElementById("subfooter").innerHTML = definition.SETTINGS.subfooter;
+  } else {
+    document.getElementById("subfooter").innerHTML = "";
   }
   if ("recording_interval" in definition.SETTINGS) {
     clearInterval(voteCounter);
