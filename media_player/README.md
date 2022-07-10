@@ -1,7 +1,7 @@
 # Media Player
 
 ## Introduction
-Media player displays images and videos using the browser as its rendering engine. The player and its optional kiosk are implemented in JavaScript.
+Media Player displays images and videos using the browser as its rendering engine. The player and its optional kiosk are implemented in JavaScript.
 
 ## Terminology
 * `collateral`: Material other than the `content`, such as thumbnails, label text, etc.
