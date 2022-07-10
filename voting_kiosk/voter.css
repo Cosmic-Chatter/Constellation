@@ -18,7 +18,7 @@ body {
     font-family: var(--button-font);
 }
 .card-body-full {
-    height: 15vh;
+    min-height: 15vh;
     color: var(--button-text-color);
 }
 
