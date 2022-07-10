@@ -102,6 +102,7 @@ def send_ping():
                     "type": config.this_type,
                     "helperAddress": config.helper_address,
                     "allowed_actions": config.allowed_actions,
+                    "constellation_app_id": "heartbeat",
                     "AnyDeskID": config.AnyDesk_id}
 
     headers = {'Content-type': 'application/json'}

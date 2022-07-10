@@ -208,6 +208,7 @@ function sendPing() {
       "id": id,
       "type": type,
       "currentInteraction": String(currentlyActive),
+      "constellation_app_id": "sos_kiosk",
       "allowed_actions": {"refresh": "true"}
     };
     let requestString = JSON.stringify(requestDict);

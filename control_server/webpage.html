@@ -41,7 +41,7 @@
       #componentAvailableContentList {
         max-height: 25vh;
         min-height: 15vh;
-        overflow-y: scroll;
+        overflow-y: auto;
       }
     </style>
   </head>
@@ -74,13 +74,20 @@
           <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
-                <div class="modal-header w-100">
+                <div class="modal-header w-100 pr-0">
                   <div class='row modal-title align-items-middle w-100'>
                     <div class='col-8'>
                       <h4 id="componentInfoModalTitle"></h4>
                     </div>
-                    <div class='col-4'>
-                      <div id="componentInfoModalIPAddress" align="right"></div>
+                    <div class='col-4 pr-0'>
+                      <div class="dropdown float-right">
+                        <button class="btn btn-sm btn-info dropdown-toggle" type="button" id="constellationComponentIdButton" data-toggle="dropdown" aria-expanded="false">
+                          Voting Kiosk
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="constellationComponentIdButton">
+                          <span class="dropdown-item-text pl-3">IP: <span id="componentInfoModalIPAddress" ></span></span>
+                        </div>
+                      </div>
                     </div>
                     <div class="col-12">
                       <div id="componentInfoModalDescription">This is the description</div>

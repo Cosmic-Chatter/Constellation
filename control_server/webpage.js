@@ -13,6 +13,7 @@ class ExhibitComponent {
     this.status = "OFFLINE";
     this.allowed_actions = [];
     this.AnyDeskID = "";
+    this.constellationAppId = "";
 
     if (this.type == "PROJECTOR") {
       this.checkProjector();
@@ -438,6 +439,25 @@ function showExhibitComponentInfo(id) {
   } else { // This is a normal ExhibitComponent
 
     $("#componentInfoModalTitle").html(id);
+    let constellationAppId = "Unknown Component";
+    if (obj.constellationAppId != "") {
+      let constellationAppIdDisplayNames = {
+        "heartbeat": "HeartBeat",
+        "infostation": "InfoStation",
+        "media_browser": "Media Browser",
+        "media_player": "Media Player",
+        "sos_kiosk": "SOS Kiosk",
+        "sos_screen_player": "SOS Screen Player",
+        "static_component": "Static component",
+        "timelapse_viewer": "Timelapse Viewer",
+        "voting_kiosk": "Voting Kiosk",
+        "word_cloud": "Word Cloud"
+      }
+      if (obj.constellationAppId in constellationAppIdDisplayNames) {
+        constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId];
+      }
+    }
+    $("#constellationComponentIdButton").html(constellationAppId);
     $("#componentInfoModalIPAddress").html(obj.ip);
     if (obj.description == "") {
       $("#componentInfoModalDescription").hide();
@@ -883,6 +903,9 @@ function updateComponentFromServer(component) {
     newComponent.setStatus(component.status);
     if ("allowed_actions" in component) {
       newComponent.allowed_actions = component.allowed_actions;
+    }
+    if ("constellation_app_id" in component) {
+      newComponent.constellationAppId = component.constellation_app_id;
     }
     newComponent.buildHTML();
     exhibitComponents.push(newComponent);

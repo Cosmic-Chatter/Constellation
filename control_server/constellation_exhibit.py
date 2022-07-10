@@ -5,6 +5,7 @@ import logging
 import shutil
 import threading
 import time
+from typing import Union
 import os
 
 # Non-standard imports
@@ -23,19 +24,20 @@ class ExhibitComponent:
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from currentExhibitConfiguration.ini
 
-        self.id = id_
-        self.type = this_type
-        self.category = category
-        self.ip = ""  # IP address of client
-        self.helperPort = 8000  # port of the localhost helper for this component DEPRECIATED
-        self.helperAddress = None  # full IP and port of helper
+        self.id: str = id_
+        self.type: str = this_type
+        self.category: str = category
+        self.ip: str = ""  # IP address of client
+        self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
+        self.helperAddress: Union[str, None] = None  # full IP and port of helper
+        self.constellation_app_id: str = ""  # Internal identifier for what app this component is running
 
-        self.macAddress = None  # Added below if we have specified a Wake on LAN device
-        self.broadcastAddress = "255.255.255.255"
-        self.WOLPort = 9
+        self.macAddress: Union[str, None] = None  # Added below if we have specified a Wake on LAN device
+        self.broadcastAddress: str = "255.255.255.255"
+        self.WOLPort: int = 9
 
-        self.last_contact_datetime = datetime.datetime.now()
-        self.lastInteractionDateTime = datetime.datetime(2020, 1, 1)
+        self.last_contact_datetime: datetime.datetime = datetime.datetime.now()
+        self.lastInteractionDateTime: datetime.datetime = datetime.datetime(2020, 1, 1)
 
         self.config = {"commands": [],
                        "allowed_actions": [],
@@ -190,6 +192,7 @@ class WakeOnLANDevice:
         self.broadcastAddress = "255.255.255.255"
         self.port = 9
         self.ip = ip_address
+        self.constellation_app_id: str = "wol_only"
         self.config = {"allowed_actions": ["power_on"],
                        "description": config.componentDescriptions.get(id_, "")}
 
@@ -493,6 +496,8 @@ def update_exhibit_component_status(data, ip: str):
     else:
         if "error" in component.config:
             component.config.pop("error")
+    if "constellation_app_id" in data:
+        component.constellation_app_id = data["constellation_app_id"]
 
 
 # Set up log file

@@ -248,6 +248,7 @@ function sendPing() {
                    "helperPort": helperAddress.split(":")[2], // Depreciated
                    "helperAddress": helperAddress,
                    "allowed_actions": allowedActionsDict,
+                   "constellation_app_id": "timelapse_viewer",
                    "AnyDeskID": AnyDeskID};
 
     // See if there is an error to report

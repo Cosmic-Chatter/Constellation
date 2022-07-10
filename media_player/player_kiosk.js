@@ -318,6 +318,7 @@ function sendPing() {
                        "type": type,
                        "currentInteraction": String(currentlyActive),
                        "allowed_actions": allowedActionsDict,
+                       "constellation_app_id": "media_player",
                        "AnyDeskID": AnyDeskID};
 
     var requestString = JSON.stringify(requestDict);

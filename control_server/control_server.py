@@ -79,6 +79,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             temp["ip_address"] = item.ip
             temp["helperPort"] = item.helperPort
             temp["helperAddress"] = item.helperAddress
+            temp["constellation_app_id"] = item.constellation_app_id
             component_dict_list.append(temp)
 
         for item in config.projectorList:
@@ -1225,7 +1226,8 @@ def load_default_configuration():
         for this_type in static_components:
             split = static_components[this_type].split(",")
             for this_id in split:
-                c_exhibit.add_exhibit_component(this_id.strip(), this_type, category="static")
+                static_component = c_exhibit.add_exhibit_component(this_id.strip(), this_type, category="static")
+                static_component.constellation_app_id = "static_component"
         print("done")
     except KeyError:
         print("none specified")

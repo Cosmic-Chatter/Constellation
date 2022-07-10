@@ -299,6 +299,7 @@ function sendPing() {
                    "helperPort": helperAddress.split(":")[2], // DEPRECIATED
                    "helperAddress": helperAddress,
                    "currentInteraction": String(currentlyActive),
+                   "constellation_app_id": "media_browser",
                    "allowed_actions": allowedActionsDict};
 
     // See if there is an error to report

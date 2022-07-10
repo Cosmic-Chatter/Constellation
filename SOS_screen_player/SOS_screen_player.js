@@ -216,6 +216,7 @@ function sendPing() {
                    "id": id,
                    "type": type,
                    "allowed_actions": allowedActionsDict,
+                   "constellation_app_id": "sos_screen_player",
                    "AnyDeskID": AnyDeskID};
 
     if (if errorDict.length > 0) {

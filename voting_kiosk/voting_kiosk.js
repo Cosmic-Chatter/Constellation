@@ -540,6 +540,7 @@ function sendPing() {
                     "helperPort": helperAddress.split(":")[2], // Depreciated
                     "helperAddress": helperAddress,
                     "allowed_actions": allowedActionsDict,
+                    "constellation_app_id": "voting_kiosk",
                     "AnyDeskID": AnyDeskID};
 
     // See if there is an error to report
