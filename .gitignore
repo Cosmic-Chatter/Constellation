@@ -1,6 +1,5 @@
 
 *.pyc
 *.log
-*.ttf
-*.otf
+/control_server/galleryConfiguration.ini
 InfoStation/helper
