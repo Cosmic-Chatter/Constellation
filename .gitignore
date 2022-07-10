@@ -3,3 +3,7 @@
 *.log
 /control_server/galleryConfiguration.ini
 InfoStation/helper
+media_player/good-times-rg.ttf
+media_player/Gotham-Bold.otf
+SOS_kiosk/good-times-rg.ttf
+media_player/Gotham-Book.otf
