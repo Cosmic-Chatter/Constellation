@@ -26,11 +26,11 @@ function buildLayout(definition) {
 
     let div = document.createElement("div");
     div.classList = buttonClasses;
-    div.addEventListener("click", function(){logVote(item, 1)});
+    div.addEventListener("click", function(){buttonTouched(div, item)});
     document.getElementById("cardRow").appendChild(div);
 
     let card = document.createElement("div");
-    card.classList = "card mb-0";
+    card.classList = "card card-inactive mb-0";
     div.appendChild(card);
 
     if ("icon" in buttonDef) {
@@ -68,6 +68,17 @@ function buildLayout(definition) {
     $(this).height(maxHeight);
   } )
 
+}
+
+function buttonTouched(button, name) {
+
+  // Respond to the touch of a button by changing color and logging the vote
+
+  $(button).find(".card").removeClass("card-inactive").addClass("card-active");
+  setTimeout(function(){
+    $(button).find(".card").removeClass("card-active").addClass("card-inactive");
+  }, 500)
+  logVote(name, 1);
 }
 
 function logVote(name, numVotes) {

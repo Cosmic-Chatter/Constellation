@@ -14,8 +14,15 @@ body {
 }
 
 .card {
-    background-color: var(--button-color);
     font-family: var(--button-font);
+}
+.card-inactive {
+    background-color: var(--button-color);
+    transition: .5s ease-in-out all;
+}
+.card-active {
+    background-color: var(--button-touched-color);
+    transition: .1s ease-in-out all;
 }
 .card-body-full {
     min-height: 15vh;

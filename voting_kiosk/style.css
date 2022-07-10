@@ -1,6 +1,7 @@
 :root {
     --background-color: #22222E;
     --button-color: #393A5A;
+    --button-touched-color: #706F8E;
     --header-color: white;
     --subheader-color: white;
     --footer-color: white;
