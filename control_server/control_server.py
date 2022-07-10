@@ -968,7 +968,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response = delete_file(file_path)
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "checkConnection":
-                    self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
+                    try:
+                        self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
+                    except BrokenPipeError:
+                        pass
             else:
                 print(f"Error: ping with unknown class '{ping_class}' received")
                 response = {"success": False,
@@ -1253,9 +1256,6 @@ def check_file_structure():
                  "flexible-tracker": os.path.join(config.APP_PATH, "flexible-tracker"),
                  "flexible-tracker/data": os.path.join(config.APP_PATH, "flexible-tracker", "data"),
                  "flexible-tracker/templates": os.path.join(config.APP_PATH, "flexible-tracker", "templates"),
-                 "flexible-voter": os.path.join(config.APP_PATH, "flexible-voter"),
-                 "flexible-voter/data": os.path.join(config.APP_PATH, "flexible-voter", "data"),
-                 "flexible-voter/templates": os.path.join(config.APP_PATH, "flexible-voter", "templates"),
                  "issues": os.path.join(config.APP_PATH, "issues"),
                  "issues/media": os.path.join(config.APP_PATH, "issues", "media"),
                  "maintenance-logs": os.path.join(config.APP_PATH, "maintenance-logs")}

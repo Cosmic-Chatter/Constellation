@@ -1,0 +1,99 @@
+html,
+body {
+    touch-action: manipulation;
+    word-wrap: break-word;
+    font-size: 25px;
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+    background-color: var(--background-color);
+}
+
+.button-col {
+    max-height: 100%;
+}
+
+.card {
+    background-color: var(--button-color);
+    font-family: var(--button-font);
+}
+.card-body-full {
+    height: 15vh;
+    color: var(--button-text-color);
+}
+
+.card-body-empty {
+    height: 0vh;
+}
+
+.card-img-full {
+    height: 35vh;
+}
+
+.card-img-empty {
+    height: 0vh;
+}
+
+.card-img-top {
+    max-height: 50vh;
+    width: 100%;
+    object-fit: contain;
+    padding: 5%;
+}
+
+.card-text {
+    font-size: 2vw;
+}
+
+.card-title {
+    font-size: 3vw;
+    text-align: center;
+}
+
+#bottomRow {
+    height: 20vh;
+}
+
+#cardRow {
+    height: 60vh;
+}
+
+#footer {
+    text-align: center;
+    width: 100%;
+    font-size: 3vw;
+    font-weight: bold;
+    color: var(--footer-color);
+    font-family: var(--footer-font);
+}
+
+#header {
+    text-align: center;
+    width: 100%;
+    font-size: 5vw;
+    font-weight: bold;
+    color: var(--header-color);
+    font-family: var(--header-font);
+}
+
+#subfooter {
+    text-align: center;
+    width: 100%;
+    font-size: 2vw;
+    font-weight: lighter;
+    color: var(--subfooter-color);
+    font-family: var(--subfooter-font);
+}
+
+#subheader {
+    text-align: center;
+    width: 100%;
+    font-size: 2vw;
+    font-weight: lighter;
+    color: var(--subheader-color);
+    font-family: var(--subheader-font);
+}
+
+#topRow {
+    height: 20vh;
+}
