@@ -74,6 +74,8 @@ function buttonTouched(button, name) {
 
   // Respond to the touch of a button by changing color and logging the vote
 
+  currentlyActive = true;
+
   $(button).find(".card").removeClass("card-inactive").addClass("card-active");
   setTimeout(function(){
     $(button).find(".card").removeClass("card-active").addClass("card-inactive");
@@ -541,7 +543,9 @@ function sendPing() {
                     "helperAddress": helperAddress,
                     "allowed_actions": allowedActionsDict,
                     "constellation_app_id": "voting_kiosk",
+                    "currentInteraction": String(currentlyActive),
                     "AnyDeskID": AnyDeskID};
+    currentlyActive = false; 
 
     // See if there is an error to report
     let errorString = JSON.stringify(errorDict);
@@ -620,6 +624,7 @@ var voteCounter = setInterval(sendData, recordingInterval*1000);
 var blockTouches = false;
 var touchBlocker = null; // Will hold id for the setTimeout() that resets blockTouches
 var touchCooldown = 2; // seconds before blockTouches is reset
+var currentlyActive = false; // set to true when someone presses a button
 
 askForDefaults();
 checkForSoftwareUpdate();

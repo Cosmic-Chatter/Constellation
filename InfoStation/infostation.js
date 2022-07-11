@@ -845,6 +845,7 @@ function sendPing() {
                    "helperPort": helperAddress.split(":")[2], // Depreciated
                    "helperAddress": helperAddress,
                    "constellation_app_id": "infostation",
+                   "currentInteraction": String(currentlyActive),
                    "allowed_actions": allowedActionsDict};
 
     // See if there is an error to report
