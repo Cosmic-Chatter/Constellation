@@ -86,7 +86,7 @@ function buttonTouched(button, name) {
 function logVote(name, numVotes) {
 
   // Record one or more votes for the given option
-  
+
   if (blockTouches == false) {
     voteCounts[name] += numVotes;
   }
@@ -115,6 +115,15 @@ function checkConnection() {
   xhr.ontimeout = badConnection;
   xhr.onerror = badConnection;
   xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      var response = JSON.parse(this.responseText);
+      if (response["success"] == true) {
+        $("#connectionWarning").hide();
+      }
+    }
+  };xhr.onreadystatechange = function () {
     if (this.readyState != 4) return;
 
     if (this.status == 200) {
@@ -168,6 +177,14 @@ function sendConfigUpdate(update) {
   xhr.timeout = 1000;
   xhr.open("POST", helperAddress, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      var response = JSON.parse(this.responseText);
+      readUpdate(readUpdate);
+    }
+  };
   xhr.send(JSON.stringify(requestDict));
 }
 
@@ -270,9 +287,9 @@ function readUpdate(responseText) {
 
       // Get the file from the helper and build the interface
       let definition = currentContent[0]; // Only one INI file at a time
-      
+
       var xhr = new XMLHttpRequest();
-      xhr.onreadystatechange = function() { 
+      xhr.onreadystatechange = function() {
           if (xhr.readyState == 4 && xhr.status == 200) {
             updateContent(definition, parseINIString(xhr.responseText));
           }
@@ -545,7 +562,7 @@ function sendPing() {
                     "constellation_app_id": "voting_kiosk",
                     "currentInteraction": String(currentlyActive),
                     "AnyDeskID": AnyDeskID};
-    currentlyActive = false; 
+    currentlyActive = false;
 
     // See if there is an error to report
     let errorString = JSON.stringify(errorDict);

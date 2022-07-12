@@ -320,9 +320,21 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if "config" not in data["defaults"] and "content" in config.defaults_dict:
                         (data["defaults"])["content"] = config.defaults_dict["content"]
                     set_defaults(data["defaults"])
+                    response = {"success": True, "helperAddress": get_local_address()}
+                    json_string = json.dumps(response)
+                    try:
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    except BrokenPipeError:
+                        pass
                 elif data["action"] == "updateDefaults":
                     # This action is for legacy support only. New applications should utilize the setDefaults action.
                     update_defaults(data)
+                    response = {"success": True, "helperAddress": get_local_address()}
+                    json_string = json.dumps(response)
+                    try:
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    except BrokenPipeError:
+                        pass
                 elif data["action"] == "getAvailableContent":
                     if "content" in config.defaults_dict:
                         active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
