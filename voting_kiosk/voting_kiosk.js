@@ -182,7 +182,7 @@ function sendConfigUpdate(update) {
 
     if (this.status == 200) {
       var response = JSON.parse(this.responseText);
-      readUpdate(readUpdate);
+      readUpdate(this.responseText);
     }
   };
   xhr.send(JSON.stringify(requestDict));
