@@ -182,7 +182,10 @@ function sendConfigUpdate(update) {
 
     if (this.status == 200) {
       var response = JSON.parse(this.responseText);
-      readUpdate(this.responseText);
+      if ("helperAddress" in response) {
+        helperAddress = response.helperAddress;
+      }
+      
     }
   };
   xhr.send(JSON.stringify(requestDict));
