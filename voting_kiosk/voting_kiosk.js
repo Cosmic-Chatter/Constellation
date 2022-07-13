@@ -177,17 +177,17 @@ function sendConfigUpdate(update) {
   xhr.timeout = 1000;
   xhr.open("POST", helperAddress, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+  // xhr.onreadystatechange = function () {
+  //   if (this.readyState != 4) return;
 
-    if (this.status == 200) {
-      var response = JSON.parse(this.responseText);
-      if ("helperAddress" in response) {
-        helperAddress = response.helperAddress;
-      }
+  //   if (this.status == 200) {
+  //     var response = JSON.parse(this.responseText);
+  //     if ("helperAddress" in response) {
+  //       helperAddress = response.helperAddress;
+  //     }
       
-    }
-  };
+  //   }
+  // };
   xhr.send(JSON.stringify(requestDict));
 }
 
