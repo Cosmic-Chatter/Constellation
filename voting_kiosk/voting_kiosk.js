@@ -561,6 +561,7 @@ function sendPing() {
                     "type": type,
                     "helperPort": helperAddress.split(":")[2], // Depreciated
                     "helperAddress": helperAddress,
+                    "helperIPSameAsClient": helperIPSameAsClient,
                     "allowed_actions": allowedActionsDict,
                     "constellation_app_id": "voting_kiosk",
                     "currentInteraction": String(currentlyActive),
@@ -645,6 +646,8 @@ var blockTouches = false;
 var touchBlocker = null; // Will hold id for the setTimeout() that resets blockTouches
 var touchCooldown = 2; // seconds before blockTouches is reset
 var currentlyActive = false; // set to true when someone presses a button
+
+var helperIPSameAsClient = helperAddress.includes("localhost") || helperAddress.includes("127.0.0.1");
 
 askForDefaults();
 checkForSoftwareUpdate();
