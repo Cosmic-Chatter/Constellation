@@ -436,7 +436,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # This command handles both adding a new scheduled action
                     # and editing an existing action
 
-                    if "name" not in data or "timeToSet" not in data or "actionToSet" not in data or "targetToSet" not in data or "isAddition" not in data:
+                    if "name" not in data or "timeToSet" not in data or "actionToSet" not in data or "targetToSet" not in data or "valueToSet" not in data or "isAddition" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing one or more required keys"}
                         json_string = json.dumps(response_dict, default=str)
@@ -459,7 +459,17 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if data["targetToSet"] is None:
                         line_to_set += "\n"
                     else:
-                        line_to_set += f", {data['targetToSet']}\n"
+                        line_to_set += f", {data['targetToSet']}"
+                    if data["valueToSet"] is None:
+                        line_to_set += "\n"
+                    else:
+                        value = data['valueToSet']
+                        if isinstance(value, list):
+                            if len(value) > 1:
+                                value = ", ".join(value)
+                            else:
+                                value = value[0]
+                        line_to_set += f", {value}\n"
 
                     sched_dir = os.path.join(config.APP_PATH, "schedules")
                     path = os.path.join(sched_dir, data["name"] + ".ini")
@@ -901,6 +911,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             definition_list.append(file)
 
                     self.wfile.write(bytes(json.dumps(definition_list), encoding="UTF-8"))
+                elif action == "getAvailableTrackerData":
+                    kind = data.get("kind", "flexible-tracker")
+                    data_path = os.path.join(config.APP_PATH, kind, "data")
+                    data_list = []
+                    for file in os.listdir(data_path):
+                        if file.lower().endswith(".txt"):
+                            data_list.append(file)
+                    response = {"success": True,
+                                "data": data_list}
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "downloadTrackerData":
                     if "name" not in data:
                         response = {"success": False,

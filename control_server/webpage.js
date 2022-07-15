@@ -1312,28 +1312,73 @@ function setScheduleActionTargetSelector() {
     });
     targetSelector.show();
     $("#scheduleTargetSelectorLabel").show();
-  } else if (["power_on", "power_off", "refresh_page", "restart"].includes(action)) {
+  } else if (["power_on", "power_off", "refresh_page", "restart", "set_content"].includes(action)) {
     // Fill the target selector with the list of types and ids, plus an option for all.
     targetSelector.empty();
-    targetSelector.append(new Option("All", "__all"));
-    var sep = new Option("Types", null);
-    sep.setAttribute("disabled", true);
-    targetSelector.append(sep);
-    componentGroups.forEach((item) => {
-      targetSelector.append(new Option(item.type, "__type_" + item.type));
-    });
+    if (["power_on", "power_off", "refresh_page", "restart"].includes(action)) {
+      targetSelector.append(new Option("All", "__all"));
+      var sep = new Option("Types", null);
+      sep.setAttribute("disabled", true);
+      targetSelector.append(sep);
+      componentGroups.forEach((item) => {
+        targetSelector.append(new Option(item.type, "__type_" + item.type));
+      });
+    }
     var sep = new Option("IDs", null);
     sep.setAttribute("disabled", true);
     targetSelector.append(sep);
     exhibitComponents.forEach((item) => {
-      targetSelector.append(new Option(item.id, "__id_" + item.id));
+      if (item.constellationAppId != "static_component") {
+        targetSelector.append(new Option(item.id, "__id_" + item.id));
+      }
     });
     targetSelector.show();
     $("#scheduleTargetSelectorLabel").show();
+    setScheduleActionValueSelector();
   } else {
     targetSelector.hide();
     $("#scheduleTargetSelectorLabel").hide();
     targetSelector.val(null);
+  }
+}
+
+function setScheduleActionValueSelector() {
+  // Helper function to show/hide the select element for picking the value
+  // of an action when appropriate
+  console.log("here")
+  let action = $("#scheduleActionSelector").val();
+  let target = $("#scheduleTargetSelector").val();
+  let valueSelector = $("#scheduleValueSelector");
+  console.log(action, target)
+  if (action == "set_content") {
+    let component = getExhibitComponent(target.slice(5));
+    
+    // Send a request to the helper for the available content
+    var requestString = JSON.stringify({"action": "getAvailableContent"});
+
+    var xhr = new XMLHttpRequest();
+    if (obj.helperAddress != null) {
+      xhr.open("POST", obj.helperAddress, true);
+    } else {
+      xhr.open("POST", component.helperAddress, true);
+    }
+    xhr.timeout = 1000; // 10 seconds
+    // xhr.ontimeout = showFailureMessage;
+    // xhr.onerror = showFailureMessage;
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function () {
+      if (this.readyState != 4) return;
+
+      if (this.status == 200) {
+        let response = JSON.parse(this.responseText);
+        response.all_exhibits.forEach((item) => {
+          valueSelector.append(new Option(item, item));
+        });
+        valueSelector.show();
+        $("#scheduleValueSelectorLabel").show();
+      }
+    }
+    xhr.send(requestString);
   }
 }
 
@@ -1342,7 +1387,8 @@ function scheduleConfigureEditModal(scheduleName,
                                     isAddition=true,
                                     currentTime=null,
                                     currentAction=null,
-                                    currentTarget=null) {
+                                    currentTarget=null,
+                                    currentValue=null) {
 
   // Function to set up and then show the modal that enables editing a
   // scheduled action or adding a new one
@@ -1350,6 +1396,8 @@ function scheduleConfigureEditModal(scheduleName,
   // Hide elements that aren't always visible
   $("#scheduleTargetSelector").hide();
   $("#scheduleTargetSelectorLabel").hide();
+  $("#scheduleValueSelector").hide();
+  $("#scheduleValueSelectorLabel").hide();
   $("#scheduleEditErrorAlert").hide();
 
   // Tag the modal with a bunch of data that we can read if needed when
@@ -1409,6 +1457,7 @@ function sendScheduleUpdateFromModal() {
   var time = $("#scheduleActionTimeInput").val().trim();
   var action = $("#scheduleActionSelector").val();
   var target = $("#scheduleTargetSelector").val();
+  var value = $("#scheduleValueSelector").val();
   var isAddition = $("#scheduleEditModal").data("isAddition");
 
   if (time == "" || time == null) {
@@ -1420,8 +1469,11 @@ function sendScheduleUpdateFromModal() {
   } else if (action == "set_exhibit" && target == null) {
     $("#scheduleEditErrorAlert").html("You must specifiy an exhibit to set").show();
     return;
-  } else if (["power_on", "power_off", "refresh_page", "restart"].includes(action) && target == null) {
+  } else if (["power_on", "power_off", "refresh_page", "restart", "set_content"].includes(action) && target == null) {
     $("#scheduleEditErrorAlert").html("You must specifiy a target for this action").show();
+    return;
+  } else if (action == "set_content" && value == null) {
+    $("#scheduleEditErrorAlert").html("You must specifiy a value for this action").show();
     return;
   }
 
@@ -1431,6 +1483,7 @@ function sendScheduleUpdateFromModal() {
                      "timeToSet": time,
                      "actionToSet": action,
                      "targetToSet": target,
+                     "valueToSet": value,
                      "isAddition": isAddition};
 
   if (isAddition == false) {
@@ -2044,12 +2097,28 @@ function deleteIssue(id) {
   xhr.send(JSON.stringify(requestDict));
 }
 
+function populateTrackerDataSelect(data) {
+
+  // Take a list of data filenames and populate the TrackerDataSelect
+
+  let trackerDataSelect = $("#trackerDataSelect");
+  trackerDataSelect.empty();
+
+  data.sort().forEach(item => {
+    var name = item.split(".").slice(0, -1).join(".");
+    var html = `<option value="${name}">${name}</option>`;
+    trackerDataSelect.append(html);
+  });
+
+}
+
+
 function downloadTrackerData() {
 
   // Ask the server to send the data for the currently selected tracker as a CSV
   // and initiate a download.
 
-  let name = $("#trackerTemplateSelect").val();
+  let name = $("#trackerDataSelect").val();
 
   requestDict = {"class": "tracker",
                  "action": "downloadTrackerData",
@@ -2086,8 +2155,7 @@ function showDeleteTrackerDataModal() {
   // Show a modal confirming the request to delete a specific dataset. To be sure
   // populate the modal with data for a test.
 
-  let name = $("#trackerTemplateSelect").val();
-
+  let name = $("#trackerDataSelect").val();
   $("#deleteTrackerDataModalDeletedName").html(name);
   $("#deleteTrackerDataModalDeletedInput").val("");
   $("#deleteTrackerDataModalSpellingError").hide();
@@ -2513,7 +2581,7 @@ function askForUpdate() {
           if ("class" in component) {
             if (component["class"] == "exhibitComponent") {
               n_comps += 1;
-              if ((component.status == "ONLINE") || (component.status == "STANDBY") || (component.status == "SYSTEM ON")) {
+              if ((component.status == "ONLINE") || (component.status == "STANDBY") || (component.status == "SYSTEM ON") || (component.status == "STATIC")) {
                 n_online += 1;
               }
               updateComponentFromServer(component);

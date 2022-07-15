@@ -5,7 +5,7 @@ function getAvailableDefinitions(complete) {
   // Ask the control server to send a list of availble definition files
   // Pass a function and it will be called with the list as the
   // only parameter
-
+  
   var requestDict = {"class": "tracker",
                      "action": "getAvailableDefinitions"};
 
@@ -23,6 +23,39 @@ function getAvailableDefinitions(complete) {
       var definitionList = JSON.parse(this.responseText);
       if (typeof complete == "function") {
         complete(definitionList);
+      }
+    }
+  };
+  xhr.send(requestString);
+}
+
+function getAvailableTrackerData(complete) {
+
+  // Ask the control server to send a list of availble data files
+  // Pass a function and it will be called with the list as the
+  // only parameter
+
+  var requestDict = {"class": "tracker",
+                     "action": "getAvailableTrackerData"};
+
+  var requestString = JSON.stringify(requestDict);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", serverIP, true);
+  xhr.timeout = 3000;
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      var response = JSON.parse(this.responseText);
+      if ("success" in response && response.success == false) {
+        console.log("Error retrieving tracker data list:", response.reason)
+        return
+      }
+      if (typeof complete == "function") {
+        complete(response.data);
       }
     }
   };
