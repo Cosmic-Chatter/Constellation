@@ -475,8 +475,11 @@ def update_exhibit_component_status(data, ip: str):
     component.ip = ip
     if "helperPort" in data:
         component.helperPort = data["helperPort"]
-    if "helperAddress" in data:
-        component.helperAddress = data["helperAddress"]
+    component.helperAddress = f"http://{ip}:{component.helperPort}"
+    if "helperIPSameAsClient" in data and data["helperIPSameAsClient"] is False:
+        if "helperAddress" in data:
+            component.helperAddress = data["helperAddress"]
+
     component.update_last_contact_datetime()
     if "AnyDeskID" in data:
         component.config["AnyDeskID"] = data["AnyDeskID"]
