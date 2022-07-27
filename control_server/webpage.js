@@ -186,8 +186,8 @@ class ExhibitComponent {
 
     var html = `
       <div class='${classString}'>
-        <div class="btn-group btn-block">
-          <button type="button" class="btn ${this.getButtonColorClass()} btn-block" id="${this.id}MainButton" onclick="showExhibitComponentInfo('${this.id}')"><H5>${displayName}</H5><div id="${this.id}StatusField">${this.status}</div></button>
+        <div class="btn-group btn-block h-100 w-100">
+          <button type="button" class="btn ${this.getButtonColorClass()} btn-block componentStatusButton" id="${this.id}MainButton" onclick="showExhibitComponentInfo('${this.id}')"><H5>${displayName}</H5><div id="${this.id}StatusField">${this.status}</div></button>
           <button type="button" id="${this.id}DropdownButton" class="btn ${this.getButtonColorClass()} dropdown-toggle dropdown-toggle-split"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="sr-only">Toggle Dropdown</span>
           </button>
@@ -582,9 +582,10 @@ function showExhibitComponentInfo(id) {
 
             // Get filenames listed under key in availableContent and add
             // the resulting buttons to the div given by div
-
+            
             var activeContent = availableContent.active_content;
             var contentList = availableContent[key].sort(function(a,b) {return a.localeCompare(b);});
+            var thumbnailList = availableContent.thumbnails;
             var active;
 
             for (var i=0; i<contentList.length; i++) {
@@ -593,25 +594,56 @@ function showExhibitComponentInfo(id) {
               } else {
                 active = "btn-secondary";
               }
-              var html = `
-              <div class="col-6 mt-1">
-                <div class="btn-group w-100 h-100">
-                  <button type="button" id="${contentList[i].split('.').join("").split(")").join("").split("(").join("").split(/[\\\/]/).join("")}Button" class="btn componentContentButton ${active}">${contentList[i]}</button>
-                  <button type="button" id="${contentList[i].split('.').join("").split(")").join("").split("(").join("").split(/[\\\/]/).join("")}ButtonDropdown" class="btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton ${active}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="sr-only">Toggle Dropdown</span>
-                  </button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item text-danger" onclick="deleteRemoteFile('${id}', '${contentList[i]}')">Delete</a>
-                  </div>
-                </div>
-              </div>
-              `;
-              $("#"+div).append(html);
+
+              let container = document.createElement("div");
+              container.classList = "col-6 mt-1";
+
+              let btnGroup = document.createElement("div");
+              btnGroup.classList = "btn-group w-100 h-100";
+              container.appendChild(btnGroup);
+
+              let button = document.createElement("button");
+              let cleanFilename = contentList[i].split('.').join("").split(")").join("").split("(").join("").split(/[\\\/]/).join("").replace(/\s/g, '');
+              button.setAttribute("type", "button");
+              button.setAttribute("id", cleanFilename + "Button");
+              button.classList = `btn componentContentButton ${active}`;
+              button.innerHTML = contentList[i];
+
+              let thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".jpg"
+              if (thumbnailList.includes(thumbName)) {
+                let thumb = document.createElement("img");
+                thumb.classList = "contentThumbnail mt-1";
+                thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
+                button.appendChild(thumb);
+              }
+
+              btnGroup.appendChild(button);
+
+              let dropdownButton = document.createElement("button");
+              dropdownButton.setAttribute("type", "button");
+              dropdownButton.setAttribute("id", cleanFilename + "ButtonDropdown");
+              dropdownButton.setAttribute("data-toggle", "dropdown");
+              dropdownButton.setAttribute("aria-haspopup", true);
+              dropdownButton.setAttribute("aria-expanded", false);
+              dropdownButton.classList = `btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton ${active}`;
+              dropdownButton.innerHTML = `<span class="sr-only">Toggle Dropdown</span>`;
+              btnGroup.appendChild(dropdownButton);
+
+              let dropdownMenu = document.createElement("div");
+              dropdownMenu.classList = "dropdown-menu";
+              
+              let deleteFileButton = document.createElement("a");
+              deleteFileButton.classList = "dropdown-item text-danger";
+              let file = contentList[i];
+              deleteFileButton.addEventListener("click", function(){
+                deleteRemoteFile(id, file)});
+              deleteFileButton.innerHTML = "Delete";
+              dropdownMenu.appendChild(deleteFileButton);
+              btnGroup.appendChild(dropdownMenu);
+              
+              $("#"+div).append(container);
             }
           };
-
-          // Build buttons for each file in the current exhibit
-          //populateContent('current_exhibit', id, "componentAvailableContentList-thisExhibit")
 
           // Build buttons for each file in all exhibits
           populateContent('all_exhibits', id, "componentAvailableContentList");

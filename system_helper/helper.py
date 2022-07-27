@@ -26,6 +26,7 @@ import psutil
 import dateutil.parser
 import requests
 import serial
+from PIL import Image, UnidentifiedImageError
 
 # Constellation modules
 import config
@@ -231,8 +232,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     with open(file_path, "wb") as f:
                         f.write(file)
 
+                mimetype = mimetypes.guess_type(file_path, strict=False)[0]
+                if mimetype is not None and mimetype.split("/")[0] == "image":
+                    create_thumbnail(fields.get("filename")[0])
+
                 json_string = json.dumps({"success": True})
-            except:
+            except Exception as e:
+                print("Exception in multi-part form data:", e)
                 json_string = json.dumps({"success": False})
 
             try:
@@ -329,18 +335,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif data["action"] == "updateDefaults":
                     # This action is for legacy support only. New applications should utilize the setDefaults action.
                     update_defaults(data)
-                    # response = {"success": True, "helperAddress": get_local_address()}
-                    # json_string = json.dumps(response)
-                    # try:
-                    #     self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                    # except BrokenPipeError:
-                    #     pass
                 elif data["action"] == "getAvailableContent":
                     if "content" in config.defaults_dict:
                         active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
                     else:
                         active_content = ""
                     response = {"all_exhibits": get_all_directory_contents(),
+                                "thumbnails": get_directory_contents("thumbnails"),
                                 "active_content": active_content,
                                 "system_stats": get_system_stats()}
 
@@ -601,43 +602,51 @@ def delete_file(file: str, absolute: bool = False):
     with config.content_file_lock:
         os.remove(file_path)
 
+    thumb_path = get_path(["thumbnails", with_extension(file, "jpg")], user_file=True)
+    if os.path.exists(thumb_path):
+        with config.content_file_lock:
+            os.remove(thumb_path)
 
-def get_all_directory_contents() -> list:
+
+def get_all_directory_contents(directory: str = "content") -> list:
     """Recursively search for files in the content directory and its subdirectories"""
 
-    content_path = get_path(["content"], user_file=True)
+    content_path = get_path([directory], user_file=True)
     result = [os.path.relpath(os.path.join(dp, f), content_path) for dp, dn, fn in os.walk(content_path) for f in fn]
 
     return [x for x in result if x.find(".DS_Store") == -1]
 
 
-def get_directory_contents(path: str, absolute: bool = False) -> list:
+def get_directory_contents(directory: str, absolute: bool = False) -> list:
     """Return the contents of an exhibit directory
 
     if absolute == False, the path is appended to the default content directory
     """
 
     if absolute:
-        contents = os.listdir(path)
+        contents = os.listdir(directory)
     else:
-        content_path = get_path(["content"], user_file=True)
-        contents = os.listdir(os.path.join(content_path, path))
+        content_path = get_path([directory], user_file=True)
+        contents = os.listdir(content_path)
     return [x for x in contents if x[0] != "."]  # Don't return hidden files
 
 
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    content_path = get_path(["content"], user_file=True)
-    try:
-        os.listdir(content_path)
-    except FileNotFoundError:
-        print("Warning: content directory not found. Creating it...")
+    dir_list = ["content", "thumbnails"]
 
+    for directory in dir_list:
+        content_path = get_path([directory], user_file=True)
         try:
-            os.mkdir(content_path)
-        except PermissionError:
-            print("Error: unable to create directory. Do you have write permission?")
+            os.listdir(content_path)
+        except FileNotFoundError:
+            print(f"Warning: {directory} directory not found. Creating it...")
+
+            try:
+                os.mkdir(content_path)
+            except PermissionError:
+                print("Error: unable to create directory. Do you have write permission?")
 
 
 def get_local_address() -> str:
@@ -859,6 +868,31 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         check_directory_structure()
 
     # return(config_object, config_dict)
+
+
+def with_extension(filename: str, ext: str) -> str:
+    """Return the filename with the current extension replaced by the given one"""
+
+    if ext.startswith("."):
+        ext = ext[1:]
+
+    split = filename.split(".")
+    return ".".join(split[0:-1]) + "." + ext
+
+
+def create_thumbnail(filename: str):
+    """Create a thumbnail from the given image and add it to the thumbnails directory"""
+
+    with config.content_file_lock:
+        try:
+            image = Image.open(get_path(["content", filename], user_file=True))
+        except UnidentifiedImageError:
+            pass
+        max_size = (400, 400)
+
+        image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
+        image = image.convert('RGB')
+        image.save(get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True))
 
 
 def get_path(path_list: list[str], user_file: bool = False) -> str:

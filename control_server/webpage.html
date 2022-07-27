@@ -25,6 +25,14 @@
       }
       .componentContentButton {
         width: 80% !important;
+        overflow-wrap: break-word;
+      }
+      .componentStatusButton {
+        overflow-wrap: break-word;
+        width: 75%;
+      }
+      .contentThumbnail {
+        width: 100%;
       }
       .dropdown-item {
         padding-top: 10px;
@@ -156,10 +164,10 @@
 
                       <div id="componentcontentUploadInterface" class="form-group mt-3 mb-0">
                         <label for="componentContentUpload"><H5>Upload new content</H5></label>
-                        <div class="row align-middle">
+                        <div class="row align-middle d-flex align-items-center">
                           <div class="col-8">
-                            <label class="btn btn-outline-secondary text-wrap">
-                              <span id="componentContentUploadfilename">Choose file</span>
+                            <label class="btn btn-outline-secondary mw-100">
+                              <span id="componentContentUploadfilename" style="overflow-wrap: break-word!important;">Choose file</span>
                               <input hidden type="file" class="form-control-file" id="componentContentUpload" onchange="onUploadContentChange()">
                             </label>
                           </div>

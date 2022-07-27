@@ -463,13 +463,17 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if data["valueToSet"] is None:
                         line_to_set += "\n"
                     else:
-                        value = data['valueToSet']
-                        if isinstance(value, list):
-                            if len(value) > 1:
-                                value = ", ".join(value)
+                        valueToSet = data['valueToSet']
+                        if isinstance(valueToSet, list):
+                            if len(valueToSet) > 1:
+                                value = ", ".join(valueToSet)
+                            elif len(valueToSet) == 1:
+                                print(valueToSet)
+                                value = valueToSet[0]
                             else:
-                                value = value[0]
-                        line_to_set += f", {value}\n"
+                                value = ""
+                        if value != "":
+                            line_to_set += f", {value}\n"
 
                     sched_dir = os.path.join(config.APP_PATH, "schedules")
                     path = os.path.join(sched_dir, data["name"] + ".ini")
