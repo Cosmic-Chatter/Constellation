@@ -463,13 +463,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if data["valueToSet"] is None:
                         line_to_set += "\n"
                     else:
-                        valueToSet = data['valueToSet']
-                        if isinstance(valueToSet, list):
-                            if len(valueToSet) > 1:
-                                value = ", ".join(valueToSet)
-                            elif len(valueToSet) == 1:
-                                print(valueToSet)
-                                value = valueToSet[0]
+                        value_to_set = data.get('valueToSet', [])
+                        value = ""
+                        if isinstance(value_to_set, list):
+                            if len(value_to_set) > 1:
+                                value = ", ".join(value_to_set)
+                            elif len(value_to_set) == 1:
+                                print(value_to_set)
+                                value = value_to_set[0]
                             else:
                                 value = ""
                         if value != "":
