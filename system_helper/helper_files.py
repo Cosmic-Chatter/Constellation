@@ -55,7 +55,10 @@ def get_thumbnail(filename: str) -> (Union[str, None], str):
     """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype"""
 
     mimetype, _ = mimetypes.guess_type(filename)
-    mimetype = mimetype.split("/")[0]
+    try:
+        mimetype = mimetype.split("/")[0]
+    except AttributeError:
+        mimetype = None
     if mimetype == "image":
         thumb_path = get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True)
     elif mimetype == "video":

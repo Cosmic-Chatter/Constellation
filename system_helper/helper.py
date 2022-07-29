@@ -873,9 +873,9 @@ def create_thumbnail(filename: str, mimetype: str):
         # image = image.convert('RGB')
         # image.save(helper_files.get_path(["thumbnails", helper_files.with_extension(filename, "jpg")], user_file=True))
 
-        ff = pyffmpeg.FFmpeg()
-
         try:
+            ff = pyffmpeg.FFmpeg()
+
             if mimetype == "image":
                 subprocess.call([ff.get_ffmpeg_bin(), "-y",
                                  "-i", helper_files.get_path(['content', filename], user_file=True),
@@ -891,6 +891,8 @@ def create_thumbnail(filename: str, mimetype: str):
                                  helper_files.get_path(['thumbnails', helper_files.with_extension(filename, 'mp4')], user_file=True)])
         except OSError as e:
             print("create_thumbnail: error:", e)
+        except ImportError as e:
+            print("create_thumbnail: error loading FFmpeg: ", e)
 
 
 def create_missing_thumbnails():
