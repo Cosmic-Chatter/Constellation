@@ -607,16 +607,30 @@ function showExhibitComponentInfo(id) {
               button.setAttribute("type", "button");
               button.setAttribute("id", cleanFilename + "Button");
               button.classList = `btn componentContentButton ${active}`;
-              button.innerHTML = contentList[i];
+              button.innerHTML = `<span>${contentList[i]}</span>`;
 
-              let thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".jpg"
-              if (thumbnailList.includes(thumbName)) {
-                let thumb = document.createElement("img");
-                thumb.classList = "contentThumbnail mt-1";
-                thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
-                button.appendChild(thumb);
+              let thumbName;
+              let mimetype = guessMimetype(contentList[i]);
+              if (mimetype == "image") {
+                thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".jpg"
+                if (thumbnailList.includes(thumbName)) {
+                  let thumb = document.createElement("img");
+                  thumb.classList = "contentThumbnail mt-1";
+                  thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
+                  button.appendChild(thumb);
+                }
+              } else if (mimetype == "video") {
+                thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".mp4"
+                if (thumbnailList.includes(thumbName)) {
+                  let thumb = document.createElement("video");
+                  thumb.classList = "contentThumbnail mt-1";
+                  thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
+                  thumb.setAttribute("loop", true);
+                  thumb.setAttribute("autoplay", true);
+                  button.appendChild(thumb);
+                }
               }
-
+            
               btnGroup.appendChild(button);
 
               let dropdownButton = document.createElement("button");
@@ -676,7 +690,19 @@ function showExhibitComponentInfo(id) {
     // Make the modal visible
     $("#componentInfoModal").modal("show");
   }
+}
 
+function guessMimetype(filename) {
+
+  // Use filename's extension to guess the mimetype
+
+  let ext = filename.split(".").slice(-1)[0].toLowerCase();
+  
+  if (["mp4", "mpeg", "webm", "mov", "m4v", "avi", "flv"].includes(ext)) {
+    return "video";
+  } else if (["jpeg", "jpg", "tiff", "tif", "png", "bmp", "gif", "webp", "eps", "ps", "svg"].includes(ext)) {
+    return "image";
+  }
 }
 
 function deleteRemoteFile(id, file, warn=true) {
@@ -829,13 +855,15 @@ function submitComponentContentChange() {
   // back to the server to be changed.
 
   var id = $("#componentInfoModalTitle").html().trim();
-  var selectedButtons = $('.componentContentButton.btn-primary');
+  var selectedButtons = $('.componentContentButton.btn-primary').find("span");
   var component = getExhibitComponent(id);
   var contentList = [];
   for (var i=0; i<selectedButtons.length; i++) {
     content = selectedButtons[i].innerHTML.trim();
+    console.log(selectedButtons)
     contentList.push(content);
   }
+  
   sendComponentContentChangeRequest(id, contentList);
   askForUpdate();
 

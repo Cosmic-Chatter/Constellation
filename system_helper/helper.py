@@ -20,13 +20,15 @@ import urllib
 import re
 import errno
 import webbrowser
+import subprocess
 
 # Non-standard modules
 import psutil
 import dateutil.parser
 import requests
 import serial
-from PIL import Image, UnidentifiedImageError
+# from PIL import Image, UnidentifiedImageError
+import pyffmpeg
 
 # Constellation modules
 import config
@@ -231,14 +233,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 with config.content_file_lock:
                     with open(file_path, "wb") as f:
                         f.write(file)
-
                 mimetype = mimetypes.guess_type(file_path, strict=False)[0]
-                if mimetype is not None and mimetype.split("/")[0] == "image":
-                    create_thumbnail(fields.get("filename")[0])
+                if mimetype is not None:
+                    create_thumbnail(fields.get("filename")[0], mimetype.split("/")[0])
 
                 json_string = json.dumps({"success": True})
             except Exception as e:
-                print("Exception in multi-part form data:", e)
+                print("Exception in multi-part form data:", type(e).__name__, e)
                 json_string = json.dumps({"success": False})
 
             try:
@@ -602,7 +603,14 @@ def delete_file(file: str, absolute: bool = False):
     with config.content_file_lock:
         os.remove(file_path)
 
-    thumb_path = get_path(["thumbnails", with_extension(file, "jpg")], user_file=True)
+    mimetype, _ = mimetypes.guess_type(file)
+    mimetype = mimetype.split("/")[0]
+    if mimetype == "image":
+        thumb_path = get_path(["thumbnails", with_extension(file, "jpg")], user_file=True)
+    elif mimetype == "video":
+        thumb_path = get_path(["thumbnails", with_extension(file, "mp4")], user_file=True)
+    else:
+        thumb_path = None
     if os.path.exists(thumb_path):
         with config.content_file_lock:
             os.remove(thumb_path)
@@ -880,19 +888,40 @@ def with_extension(filename: str, ext: str) -> str:
     return ".".join(split[0:-1]) + "." + ext
 
 
-def create_thumbnail(filename: str):
-    """Create a thumbnail from the given image and add it to the thumbnails directory"""
+def create_thumbnail(filename: str, mimetype: str):
+    """Create a thumbnail from the given media file and add it to the thumbnails directory.
+
+    If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
 
     with config.content_file_lock:
-        try:
-            image = Image.open(get_path(["content", filename], user_file=True))
-        except UnidentifiedImageError:
-            pass
-        max_size = (400, 400)
+        # try:
+        #     image = Image.open(get_path(["content", filename], user_file=True))
+        # except UnidentifiedImageError:
+        #     pass
+        # max_size = (400, 400)
+        #
+        # image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
+        # image = image.convert('RGB')
+        # image.save(get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True))
 
-        image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
-        image = image.convert('RGB')
-        image.save(get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True))
+        ff = pyffmpeg.FFmpeg()
+
+        try:
+            if mimetype == "image":
+                subprocess.call([ff.get_ffmpeg_bin(), "-y",
+                                 "-i", get_path(['content', filename], user_file=True),
+                                 "-vf", "scale=400:-1",
+                                 get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            elif mimetype == "video":
+                subprocess.call([ff.get_ffmpeg_bin(), "-y",
+                                 "-i", get_path(['content', filename], user_file=True),
+                                 "-r", "1",
+                                 "-t", "10",
+                                 "-vf", "scale=400:-2",
+                                 "-an",
+                                 get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
+        except OSError as e:
+            print("create_thumbnail: error:", e)
 
 
 def get_path(path_list: list[str], user_file: bool = False) -> str:

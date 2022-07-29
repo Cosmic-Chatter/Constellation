@@ -3,4 +3,4 @@ pyserial
 psutil
 python-dateutil
 requests
-Pillow
+pyffmpeg
