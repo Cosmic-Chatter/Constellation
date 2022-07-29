@@ -32,6 +32,7 @@ import pyffmpeg
 
 # Constellation modules
 import config
+import helper_files
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -119,7 +120,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 self.path = self.path[1:]
             config.HELPING_REMOTE_CLIENT = True
 
-            file_path = get_path([self.path], user_file=user_file)
+            file_path = helper_files.get_path([self.path], user_file=user_file)
             try:
                 with open(file_path, "r", encoding='UTF-8') as f:
 
@@ -160,7 +161,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print(f"  Handling {mimetype}")
             if self.path[0] == '/':
                 self.path = self.path[1:]
-            file_path = get_path([self.path], user_file=True)
+            file_path = helper_files.get_path([self.path], user_file=True)
             try:
                 # print(f"  Opening file {self.path}")
                 with open(file_path, 'rb') as f:
@@ -228,7 +229,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 fields = cgi.parse_multipart(self.rfile, pdict)
                 file = fields.get('file')[0]
 
-                file_path = get_path(["content", fields.get("filename")[0]], user_file=True)
+                file_path = helper_files.get_path(["content", fields.get("filename")[0]], user_file=True)
                 print(f"Saving uploaded file to {file_path}")
                 with config.content_file_lock:
                     with open(file_path, "wb") as f:
@@ -312,7 +313,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         content_path = "content"
                     else:
                         # Files will be loaded directly by the client
-                        content_path = get_path(["content"], user_file=True)
+                        content_path = helper_files.get_path(["content"], user_file=True)
                     config_to_send["contentPath"] = content_path
                     # config_to_send["helperAddress"] = get_local_address()
                     json_string = json.dumps(config_to_send)
@@ -359,7 +360,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         pass
                 elif data["action"] == "deleteFile":
                     if "file" in data:
-                        delete_file(data["file"])
+                        helper_files.delete_file(data["file"])
                         response = {"success": True}
                     else:
                         response = {"success": False,
@@ -431,7 +432,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     else:
                         lang = "en"
                     if "name" in data:
-                        label_path = get_path(["labels", config.defaults_dict["current_exhibit"], lang, data["name"]],
+                        label_path = helper_files.get_path(["labels", config.defaults_dict["current_exhibit"], lang, data["name"]],
                                               user_file=True)
 
                         try:
@@ -541,7 +542,7 @@ def sleep_display():
         elif sys.platform == "linux":
             os.system("xset dpms force off")
         elif sys.platform == "win32":
-            nircmd_path = get_path(["nircmd.exe"])
+            nircmd_path = helper_files.get_path(["nircmd.exe"])
             os.system(nircmd_path + " monitor async_off")
 
 
@@ -557,7 +558,7 @@ def wake_display():
             os.system("xset dpms force on")
         elif sys.platform == "win32":
             # os.system("nircmd.exe monitor async_on")
-            nircmd_path = get_path(["nircmd.exe"])
+            nircmd_path = helper_files.get_path(["nircmd.exe"])
             os.system(nircmd_path + " sendkeypress ctrl")
     elif display_type == "projector":
         command_projector("on")
@@ -591,27 +592,12 @@ def command_projector(cmd: str):
             print(f"commandProjector: Error: Unknown command: {cmd}")
 
 
-def delete_file(file: str, absolute: bool = False):
-    """Delete a file"""
 
-    if absolute:
-        file_path = file
-    else:
-        file_path = get_path(["content", file], user_file=True)
-
-    print("Deleting file:", file_path)
-    with config.content_file_lock:
-        os.remove(file_path)
-
-    thumb_path, _ = get_thumbnail(file)
-    if thumb_path is not None and os.path.exists(thumb_path):
-        with config.content_file_lock:
-            os.remove(thumb_path)
 
 
 def get_all_directory_contents(directory: str = "content") -> list:
     """Recursively search for files in the content directory and its subdirectories"""
-    content_path = get_path([directory], user_file=True)
+    content_path = helper_files.get_path([directory], user_file=True)
     result = [os.path.relpath(os.path.join(dp, f), content_path) for dp, dn, fn in os.walk(content_path) for f in fn]
 
     return [x for x in result if x.find(".DS_Store") == -1]
@@ -626,7 +612,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
     if absolute:
         contents = os.listdir(directory)
     else:
-        content_path = get_path([directory], user_file=True)
+        content_path = helper_files.get_path([directory], user_file=True)
         contents = os.listdir(content_path)
     return [x for x in contents if x[0] != "."]  # Don't return hidden files
 
@@ -637,7 +623,7 @@ def check_directory_structure():
     dir_list = ["content", "thumbnails"]
 
     for directory in dir_list:
-        content_path = get_path([directory], user_file=True)
+        content_path = helper_files.get_path([directory], user_file=True)
         try:
             os.listdir(content_path)
         except FileNotFoundError:
@@ -733,7 +719,7 @@ def retrieve_schedule():
     schedule_to_read = None
 
     for source in sources_to_try:
-        sched_path = get_path(["schedules", source], user_file=True)
+        sched_path = helper_files.get_path(["schedules", source], user_file=True)
         try:
             schedules = os.listdir(sched_path)
             if today_filename in schedules:
@@ -771,7 +757,7 @@ def read_schedule(schedule_input):
     config.schedule = []
     config.missingContentWarningList = []
 
-    content_path = get_path(["content"], user_file=True)
+    content_path = helper_files.get_path(["content"], user_file=True)
 
     for key in schedule_input:
         event_time = dateutil.parser.parse(key).time()
@@ -798,7 +784,7 @@ def queue_next_scheduled_event():
         sorted_sched = sorted(config.schedule)
         now = datetime.datetime.now().time()
 
-        content_path = get_path(["content"], user_file=True)
+        content_path = helper_files.get_path(["content"], user_file=True)
 
         for event in sorted_sched:
             event_time, content = event
@@ -870,33 +856,6 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
     # return(config_object, config_dict)
 
 
-def with_extension(filename: str, ext: str) -> str:
-    """Return the filename with the current extension replaced by the given one"""
-
-    if ext.startswith("."):
-        ext = ext[1:]
-
-    split = filename.split(".")
-    return ".".join(split[0:-1]) + "." + ext
-
-
-def get_thumbnail(filename: str) -> (Union[str, None], str):
-    """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype"""
-
-    mimetype, _ = mimetypes.guess_type(filename)
-    mimetype = mimetype.split("/")[0]
-    if mimetype == "image":
-        thumb_path = get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True)
-    elif mimetype == "video":
-        thumb_path = get_path(["thumbnails", with_extension(filename, "mp4")], user_file=True)
-    else:
-        thumb_path = None
-
-    if thumb_path is not None and not os.path.exists(thumb_path):
-        thumb_path = None
-
-    return thumb_path, mimetype
-
 
 def create_thumbnail(filename: str, mimetype: str):
     """Create a thumbnail from the given media file and add it to the thumbnails directory.
@@ -905,31 +864,31 @@ def create_thumbnail(filename: str, mimetype: str):
 
     with config.content_file_lock:
         # try:
-        #     image = Image.open(get_path(["content", filename], user_file=True))
+        #     image = Image.open(helper_files.get_path(["content", filename], user_file=True))
         # except UnidentifiedImageError:
         #     pass
         # max_size = (400, 400)
         #
         # image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
         # image = image.convert('RGB')
-        # image.save(get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True))
+        # image.save(helper_files.get_path(["thumbnails", helper_files.with_extension(filename, "jpg")], user_file=True))
 
         ff = pyffmpeg.FFmpeg()
 
         try:
             if mimetype == "image":
                 subprocess.call([ff.get_ffmpeg_bin(), "-y",
-                                 "-i", get_path(['content', filename], user_file=True),
+                                 "-i", helper_files.get_path(['content', filename], user_file=True),
                                  "-vf", "scale=400:-1",
-                                 get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+                                 helper_files.get_path(['thumbnails', helper_files.with_extension(filename, 'jpg')], user_file=True)])
             elif mimetype == "video":
                 subprocess.call([ff.get_ffmpeg_bin(), "-y",
-                                 "-i", get_path(['content', filename], user_file=True),
+                                 "-i", helper_files.get_path(['content', filename], user_file=True),
                                  "-r", "1",
                                  "-t", "10",
                                  "-vf", "scale=400:-2",
                                  "-an",
-                                 get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
+                                 helper_files.get_path(['thumbnails', helper_files.with_extension(filename, 'mp4')], user_file=True)])
         except OSError as e:
             print("create_thumbnail: error:", e)
 
@@ -940,19 +899,9 @@ def create_missing_thumbnails():
     content = get_all_directory_contents("content")
 
     for file in content:
-        file_path, mimetype = get_thumbnail(file)
+        file_path, mimetype = helper_files.get_thumbnail(file)
         if file_path is None:
             create_thumbnail(file, mimetype)
-
-def get_path(path_list: list[str], user_file: bool = False) -> str:
-    """Return a path that takes into account whether the app has been packaged by Pyinstaller"""
-
-    _path = os.path.join(config.application_path, *path_list)
-    if getattr(sys, 'frozen', False) and not user_file:
-        # Handle the case of a Pyinstaller --onefile binary
-        _path = os.path.join(config.exec_path, *path_list)
-
-    return _path
 
 
 def handle_missing_defaults_file():
@@ -1025,7 +974,7 @@ def update_defaults(data: dict, force: bool = False):
     # Update file
     if update_made:
         with config.defaults_file_lock:
-            defaults_path = get_path(['defaults.ini'], user_file=True)
+            defaults_path = helper_files.get_path(['defaults.ini'], user_file=True)
             with open(defaults_path, 'w', encoding='UTF-8') as f:
                 config.defaults_object.write(f)
 
@@ -1045,7 +994,7 @@ def quit_handler(sig, frame):
 def load_dictionary():
     """Look for a file called dictionary.ini and load it if it exists"""
 
-    dict_path = get_path(["dictionary.ini"], user_file=True)
+    dict_path = helper_files.get_path(["dictionary.ini"], user_file=True)
 
     if os.path.isfile(dict_path):
         config.dictionary_object = configparser.ConfigParser(delimiters="=")
