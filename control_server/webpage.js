@@ -586,6 +586,9 @@ function showExhibitComponentInfo(id) {
             var activeContent = availableContent.active_content;
             var contentList = availableContent[key].sort(function(a,b) {return a.localeCompare(b);});
             var thumbnailList = availableContent.thumbnails;
+            if (thumbnailList == undefined) {
+              thumbnailList = [];
+            }
             var active;
 
             for (var i=0; i<contentList.length; i++) {
