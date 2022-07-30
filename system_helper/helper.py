@@ -20,15 +20,12 @@ import urllib
 import re
 import errno
 import webbrowser
-import subprocess
 
 # Non-standard modules
 import psutil
 import dateutil.parser
 import requests
 import serial
-# from PIL import Image, UnidentifiedImageError
-import pyffmpeg
 
 # Constellation modules
 import config
@@ -236,7 +233,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         f.write(file)
                 mimetype = mimetypes.guess_type(file_path, strict=False)[0]
                 if mimetype is not None:
-                    create_thumbnail(fields.get("filename")[0], mimetype.split("/")[0])
+                    helper_files.create_thumbnail(fields.get("filename")[0], mimetype.split("/")[0])
 
                 json_string = json.dumps({"success": True})
             except Exception as e:
@@ -306,7 +303,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             config_to_send["dictionary"] = \
                                 dict(config.dictionary_object.items("CURRENT"))
                     config_to_send["availableContent"] = \
-                        {"all_exhibits": get_all_directory_contents()}
+                        {"all_exhibits": helper_files.get_all_directory_contents()}
 
                     if config.HELPING_REMOTE_CLIENT:
                         # Files will be dispatched by the server
@@ -342,8 +339,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
                     else:
                         active_content = ""
-                    response = {"all_exhibits": get_all_directory_contents(),
-                                "thumbnails": get_directory_contents("thumbnails"),
+                    response = {"all_exhibits": helper_files.get_all_directory_contents(),
+                                "thumbnails": helper_files.get_directory_contents("thumbnails"),
                                 "active_content": active_content,
                                 "system_stats": get_system_stats()}
 
@@ -399,9 +396,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response_dict = {"commands": config.commandList,
                                      "missingContentWarnings": config.missingContentWarningList}
 
-                    event_content = check_event_schedule()
-                    if event_content is not None:
-                        response_dict["content"] = event_content
+                    # event_content = check_event_schedule()
+                    # if event_content is not None:
+                    #     response_dict["content"] = event_content
 
                     json_string = json.dumps(response_dict)
                     try:
@@ -592,49 +589,6 @@ def command_projector(cmd: str):
             print(f"commandProjector: Error: Unknown command: {cmd}")
 
 
-
-
-
-def get_all_directory_contents(directory: str = "content") -> list:
-    """Recursively search for files in the content directory and its subdirectories"""
-    content_path = helper_files.get_path([directory], user_file=True)
-    result = [os.path.relpath(os.path.join(dp, f), content_path) for dp, dn, fn in os.walk(content_path) for f in fn]
-
-    return [x for x in result if x.find(".DS_Store") == -1]
-
-
-def get_directory_contents(directory: str, absolute: bool = False) -> list:
-    """Return the contents of an exhibit directory
-
-    if absolute == False, the path is appended to the default content directory
-    """
-
-    if absolute:
-        contents = os.listdir(directory)
-    else:
-        content_path = helper_files.get_path([directory], user_file=True)
-        contents = os.listdir(content_path)
-    return [x for x in contents if x[0] != "."]  # Don't return hidden files
-
-
-def check_directory_structure():
-    """Make sure the appropriate content directories are present and create them if they are not."""
-
-    dir_list = ["content", "thumbnails"]
-
-    for directory in dir_list:
-        content_path = helper_files.get_path([directory], user_file=True)
-        try:
-            os.listdir(content_path)
-        except FileNotFoundError:
-            print(f"Warning: {directory} directory not found. Creating it...")
-
-            try:
-                os.mkdir(content_path)
-            except PermissionError:
-                print("Error: unable to create directory. Do you have write permission?")
-
-
 def get_local_address() -> str:
     """Return the IP address and port of this helper"""
 
@@ -693,132 +647,132 @@ def get_system_stats() -> dict[str, Union[int, float]]:
     return result
 
 
-def perform_manual_content_update(content: list[str]):
-    """Take the given list of content and update the control server"""
-
-    # First, update the control server
-    request_dict = {"class": "webpage",
-                    "id": config.defaults_dict["id"],
-                    "action": "setComponentContent",
-                    "content": content}
-
-    headers = {'Content-type': 'application/json'}
-    ip_address = config.defaults_dict['server_ip_address']
-    port = config.defaults_dict['server_port']
-    requests.post(f"http://{ip_address}:{port}", headers=headers, json=request_dict)
-
-
-def retrieve_schedule():
-    """Search the schedules directory for an appropriate schedule"""
-
-    # Try several possible sources for the schedule with increasing generality
-    # root = os.path.dirname(os.path.abspath(__file__))
-    sources_to_try = [config.defaults_dict["current_exhibit"], "default"]
-    today_filename = datetime.datetime.now().date().isoformat() + ".ini"  # eg. 2021-04-14.ini
-    today_day_filename = datetime.datetime.now().strftime("%A").lower() + ".ini"  # eg. monday.ini
-    schedule_to_read = None
-
-    for source in sources_to_try:
-        sched_path = helper_files.get_path(["schedules", source], user_file=True)
-        try:
-            schedules = os.listdir(sched_path)
-            if today_filename in schedules:
-                print("Found schedule", today_filename, "in", source)
-                schedule_to_read = os.path.join(sched_path, today_filename)
-                break
-            if today_day_filename in schedules:
-                print("Found schedule", today_day_filename, "in", source)
-                schedule_to_read = os.path.join(sched_path, today_day_filename)
-                break
-            if "default.ini" in schedules:
-                print("Found schedule default.ini in", source)
-                schedule_to_read = os.path.join(sched_path, "default.ini")
-                break
-        except FileNotFoundError:
-            pass
-
-    if schedule_to_read is not None:
-        parser = configparser.ConfigParser(delimiters="=")
-        parser.read(schedule_to_read)
-        if "SCHEDULE" in parser:
-            read_schedule(parser["SCHEDULE"])
-        else:
-            print("retrieve_schedule: error: no INI section 'SCHEDULE' found!")
-    else:
-        # Check again tomorrow
-        config.schedule = []
-        config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
-        print("No schedule for today. Checking again tomorrow...")
+# def perform_manual_content_update(content: list[str]):
+#     """Take the given list of content and update the control server"""
+#
+#     # First, update the control server
+#     request_dict = {"class": "webpage",
+#                     "id": config.defaults_dict["id"],
+#                     "action": "setComponentContent",
+#                     "content": content}
+#
+#     headers = {'Content-type': 'application/json'}
+#     ip_address = config.defaults_dict['server_ip_address']
+#     port = config.defaults_dict['server_port']
+#     requests.post(f"http://{ip_address}:{port}", headers=headers, json=request_dict)
 
 
-def read_schedule(schedule_input):
-    """Parse the configParser section provided in schedule and convert it for later use"""
-
-    config.schedule = []
-    config.missingContentWarningList = []
-
-    content_path = helper_files.get_path(["content"], user_file=True)
-
-    for key in schedule_input:
-        event_time = dateutil.parser.parse(key).time()
-        content = [s.strip() for s in schedule_input[key].split(",")]
-        # Check to make sure that every file in the schedule actually exists.
-        # Otherwise, add it to the warning list to be passed to the control server
-        for item in content:
-            if not os.path.isfile(os.path.join(content_path, item)):
-                config.missingContentWarningList.append(item)
-        config.schedule.append((event_time, content))
-
-    # Add an event at 12:01 AM to retrieve the new schedule
-    config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
-
-    queue_next_scheduled_event()
-
-
-def queue_next_scheduled_event():
-    """Cycle through the schedule and queue the next event"""
-
-    config.NEXT_EVENT = None
-
-    if config.schedule is not None:
-        sorted_sched = sorted(config.schedule)
-        now = datetime.datetime.now().time()
-
-        content_path = helper_files.get_path(["content"], user_file=True)
-
-        for event in sorted_sched:
-            event_time, content = event
-            # If the content was previously missing, see if it is still missing
-            # (the user may have fixed the problem)
-            for item in content:
-                if item in config.missingContentWarningList:
-                    if os.path.isfile(os.path.join(content_path, item)):
-                        # It now exists; remove it from the warning list
-                        config.missingContentWarningList = [x for x in config.missingContentWarningList if x != item]
-            if now < event_time:
-                config.NEXT_EVENT = event
-                break
+# def retrieve_schedule():
+#     """Search the schedules directory for an appropriate schedule"""
+#
+#     # Try several possible sources for the schedule with increasing generality
+#     # root = os.path.dirname(os.path.abspath(__file__))
+#     sources_to_try = [config.defaults_dict["current_exhibit"], "default"]
+#     today_filename = datetime.datetime.now().date().isoformat() + ".ini"  # eg. 2021-04-14.ini
+#     today_day_filename = datetime.datetime.now().strftime("%A").lower() + ".ini"  # eg. monday.ini
+#     schedule_to_read = None
+#
+#     for source in sources_to_try:
+#         sched_path = helper_files.get_path(["schedules", source], user_file=True)
+#         try:
+#             schedules = os.listdir(sched_path)
+#             if today_filename in schedules:
+#                 print("Found schedule", today_filename, "in", source)
+#                 schedule_to_read = os.path.join(sched_path, today_filename)
+#                 break
+#             if today_day_filename in schedules:
+#                 print("Found schedule", today_day_filename, "in", source)
+#                 schedule_to_read = os.path.join(sched_path, today_day_filename)
+#                 break
+#             if "default.ini" in schedules:
+#                 print("Found schedule default.ini in", source)
+#                 schedule_to_read = os.path.join(sched_path, "default.ini")
+#                 break
+#         except FileNotFoundError:
+#             pass
+#
+#     if schedule_to_read is not None:
+#         parser = configparser.ConfigParser(delimiters="=")
+#         parser.read(schedule_to_read)
+#         if "SCHEDULE" in parser:
+#             read_schedule(parser["SCHEDULE"])
+#         else:
+#             print("retrieve_schedule: error: no INI section 'SCHEDULE' found!")
+#     else:
+#         # Check again tomorrow
+#         config.schedule = []
+#         config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
+#         print("No schedule for today. Checking again tomorrow...")
 
 
-def check_event_schedule():
-    """Check the NEXT_EVENT and see if it is time. If so, set the content"""
+# def read_schedule(schedule_input):
+#     """Parse the configParser section provided in schedule and convert it for later use"""
+#
+#     config.schedule = []
+#     config.missingContentWarningList = []
+#
+#     content_path = helper_files.get_path(["content"], user_file=True)
+#
+#     for key in schedule_input:
+#         event_time = dateutil.parser.parse(key).time()
+#         content = [s.strip() for s in schedule_input[key].split(",")]
+#         # Check to make sure that every file in the schedule actually exists.
+#         # Otherwise, add it to the warning list to be passed to the control server
+#         for item in content:
+#             if not os.path.isfile(os.path.join(content_path, item)):
+#                 config.missingContentWarningList.append(item)
+#         config.schedule.append((event_time, content))
+#
+#     # Add an event at 12:01 AM to retrieve the new schedule
+#     config.schedule.append((datetime.time(0, 1), ["reload_schedule"]))
+#
+#     queue_next_scheduled_event()
 
-    content_to_return = None
-    if config.NEXT_EVENT is not None:
-        event_time, content = config.NEXT_EVENT
-        # print("Checking for scheduled event:", content)
-        # print(f"Now: {datetime.now().time()}, Event time: {time}, Time for event: {datetime.now().time() > time}")
-        if datetime.datetime.now().time() > event_time:  # It is time for this event!
-            print("Scheduled event occurred:", event_time, content)
-            if content == ["reload_schedule"]:
-                retrieve_schedule()
-            else:
-                perform_manual_content_update(content)
-                content_to_return = content
-            config.NEXT_EVENT = None
 
-    queue_next_scheduled_event()
-    return content_to_return
+# def queue_next_scheduled_event():
+#     """Cycle through the schedule and queue the next event"""
+#
+#     config.NEXT_EVENT = None
+#
+#     if config.schedule is not None:
+#         sorted_sched = sorted(config.schedule)
+#         now = datetime.datetime.now().time()
+#
+#         content_path = helper_files.get_path(["content"], user_file=True)
+#
+#         for event in sorted_sched:
+#             event_time, content = event
+#             # If the content was previously missing, see if it is still missing
+#             # (the user may have fixed the problem)
+#             for item in content:
+#                 if item in config.missingContentWarningList:
+#                     if os.path.isfile(os.path.join(content_path, item)):
+#                         # It now exists; remove it from the warning list
+#                         config.missingContentWarningList = [x for x in config.missingContentWarningList if x != item]
+#             if now < event_time:
+#                 config.NEXT_EVENT = event
+#                 break
+
+
+# def check_event_schedule():
+#     """Check the NEXT_EVENT and see if it is time. If so, set the content"""
+#
+#     content_to_return = None
+#     if config.NEXT_EVENT is not None:
+#         event_time, content = config.NEXT_EVENT
+#         # print("Checking for scheduled event:", content)
+#         # print(f"Now: {datetime.now().time()}, Event time: {time}, Time for event: {datetime.now().time() > time}")
+#         if datetime.datetime.now().time() > event_time:  # It is time for this event!
+#             print("Scheduled event occurred:", event_time, content)
+#             if content == ["reload_schedule"]:
+#                 retrieve_schedule()
+#             else:
+#                 perform_manual_content_update(content)
+#                 content_to_return = content
+#             config.NEXT_EVENT = None
+#
+#     queue_next_scheduled_event()
+#     return content_to_return
 
 
 def read_default_configuration(check_directories: bool = True, dict_to_read: dict = None):
@@ -851,59 +805,7 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
 
     # Make sure we have the appropriate file system set up
     if check_directories:
-        check_directory_structure()
-
-    # return(config_object, config_dict)
-
-
-
-def create_thumbnail(filename: str, mimetype: str):
-    """Create a thumbnail from the given media file and add it to the thumbnails directory.
-
-    If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
-
-    with config.content_file_lock:
-        # try:
-        #     image = Image.open(helper_files.get_path(["content", filename], user_file=True))
-        # except UnidentifiedImageError:
-        #     pass
-        # max_size = (400, 400)
-        #
-        # image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
-        # image = image.convert('RGB')
-        # image.save(helper_files.get_path(["thumbnails", helper_files.with_extension(filename, "jpg")], user_file=True))
-
-        try:
-            ff = pyffmpeg.FFmpeg()
-
-            if mimetype == "image":
-                subprocess.call([ff.get_ffmpeg_bin(), "-y",
-                                 "-i", helper_files.get_path(['content', filename], user_file=True),
-                                 "-vf", "scale=400:-1",
-                                 helper_files.get_path(['thumbnails', helper_files.with_extension(filename, 'jpg')], user_file=True)])
-            elif mimetype == "video":
-                subprocess.call([ff.get_ffmpeg_bin(), "-y",
-                                 "-i", helper_files.get_path(['content', filename], user_file=True),
-                                 "-r", "1",
-                                 "-t", "10",
-                                 "-vf", "scale=400:-2",
-                                 "-an",
-                                 helper_files.get_path(['thumbnails', helper_files.with_extension(filename, 'mp4')], user_file=True)])
-        except OSError as e:
-            print("create_thumbnail: error:", e)
-        except ImportError as e:
-            print("create_thumbnail: error loading FFmpeg: ", e)
-
-
-def create_missing_thumbnails():
-    """Check the content directory for files without thumbnails and create them"""
-
-    content = get_all_directory_contents("content")
-
-    for file in content:
-        file_path, mimetype = helper_files.get_thumbnail(file)
-        if file_path is None:
-            create_thumbnail(file, mimetype)
+        helper_files.check_directory_structure()
 
 
 def handle_missing_defaults_file():
@@ -1021,13 +923,13 @@ if __name__ == "__main__":
     read_default_configuration()
 
     # Check for missing content thumbnails and create them
-    create_missing_thumbnails()
+    helper_files.create_missing_thumbnails()
 
     # If it exists, load the dictionary that maps one value into another
     load_dictionary()
 
     # Look for an available schedule and load it
-    retrieve_schedule()
+    # retrieve_schedule()
 
     # Check the GitHub server for an available software update
     check_for_software_update()
