@@ -37,6 +37,9 @@ issueList_last_update_date = datetime.datetime.now().isoformat()
 issueList = []
 
 # Schedule stuff
+schedule_timers: list[threading.Timer] = []
+json_schedule_list: list[dict] = []
+json_next_event = []
 scheduleList = []
 nextEvent = {}
 scheduleUpdateTime: float = 0

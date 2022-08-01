@@ -34,6 +34,7 @@ import constellation_issues as c_issues
 import constellation_maintenance as c_maint
 import constellation_projector as c_proj
 import constellation_schedule as c_sched
+import constellation_tools as c_tools
 import constellation_tracker as c_track
 
 
@@ -47,7 +48,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
     """Handle incoming requests to the control server"""
 
     def send_current_configuration(self, id_):
-
         """Function to respond to a POST with a dictionary defining the current exhibit configuration"""
 
         json_string = json.dumps(c_exhibit.get_exhibit_component(id_).config)
@@ -57,7 +57,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
     def send_webpage_update(self):
-
         """Function to collect the current exhibit status, format it, and send it back to the web client to update the page"""
 
         component_dict_list = []
@@ -122,11 +121,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
         component_dict_list.append(temp)
 
         # Also include an object containing the current schedule
+        c_sched.retrieve_json_schedule()
         with config.scheduleLock:
             temp = {"class": "schedule",
                     "updateTime": config.scheduleUpdateTime,
-                    "schedule": config.scheduleList,
-                    "nextEvent": config.nextEvent}
+                    "schedule": config.json_schedule_list,
+                    "nextEvent": config.json_next_event}
             component_dict_list.append(temp)
 
         json_string = json.dumps(component_dict_list, default=str)
@@ -352,7 +352,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             data_str = self.rfile.read(length).decode("utf-8")
 
             try:  # JSON
-                data = json.loads(data_str)
+                data: dict = json.loads(data_str)
             except json.decoder.JSONDecodeError:  # not JSON
                 data = {}
                 split = data_str.split("&")
@@ -436,107 +436,39 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # This command handles both adding a new scheduled action
                     # and editing an existing action
 
-                    if "name" not in data or "timeToSet" not in data or "actionToSet" not in data or "targetToSet" not in data or "valueToSet" not in data or "isAddition" not in data:
+                    if "name" not in data or "timeToSet" not in data or "actionToSet" not in data or "targetToSet" not in data or "valueToSet" not in data or "isAddition" not in data or "scheduleID" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing one or more required keys"}
                         json_string = json.dumps(response_dict, default=str)
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         return
 
+                    # Make sure we were given a valid time to parse
                     try:
-                        time_to_set = dateutil.parser.parse(data['timeToSet']).time()
+                        dateutil.parser.parse(data["timeToSet"])
                     except dateutil.parser._parser.ParserError:
                         response_dict = {"success": False,
-                                         "reason": "Unknown date format"}
+                                         "reason": "Time not valid"}
                         json_string = json.dumps(response_dict, default=str)
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         return
 
+                    c_sched.update_json_schedule(data["name"]+".json", {data["scheduleID"]: {"time": data["timeToSet"], "action": data["actionToSet"], "target": data["targetToSet"], "value": data["valueToSet"]}})
+
                     error = False
                     error_message = ""
-
-                    line_to_set = f"{data['timeToSet']} = {data['actionToSet']}"
-                    if data["targetToSet"] is None:
-                        line_to_set += "\n"
-                    else:
-                        line_to_set += f", {data['targetToSet']}"
-                    if data["valueToSet"] is None:
-                        line_to_set += "\n"
-                    else:
-                        value_to_set = data.get('valueToSet', [])
-                        value = ""
-                        if isinstance(value_to_set, list):
-                            if len(value_to_set) > 1:
-                                value = ", ".join(value_to_set)
-                            elif len(value_to_set) == 1:
-                                print(value_to_set)
-                                value = value_to_set[0]
-                            else:
-                                value = ""
-                        if value != "":
-                            line_to_set += f", {value}\n"
-
-                    sched_dir = os.path.join(config.APP_PATH, "schedules")
-                    path = os.path.join(sched_dir, data["name"] + ".ini")
-
-                    if data["isAddition"]:
-                        # Check if this time already exists
-                        error = c_sched.check_if_schedule_time_exists(path, time_to_set)
-
-                        if not error:
-                            with config.scheduleLock:
-                                with open(path, 'a', encoding="UTF-8") as f:
-                                    f.write(line_to_set)
-                        else:
-                            error_message = "An action with this time already exists"
-                    elif "timeToReplace" in data:
-                        output_text = ""
-                        time_to_replace = dateutil.parser.parse(data['timeToReplace']).time()
-                        print("replacing schedule",
-                              time_to_replace, time_to_set,
-                              c_sched.check_if_schedule_time_exists(path, time_to_set))
-
-                        # We need to make sure we are not editing this entry to have
-                        # the same time as another entry
-
-                        if time_to_set == time_to_replace:
-                            okay_to_edit = True
-                        else:
-                            okay_to_edit = not c_sched.check_if_schedule_time_exists(path, time_to_set)
-
-                        if okay_to_edit:
-                            with config.scheduleLock:
-                                # Iterate the file to replace the line we are changing
-                                with open(path, 'r', encoding='UTF-8') as f:
-                                    for line in f.readlines():
-                                        split = line.split("=")
-                                        if len(split) == 2:
-                                            # We have a valid ini line
-                                            if dateutil.parser.parse(split[0]).time() != time_to_replace:
-                                                # This line doesn't match, so keep it as is
-                                                output_text += line
-                                            else:
-                                                output_text += line_to_set
-                                        else:
-                                            output_text += line
-
-                                with open(path, 'w', encoding='UTF-8') as f:
-                                    f.write(output_text)
-                        else:
-                            error = True
-                            error_message = "An action with this time already exists"
 
                     response_dict = {}
                     if not error:
                         # Reload the schedule from disk
-                        c_sched.retrieve_schedule()
+                        c_sched.retrieve_json_schedule()
 
                         # Send the updated schedule back
                         with config.scheduleLock:
                             response_dict["class"] = "schedule"
                             response_dict["updateTime"] = config.scheduleUpdateTime
-                            response_dict["schedule"] = config.scheduleList
-                            response_dict["nextEvent"] = config.nextEvent
+                            response_dict["schedule"] = config.json_schedule_list
+                            response_dict["nextEvent"] = config.json_next_event
                             response_dict["success"] = True
                     else:
                         response_dict["success"] = False
@@ -547,15 +479,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif action == 'refreshSchedule':
                     # This command reloads the schedule from disk. Normal schedule
                     # changes are passed during fetchUpdate
-                    c_sched.retrieve_schedule()
+                    c_sched.retrieve_json_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
                                          "updateTime": config.scheduleUpdateTime,
-                                         "schedule": config.scheduleList,
-                                         "nextEvent": config.nextEvent}
+                                         "schedule": config.json_schedule_list,
+                                         "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -566,21 +498,20 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
 
-                    sched_dir = os.path.join(config.APP_PATH, "schedules")
                     with config.scheduleLock:
-                        shutil.copy(os.path.join(sched_dir, data["from"].lower() + ".ini"),
-                                    os.path.join(sched_dir, data["date"] + ".ini"))
+                        shutil.copy(c_tools.get_path(["schedules", data["from"]+".json"], user_file=True),
+                                    c_tools.get_path(["schedules", data["date"]+".json"], user_file=True))
 
                     # Reload the schedule from disk
-                    c_sched.retrieve_schedule()
+                    c_sched.retrieve_json_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
                                          "updateTime": config.scheduleUpdateTime,
-                                         "schedule": config.scheduleList,
-                                         "nextEvent": config.nextEvent}
+                                         "schedule": config.json_schedule_list,
+                                         "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -591,39 +522,38 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     with config.scheduleLock:
-                        sched_dir = os.path.join(config.APP_PATH, "schedules")
-                        os.remove(os.path.join(sched_dir, data["name"] + ".ini"))
+                        json_schedule_path = c_tools.get_path(["schedules", data["name"]+".json"], user_file=True)
+                        os.remove(json_schedule_path)
 
                     # Reload the schedule from disk
-                    c_sched.retrieve_schedule()
+                    c_sched.retrieve_json_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
                                          "updateTime": config.scheduleUpdateTime,
-                                         "schedule": config.scheduleList,
-                                         "nextEvent": config.nextEvent}
-
+                                         "schedule": config.json_schedule_list,
+                                         "nextEvent": config.json_next_event}
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "deleteScheduleAction":
-                    if "from" not in data or "time" not in data:
+                    if "from" not in data or "scheduleID" not in data:
                         response = {"success": False,
-                                    "reason": "Request missing 'from' or 'time' field."}
+                                    "reason": "Request missing 'from' or 'scheduleID' field."}
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
 
-                    c_sched.delete_schedule_action(data["from"], data["time"])
-                    c_sched.retrieve_schedule()
+                    c_sched.delete_json_schedule_event(data["from"] + ".json", data["scheduleID"])
+                    c_sched.retrieve_json_schedule()
 
                     # Send the updated schedule back
                     with config.scheduleLock:
                         response_dict = {"success": True,
                                          "class": "schedule",
                                          "updateTime": config.scheduleUpdateTime,
-                                         "schedule": config.scheduleList,
-                                         "nextEvent": config.nextEvent}
+                                         "schedule": config.json_schedule_list,
+                                         "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -807,19 +737,19 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # if "id" in data:
                     #     print(f"    id = {data['id']}")
                     # print(f"    action = {action}")
-                    if action == "getUploadedFile":
-                        if "id" not in data:
-                            response = {"success": False,
-                                        "reason": "Request missing 'id' field."}
-                            self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                            return
-                        component = c_exhibit.get_exhibit_component(data["id"])
-                        if len(component.dataToUpload) > 0:
-                            upload = component.dataToUpload.pop(0)
-                            # json_string = json.dumps(upload)
-                            # self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                            self.wfile.write(upload)
-                    elif action == "beginSynchronization":
+                    # if action == "getUploadedFile":
+                    #     if "id" not in data:
+                    #         response = {"success": False,
+                    #                     "reason": "Request missing 'id' field."}
+                    #         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    #         return
+                    #     component = c_exhibit.get_exhibit_component(data["id"])
+                    #     if len(component.dataToUpload) > 0:
+                    #         upload = component.dataToUpload.pop(0)
+                    #         # json_string = json.dumps(upload)
+                    #         # self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    #         self.wfile.write(upload)
+                    if action == "beginSynchronization":
                         if "synchronizeWith" in data:
                             c_exhibit.update_synchronization_list(data["id"], data["synchronizeWith"])
                 else:  # it's a ping
@@ -873,7 +803,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
-                    file_path = os.path.join(config.APP_PATH, kind, "data", data["name"] + ".txt")
+                    # file_path = os.path.join(config.APP_PATH, kind, "data", data["name"] + ".txt")
+                    file_path = c_tools.get_path([kind, "data", data["name"] + ".txt"], user_file=True)
                     success, reason = c_track.write_JSON(data["data"], file_path)
                     response = {"success": success, "reason": reason}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
@@ -1122,7 +1053,7 @@ def load_default_configuration():
     if len(staff_list) > 0:
         config.assignable_staff = [x.strip() for x in staff_list.split(",")]
 
-    c_sched.retrieve_schedule()
+    c_sched.retrieve_json_schedule()
 
     config.projectorList = []
 
@@ -1404,7 +1335,7 @@ server_port: int = 8080  # Default; should be set in currentExhibitConfiguration
 ip_address: str = socket.gethostbyname(socket.gethostname())  # Default; should be set in galleryConfiguration.ini
 ADDR: str = ""  # Accept connections from all interfaces
 gallery_name: str = ""
-SOFTWARE_VERSION = 1.0
+SOFTWARE_VERSION = 1.1
 software_update_available: bool = False
 
 # Set up log file
@@ -1431,7 +1362,6 @@ except (FileNotFoundError, EOFError):
 check_file_structure()
 c_exhibit.check_available_exhibits()
 load_default_configuration()
-c_sched.poll_event_schedule()
 c_proj.poll_projectors()
 c_exhibit.poll_wake_on_LAN_devices()
 check_for_software_update()

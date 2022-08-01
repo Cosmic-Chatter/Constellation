@@ -218,6 +218,7 @@ The schedule tab allows you to set recurring or one-off events within the `galle
 * Send power off and power on commands
 * Refresh the `component`s
 * Set the `exhibit`
+* Set `content` for a single `component`
 
 Note that sending power off and power on commands may affect different `component`s differently. For `Projector`s, this will sleep or wake them. For `Wake on LAN` devices with shutdown permitted, the machine will be shutdown.
 
@@ -229,7 +230,7 @@ The issues tab organizes information about the current state of the `gallery` an
 
 #### Issues
 
-Issues are not tied to a specific `exhibit`, but are a property of the overall space. They can be connected to a **_Constellation_** `component` or simply a note about the state of the facilty. When creating an issue, you can give it a priority, assign it to a specific person, and connect it with a `component`. You can also upload a photo for reference. If you're using the web console on a mobile device, you can even take the picture directly from within the interface.
+Issues are not tied to a specific `exhibit`, but are a property of the overall space. They can be connected to a **_Constellation_** `component` or simply a note about the state of the facility. When creating an issue, you can give it a priority, assign it to a specific person, and connect it with a `component`. You can also upload a photo for reference. If you're using the web console on a mobile device, you can even take the picture directly from within the interface.
 
 Known issues can be filtered by priority and who they are assigned to.
 
@@ -260,9 +261,9 @@ If you make a manual change to `galleryConfiguration.ini`, pressing the "Reload 
 
 ### Hiding tabs
 
-The Schedule, Settings, and Help tabs can be hidden from view by modifying the URL. For example, to hide the schedule tab, change the URL to read `http://[Your IP]:[Your Port]/webpage.html?hideSchedule`. To hide both the help and settings tabs, use `http://[Your IP]:[Your Port]/webpage.html?hideHelp&hideSettings`.
+The tabs can be hidden from view by modifying the URL. For example, to hide the schedule tab, change the URL to read `http://[Your IP]:[Your Port]/webpage.html?hideSchedule`. To hide both the help and settings tabs, use `http://[Your IP]:[Your Port]/webpage.html?hideHelp&hideSettings`.
 
-Hiding tabs can be useful when creating a status console for frontline staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
+Hiding tabs can be useful when creating a status console for certain staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
 
 ## Using the flexible tracker
 
@@ -336,7 +337,7 @@ Once you have collected some data, you can easily download it as a comma-separat
 By clicking the "Clear data" button, you can erase the existing data. This action cannot be undone.
 
 ## Integrating with **_Constellation_**
-The control server communicates with `component`s using HTTP requests. Connecting a custom `component` is as simple as sending and receiving the appropriate requests.
+Control Server communicates with `component`s using HTTP requests. Connecting a custom `component` is as simple as sending and receiving the appropriate requests.
 
 ### Required actions
 
@@ -353,7 +354,7 @@ Control Server does not search for new `component`s. Rather, each `component` mu
 | AnyDeskID | String | The ID corresponding to an AnyDesk entry running on the host PC | No | - |
 | allowed_actions | array of strings | Any subset of ["restart", "shutdown", "sleep"] | No | Sending these values indicates that the `component` is able and willing to respond to their corresponding commands. Don't send an action if you have not implemented a method of responding to it. |
 | currentInteraction | String | "true" or "false" | No | Send "true" if the `component` has been interacted with in the last 30 seconds. Send "false" if it has not. For a `component` with an attractor, you can also send "true" if the attractor is not displayed. |
-| error | JSON object string | The keys of the stringified object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
+| error | JSON object | The keys of the stringified object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
 | helperAddress | String | An HTTP address, including the port, of a server capable of responding to requests | No | This is required for the `component` to respond to certain commands, such as shutting down or restarting. |
 
 
@@ -363,22 +364,22 @@ Your system should implement as many of these commands as makes sense for your u
 
 Commands are passed to the `component` as responses to a ping. The returned JSON object will have a `commands` field containing a list of string commands. If you implement any of `power_on`, `power_off`, `restart`, `shutdown`, or `sleepDisplays`, make sure you have indicated this in the `allowed_actions` field of every ping.
 
-| Command | Intended action | Notes |
-| ------- | --------------- | ----- |
-| `disableAutoplay` | Stop any automatic cycling of the `content` | - |
-| `enableAutoplay` | Resume any automatic cycling of the `content` | - |
-| `pauseVideo` | Pause any currently playing video | -|
-| `playVideo` | Start or resume play of a video | - |
-| `power_off` | Alias of `shutdown` | - |
-| `power_on` | Alias of `wakeDisplay` | If you want to wake the PC from a shutdown, make sure it is capable of wake on LAN and add the MAC address to the `[WAKE_ON_LAN]` section of  `currentExhibitConfiguration` |
-| `refresh_page` | Refresh the browser window or reset the current screen | - |
-| `reloadDefaults` | Reset the `component` to its initial condition | - |
-| `restart` | Initiate a restart of the PC | - |
-| `seekVideo_[back\|forward]_X` | Seek video X% in the given directoni | For example, `seekVideo_back_10` will rewind by amount equal to 10% of the video's length. |
-| `shutdown` | Shutdown the PC | This command should only be implemented if the PC can be woken by wake on LAN. If `shutdown` is not implemented, but `sleep` is, then make `shutdown` an alias of `sleep` so that the display can be put to sleep on a `shutdown` command. |
-| `sleepDisplay` | Put the PC's display to sleep | - |
-| `toggleAutoplay` | If `content` is automatically cycling, stop that. If not, start it | - |
-| `wakeDisplay` | Wake the PC's display | - |
+| Command                      | Intended action                                                  | Notes |
+|------------------------------|------------------------------------------------------------------| ----- |
+| `disableAutoplay`            | Stop any automatic cycling of the `content`                      | - |
+| `enableAutoplay`             | Resume any automatic cycling of the `content`                    | - |
+| `pauseVideo`                 | Pause any currently playing video                                | -|
+| `playVideo`                  | Start or resume play of a video                                  | - |
+| `power_off`                  | Alias of `shutdown`                                              | - |
+| `power_on`                   | Alias of `wakeDisplay`                                           | If you want to wake the PC from a shutdown, make sure it is capable of wake on LAN and add the MAC address to the `[WAKE_ON_LAN]` section of  `currentExhibitConfiguration` |
+| `refresh_page`               | Refresh the browser window or reset the current screen           | - |
+| `reloadDefaults`             | Reset the `component` to its initial condition                   | - |
+| `restart`                    | Initiate a restart of the PC                                     | - |
+| `seekVideo_[back/forward]_X` | Seek video X% in the given directoni | For example, `seekVideo_back_10` will rewind by amount equal to 10% of the video's length. |
+| `shutdown`                   | Shutdown the PC                                                  | This command should only be implemented if the PC can be woken by wake on LAN. If `shutdown` is not implemented, but `sleep` is, then make `shutdown` an alias of `sleep` so that the display can be put to sleep on a `shutdown` command. |
+| `sleepDisplay`               | Put the PC's display to sleep                                    | - |
+| `toggleAutoplay`             | If `content` is automatically cycling, stop that. If not, start it | - |
+| `wakeDisplay`                | Wake the PC's display                                            | - |
 
 #### Example
 

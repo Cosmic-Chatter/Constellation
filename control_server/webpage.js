@@ -1202,6 +1202,10 @@ function scheduleConvertToDateSpecific(date, dayName) {
 
 function populateSchedule(schedule) {
 
+  // Take a provided schedule and build the interface to show it.
+
+  console.log(schedule)
+
   document.getElementById('scheduleContainer').innerHTML = "";
   $("#dateSpecificScheduleAlert").hide();
 
@@ -1231,131 +1235,221 @@ function populateSchedule(schedule) {
       deleteState = "none";
       scheduleName = day.dayName.toLowerCase();
     }
-      var html = `<div class="col-12 col-sm-6 col-lg-4 mt-3 pt-3 pb-3 ${scheduleClass}">`;
-      html += `
-                      <div class="row">
-                        <div class="col-6 col-sm-12 col-md-6">
-                          <span style="font-size: 35px;">${day.dayName}</span>
-                        </div>
-                        <div class="col-6 col-sm-12 col-md-6 my-auto" style="text-align: right;">
-                          <strong>${day.date}</strong>
-                        </div>
-                        <div class="col-12 col-lg-6 mt-2">
-                            <button class="btn btn-primary w-100" type="button" onclick="scheduleConfigureEditModal('${scheduleName}', '${day.source}')">${addItemText}</button>
-                        </div>
-                        <div class="col-12 col-lg-6 mt-2" style="display: ${convertState};">
-                            <button class="btn btn-warning w-100" type="button" onclick="scheduleConvertToDateSpecific('${day.date}', '${day.dayName}')">Convert to date-specific schedule</button>
-                        </div>
-                        <div class="col-12 col-lg-6 mt-2" style="display: ${deleteState};">
-                            <button class="btn btn-danger w-100" type="button" onclick="deleteSchedule('${day.date}')">Delete date-specific schedule</button>
-                        </div>
-                      </div>
-                    `;
+
+    let dayContainer = document.createElement("div");
+    dayContainer.classList = `col-12 col-sm-6 col-lg-4 mt-3 pt-3 pb-3 ${scheduleClass}`;
+
+    let row = document.createElement("div");
+    row.classList = "row";
+    dayContainer.appendChild(row);
+
+    let dayNameCol = document.createElement("div");
+    dayNameCol.classList = "col-6 col-sm-12 col-md-6";
+    row.appendChild(dayNameCol);
+
+    let dayNameSpan = document.createElement("span");
+    dayNameSpan.style.fontSize = "35px";
+    dayNameSpan.innerHTML = day.dayName;
+    dayNameCol.appendChild(dayNameSpan);
+
+    let dateCol = document.createElement("div");
+    dateCol.classList = "col-6 col-sm-12 col-md-6 my-auto";
+    dateCol.style.textAlign = "right";
+    row.appendChild(dateCol);
+
+    let dateSpan = document.createElement("strong");
+    dateSpan.innerHTML = day.date;
+    dateCol.appendChild(dateSpan);
+
+    let editButtonCol = document.createElement("div");
+    editButtonCol.classList = "col-12 col-lg-6 mt-2";
+    row.appendChild(editButtonCol);
+
+    let editButton = document.createElement("button");
+    editButton.classList = "btn btn-primary w-100";
+    editButton.setAttribute("type", "button");
+    editButton.innerHTML = addItemText;
+    editButton.addEventListener("click", function(){
+      scheduleConfigureEditModal(scheduleName,day.source)
+    });
+    editButtonCol.appendChild(editButton);
+
+    let convertButtonCol = document.createElement("div");
+    convertButtonCol.classList = "col-12 col-lg-6 mt-2";
+    convertButtonCol.style.display = convertState;
+    row.appendChild(convertButtonCol);
+
+    let convertButton = document.createElement("button");
+    convertButton.classList = "btn btn-warning w-100";
+    convertButton.setAttribute("type", "button");
+    convertButton.innerHTML = "Convert to date-specific schedule";
+    convertButton.addEventListener("click", function() {
+      scheduleConvertToDateSpecific(day.date, day.dayName);
+    });
+    convertButtonCol.appendChild(convertButton);
+
+    let deleteButtonCol = document.createElement("div");
+    deleteButtonCol.classList = "col-12 col-lg-6 mt-2";
+    deleteButtonCol.style.display = deleteState;
+    row.appendChild(deleteButtonCol);
+
+    let deleteButton = document.createElement("button");
+    deleteButton.classList = "btn btn-danger w-100";
+    deleteButton.setAttribute("type", "button");
+    deleteButton.innerHTML = "Delete date-specific schedule";
+    deleteButton.addEventListener("click", function() {
+      deleteSchedule(day.date);
+    });
+    deleteButtonCol.appendChild(deleteButton);
+
+    $("#scheduleContainer").append(dayContainer);
 
       // Loop through the schedule elements and add a row for each
-      day.schedule.forEach((item) => {
+      let scheduleIDs = Object.keys(day.schedule);
+      
+      scheduleIDs.forEach((scheduleID) => {
+        let item = day.schedule[scheduleID];
         var description = null;
-        var action = null;
-        var target = null;
-        if (item[2].length == 1) {
-          action = (item[2])[0];
-        } else if (item[2].length == 2) {
-          action = (item[2])[0];
-          target = (item[2])[1];
+        var action = item.action;
+        var target = item.target;
+        var value = item.value;
 
-          if (["power_off", "power_on", "refresh_page", "restart"].includes(action)) {
-            description = populateScheduleDescriptionHelper(action, target);
-          } else if (action == "set_exhibit") {
-            description = `Set exhibit: ${target}`;
-          }
+        if (["power_off", "power_on", "refresh_page", "restart", "set_content"].includes(action)) {
+          description = populateScheduleDescriptionHelper([item], false);
+        } else if (action == "set_exhibit") {
+          description = `Set exhibit: ${target}`;
         }
 
         if (description != null) {
-          html += `
-                      <div class="row mt-2">
-                          <div class='col-4 mr-0 pr-0'>
-                            <div class="rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1"><div class="align-self-center justify-content-center">${item[1]}</div></div>
-                          </div>
-                          <div class="col-5 mx-0 px-0">
-                            <div class="text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1"><div class="align-self-center justify-content-center text-wrap"><center>${description}</center></div></div>
-                          </div>
-                          <div class="col-3 ml-0 pl-0">
-                            <button type="button" class="btn-info w-100 h-100 rounded-right" style="border-style: solid; border: 0px;" onclick="scheduleConfigureEditModal('${scheduleName}', '${day.source}', false, '${item[1]}', '${action}', '${target}')">Edit</button>
-                          </div>
-                      </div>
-          `;
+
+          let eventRow = document.createElement("div");
+          eventRow.classList = "row mt-2 eventListing";
+          $(eventRow).data("time_in_seconds", item.time_in_seconds);
+          dayContainer.appendChild(eventRow);
+
+          let eventTimeCol = document.createElement("div");
+          eventTimeCol.classList = "col-4 mr-0 pr-0";
+          eventRow.appendChild(eventTimeCol);
+
+          let eventTimeContainer = document.createElement("div");
+          eventTimeContainer.classList = "rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1";
+          eventTimeCol.appendChild(eventTimeContainer);
+
+          let eventTime = document.createElement("div");
+          eventTime.classList = "align-self-center justify-content-center";
+          eventTime.innerHTML = item.time;
+          eventTimeContainer.appendChild(eventTime);
+
+          let eventDescriptionCol = document.createElement("div");
+          eventDescriptionCol.classList = "col-5 mx-0 px-0";
+          eventRow.appendChild(eventDescriptionCol);
+
+          let eventDescriptionOuterContainer = document.createElement("div");
+          eventDescriptionOuterContainer.classList = "text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1";
+          eventDescriptionCol.appendChild(eventDescriptionOuterContainer);
+
+          let eventDescriptionInnerContainer = document.createElement("div");
+          eventDescriptionInnerContainer.classList = "align-self-center justify-content-center text-wrap";
+          eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer);
+
+          let eventDescription = document.createElement("center");
+          eventDescription.innerHTML = description;
+          eventDescriptionOuterContainer.appendChild(eventDescription);
+
+          let eventEditButtonCol = document.createElement("div");
+          eventEditButtonCol.classList = "col-3 ml-0 pl-0";
+          eventRow.appendChild(eventEditButtonCol);
+
+          let eventEditButton = document.createElement("button");
+          eventEditButton.classList = "btn-info w-100 h-100 rounded-right";
+          eventEditButton.setAttribute("type", "button");
+          eventEditButton.style.borderStyle = "solid";
+          eventEditButton.style.border = "0px";
+          eventEditButton.innerHTML = "Edit";
+          eventEditButton.addEventListener("click", function(){
+            console.log(item)
+            scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value);
+          });
+          eventEditButtonCol.appendChild(eventEditButton);
         }
-
       });
-      html += "</div>";
-      $("#scheduleContainer").append(html);
+      // Sort the elements by time
+      let events = $(dayContainer).children(".eventListing");
+      events.sort(function(a, b) {
+        return $(a).data("time_in_seconds") - $(b).data("time_in_seconds");
+      });
+      $(dayContainer).append(events);
+      // html += "</div>";
+      // $("#scheduleContainer").append(html);
   });
-
-  var nextEvent = schedule.nextEvent;
-  // var html = '';
-  // var action;
-  // if (nextEvent.action.length == 1) {
-  //    else if (action == "power_on") {
-  //     html = `Power on at ${nextEvent.time}`;
-  //   } else if (action == "power_off") {
-  //     html = `Power off at ${nextEvent.time}`;
-  //   } else if (action == "refresh_page") {
-  //     html = `Refresh components at ${nextEvent.time}`;
-  //   } else if (action == "restart") {
-  //     html = `Restart components at ${nextEvent.time}`;
-  //   }
-  // } else if (nextEvent.action.length == 2) {
-  //   action = nextEvent.action[0];
-  //   var target = nextEvent.action[1];
-  //   if (action == 'set_exhibit') {
-  //     html = `Set exhibit to ${target} at ${nextEvent.time}`;
-  //   }
-  // }
-  let action = (nextEvent.action)[0];
-  let target = nextEvent.action[1];
-  if (action == "reload_schedule") {
-    html = "No more actions today";
-  } else {
-    html = populateScheduleDescriptionHelper(action, target, nextEvent.time);
-  }
-  $("#Schedule_next_event").html(html);
+  
+  $("#Schedule_next_event").html(populateScheduleDescriptionHelper(schedule.nextEvent, true));
 }
 
-function populateScheduleDescriptionHelper(action, target, time=null) {
+function populateScheduleDescriptionHelper(eventList, includeTime) {
 
-  // Helper function to format strings that describe the nature of a scheduled
-  // action.
+  // Helper function to create text strings that describe the upcoming action(s)
 
   let description = "";
 
-  switch (action) {
-    case "power_off":
-      description = "Power off";
-      break;
-    case "power_on":
-      description = "Power on";
-      break;
-    case "refresh_page":
-      description = "Refresh";
-      break;
-    case "restart":
-      description = "Restart";
-      break;
-    default:
-      break;
+  if (eventList.length == 0) {
+    return "No more actions today";
+  } else if (eventList.length == 1) {
+    let event = eventList[0]
+    description += scheduleActionToDescription(event.action) + " ";
+    description += scheduleTargetToDescription(event.target);
+  } else {
+    let action = eventList[0].action;
+    let allSame = true;
+    eventList.forEach((event) => {
+      if (event.action != action) {
+        allSame = false
+      }
+    });
+    if (allSame) {
+      description += scheduleActionToDescription(action) + " multiple";
+    } else {
+      description = "Multiple actions"
+    }
+  }
+  if (includeTime) {
+    description += " at " + eventList[0].time;
   }
 
-  if (target == "__all") {
-    description += " all components";
-  } else if (target.startsWith("__type_")) {
-    description += " all " + target.slice(7);
-  } else if (target.startsWith("__id_")) {
-    description += " " + target.slice(5);
-  }
-  if (time != null) {
-    description += " at " + time;
-  }
   return description;
+}
+
+function scheduleActionToDescription(action) {
+  // Convert actions such as "power_on" to English text like "Power on"
+
+  switch (action) {
+    case "power_off":
+      return "Power off";
+    case "power_on":
+      return "Power on";
+    case "refresh_page":
+      return "Refresh";
+    case "restart":
+      return "Restart";
+    case "set_content":
+      return "Set content for";
+    case "set_exhibit":
+      return "Set exhibit";
+    default:
+      return action;
+  }
+}
+
+function scheduleTargetToDescription(target) {
+  // Convert targets such as "__id_TEST1" to English words like "TEST1"
+  
+  if (target == "__all") {
+    return "all components";
+  } else if (target.startsWith("__type_")) {
+    return "all " + target.slice(7);
+  } else if (target.startsWith("__id_")) {
+    return target.slice(5);
+  }
 }
 
 function setScheduleActionTargetSelector() {
@@ -1408,11 +1502,12 @@ function setScheduleActionTargetSelector() {
 function setScheduleActionValueSelector() {
   // Helper function to show/hide the select element for picking the value
   // of an action when appropriate
-  console.log("here")
+
   let action = $("#scheduleActionSelector").val();
   let target = $("#scheduleTargetSelector").val();
   let valueSelector = $("#scheduleValueSelector");
-  console.log(action, target)
+  valueSelector.empty();
+
   if (action == "set_content") {
     let component = getExhibitComponent(target.slice(5));
     
@@ -1437,6 +1532,8 @@ function setScheduleActionValueSelector() {
         response.all_exhibits.forEach((item) => {
           valueSelector.append(new Option(item, item));
         });
+        // In the case of editing an action, preselect any existing values
+        valueSelector.val($("#scheduleEditModal").data("currentValue"));
         valueSelector.show();
         $("#scheduleValueSelectorLabel").show();
       }
@@ -1448,13 +1545,20 @@ function setScheduleActionValueSelector() {
 function scheduleConfigureEditModal(scheduleName,
                                     type,
                                     isAddition=true,
+                                    currentScheduleID=null,
                                     currentTime=null,
                                     currentAction=null,
                                     currentTarget=null,
                                     currentValue=null) {
 
   // Function to set up and then show the modal that enables editing a
-  // scheduled action or adding a new one
+  // scheduled event or adding a new one
+
+  // If currentScheduleID == null, we are adding a new schedule item, so create a unique
+  // ID from the current time.
+  if (currentScheduleID == null) {
+    currentScheduleID = String(new Date().getTime());
+  }
 
   // Hide elements that aren't always visible
   $("#scheduleTargetSelector").hide();
@@ -1466,10 +1570,12 @@ function scheduleConfigureEditModal(scheduleName,
   // Tag the modal with a bunch of data that we can read if needed when
   // submitting the change
   $("#scheduleEditModal").data("scheduleName", scheduleName);
+  $("#scheduleEditModal").data("scheduleID", currentScheduleID);
   $("#scheduleEditModal").data("isAddition", isAddition);
   $("#scheduleEditModal").data("currentTime", currentTime);
   $("#scheduleEditModal").data("currentAction", currentAction);
   $("#scheduleEditModal").data("currentTarget", currentTarget);
+  $("#scheduleEditModal").data("currentValue", currentValue);
 
   // Set the modal title
   if (isAddition) {
@@ -1489,7 +1595,6 @@ function scheduleConfigureEditModal(scheduleName,
     default:
       break;
   }
-
 
   // If we're editing an existing action, pre-fill the current options
   if (isAddition == false) {
@@ -1522,6 +1627,7 @@ function sendScheduleUpdateFromModal() {
   var target = $("#scheduleTargetSelector").val();
   var value = $("#scheduleValueSelector").val();
   var isAddition = $("#scheduleEditModal").data("isAddition");
+  var scheduleID = $("#scheduleEditModal").data("scheduleID");
 
   if (time == "" || time == null) {
     $("#scheduleEditErrorAlert").html("You must specifiy a time for the action").show();
@@ -1547,10 +1653,12 @@ function sendScheduleUpdateFromModal() {
                      "actionToSet": action,
                      "targetToSet": target,
                      "valueToSet": value,
+                     "scheduleID": scheduleID,
                      "isAddition": isAddition};
 
   if (isAddition == false) {
     requestDict.timeToReplace = $("#scheduleEditModal").data("currentTime");
+    requestDict.scheduleID = scheduleID
   }
 
   requestString = JSON.stringify(requestDict);
@@ -1590,15 +1698,15 @@ function scheduleDeleteActionFromModal() {
   // Gather necessary info from the schedule editing modal and send a
   // message to the control server asking to delete the given action
 
-  var scheduleName = $("#scheduleEditModal").data("scheduleName");
-  var time = $("#scheduleActionTimeInput").val();
+  let scheduleName = $("#scheduleEditModal").data("scheduleName");
+  let scheduleID = $("#scheduleEditModal").data("scheduleID");
 
-  console.log("Delete:", scheduleName, time);
+  console.log("Delete:", scheduleName, scheduleID);
 
   var requestDict = {"class": "webpage",
                      "action": "deleteScheduleAction",
                      "from": scheduleName,
-                     "time": time};
+                     "scheduleID": scheduleID};
 
   requestString = JSON.stringify(requestDict);
 
