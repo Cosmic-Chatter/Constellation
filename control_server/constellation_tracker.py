@@ -13,7 +13,7 @@ from typing import Union
 import config
 
 
-def create_CSV(file_path: Union[str, os.PathLike], filename: str = ""):
+def create_CSV(file_path: Union[str, os.PathLike], filename: str = "") -> str:
     """Load a tracker text file and convert it to a CSV"""
 
     dict_list = []
@@ -23,7 +23,7 @@ def create_CSV(file_path: Union[str, os.PathLike], filename: str = ""):
     return JSON_list_to_CSV(dict_list, filename=filename)
 
 
-def create_template(file_path: Union[str, os.PathLike], template: dict):
+def create_template(file_path: Union[str, os.PathLike], template: dict) -> bool:
     """Given a template dictionary, write it to file"""
 
     parser = configparser.ConfigParser()

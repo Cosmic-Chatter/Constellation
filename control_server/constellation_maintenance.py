@@ -145,6 +145,7 @@ def summarize_segments(segments: list[dict]) -> dict[str, float]:
             "working": working_pct,
             "not_working": not_working_pct}
 
+
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',

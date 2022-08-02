@@ -103,6 +103,7 @@ def save_issueList():
     with open(issue_file, "w", encoding="UTF-8") as file_object:
         json.dump([x.details for x in config.issueList], file_object)
 
+
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',

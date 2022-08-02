@@ -21,15 +21,15 @@ class Projector:
                  password: str = None):
 
         self.id = id_
-        self.type = "PROJECTOR"
+        self.type: str = "PROJECTOR"
         self.ip = ip  # IP address of the projector
         self.password = password  # Password to access PJLink
         self.mac_address = mac_address  # For use with Wake on LAN
         self.connection_type = connection_type
         self.make = make
         self.constellation_app_id: str = "projector"
-        self.config = {"allowed_actions": ["power_on", "power_off"],
-                       "description": config.componentDescriptions.get(id_, "")}
+        self.config: dict = {"allowed_actions": ["power_on", "power_off"],
+                             "description": config.componentDescriptions.get(id_, "")}
 
         self.state = {"status": "OFFLINE"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -138,6 +138,7 @@ def poll_projectors():
 
     config.polling_thread_dict["poll_projectors"] = threading.Timer(30, poll_projectors)
     config.polling_thread_dict["poll_projectors"].start()
+
 
 # Set up log file
 log_path = os.path.join(config.APP_PATH, "control_server.log")

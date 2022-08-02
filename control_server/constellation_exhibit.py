@@ -14,6 +14,7 @@ import wakeonlan
 
 # Constellation imports
 import config
+import constellation_tools as c_tools
 
 
 class ExhibitComponent:
@@ -393,15 +394,16 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
     config.galleryConfiguration.read(exhibit_path)
 
     if update_default:
-        configReader = configparser.ConfigParser(delimiters="=")
-        configReader.optionxform = str  # Override default, which is case in-sensitive
-        cEC_path = os.path.join(config.APP_PATH,
-                                'galleryConfiguration.ini')
+        config_reader = configparser.ConfigParser(delimiters="=")
+        config_reader.optionxform = str  # Override default, which is case in-sensitive
+        # config_path = os.path.join(config.APP_PATH,
+        #                         'galleryConfiguration.ini')
+        config_path = c_tools.get_path(['galleryConfiguration.ini'], user_file=True)
         with config.galleryConfigurationLock:
-            configReader.read(cEC_path)
-            configReader.set("CURRENT", "current_exhibit", name)
-            with open(cEC_path, "w", encoding="UTF-8") as f:
-                configReader.write(f)
+            config_reader.read(config_path)
+            config_reader.set("CURRENT", "current_exhibit", name)
+            with open(config_path, "w", encoding="UTF-8") as f:
+                config_reader.write(f)
 
 
 def set_component_content(id_: str, content_list: list[str]):

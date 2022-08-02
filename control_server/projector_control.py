@@ -1,7 +1,8 @@
-"""Communicate with projectos using PJLink or serial commands"""
+"""Communicate with projectors using PJLink or serial commands"""
 
 # Standard imports
 import platform
+from typing import Union
 
 # Non-standard imports
 import serial
@@ -13,11 +14,11 @@ def serial_connect_with_url(ip: str,
                             make: str = None,
                             port: int = None,
                             protocol: str = 'socket',
-                            timeout: float = 4) -> serial.Serial:
+                            timeout: float = 4) -> Union[serial.Serial, None]:
     """Establish a serial connection over TCP/IP"""
 
     if (port is None) and (make is None):
-        raise Exception("Must specifiy either a port or a make")
+        raise Exception("Must specify either a port or a make")
     if port is None:
 
         port_dict = {"barco": 1025,
@@ -41,7 +42,7 @@ def serial_connect(baudrate: int = 9600,
                    parity=serial.PARITY_NONE,
                    port: str = None,
                    stopbits=serial.STOPBITS_ONE,
-                   timeout: float = 2) -> serial.Serial:
+                   timeout: float = 2) -> Union[serial.Serial, None]:
     """Connect to a serial device connected to the machine"""
 
     if port is None:
@@ -73,7 +74,7 @@ def serial_send_command(connection: serial.Serial,
                         command: str,
                         char_to_read: int = None,
                         debug: bool = False,
-                        make: str = None) -> dict:
+                        make: str = None) -> str:
     """Send a command to a projector, wait for a response and return that response"""
 
     command_dict = {
@@ -354,7 +355,7 @@ def pjlink_connect(ip: str, password: str = None, timeout: float = 2):
     return projector
 
 
-def pjlink_send_command(connection: serial.Serial, command: str):
+def pjlink_send_command(connection: serial.Serial, command: str) -> str:
     """Send a command using the PJLink protocol"""
 
     result = None
