@@ -22,7 +22,7 @@ class ExhibitComponent:
     def __init__(self, id_: str, this_type: str, category: str = 'dynamic'):
 
         # category='dynamic' for components that are connected over the network
-        # category='static' for components added from currentExhibitConfiguration.ini
+        # category='static' for components added from galleryConfiguration.ini
 
         self.id: str = id_
         self.type: str = this_type
@@ -114,7 +114,7 @@ class ExhibitComponent:
 
         """Retrieve the latest configuration data from the configParser object"""
         try:
-            file_config = dict(config.currentExhibitConfiguration.items(self.id))
+            file_config = dict(config.galleryConfiguration.items(self.id))
             for key in file_config:
                 if key == 'content':
                     self.config[key] = [s.strip() for s in file_config[key].split(",")]
@@ -388,15 +388,15 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
         return
 
     config.currentExhibit = name
-    config.currentExhibitConfiguration = configparser.ConfigParser()
+    config.galleryConfiguration = configparser.ConfigParser()
     exhibit_path = os.path.join(config.APP_PATH, "exhibits")
-    config.currentExhibitConfiguration.read(exhibit_path)
+    config.galleryConfiguration.read(exhibit_path)
 
     if update_default:
         configReader = configparser.ConfigParser(delimiters="=")
         configReader.optionxform = str  # Override default, which is case in-sensitive
         cEC_path = os.path.join(config.APP_PATH,
-                                'currentExhibitConfiguration.ini')
+                                'galleryConfiguration.ini')
         with config.galleryConfigurationLock:
             configReader.read(cEC_path)
             configReader.set("CURRENT", "current_exhibit", name)
@@ -411,10 +411,10 @@ def set_component_content(id_: str, content_list: list[str]):
 
     with config.galleryConfigurationLock:
         try:
-            config.currentExhibitConfiguration.set(id_, "content", content)
+            config.galleryConfiguration.set(id_, "content", content)
         except configparser.NoSectionError:  # This exhibit does not have content for this component
-            config.currentExhibitConfiguration.add_section(id_)
-            config.currentExhibitConfiguration.set(id_, "content", content)
+            config.galleryConfiguration.add_section(id_)
+            config.galleryConfiguration.set(id_, "content", content)
 
     # Update the component
     get_exhibit_component(id_).update_configuration()
@@ -423,7 +423,7 @@ def set_component_content(id_: str, content_list: list[str]):
     with config.galleryConfigurationLock:
         with open(os.path.join(config.APP_PATH, "exhibits", config.currentExhibit),
                   'w', encoding="UTF-8") as f:
-            config.currentExhibitConfiguration.write(f)
+            config.galleryConfiguration.write(f)
 
 
 def update_synchronization_list(this_id: str, other_ids: list[str]):

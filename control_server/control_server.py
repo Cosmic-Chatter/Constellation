@@ -1331,7 +1331,7 @@ if getattr(sys, 'frozen', False):
 else:
     config.APP_PATH = config.EXEC_PATH
 
-server_port: int = 8080  # Default; should be set in currentExhibitConfiguration.ini
+server_port: int = 8080  # Default; should be set in galleryConfiguration.ini
 ip_address: str = socket.gethostbyname(socket.gethostname())  # Default; should be set in galleryConfiguration.ini
 ADDR: str = ""  # Accept connections from all interfaces
 gallery_name: str = ""

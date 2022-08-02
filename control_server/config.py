@@ -48,6 +48,6 @@ rebooting: bool = False  # This will be set to True from a background thread whe
 
 # Exhibit stuff
 currentExhibit: str = None  # The INI file defining the current exhibit "name.exhibit"
-currentExhibitConfiguration: configparser.ConfigParser = None  # the configParser object holding the current config
+galleryConfiguration: configparser.ConfigParser = None  # the configParser object holding the current config
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
