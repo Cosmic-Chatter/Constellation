@@ -2353,7 +2353,7 @@ function deleteTrackerData() {
   // Send a message to the server asking it to delete the data for the currently
   // selected template
 
-  let name = $("#trackerTemplateSelect").val();
+  let name = $("#trackerDataSelect").val();
 
   requestDict = {"class": "tracker",
                  "action": "clearTrackerData",
