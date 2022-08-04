@@ -880,6 +880,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         return
                     kind = data.get("kind", "flexible-tracker")
                     name = data["name"]
+                    if name is None:
+                        response = {"success": False,
+                                    "reason": "'name' field is blank."}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
                     if not name.lower().endswith(".txt"):
                         name += ".txt"
                     data_path = os.path.join(config.APP_PATH, kind, "data", name)

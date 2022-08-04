@@ -2371,6 +2371,7 @@ function deleteTrackerData() {
         let result = JSON.parse(this.responseText);
         if ("success" in result && result.success == true) {
           $("#deleteTrackerDataModal").modal("hide");
+          getAvailableTrackerData(populateTrackerDataSelect);
         }
       }
     }
