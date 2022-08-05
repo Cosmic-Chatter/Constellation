@@ -499,8 +499,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         return
 
                     with config.scheduleLock:
-                        shutil.copy(c_tools.get_path(["schedules", data["from"]+".json"], user_file=True),
-                                    c_tools.get_path(["schedules", data["date"]+".json"], user_file=True))
+                        shutil.copy(c_tools.get_path(["schedules", data["from"].lower() + ".json"], user_file=True),
+                                    c_tools.get_path(["schedules", data["date"] + ".json"], user_file=True))
 
                     # Reload the schedule from disk
                     c_sched.retrieve_json_schedule()
@@ -1229,14 +1229,14 @@ def check_file_structure():
         print("Missing schedules directory. Creating now...")
         try:
             os.mkdir(schedules_dir)
-            # default_schedule_list = ["monday.ini", "tuesday.ini",
-            #                          "wednesday.ini", "thursday.ini",
-            #                          "friday.ini", "saturday.ini",
-            #                          "sunday.ini"]
-            #
-            # for file in default_schedule_list:
-            #     with open(os.path.join(schedules_dir, file), 'w', encoding="UTF-8") as f:
-            #         f.write("[SCHEDULE]\n")
+            default_schedule_list = ["monday.json", "tuesday.json",
+                                     "wednesday.json", "thursday.json",
+                                     "friday.json", "saturday.json",
+                                     "sunday.json"]
+
+            for file in default_schedule_list:
+                with open(os.path.join(schedules_dir, file), 'w', encoding="UTF-8") as f:
+                    f.write("{}")
         except PermissionError:
             print("Error: unable to create 'schedules' directory. Do you have write permission?")
 
