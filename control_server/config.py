@@ -4,6 +4,7 @@
 import configparser
 import datetime
 import threading
+from typing import Union
 
 # Path to the directory where the server is being launched from
 APP_PATH: str = ""
@@ -47,7 +48,7 @@ serverRebootTime = None
 rebooting: bool = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
-currentExhibit: str = None  # The INI file defining the current exhibit "name.exhibit"
-galleryConfiguration: configparser.ConfigParser = None  # the configParser object holding the current config
+currentExhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
+galleryConfiguration: Union[configparser.ConfigParser, None] = None  # the configParser object holding the current config
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []

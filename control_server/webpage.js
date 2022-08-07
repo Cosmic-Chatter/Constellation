@@ -2855,6 +2855,40 @@ function populateHelpTab() {
   xhr.send(requestString);
 }
 
+function showEditGalleryConfigModal() {
+  
+  // Populate the galleryEditModal with information from galleryConfiguration.ini and show the modal.
+
+  requestDict = {"class": "webpage",
+                 "action": "getConfigurationRawText"};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        if ("success" in result && result.success == true) {
+          // $("#editGalleryConfigModal").data("configuration", result.configuration);
+          populateEditGalleryConfigModal(result.configuration);
+          $("#editGalleryConfigModal").modal("show");
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+}
+
+function populateEditGalleryConfigModal(configText) {
+  // Take the provided text and set up the edit modal
+
+  $("#editGalleryConfigTextArea").val(configText);
+}
+
 function populateTrackerTemplateSelect(definitionList) {
 
   // Get a list of the available tracker layout templates and populate the

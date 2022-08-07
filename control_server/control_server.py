@@ -405,6 +405,29 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     json_string = json.dumps({"success": True})
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                elif action == "getConfiguration":
+
+                    config_reader = configparser.ConfigParser(delimiters="=")
+                    config_reader.optionxform = str  # Override default, which is case in-sensitive
+                    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
+                    with config.galleryConfigurationLock:
+                        config_reader.read(gal_path)
+
+                    config_dict = {}
+                    for section in config_reader.sections():
+                        config_dict[section] = {}
+                        for key, val in config_reader.items(section):
+                            config_dict[section][key] = val
+
+                    json_string = json.dumps({"success": True, "configuration": config_dict})
+                    self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                elif action == "getConfigurationRawText":
+                    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
+                    with open(gal_path, 'r', encoding='UTF-8') as f:
+                        text = f.read()
+
+                    json_string = json.dumps({"success": True, "configuration": text})
+                    self.wfile.write(bytes(json_string, encoding="UTF-8"))
                 elif action == "queueCommand":
                     if "command" not in data or "id" not in data:
                         response_dict = {"success": False,
