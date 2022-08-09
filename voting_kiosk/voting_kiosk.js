@@ -46,7 +46,7 @@ function buildLayout(definition) {
     card.appendChild(text);
 
     let title = document.createElement("div");
-    title.classList = "card-title my-0";
+    title.classList = "card-title my-0 noselect";
     if ("title" in buttonDef) {
       numText += 1;
       title.innerHTML = buttonDef.title;
