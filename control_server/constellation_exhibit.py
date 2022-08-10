@@ -48,6 +48,8 @@ class ExhibitComponent:
 
         if category != "static":
             self.update_configuration()
+        else:
+            self.last_contact_datetime = None
 
         # Check if we have specified a Wake on LAN device matching this id
         # If yes, subsume it into this component
