@@ -219,6 +219,9 @@
       if ("type" in update) {
         type = update["type"]
       }
+      if ("operating_system" in update) {
+        operatingSystem = update.operating_system;
+      }
       if (("server_ip_address" in update) && ("server_port" in update)) {
         serverAddress = "http://" + update["server_ip_address"] + ":" + update["server_port"];
       }
@@ -280,6 +283,7 @@
                            "id": id,
                            "type": type,
                            "constellation_app_id": "word_cloud",
+                           "operating_system": operatingSystem,
                            "allowed_actions": allowedActionsDict};
 
         var requestString = JSON.stringify(requestDict);
@@ -381,6 +385,7 @@
     // These will be replaced by the values specified in defaults.ini
     var id = 'UNKNWON';
     var type = 'WORDCLOUD_INPUT';
+    var operatingSystem = null;
     var serverAddress = ""; // The address of the main control server
     var dictionary = null;
     var current_config = {}; // Will hold the defaults sent from the helper

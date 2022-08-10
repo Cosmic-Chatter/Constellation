@@ -1,6 +1,7 @@
 """A program to provide basic Constellation services"""
 
 # Standard imports
+import sys
 import time
 import json
 
@@ -103,6 +104,7 @@ def send_ping():
                     "helperAddress": config.helper_address,
                     "allowed_actions": config.allowed_actions,
                     "constellation_app_id": "heartbeat",
+                    "operating_system": sys.platform,
                     "AnyDeskID": config.AnyDesk_id}
 
     headers = {'Content-type': 'application/json'}

@@ -300,6 +300,7 @@ function sendPing() {
                    "helperAddress": helperAddress,
                    "currentInteraction": String(currentlyActive),
                    "constellation_app_id": "media_browser",
+                   "operating_system": operatingSystem,
                    "allowed_actions": allowedActionsDict};
 
     // See if there is an error to report
@@ -362,6 +363,9 @@ function readUpdate(responseText) {
   }
   if ("type" in update) {
     type = update.type;
+  }
+  if ("operating_system" in update) {
+    operatingSystem = update.operating_system;
   }
   if (("server_ip_address" in update) && ("server_port" in update)) {
     serverAddress = "http://" + update.server_ip_address + ":" + update.server_port;

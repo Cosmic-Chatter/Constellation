@@ -145,6 +145,9 @@ function readUpdate(responseText) {
   if ("type" in update) {
     type = update.type;
   }
+  if ("operating_system" in update) {
+    operatingSystem = update.operating_system;
+  }
   if (("server_ip_address" in update) && ("server_port" in update)) {
     serverAddress = "http://" + update.server_ip_address + ":" + update.server_port;
   }
@@ -445,6 +448,7 @@ function sendPing() {
                    "helperAddress": helperAddress,
                    "allowed_actions": allowedActionsDict,
                    "constellation_app_id": "media_player",
+                   "operating_system": operatingSystem,
                    "AnyDeskID": AnyDeskID};
 
     // See if there is an error to report

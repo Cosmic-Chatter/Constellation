@@ -102,6 +102,9 @@ function readUpdate(responseText) {
   if ("type" in update) {
     type = update.type;
   }
+  if ("operating_system" in update) {
+    operatingSystem = update.operating_system;
+  }
   if (("server_ip_address" in update) && ("server_port" in update)) {
     serverAddress = "http://" + update.server_ip_address + ":" + update.server_port;
   }
@@ -217,6 +220,7 @@ function sendPing() {
                    "type": type,
                    "allowed_actions": allowedActionsDict,
                    "constellation_app_id": "sos_screen_player",
+                   "operating_system": operatingSystem,
                    "AnyDeskID": AnyDeskID};
 
     if (if errorDict.length > 0) {

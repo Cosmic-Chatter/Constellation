@@ -14,6 +14,7 @@ class ExhibitComponent {
     this.allowed_actions = [];
     this.AnyDeskID = "";
     this.constellationAppId = "";
+    this.operatingSystem = "";
 
     if (this.type == "PROJECTOR") {
       this.checkProjector();
@@ -455,6 +456,12 @@ function showExhibitComponentInfo(id) {
       }
       if (obj.constellationAppId in constellationAppIdDisplayNames) {
         constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId];
+      }
+      if (obj.operatingSystem != null) {
+        let os_dict = {linux: "Linux",
+                       darwin: "macOS",
+                       win32: "Windows"};
+        $("#componentInfoModalOperatingSystem").html(os_dict[obj.operatingSystem]);
       }
     }
     $("#constellationComponentIdButton").html(constellationAppId);
@@ -969,6 +976,9 @@ function updateComponentFromServer(component) {
     }
     if ("constellation_app_id" in component) {
       newComponent.constellationAppId = component.constellation_app_id;
+    }
+    if ("operating_system" in component) {
+      newComponent.operatingSystem = component.operating_system;
     }
     newComponent.buildHTML();
     exhibitComponents.push(newComponent);
