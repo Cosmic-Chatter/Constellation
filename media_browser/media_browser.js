@@ -300,7 +300,7 @@ function sendPing() {
                    "helperAddress": helperAddress,
                    "currentInteraction": String(currentlyActive),
                    "constellation_app_id": "media_browser",
-                   "operating_system": operatingSystem,
+                   "platform_details": platformDetails,
                    "allowed_actions": allowedActionsDict};
 
     // See if there is an error to report

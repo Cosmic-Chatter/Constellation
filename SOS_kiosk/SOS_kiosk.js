@@ -209,6 +209,7 @@ function sendPing() {
       "type": type,
       "currentInteraction": String(currentlyActive),
       "constellation_app_id": "sos_kiosk",
+      "platform_details": platformDetails,
       "allowed_actions": {"refresh": "true"}
     };
     let requestString = JSON.stringify(requestDict);
@@ -500,6 +501,10 @@ function resetActivityTimer() {
 // These will be replaced by the values specified in defaults.ini
 var id = 'SOS-KIOSK';
 var type = 'KIOSK';
+var platformDetails = {
+  operating_system: String(platform.os),
+  browser: platform.name + " " + platform.version
+}
 var serverAddress = ""; // The address of the main control server
 var source = "";
 var dictionary = null;

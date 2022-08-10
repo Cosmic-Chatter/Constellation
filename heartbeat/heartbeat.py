@@ -1,7 +1,7 @@
 """A program to provide basic Constellation services"""
 
 # Standard imports
-import sys
+import platform
 import time
 import json
 
@@ -94,6 +94,19 @@ def send_command(command: str):
         print(f"Unable to connect to helper (command: {command})")
 
 
+def get_platform():
+    """Format a string representing the current operating system"""
+
+    os = platform.system()
+
+    if os == "Darwin":
+        return "macOS " + platform.mac_ver()[0]
+    if os == "Linux":
+        return os
+    if os == "Windows":
+        return "Windows " + platform.win32_ver()[0]
+
+
 def send_ping():
 
     """Send a packet to the control server """
@@ -104,7 +117,7 @@ def send_ping():
                     "helperAddress": config.helper_address,
                     "allowed_actions": config.allowed_actions,
                     "constellation_app_id": "heartbeat",
-                    "operating_system": sys.platform,
+                    "platform_details": {"operating_system": get_platform()},
                     "AnyDeskID": config.AnyDesk_id}
 
     headers = {'Content-type': 'application/json'}

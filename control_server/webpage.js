@@ -11,10 +11,11 @@ class ExhibitComponent {
     this.helperAddress = null; // Full address to the helper
     this.state = {};
     this.status = "OFFLINE";
+    this.lastContactDateTime = null;
     this.allowed_actions = [];
     this.AnyDeskID = "";
     this.constellationAppId = "";
-    this.operatingSystem = "";
+    this.platformDetails = {};
 
     if (this.type == "PROJECTOR") {
       this.checkProjector();
@@ -457,15 +458,32 @@ function showExhibitComponentInfo(id) {
       if (obj.constellationAppId in constellationAppIdDisplayNames) {
         constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId];
       }
-      if (obj.operatingSystem != null) {
-        let os_dict = {linux: "Linux",
-                       darwin: "macOS",
-                       win32: "Windows"};
-        $("#componentInfoModalOperatingSystem").html(os_dict[obj.operatingSystem]);
-      }
     }
     $("#constellationComponentIdButton").html(constellationAppId);
-    $("#componentInfoModalIPAddress").html(obj.ip);
+    if (obj.ip != ""){
+      $("#componentInfoModalIPAddress").html(obj.ip);
+      $("#componentInfoModalIPAddressGroup").show();
+    } else {
+      $("#componentInfoModalIPAddressGroup").hide();
+    }
+    if ("operating_system" in obj.platformDetails) {
+      $("#componentInfoModalOperatingSystem").html(obj.platformDetails.operating_system.replace("OS X", "macOS"));
+      $("#componentInfoModalOperatingSystemGroup").show();
+    } else {
+      $("#componentInfoModalOperatingSystemGroup").hide();
+    }
+    if ("browser" in obj.platformDetails) {
+      $("#componentInfoModalBrowser").html(obj.platformDetails.browser);
+      $("#componentInfoModalBrowserGroup").show();
+    } else {
+      $("#componentInfoModalBrowserGroup").hide();
+    }
+    if (obj.lastContactDateTime != null) {
+      $("#componentInfoModalLastContact").html(formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)));
+      $("#componentInfoModalLastContactGroup").show();
+    } else {
+      $("#componentInfoModalLastContactGroup").hide();
+    }
     if (obj.description == "") {
       $("#componentInfoModalDescription").hide();
     } else {
@@ -946,6 +964,12 @@ function updateComponentFromServer(component) {
     if ("description" in component) {
       obj.description = component.description;
     }
+    if ("platform_details" in component) {
+      obj.platformDetails = component.platform_details;
+    }
+    if ("lastContactDateTime" in component) {
+      obj.lastContactDateTime = component.lastContactDateTime;
+    }
     if ("AnyDeskID" in component) {
       obj.AnyDeskID = component.AnyDeskID;
     }
@@ -977,8 +1001,8 @@ function updateComponentFromServer(component) {
     if ("constellation_app_id" in component) {
       newComponent.constellationAppId = component.constellation_app_id;
     }
-    if ("operating_system" in component) {
-      newComponent.operatingSystem = component.operating_system;
+    if ("platform_details" in component) {
+      newComponent.platformDetails = component.platform_details;
     }
     newComponent.buildHTML();
     exhibitComponents.push(newComponent);
@@ -989,6 +1013,40 @@ function updateComponentFromServer(component) {
     // Finally, call this function again to populate the information
     updateComponentFromServer(component);
   }
+}
+
+function formatDateTimeDifference(dt1, dt2) {
+  // Convert the difference between two times into English
+  // dt1 and dt2 should be datetimes or milliseconds
+
+  let diff = (dt1 - dt2);
+
+  let sec = Math.round(diff/1000); // seconds
+  if (sec < 0 && sec > -60) {
+    return String(Math.abs(sec)) + " seconds from now";
+  }
+  if (sec < 60 && sec >= 0) {
+    return String(sec) + " seconds ago";
+  } 
+  let min = Math.round(diff/1000/60); // minutes
+  if (min < 0 && min > -60) {
+    return String(Math.abs(min)) + " minutes from now";
+  }
+  if (min < 60 && min >= 0) {
+    return String(min) + " minutes ago";
+  }
+  let hour = Math.round(diff/1000/3600); // hours
+  if (min < 0 && min > -24) {
+    return String(Math.abs(hour)) + " hours from now";
+  }
+  if (hour < 24 && hour >= 0) {
+    return String(hour) + " hours ago";
+  }
+  let day = Math.round(diff/1000/3600/24); // days
+  if (day < 0) {
+    return String(Math.abs(day)) + " days from now";
+  }
+  return String(day) + " days ago";
 }
 
 function setCurrentExhibitName(name) {
@@ -1213,8 +1271,6 @@ function scheduleConvertToDateSpecific(date, dayName) {
 function populateSchedule(schedule) {
 
   // Take a provided schedule and build the interface to show it.
-
-  console.log(schedule)
 
   document.getElementById('scheduleContainer').innerHTML = "";
   $("#dateSpecificScheduleAlert").hide();

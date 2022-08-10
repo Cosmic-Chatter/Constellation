@@ -848,7 +848,7 @@ function sendPing() {
                    "helperPort": helperAddress.split(":")[2], // Depreciated
                    "helperAddress": helperAddress,
                    "constellation_app_id": "infostation",
-                   "operating_system": operatingSystem,
+                   "platform_details": platformDetails,
                    "currentInteraction": String(currentlyActive),
                    "allowed_actions": allowedActionsDict};
 
@@ -1109,7 +1109,10 @@ var tabsUpdated = 0; // Async tab updates check in here during toggleLang()
 // These will be replaced by values from the helper upon loading
 var id = "UNKNOWN";
 var type = "INFOSTATION";
-var operatingSystem = null;
+var platformDetails = {
+  operating_system: String(platform.os),
+  browser: platform.name + " " + platform.version
+}
 var serverAddress = ""; // The address of the main control server
 var allowedActionsDict = {"refresh": "true"};
 var contentPath = "";

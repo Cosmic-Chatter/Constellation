@@ -69,6 +69,7 @@
   <script src="js/jquery.profanityfilter.min.js"></script>
   <script src="js/swearWords.js"></script>
   <script src="js/pluralize-8.0.0.js"></script>
+  <script src="js/platform.js"></script>
   <script>
 
     function arraysEqual(arr1, arr2) {
@@ -331,7 +332,7 @@
                            "id": id,
                            "type": type,
                            "constellation_app_id": "word_cloud",
-                           "operating_system": operatingSystem,
+                           "platform_details": platformDetails,
                            "allowed_actions": allowedActionsDict};
 
         var requestString = JSON.stringify(requestDict);
@@ -359,7 +360,10 @@
     // These will be replaced by the values specified in defaults.ini
     var id = 'UNKNWON';
     var type = 'WORDCLOUD_VIEWER';
-    var operatingSystem = null;
+    var platformDetails = {
+      operating_system: String(platform.os),
+      browser: platform.name + " " + platform.version
+    }
     var serverAddress = ""; // The address of the main control server
     var dictionary = null;
     var current_config = {}; // Will hold the defaults sent from the helper

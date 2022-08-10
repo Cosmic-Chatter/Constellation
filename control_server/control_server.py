@@ -75,10 +75,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 temp["AnyDeskID"] = item.config["AnyDeskID"]
             temp["class"] = "exhibitComponent"
             temp["status"] = item.current_status()
+            temp["lastContactDateTime"] = item.last_contact_datetime
             temp["ip_address"] = item.ip
             temp["helperPort"] = item.helperPort
             temp["helperAddress"] = item.helperAddress
             temp["constellation_app_id"] = item.constellation_app_id
+            temp["platform_details"] = item.platform_details
             component_dict_list.append(temp)
 
         for item in config.projectorList:
@@ -660,7 +662,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     else:
                         response_dict = {
                             "success": False,
-                            "reason": "Must include field 'details' with property 'id'"
+                            "reason": "Must include field 'details' with proper"
+                                      "ty 'id'"
                         }
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "deleteIssue":

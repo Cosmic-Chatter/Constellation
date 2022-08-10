@@ -312,7 +312,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         # Files will be loaded directly by the client
                         content_path = helper_files.get_path(["content"], user_file=True)
                     config_to_send["contentPath"] = content_path
-                    config_to_send["operating_system"] = sys.platform
                     # config_to_send["helperAddress"] = get_local_address()
                     json_string = json.dumps(config_to_send)
                     try:

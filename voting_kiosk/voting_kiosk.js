@@ -254,9 +254,6 @@ function readUpdate(responseText) {
   if ("type" in update) {
     type = update.type;
   }
-  if ("operating_system" in update) {
-    operatingSystem = update.operating_system;
-  }
   if (("server_ip_address" in update) && ("server_port" in update)) {
     serverAddress = "http://" + update.server_ip_address + ":" + update.server_port;
   }
@@ -567,7 +564,7 @@ function sendPing() {
                     "helperIPSameAsClient": helperIPSameAsClient,
                     "allowed_actions": allowedActionsDict,
                     "constellation_app_id": "voting_kiosk",
-                    "operating_system": operatingSystem,
+                    "platform_details": platformDetails,
                     "currentInteraction": String(currentlyActive),
                     "AnyDeskID": AnyDeskID};
     currentlyActive = false;
@@ -633,7 +630,10 @@ function parseINIString(data) {
 var id = "NO_ID";
 var type = "VOTING_KIOSK";
 const SOFTWARE_VERSION = 1.0;
-var operatingSystem = null;
+var platformDetails = {
+  operating_system: String(platform.os),
+  browser: platform.name + " " + platform.version
+}
 
 var serverAddress = "http://localhost:8082";
 var currentExhibit = ""; // This will double as the root of the source path

@@ -32,6 +32,7 @@ class ExhibitComponent:
         self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
         self.helperAddress: Union[str, None] = None  # full IP and port of helper
         self.constellation_app_id: str = ""  # Internal identifier for what app this component is running
+        self.platform_details: dict = {}
 
         self.macAddress: Union[str, None] = None  # Added below if we have specified a Wake on LAN device
         self.broadcastAddress: str = "255.255.255.255"
@@ -503,6 +504,9 @@ def update_exhibit_component_status(data, ip: str):
             component.config.pop("error")
     if "constellation_app_id" in data:
         component.constellation_app_id = data["constellation_app_id"]
+    if "platform_details" in data:
+        if isinstance(data["platform_details"], dict):
+            component.platform_details.update(data["platform_details"])
 
 
 # Set up log file

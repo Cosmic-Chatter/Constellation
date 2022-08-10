@@ -220,7 +220,7 @@ function sendPing() {
                    "type": type,
                    "allowed_actions": allowedActionsDict,
                    "constellation_app_id": "sos_screen_player",
-                   "operating_system": operatingSystem,
+                   "platform_details": platformDetails,
                    "AnyDeskID": AnyDeskID};
 
     if (if errorDict.length > 0) {

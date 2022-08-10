@@ -243,6 +243,7 @@
   <!-- <script type="text/javascript" src="js/popper.min.js"></script> -->
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
   <script type="text/javascript" src="js/simple-keyboard.js"></script>
+  <script type="text/javascript" src="js/platform.js"></script>
 
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript" src="data.js"></script>
@@ -300,7 +301,10 @@
     // to this app by the helper server
     var id = 'UNKNOWN';
     var type = 'UNKNOWN';
-    var operatingSystem = null;
+    var platformDetails = {
+      operating_system: String(platform.os),
+      browser: platform.name + " " + platform.version
+    }
     var serverAddress = ""; // The address of the main control server
 
     const SOFTWARE_VERSION = 1.0
