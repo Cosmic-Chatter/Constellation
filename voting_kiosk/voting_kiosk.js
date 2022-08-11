@@ -104,16 +104,19 @@ function checkConnection() {
 
   var requestString = JSON.stringify(requestDict);
 
-  function badConnection() {
-    $("#connectionWarning").show();
+  function badConnectionHandler() {
+    if (debug) {
+      $("#connectionWarning").show();
+    }
+    badConnection = true;
   }
   var xhr = new XMLHttpRequest();
   xhr.open("POST", serverAddress, true);
   xhr.timeout = 1000;
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
-  xhr.ontimeout = badConnection;
-  xhr.onerror = badConnection;
+  xhr.ontimeout = badConnectionHandler;
+  xhr.onerror = badConnectionHandler;
   xhr.onreadystatechange = function () {
     if (this.readyState != 4) return;
 
@@ -121,19 +124,21 @@ function checkConnection() {
       var response = JSON.parse(this.responseText);
       if (response["success"] == true) {
         $("#connectionWarning").hide();
-      }
-    }
-  };xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      var response = JSON.parse(this.responseText);
-      if (response["success"] == true) {
-        $("#connectionWarning").hide();
+        badConnection = false;
       }
     }
   };
   xhr.send(requestString);
+}
+
+function stringToBool(str) {
+  // Parse a given string and return an appropriate bool
+
+  if (["True", "true", "TRUE", "1", "yes", "Yes"].includes(str)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function checkForHelperUpdates() {
@@ -381,6 +386,11 @@ function updateContent(name, definition) {
   } else {
     touchCooldown = 2;
   }
+  if ("debug" in definition.SETTINGS && stringToBool(definition.SETTINGS.debug) == true) {
+    debug = true;
+  } else {
+    debug = false;
+  }
 
   buildLayout(definition);
 }
@@ -491,6 +501,12 @@ function sendData() {
   if (debug) {
     console.log("Sending data...")
   }
+  if (badConnection) {
+    if (debug) {
+      console.log("Error: bad connection. Will not attempt to send data.");
+    }
+    return;
+  }
   resultDict = {};
 
   // Append the date and time of this recording
@@ -560,8 +576,10 @@ function askForDefaults() {
   var requestString = JSON.stringify({"action": "getDefaults"});
 
   let checkAgain = function() {
-    $("#helperConnectionWarningAddress").text(helperAddress);
-    $("#helperConnectionWarning").show();
+    if (debug) {
+      $("#helperConnectionWarningAddress").text(helperAddress);
+      $("#helperConnectionWarning").show();  
+    }
     console.log("Could not get defaults... checking again");
     setTimeout(askForDefaults, 500);
   };
@@ -672,7 +690,8 @@ var currentExhibit = ""; // This will double as the root of the source path
 var allowedActionsDict = {"refresh": "true"};
 var AnyDeskID = "";
 var errorDict = {};
-var debug = true;
+var debug = false;
+var badConnection = true;
 
 var configurationName = "default";
 var currentContent = [];
