@@ -57,6 +57,7 @@ The `[SETTINGS]` section provides Voting Kiosk with details on how to configure 
 | --- | ------- | -------- | ------- | ---- |
 | bottom_height | Percent of the screen that should be used for the footer/subfooter. **Number only** | No | 20 | Number |
 | button_height | Percent of the screen that should be used for the row of buttoms. **Number only** | No | 60 | Number |
+| debug | Should the debug information be displayed? | No | False | True/False |
 | footer | The large text at the bottom of the screen | No | - | Text |
 | header | The large text at the top of the screen | No | - | Text |
 | recording_interval | How many seconds of data to batch for sending to Control Server | No | 60 | Numnber |
