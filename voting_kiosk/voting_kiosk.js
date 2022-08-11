@@ -677,6 +677,20 @@ function parseINIString(data) {
   return value;
 }
 
+// Disable pinch-to-zoom for browsers the ignore the viewport setting
+document.addEventListener('touchmove', e => {
+  console.log("here")
+  if (e.touches.length > 1) {  
+     e.preventDefault();
+  }
+}, {passive: false});
+
+document.addEventListener("wheel", function(e) {
+  if (e.ctrlKey) {
+      e.preventDefault();
+  }
+}, {passive: false});
+
 var id = "NO_ID";
 var type = "VOTING_KIOSK";
 const SOFTWARE_VERSION = 1.0;
