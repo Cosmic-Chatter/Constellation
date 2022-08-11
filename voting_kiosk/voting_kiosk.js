@@ -323,31 +323,63 @@ function updateContent(name, definition) {
   // Parse the settings and make the appropriate changes
   if ("header" in definition.SETTINGS) {
     document.getElementById("header").innerHTML = definition.SETTINGS.header;
+    document.getElementById("headerCol").style.display = "block";
   } else {
     document.getElementById("header").innerHTML = "";
+    document.getElementById("headerCol").style.display = "none";
   }
   if ("subheader" in definition.SETTINGS) {
     document.getElementById("subheader").innerHTML = definition.SETTINGS.subheader;
+    document.getElementById("subheaderCol").style.display = "block";
+
   } else {
     document.getElementById("subheader").innerHTML = "";
+    document.getElementById("subheaderCol").style.display = "none";
+
   }
   if ("footer" in definition.SETTINGS) {
     document.getElementById("footer").innerHTML = definition.SETTINGS.footer;
+    document.getElementById("footerCol").style.display = "block";
   } else {
     document.getElementById("footer").innerHTML = "";
+    document.getElementById("footerCol").style.display = "none";
   }
   if ("subfooter" in definition.SETTINGS) {
     document.getElementById("subfooter").innerHTML = definition.SETTINGS.subfooter;
+    document.getElementById("subfooterCol").style.display = "block";
+
   } else {
     document.getElementById("subfooter").innerHTML = "";
+    document.getElementById("subfooterCol").style.display = "none";
+  }
+  if ("top_height" in definition.SETTINGS) {
+    document.getElementById("topRow").style.height = definition.SETTINGS.top_height + "vh";
+  } else {
+    document.getElementById("topRow").style.height = null;
+  }
+  if ("button_height" in definition.SETTINGS) {
+    document.getElementById("cardRow").style.height = definition.SETTINGS.button_height + "vh";
+  } else {
+    document.getElementById("cardRow").style.height = null;
+  }
+  if ("bottom_height" in definition.SETTINGS) {
+    document.getElementById("bottomRow").style.height = definition.SETTINGS.bottom_height + "vh";
+  } else {
+    document.getElementById("bottomRow").style.height = null;
   }
   if ("recording_interval" in definition.SETTINGS) {
     clearInterval(voteCounter);
     recordingInterval = parseFloat(definition.SETTINGS.recording_interval);
     voteCounter = setInterval(sendData, recordingInterval*1000);
+  } else {
+    clearInterval(voteCounter);
+    recordingInterval = 60;
+    voteCounter = setInterval(sendData, recordingInterval*1000);
   }
   if ("touch_cooldown" in definition.SETTINGS) {
     touchCooldown = parseFloat(definition.SETTINGS.touch_cooldown);
+  } else {
+    touchCooldown = 2;
   }
 
   buildLayout(definition);
