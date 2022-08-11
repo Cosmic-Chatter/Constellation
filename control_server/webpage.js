@@ -466,6 +466,12 @@ function showExhibitComponentInfo(id) {
     } else {
       $("#componentInfoModalIPAddressGroup").hide();
     }
+    if (obj.ip != extractIPAddress(obj.helperAddress)) {
+      $("#componentInfoModalHelperIPAddress").html(extractIPAddress(obj.helperAddress));
+      $("#componentInfoModalHelperIPAddressGroup").show();
+    } else {
+      $("#componentInfoModalHelperIPAddressGroup").hide();
+    }
     if ("operating_system" in obj.platformDetails) {
       $("#componentInfoModalOperatingSystem").html(obj.platformDetails.operating_system.replace("OS X", "macOS"));
       $("#componentInfoModalOperatingSystemGroup").show();
@@ -718,6 +724,18 @@ function showExhibitComponentInfo(id) {
     // Make the modal visible
     $("#componentInfoModal").modal("show");
   }
+}
+
+function extractIPAddress(address) {
+  // Extract just the IP address from a web address
+
+  // Remove the prefix
+  address = address.replace("http://", "");
+  address = address.replace("https://", "");
+  // Find and remove the port
+  let colon = address.indexOf(":");
+  address = address.slice(0, colon);
+  return address;
 }
 
 function guessMimetype(filename) {
