@@ -276,7 +276,7 @@ class ExhibitComponentGroup {
     if(this.components.length > 7) {
       classString = 'col-12 col-xl-8 mt-4';
     } else {
-      classString = 'col-md-6 col-lg-5 col-xl-4 mt-4';
+      classString = 'col-12 col-md-6 col-xl-4 mt-4';
     }
 
     var html = `
