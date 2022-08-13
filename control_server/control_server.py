@@ -430,6 +430,46 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     json_string = json.dumps({"success": True, "configuration": text})
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                elif action == "updateConfigurationRawText":
+                    if "configuration" not in data:
+                        json_string = json.dumps({"success": False, "reason": "Missing required field 'configuration'"})
+                        self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                        return
+
+                    response_dict = {"success": True}
+                    config_reader = configparser.ConfigParser(delimiters="=")
+                    config_reader.optionxform = str  # Override default, which is case in-sensitive
+                    try:
+                        # Try to parse the raw text to look for errors
+
+                        config_reader.read_string((data["configuration"]))
+                        config_reader.get("CURRENT", "server_ip_address")
+                        config_reader.get("CURRENT", "server_port")
+                        config_reader.get("CURRENT", "current_exhibit")
+                        config_reader.get("CURRENT", "gallery_name")
+
+                        gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
+                        with open(gal_path, 'w', encoding='UTF-8') as f:
+                            f.write(data["configuration"])
+                    except configparser.MissingSectionHeaderError:
+                        response_dict["success"] = False
+                        response_dict["reason"] = "You must have at least a [CURRENT] section"
+                    except configparser.ParsingError as e:
+                        error = e.errors[0]
+                        err_line = error[0]
+                        err_msg = error[1].replace('\\n', '')
+                        response_dict["success"] = False
+                        response_dict["reason"] = f"Error in line {err_line}: {err_msg}"
+                    except configparser.DuplicateOptionError as e:
+                        response_dict["success"] = False
+                        response_dict["reason"] = f"Section [{e.section}] has a repeated option: {e.option} (line {e.lineno})"
+                    except configparser.NoSectionError:
+                        response_dict["success"] = False
+                        response_dict["reason"] = "You must have a [CURRENT] section"
+                    except configparser.NoOptionError as e:
+                        response_dict["success"] = False
+                        response_dict["reason"] = f"You must have the {e.option} setting in the [{e.section}] section"
+                    self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                 elif action == "queueCommand":
                     if "command" not in data or "id" not in data:
                         response_dict = {"success": False,

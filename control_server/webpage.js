@@ -2957,9 +2957,9 @@ function showEditGalleryConfigModal() {
       if (this.responseText != "") {
         let result = JSON.parse(this.responseText);
         if ("success" in result && result.success == true) {
-          // $("#editGalleryConfigModal").data("configuration", result.configuration);
-          populateEditGalleryConfigModal(result.configuration);
+          // Must show first so that we can calculate the heights appropriately.
           $("#editGalleryConfigModal").modal("show");
+          populateEditGalleryConfigModal(result.configuration);
         }
       }
     }
@@ -2971,6 +2971,47 @@ function populateEditGalleryConfigModal(configText) {
   // Take the provided text and set up the edit modal
 
   $("#editGalleryConfigTextArea").val(configText);
+  $("#galleryConfigEditModalErrorMessage").hide();
+
+  // Calculate what the height of the text area should be an update it.
+  let colHeight = $("#editGalleryConfigTextArea").parent().parent().height();
+  let headerHeight = $("#editGalleryConfigTextArea").parent().siblings("h3").height();
+  let lineHeight = parseFloat($("#editGalleryConfigTextArea").css("lineHeight"));
+  let rows = Math.floor((colHeight - headerHeight)/lineHeight - 1);
+  $("#editGalleryConfigTextArea").attr("rows", rows);
+}
+
+function submitGalleryConfigChangeFromModal() {
+  // Take the updated contents of the text input and send it to Control Server.
+  // Control Server will perform a number of checks, which this function needs to
+  // handle and return to the user.
+
+  requestDict = {class: "webpage",
+                 action: "updateConfigurationRawText",
+                 configuration: $("#editGalleryConfigTextArea").val()};
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open("POST", serverIP, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      if (this.responseText != "") {
+        let result = JSON.parse(this.responseText);
+        console.log(result  )
+        if ("success" in result && result.success == true) {
+          $("#editGalleryConfigModal").modal("hide");
+        } else {
+          $("#galleryConfigEditModalErrorMessage").html(result.reason);
+          $("#galleryConfigEditModalErrorMessage").show();
+        }
+      }
+    }
+  };
+  xhr.send(JSON.stringify(requestDict));
+
 }
 
 function populateTrackerTemplateSelect(definitionList) {
