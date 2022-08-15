@@ -357,6 +357,11 @@ function handleTouchEnd(event) {
 
 function handleTouchMove(event, touch=true) {
 
+  if (event.touches.length > 1) {
+    event.preventDefault()
+    return
+  }
+
   let pos;
   let dx;
   let dist;
@@ -372,7 +377,6 @@ function handleTouchMove(event, touch=true) {
   }
 
   if (lastTouchX != null) {
-
     dx = pos - lastTouchX;
     dist = Math.abs(pos - touchStartX);
 
