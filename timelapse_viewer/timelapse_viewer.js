@@ -107,6 +107,9 @@ function readUpdate(responseText) {
   if ("helperAddress" in update) {
     helperAddress = update.helperAddress;
   }
+  if ("enable_analytics" in update) {
+    enableAnalytics = stringToBool(update.enable_analytics)
+  }
   if ("contentPath" in update) {
     contentPath = update.contentPath;
   }
@@ -253,8 +256,10 @@ function sendPing() {
                    "allowed_actions": allowedActionsDict,
                    "constellation_app_id": "timelapse_viewer",
                    "platform_details": platformDetails,
+                   "currentInteraction": String(currentlyActive),
                    "AnyDeskID": AnyDeskID};
 
+    currentlyActive = false;
     // See if there is an error to report
     let errorString = JSON.stringify(errorDict);
     if (errorString != "") {
@@ -339,6 +344,7 @@ function sendConfigUpdate(update) {
 function handleTouchStart(event, touch=true) {
 
   hideAttractor();
+  currentlyActive = true;
 
   if (touch) {
     touchStartX = event.touches[0].clientX;
@@ -357,6 +363,7 @@ function handleTouchEnd(event) {
 
 function handleTouchMove(event, touch=true) {
 
+  currentlyActive = true;
   if (event.touches.length > 1) {
     event.preventDefault()
     return
@@ -428,6 +435,7 @@ function handleScroll(event) {
   // Cycle the images when a user scrolls the mouse scroll wheel.
 
   hideAttractor();
+  currentlyActive = true;
 
   let dx = event.wheelDelta;
   let velocity = Math.abs(dx);
@@ -465,6 +473,7 @@ function handleKeyDown(event) {
   // Listen for arrow keys and switch images accordingly
 
   hideAttractor();
+  currentlyActive = true;
 
   let key = event.key;
   let repeated = event.repeat
@@ -585,12 +594,47 @@ function animateTimelapse() {
   animateNextFrame();
 }
 
+function sendAnalytics(data) {
+  // Send the given data object to Control Server for logging
+
+  if ("date" in data === false) {
+    data.date = new Date().toISOString()
+  }
+  console.log(data)
+  var requestDict = {class: "tracker",
+                     action: "submitAnalytics",
+                     name: id,
+                     data: data,
+                    };
+
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 1000;
+  xhr.open("POST", serverAddress, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(JSON.stringify(requestDict));
+}
+
+function stringToBool(str) {
+  // Parse a given string and return an appropriate bool
+
+  if (["True", "true", "TRUE", "1", "yes", "Yes"].includes(str)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 function showAttractor() {
 
   // Start animating the timelapse and show a moving hand icon to guide users
 
   animateTimelapse();
   document.getElementById("handContainer").style.display = "block";
+
+  // Report analytics, if necessary
+  if (enableAnalytics) {
+    sendAnalytics({action: "showAttractor"})
+  }
 }
 
 function hideAttractor() {
@@ -600,6 +644,11 @@ function hideAttractor() {
 
   // Hide the moving hand icon
   document.getElementById("handContainer").style.display = "none";
+
+  // Report analytics, if necessary
+  if (enableAnalytics && !currentlyActive) {
+    sendAnalytics({action: "hideAttractor"})
+  }
 
   // Set the attractor to start again in 30 s
   clearTimeout(attractorTimer);
