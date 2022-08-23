@@ -11,6 +11,7 @@ from typing import Union
 
 # Constellation modules
 import config
+import constellation_tools as c_tools
 
 
 def create_CSV(file_path: Union[str, os.PathLike], filename: str = "") -> str:
@@ -58,7 +59,7 @@ def get_layout_definition(name: str, kind: str = "flexible-tracker") -> tuple[di
 def get_raw_text(name: str, kind: str = 'flexible-tracker') -> tuple[str, bool, str]:
     """Return the contents of a text file."""
 
-    file_path = os.path.join(config.APP_PATH, kind, "data", name)
+    file_path = c_tools.get_path([kind, "data", name], user_file=True)
     success = True
     reason = ""
     result = ""
@@ -165,10 +166,10 @@ def write_JSON(data: dict, file_path: Union[str, os.PathLike]) -> tuple[bool, st
     return success, reason
 
 
-def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker", mode: str = "a") -> tuple[bool, str]:
+def write_raw_text(data: str, name: str, kind: str = "flexible-tracker", mode: str = "a") -> tuple[bool, str]:
     """Write an un-formatted string to file"""
 
-    file_path = os.path.join(config.APP_PATH, kind, "data", name)
+    file_path = c_tools.get_path([kind, "data", name], user_file=True)
     success = True
     reason = ""
 
@@ -178,7 +179,7 @@ def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker", mode: 
     try:
         with config.trackingDataWriteLock:
             with open(file_path, mode, encoding="UTF-8") as f:
-                f.write(data["text"] + "\n")
+                f.write(data + "\n")
     except FileNotFoundError:
         success = False
         reason = f"File {file_path} does not exist"
