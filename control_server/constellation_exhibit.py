@@ -30,7 +30,7 @@ class ExhibitComponent:
         self.category: str = category
         self.ip: str = ""  # IP address of client
         self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
-        self.helperAddress: Union[str, None] = None  # full IP and port of helper
+        self.helperAddress: str = ""  # full IP and port of helper
         self.constellation_app_id: str = ""  # Internal identifier for what app this component is running
         self.platform_details: dict = {}
 

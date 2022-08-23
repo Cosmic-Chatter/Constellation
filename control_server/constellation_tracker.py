@@ -172,6 +172,9 @@ def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker", mode: 
     success = True
     reason = ""
 
+    if mode != "a" and mode != "w":
+        return False, "Mode must be either 'a' (append, [default]) or 'w' (overwrite)"
+
     try:
         with config.trackingDataWriteLock:
             with open(file_path, mode, encoding="UTF-8") as f:
