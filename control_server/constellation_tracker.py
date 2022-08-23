@@ -165,7 +165,7 @@ def write_JSON(data: dict, file_path: Union[str, os.PathLike]) -> tuple[bool, st
     return success, reason
 
 
-def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker") -> tuple[bool, str]:
+def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker", mode: str = "a") -> tuple[bool, str]:
     """Write an un-formatted string to file"""
 
     file_path = os.path.join(config.APP_PATH, kind, "data", name)
@@ -174,7 +174,7 @@ def write_raw_text(data: dict, name: str, kind: str = "flexible-tracker") -> tup
 
     try:
         with config.trackingDataWriteLock:
-            with open(file_path, "a", encoding="UTF-8") as f:
+            with open(file_path, mode, encoding="UTF-8") as f:
                 f.write(data["text"] + "\n")
     except FileNotFoundError:
         success = False

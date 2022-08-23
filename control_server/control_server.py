@@ -881,7 +881,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
-                    success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind)
+                    mode = data.get("mode", "a")
+                    if mode != "a" and mode != "w":
+                        response = {"success": False,
+                                    "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
+                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                        return
+                    success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind=kind, mode=mode)
                     response = {"success": success, "reason": reason}
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "retrieveRawText":
