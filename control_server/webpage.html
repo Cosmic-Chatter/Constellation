@@ -50,6 +50,9 @@
         min-height: 15vh;
         overflow-y: auto;
       }
+      #issueMediaUploadFilename {
+        overflow-wrap: break-word!important;
+      }
     </style>
   </head>
 
@@ -177,7 +180,7 @@
                           <div class="row" id="componentAvailableContentList"></div>
                         </div>
                         <div class='col-12'>
-                          <button type="button" class="btn btn-primary mt-2" onclick="submitComponentContentChange()" id="componentSaveConfirmationButton">Save changes</button>
+                          <button type="button" class="btn btn-primary mt-2" id="componentSaveConfirmationButton">Save changes</button>
                         </div>
 
                       </div>
@@ -188,11 +191,11 @@
                           <div class="col-8">
                             <label class="btn btn-outline-secondary mw-100">
                               <span id="componentContentUploadfilename" style="overflow-wrap: break-word!important;">Choose file</span>
-                              <input hidden type="file" class="form-control-file" id="componentContentUpload" onchange="onUploadContentChange()">
+                              <input hidden type="file" class="form-control-file" id="componentContentUpload">
                             </label>
                           </div>
                           <div class="col-4">
-                            <button id="contentUploadSubmitButton" class='btn btn-block btn-outline-primary' onclick="uploadComponentContentFile()">Upload</button>
+                            <button id="contentUploadSubmitButton" class='btn btn-block btn-outline-primary'>Upload</button>
                           </div>
 
                           <div class='col-12 mt-3' id='contentUploadProgressBarContainer'>
@@ -212,7 +215,7 @@
                           <a id='AnyDeskLabel' href="" class='btn btn-primary d-sm-inline d-md-none'>Anydesk</a>
                           <div class="form-group mt-2">
                             <label for="componentInfoModalMaintenanceStatusSelector">Maintenance status</label>
-                            <select class="form-control" id="componentInfoModalMaintenanceStatusSelector" onchange="$('#componentInfoModalMaintenanceSaveButton').show()">
+                            <select class="form-control" id="componentInfoModalMaintenanceStatusSelector">
                               <option>On floor, working</option>
                               <option>On floor, not working</option>
                               <option>Off floor, working</option>
@@ -230,11 +233,11 @@
                         <div class='col-12 mt-2'>
                           <div class="form-group">
                             <label for="componentInfoModalMaintenanceNote">Notes</label>
-                            <textarea class="form-control" id="componentInfoModalMaintenanceNote" rows="3" oninput="$('#componentInfoModalMaintenanceSaveButton').show()"></textarea>
+                            <textarea class="form-control" id="componentInfoModalMaintenanceNote" rows="3"></textarea>
                           </div>
                         </div>
                         <div class='col-12 mt-2'>
-                          <button id='componentInfoModalMaintenanceSaveButton' class='btn btn-primary' onclick="submitComponentMaintenanceStatusChange(type='component')">Save changes</button>
+                          <button id='componentInfoModalMaintenanceSaveButton' class='btn btn-primary'>Save changes</button>
                         </div>
                       </div>
                     </div>
@@ -360,7 +363,7 @@
                         </div>
                         <div class="col-4">
                           <label for="scheduleActionSelector">Action</label>
-                          <select class="form-control" id="scheduleActionSelector" onchange="setScheduleActionTargetSelector()">
+                          <select class="form-control" id="scheduleActionSelector">
                             <option value="power_on">Power on</option>
                             <option value="power_off">Power off</option>
                             <option value="refresh_page">Refresh components</option>
@@ -371,7 +374,7 @@
                         </div>
                         <div class="col-4">
                           <label id="scheduleTargetSelectorLabel" for="scheduleTargetSelector">Target</label>
-                          <select class="form-control" id="scheduleTargetSelector" onchange="setScheduleActionValueSelector()">
+                          <select class="form-control" id="scheduleTargetSelector">
                           </select>
                         </div>
                         <div class="col-4">
@@ -385,8 +388,8 @@
                   <div id="scheduleEditErrorAlert" class="alert bg-danger text-light w-100" style="display: none;"></div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" mr-auto onclick="scheduleDeleteActionFromModal()" id="scheduleEditDeleteActionButton">Delete action</button>
-                  <button type="button" class="btn btn-primary ml-auto" onclick="sendScheduleUpdateFromModal()" id="scheduleEditSubmitButton">Save changes</button>
+                  <button type="button" class="btn btn-danger" mr-auto id="scheduleEditDeleteActionButton">Delete action</button>
+                  <button type="button" class="btn btn-primary ml-auto" id="scheduleEditSubmitButton">Save changes</button>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -398,7 +401,7 @@
               <h4><b>Next scheduled action: </b><span id="Schedule_next_event"></span></h4>
             </div>
             <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-md-2 mb-2'>
-              <button id='refreshScheduleButton' class='btn btn-primary w-100' onclick='askForScheduleRefresh()'>Refresh schedule</button>
+              <button id='refreshScheduleButton' class='btn btn-primary w-100'>Refresh schedule</button>
             </div>
             <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto" role="alert">
               Date-specific schedule
@@ -454,17 +457,17 @@
                           <label id="issueMediaModalLabel" for="issueMediaUpload">Add image</label>
                         </div>
                         <div id="issueMediaUploadCol" class='col-8'>
-                          <label class="btn btn-outline-secondary text-wrap">
-                            <span id="issueMediaUploadFilename">Choose file</span>
-                            <input hidden type="file" accept="image/*" class="form-control-file" id="issueMediaUpload" onchange="onIssueMediaUploadChange()">
+                          <label class="btn btn-outline-secondary text-wrap" style="max-width: 100%;">
+                            <span id="issueMediaUploadFilename" class="w-100">Choose file</span>
+                            <input hidden type="file" accept="image/*" class="form-control-file" id="issueMediaUpload">
                           </label>
                         </div>
                         <div id="issueMediaViewCol" class='col-8'>
-                          <button id="issueMediaViewFromModal" class='btn btn-outline-secondary' onclick="issueMediaView($('#issueMediaViewFromModal').data('filename'))">View image</button>
-                          <button class='btn btn-outline-danger' onclick="issueMediaDelete($('#issueMediaViewFromModal').data('filename'))">Remove image</button>
+                          <button id="issueMediaViewFromModal" class='btn btn-outline-secondary'>View image</button>
+                          <button id="issueMediaDeleteButton" class='btn btn-outline-danger'>Remove image</button>
                         </div>
                         <div class="col-4">
-                          <button id="issueMediaUploadSubmitButton" class='btn btn-block btn-outline-primary' onclick="uploadIssueMediaFile()">Upload</button>
+                          <button id="issueMediaUploadSubmitButton" class='btn btn-block btn-outline-primary'>Upload</button>
                         </div>
                         <div class='col-12 mt-2' id='issueMediaUploadProgressBarContainer'>
                           <div class="progress" style="height: 25px;">
@@ -477,7 +480,7 @@
                     </div>
                   </form>
                 <div class="modal-footer">
-                  <button id="issueEditSubmitButton" type="button" class="btn btn-primary ml-auto" onclick="submitIssueFromModal()">Save changes</button>
+                  <button id="issueEditSubmitButton" type="button" class="btn btn-primary ml-auto">Save changes</button>
                   <button id="issueEditCancelButton" type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -487,11 +490,11 @@
 
           <div id='issueTabButtons' class='row mt-4'>
             <div class='col-12'>
-              <button class='btn btn-primary' onclick='showIssueEditModal("new")'>Create issue</button>
+              <button id="createIssueButton" class='btn btn-primary'>Create issue</button>
             </div>
             <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
               <label>Priority</label>
-              <select id="issueListFilterPrioritySelect" class='form-control' onchange="rebuildIssueList(issueList)">
+              <select id="issueListFilterPrioritySelect" class='form-control'>
                 <option value="all">All</option>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -500,7 +503,7 @@
             </div>
             <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
               <label>Assigned to</label>
-              <select id="issueListFilterAssignedToSelect" class='form-control' onchange="rebuildIssueList(issueList)">
+              <select id="issueListFilterAssignedToSelect" class='form-control'>
               </select>
             </div>
             <div class='col-12'>
@@ -510,7 +513,7 @@
           <div class='row mt-4'>
             <div class='col-12'>
               <H3>Maintenance overview</H3>
-              <button class='btn btn-primary' onclick="refreshMaintenanceRecords()">Refresh</button>
+              <button id="refreshMaintenanceRecordsBUtton" class='btn btn-primary'>Refresh</button>
             </div>
             <div class='col-12 col-md-6'>
               <div class='col-12 mt-3 pb-3 pt-3' style="background-color: #b4ffb3;">
@@ -555,7 +558,7 @@
                   Changing the exhibit will be immediately visible to guests and the changing process may be unsightly for up to a minute.
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" onclick="changeExhibit(true)" id="exhibitChangeConfirmationButton">Change exhibit</button>
+                  <button type="button" class="btn btn-danger" id="exhibitChangeConfirmationButton">Change exhibit</button>
                   <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -572,7 +575,7 @@
                   Deleting an exhibit cannot be undone.
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" onclick="deleteExhibitFromModal()">Delete exhibit</button>
+                  <button id="deleteExhibitButton" type="button" class="btn btn-danger">Delete exhibit</button>
                   <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -592,7 +595,7 @@
                   <p id='deleteTrackerDataModalSpellingError' class='text-danger mt-2'>Your typed name does not match. Are you sure you want to delete these data?</p>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" onclick="deleteTrackerDataFromModal()">Delete data</button>
+                  <button type="button" class="btn btn-danger" id="deleteTrackerDataFromModalButton">Delete data</button>
                   <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -609,7 +612,7 @@
                   Deleting a template cannot be undone.
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" onclick="deleteTrackerTemplate()">Delete template</button>
+                  <button id="deleteTrackerTemplateFromModalButton" type="button" class="btn btn-danger">Delete template</button>
                   <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -627,12 +630,12 @@
                     <div class='col-4 col-sm-3 col-md-2 border-right'>
                       <H3>Widgets</H3>
                       <div id='editTrackerAvailableWidgets'>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Counter', 'counter')">Counter</button>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Dropdown', 'dropdown')">Dropdown</button>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Number', 'number')">Number</button>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Slider', 'slider')">Slider</button>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Text', 'text')">Text</button>
-                        <button class="btn btn-secondary w-100 mt-1" onclick="editTrackerTemplateModalAddWidget('New Timer', 'timer')">Timer</button>
+                        <button class="btn btn-secondary w-100 mt-1" id="editTrackerTemplateModalAddCounterButton">Counter</button>
+                        <button id="editTrackerTemplateModalAddDropdownButton" class="btn btn-secondary w-100 mt-1">Dropdown</button>
+                        <button id="editTrackerTemplateModalAddNumberButton" class="btn btn-secondary w-100 mt-1">Number</button>
+                        <button id="editTrackerTemplateModalAddSliderButton" class="btn btn-secondary w-100 mt-1">Slider</button>
+                        <button id="editTrackerTemplateModalAddTextButton" class="btn btn-secondary w-100 mt-1">Text</button>
+                        <button id="editTrackerTemplateModalAddTimerButton" class="btn btn-secondary w-100 mt-1">Timer</button>
                       </div>
                     </div>
                     <div class='col-4 col-sm-5 col-md-6 border-right border-left h-100'>
@@ -645,13 +648,13 @@
                       <H3>Edit properties</H3>
                       <div id='editTrackerTemplateNameInputGroup'>
                         <label for='editTrackerTemplateNameInput'>Name</label>
-                        <input id="editTrackerTemplateNameInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                        <input id="editTrackerTemplateNameInput" type="text" class='form-control editTrackerTemplateInputField'></input>
                       </div>
 
                       <div id='editTrackerTemplateLabelInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateLabelInput'>Label</label>
-                        <input id="editTrackerTemplateLabelInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                        <input id="editTrackerTemplateLabelInput" type="text" class='form-control editTrackerTemplateInputField'></input>
                       </div>
 
                       <div id='editTrackerTemplateMultipleInputGroup' class='editTrackerTemplateInputGroup'>
@@ -659,11 +662,11 @@
                         <label>Multiple</label>
                         <br>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputTrue" value="true" oninput="editTrackerTemplateModalUpdateFromInput()">
+                          <input class="form-check-input editTrackerTemplateInputField" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputTrue" value="true">
                           <label class="form-check-label" for="editTrackerTemplateMultipleInputTrue">True</label>
                         </div>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputFalse" value="false" checked oninput="editTrackerTemplateModalUpdateFromInput()">
+                          <input class="form-check-input editTrackerTemplateInputField" type="radio" name="editTrackerTemplateMultipleInput" id="editTrackerTemplateMultipleInputFalse" value="false" checked>
                           <label class="form-check-label" for="editTrackerTemplateMultipleInputFalse">False</label>
                         </div>
                         <p><i>Allow more than one option to be selected.</i></p>
@@ -672,7 +675,7 @@
                       <div id='editTrackerTemplateOptionsInputGroup' class='editTrackerTemplateInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateOptionsInput'>Options</label>
-                        <input id="editTrackerTemplateOptionsInput" type="text" class='form-control' oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                        <input id="editTrackerTemplateOptionsInput" type="text" class='form-control editTrackerTemplateInputField'></input>
                         <p><i>Separate each option with a comma.</i></p>
                       </div>
 
@@ -682,19 +685,19 @@
                         <div class='row no-gutters'>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputMin'>Min</label>
-                            <input id="editTrackerTemplateSliderInputMin" type="number" class='form-control' value=1 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                            <input id="editTrackerTemplateSliderInputMin" type="number" class='form-control editTrackerTemplateInputField' value=1></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputMax'>Max</label>
-                            <input id="editTrackerTemplateSliderInputMax" type="number" class='form-control' value=5 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                            <input id="editTrackerTemplateSliderInputMax" type="number" class='form-control editTrackerTemplateInputField' value=5></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputStep'>Step</label>
-                            <input id="editTrackerTemplateSliderInputStep" type="number" class='form-control' value=1 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                            <input id="editTrackerTemplateSliderInputStep" type="number" class='form-control editTrackerTemplateInputField' value=1></input>
                           </div>
                           <div class='col-6 col-lg-3 px-1'>
                             <label for='editTrackerTemplateSliderInputStart'>Start</label>
-                            <input id="editTrackerTemplateSliderInputStart" type="number" class='form-control' value=3 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                            <input id="editTrackerTemplateSliderInputStart" type="number" class='form-control editTrackerTemplateInputField' value=3></input>
                           </div>
                         </div>
                       </div>
@@ -704,11 +707,11 @@
                         <label>Exclusive</label>
                         <br>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputTrue" value="true" oninput="editTrackerTemplateModalUpdateFromInput()">
+                          <input class="form-check-input editTrackerTemplateInputField" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputTrue" value="true">
                           <label class="form-check-label" for="editTrackerTemplateExclusiveInputTrue">True</label>
                         </div>
                         <div class="form-check form-check-inline">
-                          <input class="form-check-input" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputFalse" value="false" checked oninput="editTrackerTemplateModalUpdateFromInput()">
+                          <input class="form-check-input editTrackerTemplateInputField" type="radio" name="editTrackerTemplateExclusiveInput" id="editTrackerTemplateExclusiveInputFalse" value="false" checked>
                           <label class="form-check-label" for="editTrackerTemplateExclusiveInputFalse">False</label>
                         </div>
                         <p><i>Starting an exclusive timer stops the others.</i></p>
@@ -717,15 +720,15 @@
                       <div id='editTrackerTemplateLinesInputGroup' class='editTrackerTemplateInputGroup'>
                         <hr>
                         <label for='editTrackerTemplateLinesInput'>Lines</label>
-                        <input id="editTrackerTemplateLinesInput" type="number" class='form-control' value=5 oninput="editTrackerTemplateModalUpdateFromInput()"></input>
+                        <input id="editTrackerTemplateLinesInput" type="number" class='form-control editTrackerTemplateInputField' value=5></input>
                         <p><i>Number of lines visible.</i></p>
                       </div>
-                      <button id="editTrackerTemplateModalDeleteWidgetButton" class='btn btn-danger w-100 mt-4 mt-auto' onclick='editTrackerTemplateModalDeleteWidget();'>Delete</button>
+                      <button id="editTrackerTemplateModalDeleteWidgetButton" class='btn btn-danger w-100 mt-4 mt-auto'>Delete</button>
                     </div>
                   </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-primary" onclick="editTrackerTemplateModalSubmitChanges();">Save</button>
+                  <button id="editTrackerTemplateModalSubmitChangesButton" type="button" class="btn btn-primary">Save</button>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
@@ -826,7 +829,7 @@
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="submitGalleryConfigChangeFromModal();">Save</button>
+                <button id="submitGalleryConfigChangeFromModalButton" type="button" class="btn btn-primary">Save</button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
               </div>
             </div>
@@ -837,15 +840,15 @@
           <i>Exhibits enable you to define a set of content for your gallery.</i>
           <div class="row mt-3">
             <div class="col-6 col-md-3 col-lg-2">
-              <button type="button" class="btn btn-primary w-100" id="editConfigButton" onclick="showEditGalleryConfigModal()">Edit Settings</button>
+              <button id="showEditGalleryConfigModalButton" type="button" class="btn btn-primary w-100" id="editConfigButton">Edit Settings</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2">
-              <button type="button" class="btn btn-primary w-100" id="reloadConfigurationButton" onclick="reloadConfiguration()">Reload Settings</button>
+              <button type="button" class="btn btn-primary w-100" id="reloadConfigurationButton">Reload Settings</button>
             </div>
             <div class="col-6 col-md-4 col-lg-3">
               <div class="form-group">
                 <label for="exhibitSelect">Set current exhibit</label>
-                <select class="form-control" id="exhibitSelect" onchange="changeExhibit(false)"></select>
+                <select class="form-control" id="exhibitSelect"></select>
               </div>
             </div>
             <div class="col-12 col-md-8">
@@ -869,10 +872,10 @@
                   <label for="exhibitDeleteSelector">Delete exhibit</label>
                 <div class="row">
                   <div class='col-7'>
-                    <select class="form-control text-danger w-100" id="exhibitDeleteSelector" onchange="checkDeleteSelection()"></select>
+                    <select class="form-control text-danger w-100" id="exhibitDeleteSelector"></select>
                   </div>
                   <div class='col-5'>
-                    <button class='btn btn-danger w-100' id="exhibitDeleteSelectorButton" onclick="showExhibitDeleteModal()">Delete</button>
+                    <button class='btn btn-danger w-100' id="exhibitDeleteSelectorButton">Delete</button>
                   </div>
                   <div class='col-12 mt-1'>
                     <span class='text-danger' id="exhibitDeleteSelectorWarning">Cannot delete current exhibit</span>
@@ -889,7 +892,7 @@
               <input type="text" id='createTrackerTemplateName' class='form-control' placeholder="Enter template name"></input>
             </div>
             <div class="col-6 col-md-3 col-lg-3 col-xl-2">
-              <button class='btn btn-primary w-100' onclick='createTrackerTemplate();'>Create template</button>
+              <button id="createTrackerTemplateButton" class='btn btn-primary w-100'>Create template</button>
             </div>
           </div>
           <div class="row mt-3">
@@ -901,13 +904,13 @@
               <select id="trackerTemplateSelect" class="form-control"></select>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-primary w-100' onclick="launchTracker();">Launch</button>
+              <button id="launchTrackerButton" class='btn btn-primary w-100'>Launch</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-info w-100' onclick="showEditTrackerTemplateModal();">Edit</button>
+              <button id="showEditTrackerTemplateButton" class='btn btn-info w-100'>Edit</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-danger w-100' onclick="$('#deleteTrackerTemplateModal').modal('show');">Delete</button>
+              <button id="deleteTrackerTemplateButton" class='btn btn-danger w-100'>Delete</button>
             </div>
           </div>
           <div class='row mt-3'>
@@ -919,13 +922,13 @@
               <select id="trackerDataSelect" class="form-control"></select>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-primary w-100' onclick="getAvailableTrackerData(populateTrackerDataSelect);">Refresh</button>
+              <button id="getAvailableTrackerDataButton" class='btn btn-primary w-100'>Refresh</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-info w-100' onclick="downloadTrackerData();">Download</button>
+              <button id="downloadTrackerDataButton" class='btn btn-info w-100'>Download</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button class='btn btn-danger w-100' onclick="showDeleteTrackerDataModal();">Delete</button>
+              <button id="showDeleteTrackerDataModalButton" class='btn btn-danger w-100'>Delete</button>
             </div>
           </div>
         </div>
@@ -944,39 +947,15 @@
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/showdown.min.js"></script>
 
-    <script type="text/javascript" src="webpage.js"></script>
-    <script type="text/javascript" src="tracker_tools.js"></script>
-
+    <!-- This must be above the importing of webpage.js so that serverIP is available -->
     <script>
-      var serverIP = INSERT_SERVERIP_HERE // This will be automatically inserted by the server before being sent to the client
-      var currentExhibit = "";
-      var exhibitComponents = [];
-      var componentGroups = [];
-      var errorDict = {}; // Will hold errors to display
-      var markdownConverter = new showdown.Converter();
-      markdownConverter.setFlavor('github');
-      var scheduleUpdateTime = 0;
-      var serverSoftwareUpdateAvailable = false;
-      var issueList = [];
-      var assignableStaff = [];
-
-      // Bind some event listeners
-      $("#createExhibitButton").click(function(){
-        createExhibit($("#createExhibitNameInput").val(), null);
-        $("#createExhibitNameInput").val("");
-      });
-      $("#cloneExhibitButton").click(function(){
-        createExhibit($("#createExhibitNameInput").val(), $("#exhibitSelect").val());
-        $("#createExhibitNameInput").val("");
-      });
-
-      askForUpdate();
-      setInterval(askForUpdate, 5000);
-      populateHelpTab();
-      refreshMaintenanceRecords();
-      parseQueryString();
-      getAvailableDefinitions(populateTrackerTemplateSelect);
+      // This will be automatically inserted by the server before being sent to the client
+      var serverIP = INSERT_SERVERIP_HERE 
     </script>
+    <!-- <script type="module" src="tracker_tools.js"></script> -->
+    <script type="module" src="webpage.js"></script>
+
+
 
   </body>
 </html>

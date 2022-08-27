@@ -1,2089 +1,1265 @@
-  /*jshint esversion: 6 */
+/* global serverIP, showdown */
 
-class ExhibitComponent {
+import constConfig from './config.js'
+import * as constTools from './constellation_tools.js'
+import * as constExhibit from './constellation_exhibit.js'
+import * as constTracker from './constellation_tracker.js'
 
-  constructor(id, type) {
-    this.id = id;
-    this.type = type;
-    this.content = null;
-    this.ip = ""; // Default; will be replaced when component pings in
-    this.helperPort = 8000; // Default; will be replaced when component pings in
-    this.helperAddress = null; // Full address to the helper
-    this.state = {};
-    this.status = "OFFLINE";
-    this.lastContactDateTime = null;
-    this.allowed_actions = [];
-    this.AnyDeskID = "";
-    this.constellationAppId = "";
-    this.platformDetails = {};
-
-    if (this.type == "PROJECTOR") {
-      this.checkProjector();
-      var thisInstance = this;
-      this.pollingFunction = setInterval(function() {thisInstance.checkProjector();}, 5000);
-    }
-  }
-
-  remove() {
-
-    // Remove the component from its ComponentGroup
-    getExhibitComponentGroup(this.type).removeComponent(this.id);
-    // Remove the component from the exhibitComponents list
-    var thisInstance = this;
-    exhibitComponents = $.grep(exhibitComponents, function(el, idx) {return el.id == thisInstance.id;}, true);
-    // Cancel the pollingFunction
-    clearInterval(this.pollingFunction);
-    // Rebuild the interface
-    rebuildComponentInterface();
-  }
-
-  checkProjector() {
-
-    // Function to ask the server to ping the projector
-    var thisInstance = this;
-    var requestDict = {"class": "webpage",
-                       "action": "fetchProjectorUpdate",
-                       "id": this.id};
-
-    var xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    xhr.open("POST", serverIP, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
-
-      if (this.status == 200) {
-        var response = JSON.parse(this.responseText);
-
-        if ("success" in response) {
-          if (response.success == false) {
-            if ("status" in response  && response.status == "DELETE") {
-              thisInstance.remove();
-            } else {
-              console.log("checkProjector: Error:", response.reason);
-            }
-          } else {
-            if ("state" in response) {
-              let state = response.state;
-              thisInstance.setStatus(state.status);
-              if ("model" in state) {
-                thisInstance.state.model = state.model;
-              }
-              if ("power_state" in state) {
-                thisInstance.state.power_state = state.power_state;
-              }
-              if ("lamp_status" in state) {
-                thisInstance.state.lamp_status = state.lamp_status;
-              }
-              if ("error_status" in state) {
-                thisInstance.state.error_status = state.error_status;
-                let errorList = {};
-                Object.keys(state.error_status).forEach((item, i) => {
-                  if ((state.error_status)[item] != "ok") {
-                    errorList[item] = (state.error_status)[item];
-                  }
-                });
-                errorDict[thisInstance.id] = errorList;
-                rebuildErrorList();
-              }
-            }
-          }
-        }
-      }
-    };
-    xhr.send(JSON.stringify(requestDict));
-  }
-
-  setStatus(status) {
-
-    this.status = status;
-    $("#" + this.id + "StatusField").html(status);
-
-    var btnClass = this.getButtonColorClass();
-    // Strip all existing classes, then add the new one
-    $("#" + this.id + "MainButton").removeClass("btn-primary btn-warning btn-danger btn-success btn-info").addClass(btnClass);
-    $("#" + this.id + "DropdownButton").removeClass("btn-primary btn-warning btn-danger btn-success btn-info").addClass(btnClass);
-  }
-
-  getButtonColorClass() {
-
-    // Get the Bootstrap class based on the current status
-
-    switch (this.status) {
-      case 'ACTIVE':
-        return 'btn-primary';
-      case 'ONLINE':
-        return 'btn-success';
-      case 'WAITING':
-        return 'btn-warning';
-      case 'UNKNOWN':
-        return 'btn-warning';
-      case 'STANDBY':
-        return 'btn-info';
-      case 'SYSTEM ON':
-        return 'btn-info';
-      case "STATIC":
-        return 'btn-secondary';
-      default:
-        return 'btn-danger';
-    }
-  }
-
-  buildHTML() {
-
-    // Function to build the HTML representation of this component
-    // and add it to the row of the parent group
-
-    var onCmdName = "";
-    var offCmdName = "";
-    var offCmd = "";
-    var displayName = this.id;
-    switch (this.type) {
-      case "PROJECTOR":
-        onCmdName = "Wake projector";
-        offCmdName = "Sleep projector";
-        offCmd = "sleepDisplay";
-        break;
-      case "WAKE_ON_LAN":
-        onCmdName = "Wake component";
-        offCmdName = "Sleep component";
-        offCmd = "shutdown";
-        break;
-      default:
-        onCmdName = "Wake component";
-        offCmdName = "Shutdown component";
-        offCmd = "shutdown";
-    }
-
-    var optionList = "";
-    if (this.allowed_actions.includes("refresh")) {
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', 'refresh_page')">Refresh component</a>`;
-    }
-    if (this.allowed_actions.includes("restart")) {
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', 'restart')">Restart component</a>`;
-    }
-    if (this.allowed_actions.includes("shutdown") || this.allowed_actions.includes("power_off")) {
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', '${offCmd}')">${offCmdName}</a>`;
-    }
-    if (this.allowed_actions.includes("power_on")) {
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', 'power_on')">${onCmdName}</a>`;
-    }
-    if (this.allowed_actions.includes("sleep")) {
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', 'sleepDisplay')">Sleep display</a>`;
-      optionList += `<a class="dropdown-item handCursor" onclick="queueCommand('${this.id}', 'wakeDisplay')">Wake display</a>`;
-    }
-    if (optionList.length == 0) {
-      optionList += `<span class="dropdown-item">No available actions</span>`;
-    }
-
-    // Change the amount of the Bootstrap grid being used depending on the
-    // number of components in this group. Larger groups get more horizontal
-    // space, so each component needs a smaller amount of grid.
-    var classString;
-    if (getExhibitComponentGroup(this.type).components.length > 7) {
-      classString = 'col-12 col-sm-6 col-md-3 mt-1';
-    } else {
-      classString = 'col-12 col-sm-6 mt-1';
-    }
-
-    var html = `
-      <div class='${classString}'>
-        <div class="btn-group btn-block h-100 w-100">
-          <button type="button" class="btn ${this.getButtonColorClass()} btn-block componentStatusButton" id="${this.id}MainButton" onclick="showExhibitComponentInfo('${this.id}')"><H5>${displayName}</H5><div id="${this.id}StatusField">${this.status}</div></button>
-          <button type="button" id="${this.id}DropdownButton" class="btn ${this.getButtonColorClass()} dropdown-toggle dropdown-toggle-split"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="sr-only">Toggle Dropdown</span>
-          </button>
-          <div class="dropdown-menu">
-            ${optionList}
-          </div>
-        </div>
-      </div>
-    `;
-
-    $('#'+this.type+'ComponentList').append(html);
-  }
-}
+// let currentExhibit = ''
+// const exhibitComponents = []
+// const componentGroups = []
+// const errorDict = {} // Will hold errors to display
+const markdownConverter = new showdown.Converter()
+markdownConverter.setFlavor('github')
+let scheduleUpdateTime = 0
+// let serverSoftwareUpdateAvailable = false
+let issueList = []
+let assignableStaff = []
 
 class ExhibitComponentGroup {
-
-  constructor(type) {
-    this.type = type;
-    this.components = [];
-    this.buildHTML();
+  constructor (type) {
+    this.type = type
+    this.components = []
+    this.buildHTML()
   }
 
-  addComponent(component) {
-    this.components.push(component);
-    this.sortComponentList();
+  addComponent (component) {
+    this.components.push(component)
+    this.sortComponentList()
 
     // When we reach 8 components, rebuild the interface so that this group
     // expands to double width
-    if (this.components.length == 8) {
-      rebuildComponentInterface();
+    if (this.components.length === 8) {
+      constExhibit.rebuildComponentInterface()
     }
-
   }
 
-  sortComponentList() {
-
+  sortComponentList () {
     // Sort the component list by ID and then rebuild the HTML
     // representation in order
 
     if (this.components.length > 1) {
       // This line does the sorting
-      this.components.sort((a,b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0));
+      this.components.sort((a, b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0))
 
-      document.getElementById(this.type + "ComponentList").innerHTML = "";
-      for (var i=0; i<this.components.length; i++) {
-        this.components[i].buildHTML();
+      document.getElementById(this.type + 'ComponentList').innerHTML = ''
+      for (let i = 0; i < this.components.length; i++) {
+        this.components[i].buildHTML()
       }
     }
   }
 
-  removeComponent(id) {
+  removeComponent (id) {
     // Remove a component based on its id
 
-    this.components = $.grep(this.components, function(el, idx) {return el.id == id;}, true);
+    this.components = $.grep(this.components, function (el, idx) { return el.id === id }, true)
 
     // If the group now has seven components, make sure we're using the small
     // size rendering now by rebuilding the interface
-    if (this.components.length == 7) {
-      rebuildComponentInterface();
+    if (this.components.length === 7) {
+      constExhibit.rebuildComponentInterface()
     }
   }
 
-  buildHTML() {
-
+  buildHTML () {
     // Function to build the HTML representation of this group
     // and add it to the componentGroupsRow
 
-    var onCmdName = "";
-    var offCmdName = "";
-    if (this.type == "PROJECTOR") {
-      onCmdName = "Wake all projectors";
-      offCmdName = "Sleep all projectors";
+    let onCmdName = ''
+    let offCmdName = ''
+    const thisType = this.type
+    if (this.type === 'PROJECTOR') {
+      onCmdName = 'Wake all projectors'
+      offCmdName = 'Sleep all projectors'
     } else {
-      onCmdName = "Wake all displays";
-      offCmdName = "Sleep all displays";
+      onCmdName = 'Wake all displays'
+      offCmdName = 'Sleep all displays'
     }
-    let displayRefresh = "block";
-    if (["PROJECTOR", "WAKE_ON_LAN"].includes(this.type) == true) {
+    let displayRefresh = 'block'
+    if (['PROJECTOR', 'WAKE_ON_LAN'].includes(this.type) === true) {
       displayRefresh = 'none'
     }
 
     // Allow groups with lots of components to display with double width
-    var classString;
-    if(this.components.length > 7) {
-      classString = 'col-12 col-xl-8 mt-4';
+    let classString
+    if (this.components.length > 7) {
+      classString = 'col-12 col-xl-8 mt-4'
     } else {
-      classString = 'col-12 col-md-6 col-xl-4 mt-4';
+      classString = 'col-12 col-md-6 col-xl-4 mt-4'
     }
 
-    var html = `
-      <div class= "${classString}">
-        <div class="btn-group btn-block">
-          <button type="button" class="btn btn-secondary btn-block btn-lg">${this.type}</button>
-          <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="sr-only">Toggle Dropdown</span>
-          </button>
-          <div class="dropdown-menu">
-            <a class="dropdown-item handCursor" style="display:${displayRefresh};" onclick="sendGroupCommand('${this.type}', 'refresh_page')">Refresh all components</a>
-            <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'wakeDisplay')">${onCmdName}</a>
-            <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'sleepDisplay')">${offCmdName}</a>
-          </div>
-        </div>
-        <div class="row" id='${this.type}ComponentList'>
-        </div>
-      </div>
-    `;
+    const col = document.createElement('div')
+    col.classList = classString
 
-    $('#componentGroupsRow').append(html);
+    const btnGroup = document.createElement('div')
+    btnGroup.classList = 'btn-group btn-block'
+    col.appendChild(btnGroup)
+
+    const mainButton = document.createElement('button')
+    mainButton.classList = 'btn btn-secondary btn-block btn-lg'
+    mainButton.setAttribute('type', 'button')
+    mainButton.innerHTML = this.type
+    btnGroup.appendChild(mainButton)
+
+    const dropdownButton = document.createElement('button')
+    dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
+    dropdownButton.setAttribute('type', 'button')
+    dropdownButton.setAttribute('data-toggle', 'dropdown')
+    dropdownButton.setAttribute('aria-haspopup', 'true')
+    dropdownButton.setAttribute('aria-expanded', 'false')
+    btnGroup.appendChild(dropdownButton)
+
+    const srHint = document.createElement('span')
+    srHint.classList = 'sr-only'
+    srHint.innerHTML = 'Toggle Dropdown'
+    dropdownButton.appendChild(srHint)
+
+    const dropdownMenu = document.createElement('div')
+    dropdownMenu.classList = 'dropdown-menu'
+    btnGroup.appendChild(dropdownMenu)
+
+    const refreshOption = document.createElement('a')
+    refreshOption.classList = 'dropdown-item handCursor'
+    refreshOption.style.display = displayRefresh
+    refreshOption.innerHTML = 'Refresh all components'
+    refreshOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, 'refresh_page')
+    }, false)
+    dropdownMenu.appendChild(refreshOption)
+
+    const wakeOption = document.createElement('a')
+    wakeOption.classList = 'dropdown-item handCursor'
+    wakeOption.innerHTML = 'Wake all components'
+    wakeOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, onCmdName)
+    }, false)
+    dropdownMenu.appendChild(wakeOption)
+
+    const sleepOption = document.createElement('a')
+    sleepOption.classList = 'dropdown-item handCursor'
+    sleepOption.innerHTML = 'Sleep all components'
+    sleepOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, offCmdName)
+    }, false)
+    dropdownMenu.appendChild(sleepOption)
+
+    const componentList = document.createElement('div')
+    componentList.classList = 'row'
+    componentList.setAttribute('id', thisType + 'ComponentList')
+    col.appendChild(componentList)
+
+    // const html = `
+    //   <div class= "${classString}">
+    //     <div class="btn-group btn-block">
+    //       <button type="button" class="btn btn-secondary btn-block btn-lg">${this.type}</button>
+    //       <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    //         <span class="sr-only">Toggle Dropdown</span>
+    //       </button>
+    //       <div class="dropdown-menu">
+    //         <a class="dropdown-item handCursor" style="display:${displayRefresh};" onclick="sendGroupCommand('${this.type}', 'refresh_page')">Refresh all components</a>
+    //         <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'wakeDisplay')">${onCmdName}</a>
+    //         <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'sleepDisplay')">${offCmdName}</a>
+    //       </div>
+    //     </div>
+
+    //     </div>
+    //   </div>
+    // `
+
+    $('#componentGroupsRow').append(col)
   }
 }
 
-function showExhibitComponentInfo(id) {
-
-  // This sets up the componentInfoModal with the info from the selected
-  // component and shows it on the screen.
-
-  if (id == "") {
-    id = $("#componentInfoModalTitle").html();
-  }
-
-  var obj = getExhibitComponent(id);
-
-  if (obj.type == "PROJECTOR") {
-
-    // First, reset all the cell shadings
-    $("#projectorInfoLampState").parent().removeClass();
-    $("#projectorInfoFanState").parent().removeClass();
-    $("#projectorInfoFilterState").parent().removeClass();
-    $("#projectorInfoCoverState").parent().removeClass();
-    $("#projectorInfoOtherState").parent().removeClass();
-    $("#projectorInfoTempState").parent().removeClass();
-
-    // Set the title to the ID
-    $("#projectorInfoModalTitle").html(id);
-    $("#projectorInfoModalIPAddress").html(obj.ip);
-    if (obj.description == "") {
-      $("#projectorInfoModalDescription").hide();
-    } else {
-      $("#projectorInfoModalDescription").html(obj.description);
-      $("#projectorInfoModalDescription").show();
-    }
-
-    // Then, go through and populate all the cells with as much information
-    // as we have. Shade cells red if an error is reported.
-    if ("power_state" in obj.state && obj.state.power_state != "") {
-      $("#projectorInfoPowerState").html(obj.state.power_state);
-    } else {
-      $("#projectorInfoPowerState").html("-");
-    }
-    if (("error_status" in obj.state) && (obj.state.error_status.constructor == Object)) {
-      if ("lamp" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoLampState").html(obj.state.error_status.lamp);
-        // Shade if error
-        if (obj.state.error_status.lamp == "error") {
-          $("#projectorInfoLampState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoLampState").html("-");
-      }
-      if ("fan" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoFanState").html(obj.state.error_status.fan);
-        // Shade if error
-        if (obj.state.error_status.fan == "error") {
-          $("#projectorInfoFanState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoFanState").html("-");
-      }
-      if ("filter" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoFilterState").html(obj.state.error_status.filter);
-        // Shade if error
-        if (obj.state.error_status.filter == "error") {
-          $("#projectorInfoFilterState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoFilterState").html("-");
-      }
-      if ("cover" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoCoverState").html(obj.state.error_status.cover);
-        // Shade if error
-        if (obj.state.error_status.cover == "error") {
-          $("#projectorInfoCoverState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoCoverState").html("-");
-      }
-      if ("other" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoOtherState").html(obj.state.error_status.other);
-        // Shade if error
-        if (obj.state.error_status.other == "error") {
-          $("#projectorInfoOtherState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoOtherState").html("-");
-      }
-      if ("temperature" in obj.state.error_status) {
-        // Populate cell
-        $("#projectorInfoTempState").html(obj.state.error_status.temperature);
-        // Shade if error
-        if (obj.state.error_status == "error") {
-          $("#projectorInfoTempState").parent().addClass("table-danger");
-        }
-      } else {
-        $("#projectorInfoTempState").html("-");
-      }
-    } else {
-      $("#projectorInfoLampState").html("-");
-      $("#projectorInfoFanState").html("-");
-      $("#projectorInfoFilterState").html("-");
-      $("#projectorInfoCoverState").html("-");
-      $("#projectorInfoOtherState").html("-");
-      $("#projectorInfoTempState").html("-");
-    }
-    if ("model" in obj.state) {
-      $("#projectorInfoModel").html(obj.state.model);
-    } else {
-      $("#projectorInfoModel").html("-");
-    }
-
-    var lamp_html = "";
-    if ("lamp_status" in obj.state && obj.state.lamp_status != "") {
-      var lampList = obj.state.lamp_status;
-
-      for (var i=0; i<lampList.length; i++) {
-        lamp = lampList[i];
-        var statusStr = "";
-        if (lamp[1] == false) {
-          statusStr = "(off)";
-        } else if (lamp[1] == true) {
-          statusStr = "(on)";
-        } else {
-          statusStr = "";
-        }
-        lamp_html += `Lamp ${i+1} ${statusStr}: ${lamp[0]} hours<br>`;
-      }
-    } else {
-      lamp_html = "-";
-    }
-    $("#projectorInfoLampHours").html(lamp_html);
-
-    // Make the modal visible
-    $("#projectorInfoModal").modal("show");
-
-  } else { // This is a normal ExhibitComponent
-
-    $("#componentInfoModalTitle").html(id);
-    let constellationAppId = "Unknown Component";
-    if (obj.constellationAppId != "") {
-      let constellationAppIdDisplayNames = {
-        "heartbeat": "HeartBeat",
-        "infostation": "InfoStation",
-        "media_browser": "Media Browser",
-        "media_player": "Media Player",
-        "sos_kiosk": "SOS Kiosk",
-        "sos_screen_player": "SOS Screen Player",
-        "static_component": "Static component",
-        "timelapse_viewer": "Timelapse Viewer",
-        "voting_kiosk": "Voting Kiosk",
-        "word_cloud": "Word Cloud"
-      }
-      if (obj.constellationAppId in constellationAppIdDisplayNames) {
-        constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId];
-      }
-    }
-    $("#constellationComponentIdButton").html(constellationAppId);
-    if (obj.ip != ""){
-      $("#componentInfoModalIPAddress").html(obj.ip);
-      $("#componentInfoModalIPAddressGroup").show();
-    } else {
-      $("#componentInfoModalIPAddressGroup").hide();
-    }
-    if (obj.ip != extractIPAddress(obj.helperAddress)) {
-      $("#componentInfoModalHelperIPAddress").html(extractIPAddress(obj.helperAddress));
-      $("#componentInfoModalHelperIPAddressGroup").show();
-    } else {
-      $("#componentInfoModalHelperIPAddressGroup").hide();
-    }
-    if ("operating_system" in obj.platformDetails) {
-      $("#componentInfoModalOperatingSystem").html(obj.platformDetails.operating_system.replace("OS X", "macOS"));
-      $("#componentInfoModalOperatingSystemGroup").show();
-    } else {
-      $("#componentInfoModalOperatingSystemGroup").hide();
-    }
-    if ("browser" in obj.platformDetails) {
-      $("#componentInfoModalBrowser").html(obj.platformDetails.browser);
-      $("#componentInfoModalBrowserGroup").show();
-    } else {
-      $("#componentInfoModalBrowserGroup").hide();
-    }
-    if (obj.lastContactDateTime != null) {
-      $("#componentInfoModalLastContact").html(formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)));
-      $("#componentInfoModalLastContactGroup").show();
-    } else {
-      $("#componentInfoModalLastContactGroup").hide();
-    }
-    if (obj.description == "") {
-      $("#componentInfoModalDescription").hide();
-    } else {
-      $("#componentInfoModalDescription").html(obj.description);
-      $("#componentInfoModalDescription").show();
-    }
-    $("#componentAvailableContentList").empty();
-    $("#contentUploadSubmitButton").prop("disabled", false);
-    $("#contentUploadSubmitButton").html("Upload");
-    $("#componentContentUploadfilename").html("Choose file");
-    $("#componentContentUpload").val(null);
-    $("#contentUploadSubmitButton").hide();
-    $("#contentUploadEqualSignWarning").hide();
-    $("#uploadOverwriteWarning").hide();
-    $("#contentUploadProgressBarContainer").hide();
-    $("#contentUploadSystemStatsView").hide();
-    $("#componentInfoConnectingNotice").show();
-    $("#componentInfoConnectionStatusFailed").hide();
-    $("#componentInfoConnectionStatusInPrograss").show();
-    $("#componentSaveConfirmationButton").hide();
-    $("#componentAvailableContentRow").hide();
-    $("#componentcontentUploadInterface").hide();
-    setComponentInfoModalMaintenanceStatus(id);
-
-    if ("AnyDeskID" in obj && obj.AnyDeskID != "") {
-      $("#AnyDeskButton").prop("href", "anydesk:" + obj.AnyDeskID);
-      $("#AnyDeskLabel").prop("href", "anydesk:" + obj.AnyDeskID);
-      $("#AnyDeskLabel").html("AnyDesk ID: " + obj.AnyDeskID);
-      $("#AnyDeskButton").prop("title", String(obj.AnyDeskID));
-      $("#AnyDeskButton").addClass("d-sm-none d-none d-md-inline").show();
-      $("#AnyDeskLabel").addClass("d-sm-inline d-md-none").show();
-    } else {
-      $("#AnyDeskButton").removeClass("d-sm-none d-none d-md-inline").hide();
-      $("#AnyDeskLabel").removeClass("d-sm-inline d-md-none").hide();
-    }
-
-    var showFailureMessage = function() {
-      $("#componentInfoConnectionStatusFailed").show();
-      $("#componentInfoConnectionStatusInPrograss").hide();
-    };
-
-    if (obj.status != 'STATIC') {
-      // This component may be accessible over the network.
-
-      var requestString = JSON.stringify({"action": "getAvailableContent"});
-
-      var xhr = new XMLHttpRequest();
-      if (obj.helperAddress != null) {
-        xhr.open("POST", obj.helperAddress, true);
-      } else {
-        xhr.open("POST", `http://${obj.ip}:${obj.helperPort}`, true);
-      }
-      xhr.timeout = 10000; // 10 seconds
-      xhr.ontimeout = showFailureMessage;
-      xhr.onerror = showFailureMessage;
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function () {
-        if (this.readyState != 4) return;
-
-        if (this.status == 200) {
-
-          // Good connection, so show the interface elements
-          $("#componentAvailableContentRow").show();
-          $("#componentcontentUploadInterface").show();
-          $("#componentInfoConnectingNotice").hide();
-
-          var availableContent = JSON.parse(this.response);
-
-          // If it is provided, show the system stats
-          if ("system_stats" in availableContent) {
-            var stats = availableContent.system_stats;
-
-            // Disk
-            $("#contentUploadDiskSpaceUsedBar").attr("ariaValueNow", 100 - stats.disk_pct_free);
-            $("#contentUploadDiskSpaceUsedBar").width(String(100 - stats.disk_pct_free)+"%");
-            $("#contentUploadDiskSpaceFreeBar").attr("ariaValueNow", stats.disk_pct_free);
-            $("#contentUploadDiskSpaceFreeBar").width(String(stats.disk_pct_free)+"%");
-            $("#contentUploadDiskSpaceFree").html(`Disk: ${String(Math.round(stats.disK_free_GB))} GB`);
-            if (stats.disk_pct_free > 20) {
-              $("#contentUploadDiskSpaceUsedBar").removeClass("bg-warning bg-danger").addClass("bg-success");
-            } else if (stats.disk_pct_free > 10) {
-              $("#contentUploadDiskSpaceUsedBar").removeClass("bg-success bg-danger").addClass("bg-warning");
-            } else {
-              $("#contentUploadDiskSpaceUsedBar").removeClass("bg-success bg-warning").addClass("bg-danger");
-            }
-
-            // CPU
-            $("#contentUploadCPUUsedBar").attr("ariaValueNow", stats.cpu_load_pct);
-            $("#contentUploadCPUUsedBar").width(String(stats.cpu_load_pct)+"%");
-            $("#contentUploadCPUFreeBar").attr("ariaValueNow", 100 - stats.cpu_load_pct);
-            $("#contentUploadCPUFreeBar").width(String(100 - stats.cpu_load_pct)+"%");
-            $("#contentUploadCPUUsed").html(`CPU: ${String(Math.round(stats.cpu_load_pct))}%`);
-            if (stats.cpu_load_pct < 80) {
-              $("#contentUploadCPUUsedBar").removeClass("bg-warning bg-danger").addClass("bg-success");
-            } else if (stats.cpu_load_pct < 90) {
-              $("#contentUploadCPUUsedBar").removeClass("bg-success bg-danger").addClass("bg-warning");
-            } else {
-              $("#contentUploadCPUUsedBar").removeClass("bg-success bg-warning").addClass("bg-danger");
-            }
-
-            // RAM
-            $("#contentUploadRAMUsedBar").attr("ariaValueNow", stats.ram_used_pct);
-            $("#contentUploadRAMUsedBar").width(String(stats.ram_used_pct)+"%");
-            $("#contentUploadRAMFreeBar").attr("ariaValueNow", 100 - stats.ram_used_pct);
-            $("#contentUploadRAMFreeBar").width(String(100 - stats.ram_used_pct)+"%");
-            $("#contentUploadRAMUsed").html(`RAM: ${String(Math.round(stats.ram_used_pct))}%`);
-            if (stats.ram_used_pct < 80) {
-              $("#contentUploadRAMUsedBar").removeClass("bg-warning bg-danger").addClass("bg-success");
-            } else if (stats.ram_used_pct < 90) {
-              $("#contentUploadRAMUsedBar").removeClass("bg-success bg-danger").addClass("bg-warning");
-            } else {
-              $("#contentUploadCPUUsedBar").removeClass("bg-success bg-warning").addClass("bg-danger");
-            }
-
-            $("#contentUploadSystemStatsView").show();
-          } else {
-            $("#contentUploadSystemStatsView").hide();
-          }
-
-          var populateContent = function(key, id, div) {
-
-            // Get filenames listed under key in availableContent and add
-            // the resulting buttons to the div given by div
-            
-            var activeContent = availableContent.active_content;
-            var contentList = availableContent[key].sort(function(a,b) {return a.localeCompare(b);});
-            var thumbnailList = availableContent.thumbnails;
-            if (thumbnailList == undefined) {
-              thumbnailList = [];
-            }
-            var active;
-
-            for (var i=0; i<contentList.length; i++) {
-              if (activeContent.includes(contentList[i])) {
-                active = "btn-primary";
-              } else {
-                active = "btn-secondary";
-              }
-
-              let container = document.createElement("div");
-              container.classList = "col-6 mt-1";
-
-              let btnGroup = document.createElement("div");
-              btnGroup.classList = "btn-group w-100 h-100";
-              container.appendChild(btnGroup);
-
-              let button = document.createElement("button");
-              let cleanFilename = contentList[i].split('.').join("").split(")").join("").split("(").join("").split(/[\\\/]/).join("").replace(/\s/g, '');
-              button.setAttribute("type", "button");
-              button.setAttribute("id", cleanFilename + "Button");
-              button.classList = `btn componentContentButton ${active}`;
-              button.innerHTML = `<span>${contentList[i]}</span>`;
-
-              let thumbName;
-              let mimetype = guessMimetype(contentList[i]);
-              if (mimetype == "image") {
-                thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".jpg"
-                if (thumbnailList.includes(thumbName)) {
-                  let thumb = document.createElement("img");
-                  thumb.classList = "contentThumbnail mt-1";
-                  thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
-                  button.appendChild(thumb);
-                }
-              } else if (mimetype == "video") {
-                thumbName = contentList[i].replace(/\.[^/.]+$/, "") + ".mp4"
-                if (thumbnailList.includes(thumbName)) {
-                  let thumb = document.createElement("video");
-                  thumb.classList = "contentThumbnail mt-1";
-                  thumb.src = getExhibitComponent(id).helperAddress + "/thumbnails/" + thumbName;
-                  thumb.setAttribute("loop", true);
-                  thumb.setAttribute("autoplay", true);
-                  button.appendChild(thumb);
-                }
-              }
-            
-              btnGroup.appendChild(button);
-
-              let dropdownButton = document.createElement("button");
-              dropdownButton.setAttribute("type", "button");
-              dropdownButton.setAttribute("id", cleanFilename + "ButtonDropdown");
-              dropdownButton.setAttribute("data-toggle", "dropdown");
-              dropdownButton.setAttribute("aria-haspopup", true);
-              dropdownButton.setAttribute("aria-expanded", false);
-              dropdownButton.classList = `btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton ${active}`;
-              dropdownButton.innerHTML = `<span class="sr-only">Toggle Dropdown</span>`;
-              btnGroup.appendChild(dropdownButton);
-
-              let dropdownMenu = document.createElement("div");
-              dropdownMenu.classList = "dropdown-menu";
-              
-              let deleteFileButton = document.createElement("a");
-              deleteFileButton.classList = "dropdown-item text-danger";
-              let file = contentList[i];
-              deleteFileButton.addEventListener("click", function(){
-                deleteRemoteFile(id, file)});
-              deleteFileButton.innerHTML = "Delete";
-              dropdownMenu.appendChild(deleteFileButton);
-              btnGroup.appendChild(dropdownMenu);
-              
-              $("#"+div).append(container);
-            }
-          };
-
-          // Build buttons for each file in all exhibits
-          populateContent('all_exhibits', id, "componentAvailableContentList");
-
-          // Attach an event handler to change the button's color when clicked
-          $(".componentContentButton").on("click", function(e){
-            var id = $(this).attr("id");
-            // $('.componentContentButton').not($(this)).removeClass("btn-primary").addClass("btn-secondary");
-            $(this).toggleClass("btn-primary").toggleClass("btn-secondary");
-
-            // $('.componentContentDropdownButton').not($("#"+id+"Dropdown")).removeClass("btn-primary").addClass("btn-secondary");
-            $("#"+id+"Dropdown").toggleClass("btn-secondary").toggleClass("btn-primary");
-
-            if ($(".componentContentButton.btn-primary").length == 0) {
-              $("#componentSaveConfirmationButton").hide(); // Can't save a state with no selected content.
-            } else {
-              $("#componentSaveConfirmationButton").show();
-            }
-          });
-        }
-      };
-      xhr.send(requestString);
-    } else {
-      // This static component will defintely have no content.
-      showFailureMessage();
-      // Show the maintenance tab
-      $("#componentInfoModalMaintenanceTabButton").tab("show");
-    }
-
-    // Make the modal visible
-    $("#componentInfoModal").modal("show");
-  }
-}
-
-function extractIPAddress(address) {
-  // Extract just the IP address from a web address
-
-  // Remove the prefix
-  address = address.replace("http://", "");
-  address = address.replace("https://", "");
-  // Find and remove the port
-  let colon = address.indexOf(":");
-  address = address.slice(0, colon);
-  return address;
-}
-
-function guessMimetype(filename) {
-
-  // Use filename's extension to guess the mimetype
-
-  let ext = filename.split(".").slice(-1)[0].toLowerCase();
-  
-  if (["mp4", "mpeg", "webm", "mov", "m4v", "avi", "flv"].includes(ext)) {
-    return "video";
-  } else if (["jpeg", "jpg", "tiff", "tif", "png", "bmp", "gif", "webp", "eps", "ps", "svg"].includes(ext)) {
-    return "image";
-  }
-}
-
-function deleteRemoteFile(id, file, warn=true) {
-
-  // If called with warn=True, show a modal asking to delete the file.
-  // Otherwise, send the command to delete.
-
-  var model = $("#fileDeleteModal");
-
-  if (warn == true) {
-    $("#fileDeleteModalText").html(`Delete ${file} from ${id}?`);
-    // Remove any previous event handler and then add one to actually do the deletion.
-    $("#fileDeleteConfirmationButton").show();
-    $("#fileDeleteConfirmationButton").off();
-    $("#fileDeleteConfirmationButton").on("click", function(){
-      deleteRemoteFile(id, file, warn=false);
-    });
-    model.modal("show");
-  } else {
-
-    $("#fileDeleteModalText").html(`Deleting ${file}...`);
-    $("#fileDeleteConfirmationButton").hide();
-
-    var file_split = file.split(/[\\\/]/); // regex to split on forward and back slashes
-    var exhibit;
-    var file_to_delete;
-    if (file_split.length > 1) {
-      // our file is of form "exhibit/file"
-      exhibit = file_split[0];
-      file_to_delete = file_split[1];
-    } else {
-      exhibit = currentExhibit.split(".")[0];
-      file_to_delete = file;
-    }
-    var obj = getExhibitComponent(id);
-    var requestString = JSON.stringify({"action": "deleteFile",
-                                        "file": file_to_delete,
-                                        "fromExhibit": exhibit});
-
-    var xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    if (obj.helperAddress != null) {
-      xhr.open("POST", obj.helperAddress, true);
-    } else {
-      xhr.open("POST", `http://${obj.ip}:${obj.helperPort}`, true);
-    }
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(requestString);
-    xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
-      if (this.status == 200) {
-
-        var response = JSON.parse(this.responseText);
-
-        if ("success" in response) {
-          if (response.success == true) {
-            model.modal("hide");
-            showExhibitComponentInfo(id);
-          }
-        }
-      }
-    };
-  }
-
-}
-
-function onUploadContentChange() {
-
+function onUploadContentChange () {
   // When we select a file for uploading, check against the existing files
   // (as defined by their buttons) and warn if we will overwrite. Also
   // check if the filename contains an =, which is not allowed
 
-  $("#contentUploadSubmitButton").show();
+  $('#contentUploadSubmitButton').show()
   // Show the upload button (we may hide it later)
-  var fileInput = $("#componentContentUpload")[0];
+  const fileInput = $('#componentContentUpload')[0]
   // Check for filename collision
-  var currentFiles = $(".componentContentButton").map(function(){return $(this).html();}).toArray();
-  $("#componentContentUploadfilename").html("File: " + fileInput.files[0].name);
-  if(currentFiles.includes(fileInput.files[0].name)) {
-    $("#uploadOverwriteWarning").show();
+  const currentFiles = $('.componentContentButton').map(function () { return $(this).html() }).toArray()
+  $('#componentContentUploadfilename').html('File: ' + fileInput.files[0].name)
+  if (currentFiles.includes(fileInput.files[0].name)) {
+    $('#uploadOverwriteWarning').show()
   } else {
-    $("#uploadOverwriteWarning").hide();
+    $('#uploadOverwriteWarning').hide()
   }
   // Check for = in filename
-  if (fileInput.files[0].name.includes("=")) {
-    $("#contentUploadEqualSignWarning").show();
-    $("#contentUploadSubmitButton").hide();
+  if (fileInput.files[0].name.includes('=')) {
+    $('#contentUploadEqualSignWarning').show()
+    $('#contentUploadSubmitButton').hide()
   } else {
-    $("#contentUploadEqualSignWarning").hide();
+    $('#contentUploadEqualSignWarning').hide()
   }
 }
 
-function uploadComponentContentFile() {
+function uploadComponentContentFile () {
+  const fileInput = $('#componentContentUpload')[0]
+  if (fileInput.files[0] != null) {
+    const id = $('#componentInfoModalTitle').html().trim()
 
-  var fileInput = $("#componentContentUpload")[0];
-  if (fileInput.files[0] != null){
-    var id = $("#componentInfoModalTitle").html().trim();
+    const component = constExhibit.getExhibitComponent(id)
 
-    var component = getExhibitComponent(id);
+    $('#contentUploadSubmitButton').prop('disabled', true)
+    $('#contentUploadSubmitButton').html('Working...')
 
-    $("#contentUploadSubmitButton").prop("disabled", true);
-    $("#contentUploadSubmitButton").html("Working...");
+    const file = fileInput.files[0]
+    const formData = new FormData()
+    formData.append('exhibit', getCurrentExhibitName())
+    formData.append('filename', file.name)
+    formData.append('mimetype', file.type)
+    formData.append('file', file)
 
-    var file = fileInput.files[0];
-    var formData = new FormData();
-    formData.append("exhibit", getCurrentExhibitName());
-    formData.append("filename", file.name);
-    formData.append("mimetype", file.type);
-    formData.append("file", file);
-
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest()
     if (component.helperAddress != null) {
-      xhr.open("POST", component.helperAddress, true);
+      xhr.open('POST', component.helperAddress, true)
     } else {
-      xhr.open("POST", `http://${component.ip}:${component.helperPort}`, true);
+      xhr.open('POST', `http://${component.ip}:${component.helperPort}`, true)
     }
     xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
-      if (this.status == 200) {
-        var response = JSON.parse(this.responseText);
+      if (this.readyState !== 4) return
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText)
 
-        if ("success" in response) {
-          queueCommand(id, 'reloadDefaults');
-          showExhibitComponentInfo("");
+        if ('success' in response) {
+          constExhibit.queueCommand(id, 'reloadDefaults')
+          constExhibit.showExhibitComponentInfo('')
         }
       }
-    };
+    }
 
-    xhr.upload.addEventListener("progress", function(evt) {
+    xhr.upload.addEventListener('progress', function (evt) {
       if (evt.lengthComputable) {
-        var percentComplete = evt.loaded / evt.total;
-        percentComplete = parseInt(percentComplete * 100);
-        $("#contentUploadProgressBar").width(String(percentComplete) + "%");
+        let percentComplete = evt.loaded / evt.total
+        percentComplete = parseInt(percentComplete * 100)
+        $('#contentUploadProgressBar').width(String(percentComplete) + '%')
         if (percentComplete > 0) {
-          $("#contentUploadProgressBarContainer").show();
-        }
-        else if (percentComplete == 100) {
-          $("#contentUploadProgressBarContainer").hide();
+          $('#contentUploadProgressBarContainer').show()
+        } else if (percentComplete === 100) {
+          $('#contentUploadProgressBarContainer').hide()
         }
       }
-    }, false);
+    }, false)
 
-    xhr.send(formData);
+    xhr.send(formData)
   }
 }
 
-function submitComponentContentChange() {
-
+function submitComponentContentChange () {
   // Collect the new information from the componentInfoModal and pass it
   // back to the server to be changed.
 
-  var id = $("#componentInfoModalTitle").html().trim();
-  var selectedButtons = $('.componentContentButton.btn-primary').find("span");
-  var component = getExhibitComponent(id);
-  var contentList = [];
-  for (var i=0; i<selectedButtons.length; i++) {
-    content = selectedButtons[i].innerHTML.trim();
-    console.log(selectedButtons)
-    contentList.push(content);
+  const id = $('#componentInfoModalTitle').html().trim()
+  const selectedButtons = $('.componentContentButton.btn-primary').find('span')
+  // const component = constExhibit.getExhibitComponent(id)
+  const contentList = []
+  for (let i = 0; i < selectedButtons.length; i++) {
+    const content = selectedButtons[i].innerHTML.trim()
+    contentList.push(content)
   }
-  
-  sendComponentContentChangeRequest(id, contentList);
-  askForUpdate();
+
+  sendComponentContentChangeRequest(id, contentList)
+  askForUpdate()
 
   // Hide the modal
-  $("#componentInfoModal").modal("hide");
+  $('#componentInfoModal').modal('hide')
 }
 
-function sendComponentContentChangeRequest(id, content) {
-
+function sendComponentContentChangeRequest (id, content) {
   // Send a request to the server to initiate a content change
 
-  requestString = JSON.stringify({
-    "class": "webpage",
-    "action": "setComponentContent",
-    "id": id,
-    "content": content
-  });
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(requestString);
+  const requestString = JSON.stringify({
+    class: 'webpage',
+    action: 'setComponentContent',
+    id,
+    content
+  })
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.send(requestString)
 }
 
-function getExhibitComponent(id) {
-
-  // Function to search the exhibitComponents list for a given id
-
-  var result = exhibitComponents.find(obj => {
-    return obj.id === id;
-  });
-
-  return result;
-}
-
-function getExhibitComponentGroup(type) {
-
-  // Function to search the exhibitComponents list for a given id
-
-  var result = componentGroups.find(obj => {
-    return obj.type === type;
-  });
-  return result;
-}
-
-function updateComponentFromServer(component) {
-
+function updateComponentFromServer (component) {
   // Read the dictionary of component information from the control server
   // and use it to set up the component
 
-  obj = getExhibitComponent(component.id);
+  const obj = constExhibit.getExhibitComponent(component.id)
   if (obj != null) {
     // Update the object with the latest info from the server
-    obj.setStatus(component.status);
-    if ("content" in component) {
-      obj.content = component.content;
+    obj.setStatus(component.status)
+    if ('content' in component) {
+      obj.content = component.content
     }
-    if ("ip_address" in component) {
-      obj.ip = component.ip_address;
+    if ('ip_address' in component) {
+      obj.ip = component.ip_address
     }
-    if ("helperPort" in component) {
-      obj.helperPort = component.helperPort;
+    if ('helperPort' in component) {
+      obj.helperPort = component.helperPort
     }
-    if ("helperAddress" in component) {
-      obj.helperAddress = component.helperAddress;
+    if ('helperAddress' in component) {
+      obj.helperAddress = component.helperAddress
     }
-    if ("allowed_actions" in component) {
-      obj.allowed_actions = component.allowed_actions;
+    if ('allowed_actions' in component) {
+      obj.allowed_actions = component.allowed_actions
     }
-    if ("description" in component) {
-      obj.description = component.description;
+    if ('description' in component) {
+      obj.description = component.description
     }
-    if ("platform_details" in component) {
-      obj.platformDetails = component.platform_details;
+    if ('platform_details' in component) {
+      obj.platformDetails = component.platform_details
     }
-    if ("lastContactDateTime" in component) {
-      obj.lastContactDateTime = component.lastContactDateTime;
+    if ('lastContactDateTime' in component) {
+      obj.lastContactDateTime = component.lastContactDateTime
     }
-    if ("AnyDeskID" in component) {
-      obj.AnyDeskID = component.AnyDeskID;
+    if ('AnyDeskID' in component) {
+      obj.AnyDeskID = component.AnyDeskID
     }
-    if ("error" in component) {
+    if ('error' in component) {
       try {
-        newError = JSON.parse(component.error);
-        errorDict[obj.id] = newError;
+        const newError = JSON.parse(component.error)
+        constConfig.errorDict[obj.id] = newError
       } catch (e) {
-        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", component.error);
+        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", component.error)
         console.log(e)
       }
-      rebuildErrorList();
+      constTools.rebuildErrorList()
     }
   } else {
-
     // First, make sure the group matching this type exists
-    var group = getExhibitComponentGroup(component.type);
+    let group = constExhibit.getExhibitComponentGroup(component.type)
     if (group == null) {
-      group = new ExhibitComponentGroup(component.type);
-      componentGroups.push(group);
+      group = new ExhibitComponentGroup(component.type)
+      constConfig.componentGroups.push(group)
     }
 
     // Then create a new component
-    var newComponent = new ExhibitComponent(component.id, component.type);
-    newComponent.setStatus(component.status);
-    if ("allowed_actions" in component) {
-      newComponent.allowed_actions = component.allowed_actions;
+    const newComponent = new constExhibit.ExhibitComponent(component.id, component.type)
+    newComponent.setStatus(component.status)
+    if ('allowed_actions' in component) {
+      newComponent.allowed_actions = component.allowed_actions
     }
-    if ("constellation_app_id" in component) {
-      newComponent.constellationAppId = component.constellation_app_id;
+    if ('constellation_app_id' in component) {
+      newComponent.constellationAppId = component.constellation_app_id
     }
-    if ("platform_details" in component) {
-      newComponent.platformDetails = component.platform_details;
+    if ('platform_details' in component) {
+      newComponent.platformDetails = component.platform_details
     }
-    newComponent.buildHTML();
-    exhibitComponents.push(newComponent);
+    newComponent.buildHTML()
+    constConfig.exhibitComponents.push(newComponent)
 
     // Add the component to the right group
-    group.addComponent(newComponent);
+    group.addComponent(newComponent)
 
     // Finally, call this function again to populate the information
-    updateComponentFromServer(component);
+    updateComponentFromServer(component)
   }
 }
 
-function formatDateTimeDifference(dt1, dt2) {
-  // Convert the difference between two times into English
-  // dt1 and dt2 should be datetimes or milliseconds
-
-  let diff = (dt1 - dt2);
-
-  let sec = Math.round(diff/1000); // seconds
-  if (sec < 0 && sec > -60) {
-    return String(Math.abs(sec)) + " seconds from now";
-  }
-  if (sec < 60 && sec >= 0) {
-    return String(sec) + " seconds ago";
-  } 
-  let min = Math.round(diff/1000/60); // minutes
-  if (min < 0 && min > -60) {
-    return String(Math.abs(min)) + " minutes from now";
-  }
-  if (min < 60 && min >= 0) {
-    return String(min) + " minutes ago";
-  }
-  let hour = Math.round(diff/1000/3600); // hours
-  if (min < 0 && min > -24) {
-    return String(Math.abs(hour)) + " hours from now";
-  }
-  if (hour < 24 && hour >= 0) {
-    return String(hour) + " hours ago";
-  }
-  let day = Math.round(diff/1000/3600/24); // days
-  if (day < 0) {
-    return String(Math.abs(day)) + " days from now";
-  }
-  return String(day) + " days ago";
-}
-
-function setCurrentExhibitName(name) {
-  currentExhibit = name;
-  document.getElementById("exhibitNameField").innerHTML = name;
+function setCurrentExhibitName (name) {
+  constConfig.currentExhibit = name
+  document.getElementById('exhibitNameField').innerHTML = name
 
   // Don't change the value of the exhibit selector if we're currently
   // looking at the change confirmation modal, as this will result in
   // submitting the incorrect value
-  if ($('#changeExhibitModal').hasClass('show') == false) {
-    $("#exhibitSelect").val(name);
+  if ($('#changeExhibitModal').hasClass('show') === false) {
+    $('#exhibitSelect').val(name)
   }
 }
 
-function getCurrentExhibitName() {
-  return(document.getElementById("exhibitNameField").innerHTML);
+function getCurrentExhibitName () {
+  return (document.getElementById('exhibitNameField').innerHTML)
 }
 
-function updateAvailableExhibits(exhibitList) {
-
-  for (var i=0; i<exhibitList.length; i++) {
+function updateAvailableExhibits (exhibitList) {
+  for (let i = 0; i < exhibitList.length; i++) {
     // Check if exhibit already exists as an option. If not, add it
-    if ($(`#exhibitSelect option[value='${exhibitList[i]}']`).length == 0) {
-      $("#exhibitSelect").append(new Option(exhibitList[i], exhibitList[i]));
-      $("#exhibitDeleteSelector").append(new Option(exhibitList[i], exhibitList[i]));
+    if ($(`#exhibitSelect option[value='${exhibitList[i]}']`).length === 0) {
+      $('#exhibitSelect').append(new Option(exhibitList[i], exhibitList[i]))
+      $('#exhibitDeleteSelector').append(new Option(exhibitList[i], exhibitList[i]))
     }
   }
-  $("#exhibitSelect").children().toArray().forEach((item, i) => {
+  $('#exhibitSelect').children().toArray().forEach((item, i) => {
     if (!exhibitList.includes(item.value)) {
       // Remove item from exhibit selecetor
-      $(item).remove();
+      $(item).remove()
 
       // Remove item from exhibit delete selector
-      $(`#exhibitDeleteSelector option[value="${item.value}"]`).remove();
+      $(`#exhibitDeleteSelector option[value="${item.value}"]`).remove()
     }
-  });
-  checkDeleteSelection();
+  })
+  checkDeleteSelection()
 }
 
-function changeExhibit(warningShown) {
-
+function changeExhibit (warningShown) {
   // Send a command to the control server to change the current exhibit
 
-  if (warningShown == false) {
-    $("#changeExhibitModal").modal("show");
-  }
-  else {
-    $("#changeExhibitModal").modal("hide");
+  if (warningShown === false) {
+    $('#changeExhibitModal').modal('show')
+  } else {
+    $('#changeExhibitModal').modal('hide')
 
-    var requestDict = {"class": "webpage",
-                       "action": "setExhibit",
-                       "name": $("#exhibitSelect").val()};
-    var xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    xhr.open("POST", serverIP, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify(requestDict));
+    const requestDict = {
+      class: 'webpage',
+      action: 'setExhibit',
+      name: $('#exhibitSelect').val()
+    }
+    const xhr = new XMLHttpRequest()
+    xhr.timeout = 2000
+    xhr.open('POST', serverIP, true)
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    xhr.send(JSON.stringify(requestDict))
 
-    askForUpdate();
+    askForUpdate()
   }
 }
 
-function reloadConfiguration() {
-
+function reloadConfiguration () {
   // This function will send a message to the server asking it to reload
   // the current exhibit configuration file and update all the components
 
-  var requestDict = {"class": "webpage",
-                     "action": "reloadConfiguration"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'reloadConfiguration'
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      var response = JSON.parse(this.responseText);
+    if (this.status === 200) {
+      const response = JSON.parse(this.responseText)
 
-      if ("success" in response) {
-        if (response.success == true) {
-          $("#reloadConfigurationButton").html("Success!");
-          setTimeout(function() { $("#reloadConfigurationButton").html("Reload Config"); }, 2000);
+      if ('success' in response) {
+        if (response.success === true) {
+          $('#reloadConfigurationButton').html('Success!')
+          setTimeout(function () { $('#reloadConfigurationButton').html('Reload Config') }, 2000)
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
-}
-
-function queueCommand(id, cmd) {
-
-  // Function to send a command to the control server that will then
-  // be sent to the component the next time it pings the server
-
-  var obj = getExhibitComponent(id);
-  var requestDict, xhr;
-  if (["shutdown", "restart"].includes(cmd)) {
-    // We send these commands directly to the helper
-    requestDict = {"action": cmd};
-
-    xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    if (obj.helperAddress != null) {
-      xhr.open("POST", obj.helperAddress, true);
-    } else {
-      xhr.open("POST", `http://${obj.ip}:${obj.helperPort}`, true);
-    }
-
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify(requestDict));
-
-  } else {
-    // We send these commands to the server to pass to the component itself
-    var cmdType = "";
-    switch (obj.type) {
-      case "PROJECTOR":
-        cmdType = "queueProjectorCommand";
-        break;
-      case "WAKE_ON_LAN":
-        cmdType = "queueWOLCommand";
-        break;
-      default:
-        cmdType = "queueCommand";
-    }
-
-    requestDict = {"class": "webpage",
-                       "id": id,
-                       "command": cmd,
-                       "action": cmdType};
-
-    xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    xhr.open("POST", serverIP, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify(requestDict));
   }
-
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function sendGroupCommand(group, cmd) {
-
+function sendGroupCommand (group, cmd) {
   // Iterate through the components in the given group and queue the command
   // for each
 
-  group = getExhibitComponentGroup(group);
+  group = constExhibit.getExhibitComponentGroup(group)
 
-  for (var i=0; i<group.components.length; i++) {
-    queueCommand(group.components[i].id, cmd);
+  for (let i = 0; i < group.components.length; i++) {
+    constExhibit.queueCommand(group.components[i].id, cmd)
   }
 }
 
-function deleteSchedule(name) {
-
+function deleteSchedule (name) {
   // Send a message to the control server asking to delete the schedule
   // file with the given name. The name should not include ".ini"
 
-  var requestDict = {"class": "webpage",
-                     "action": "deleteSchedule",
-                     "name": name};
+  const requestDict = {
+    class: 'webpage',
+    action: 'deleteSchedule',
+    name
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 3000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {
-  };
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 3000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () {
+  }
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var update = JSON.parse(this.responseText);
-        if (update["class"] == "schedule") {
-          populateSchedule(update);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        if (update.class === 'schedule') {
+          populateSchedule(update)
         }
       }
     }
-  };
-  xhr.send(requestString);
-
+  }
+  xhr.send(requestString)
 }
 
-function scheduleConvertToDateSpecific(date, dayName) {
-
+function scheduleConvertToDateSpecific (date, dayName) {
   // Send a message to the control server, asking to create a date-specific
   // schedule out of the given day name
 
-  var requestDict = {"class": "webpage",
-                     "action": "convertSchedule",
-                     "date": date,
-                     "from": dayName};
+  const requestDict = {
+    class: 'webpage',
+    action: 'convertSchedule',
+    date,
+    from: dayName
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 3000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {
-  };
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 3000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () {
+  }
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var update = JSON.parse(this.responseText);
-        if (update["class"] == "schedule") {
-          populateSchedule(update);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        if (update.class === 'schedule') {
+          populateSchedule(update)
         }
       }
     }
-  };
-  xhr.send(requestString);
+  }
+  xhr.send(requestString)
 }
 
-function populateSchedule(schedule) {
-
+function populateSchedule (schedule) {
   // Take a provided schedule and build the interface to show it.
 
-  document.getElementById('scheduleContainer').innerHTML = "";
-  $("#dateSpecificScheduleAlert").hide();
+  document.getElementById('scheduleContainer').innerHTML = ''
+  $('#dateSpecificScheduleAlert').hide()
 
   // Record the timestamp when this schedule was generated
-  scheduleUpdateTime = schedule.updateTime;
-  var sched = schedule.schedule;
+  scheduleUpdateTime = schedule.updateTime
+  const sched = schedule.schedule
 
   sched.forEach((day) => {
     // Apply a background color to date-specific schedules so that we
     // know that they are special
-    var scheduleClass;
-    var addItemText;
-    var convertState;
-    var deleteState;
-    var scheduleName;
-    if (day.source == 'date-specific') {
-      scheduleClass = 'schedule-date-specific';
-      addItemText = 'Add date-specific action';
-      $("#dateSpecificScheduleAlert").show();
-      convertState = "none";
-      deleteState = "block";
-      scheduleName = day.date;
+    let scheduleClass
+    let addItemText
+    let convertState
+    let deleteState
+    let scheduleName
+    if (day.source === 'date-specific') {
+      scheduleClass = 'schedule-date-specific'
+      addItemText = 'Add date-specific action'
+      $('#dateSpecificScheduleAlert').show()
+      convertState = 'none'
+      deleteState = 'block'
+      scheduleName = day.date
     } else {
-      scheduleClass = '';
-      addItemText = 'Add recurring action';
-      convertState = "block";
-      deleteState = "none";
-      scheduleName = day.dayName.toLowerCase();
+      scheduleClass = ''
+      addItemText = 'Add recurring action'
+      convertState = 'block'
+      deleteState = 'none'
+      scheduleName = day.dayName.toLowerCase()
     }
 
-    let dayContainer = document.createElement("div");
-    dayContainer.classList = `col-12 col-sm-6 col-lg-4 mt-3 pt-3 pb-3 ${scheduleClass}`;
+    const dayContainer = document.createElement('div')
+    dayContainer.classList = `col-12 col-sm-6 col-lg-4 mt-3 pt-3 pb-3 ${scheduleClass}`
 
-    let row = document.createElement("div");
-    row.classList = "row";
-    dayContainer.appendChild(row);
+    const row = document.createElement('div')
+    row.classList = 'row'
+    dayContainer.appendChild(row)
 
-    let dayNameCol = document.createElement("div");
-    dayNameCol.classList = "col-6 col-sm-12 col-md-6";
-    row.appendChild(dayNameCol);
+    const dayNameCol = document.createElement('div')
+    dayNameCol.classList = 'col-6 col-sm-12 col-md-6'
+    row.appendChild(dayNameCol)
 
-    let dayNameSpan = document.createElement("span");
-    dayNameSpan.style.fontSize = "35px";
-    dayNameSpan.innerHTML = day.dayName;
-    dayNameCol.appendChild(dayNameSpan);
+    const dayNameSpan = document.createElement('span')
+    dayNameSpan.style.fontSize = '35px'
+    dayNameSpan.innerHTML = day.dayName
+    dayNameCol.appendChild(dayNameSpan)
 
-    let dateCol = document.createElement("div");
-    dateCol.classList = "col-6 col-sm-12 col-md-6 my-auto";
-    dateCol.style.textAlign = "right";
-    row.appendChild(dateCol);
+    const dateCol = document.createElement('div')
+    dateCol.classList = 'col-6 col-sm-12 col-md-6 my-auto'
+    dateCol.style.textAlign = 'right'
+    row.appendChild(dateCol)
 
-    let dateSpan = document.createElement("strong");
-    dateSpan.innerHTML = day.date;
-    dateCol.appendChild(dateSpan);
+    const dateSpan = document.createElement('strong')
+    dateSpan.innerHTML = day.date
+    dateCol.appendChild(dateSpan)
 
-    let editButtonCol = document.createElement("div");
-    editButtonCol.classList = "col-12 col-lg-6 mt-2";
-    row.appendChild(editButtonCol);
+    const editButtonCol = document.createElement('div')
+    editButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    row.appendChild(editButtonCol)
 
-    let editButton = document.createElement("button");
-    editButton.classList = "btn btn-primary w-100";
-    editButton.setAttribute("type", "button");
-    editButton.innerHTML = addItemText;
-    editButton.addEventListener("click", function(){
-      scheduleConfigureEditModal(scheduleName,day.source)
-    });
-    editButtonCol.appendChild(editButton);
+    const editButton = document.createElement('button')
+    editButton.classList = 'btn btn-primary w-100'
+    editButton.setAttribute('type', 'button')
+    editButton.innerHTML = addItemText
+    editButton.addEventListener('click', function () {
+      scheduleConfigureEditModal(scheduleName, day.source)
+    })
+    editButtonCol.appendChild(editButton)
 
-    let convertButtonCol = document.createElement("div");
-    convertButtonCol.classList = "col-12 col-lg-6 mt-2";
-    convertButtonCol.style.display = convertState;
-    row.appendChild(convertButtonCol);
+    const convertButtonCol = document.createElement('div')
+    convertButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    convertButtonCol.style.display = convertState
+    row.appendChild(convertButtonCol)
 
-    let convertButton = document.createElement("button");
-    convertButton.classList = "btn btn-warning w-100";
-    convertButton.setAttribute("type", "button");
-    convertButton.innerHTML = "Convert to date-specific schedule";
-    convertButton.addEventListener("click", function() {
-      scheduleConvertToDateSpecific(day.date, day.dayName);
-    });
-    convertButtonCol.appendChild(convertButton);
+    const convertButton = document.createElement('button')
+    convertButton.classList = 'btn btn-warning w-100'
+    convertButton.setAttribute('type', 'button')
+    convertButton.innerHTML = 'Convert to date-specific schedule'
+    convertButton.addEventListener('click', function () {
+      scheduleConvertToDateSpecific(day.date, day.dayName)
+    })
+    convertButtonCol.appendChild(convertButton)
 
-    let deleteButtonCol = document.createElement("div");
-    deleteButtonCol.classList = "col-12 col-lg-6 mt-2";
-    deleteButtonCol.style.display = deleteState;
-    row.appendChild(deleteButtonCol);
+    const deleteButtonCol = document.createElement('div')
+    deleteButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    deleteButtonCol.style.display = deleteState
+    row.appendChild(deleteButtonCol)
 
-    let deleteButton = document.createElement("button");
-    deleteButton.classList = "btn btn-danger w-100";
-    deleteButton.setAttribute("type", "button");
-    deleteButton.innerHTML = "Delete date-specific schedule";
-    deleteButton.addEventListener("click", function() {
-      deleteSchedule(day.date);
-    });
-    deleteButtonCol.appendChild(deleteButton);
+    const deleteButton = document.createElement('button')
+    deleteButton.classList = 'btn btn-danger w-100'
+    deleteButton.setAttribute('type', 'button')
+    deleteButton.innerHTML = 'Delete date-specific schedule'
+    deleteButton.addEventListener('click', function () {
+      deleteSchedule(day.date)
+    })
+    deleteButtonCol.appendChild(deleteButton)
 
-    $("#scheduleContainer").append(dayContainer);
+    $('#scheduleContainer').append(dayContainer)
 
-      // Loop through the schedule elements and add a row for each
-      let scheduleIDs = Object.keys(day.schedule);
-      
-      scheduleIDs.forEach((scheduleID) => {
-        let item = day.schedule[scheduleID];
-        var description = null;
-        var action = item.action;
-        var target = item.target;
-        var value = item.value;
+    // Loop through the schedule elements and add a row for each
+    const scheduleIDs = Object.keys(day.schedule)
 
-        if (["power_off", "power_on", "refresh_page", "restart", "set_content"].includes(action)) {
-          description = populateScheduleDescriptionHelper([item], false);
-        } else if (action == "set_exhibit") {
-          description = `Set exhibit: ${target}`;
-        }
+    scheduleIDs.forEach((scheduleID) => {
+      const item = day.schedule[scheduleID]
+      let description = null
+      const action = item.action
+      const target = item.target
+      const value = item.value
 
-        if (description != null) {
+      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_content'].includes(action)) {
+        description = populateScheduleDescriptionHelper([item], false)
+      } else if (action === 'set_exhibit') {
+        description = `Set exhibit: ${target}`
+      }
 
-          let eventRow = document.createElement("div");
-          eventRow.classList = "row mt-2 eventListing";
-          $(eventRow).data("time_in_seconds", item.time_in_seconds);
-          dayContainer.appendChild(eventRow);
+      if (description != null) {
+        const eventRow = document.createElement('div')
+        eventRow.classList = 'row mt-2 eventListing'
+        $(eventRow).data('time_in_seconds', item.time_in_seconds)
+        dayContainer.appendChild(eventRow)
 
-          let eventTimeCol = document.createElement("div");
-          eventTimeCol.classList = "col-4 mr-0 pr-0";
-          eventRow.appendChild(eventTimeCol);
+        const eventTimeCol = document.createElement('div')
+        eventTimeCol.classList = 'col-4 mr-0 pr-0'
+        eventRow.appendChild(eventTimeCol)
 
-          let eventTimeContainer = document.createElement("div");
-          eventTimeContainer.classList = "rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1";
-          eventTimeCol.appendChild(eventTimeContainer);
+        const eventTimeContainer = document.createElement('div')
+        eventTimeContainer.classList = 'rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1'
+        eventTimeCol.appendChild(eventTimeContainer)
 
-          let eventTime = document.createElement("div");
-          eventTime.classList = "align-self-center justify-content-center";
-          eventTime.innerHTML = item.time;
-          eventTimeContainer.appendChild(eventTime);
+        const eventTime = document.createElement('div')
+        eventTime.classList = 'align-self-center justify-content-center'
+        eventTime.innerHTML = item.time
+        eventTimeContainer.appendChild(eventTime)
 
-          let eventDescriptionCol = document.createElement("div");
-          eventDescriptionCol.classList = "col-5 mx-0 px-0";
-          eventRow.appendChild(eventDescriptionCol);
+        const eventDescriptionCol = document.createElement('div')
+        eventDescriptionCol.classList = 'col-5 mx-0 px-0'
+        eventRow.appendChild(eventDescriptionCol)
 
-          let eventDescriptionOuterContainer = document.createElement("div");
-          eventDescriptionOuterContainer.classList = "text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1";
-          eventDescriptionCol.appendChild(eventDescriptionOuterContainer);
+        const eventDescriptionOuterContainer = document.createElement('div')
+        eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
+        eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
-          let eventDescriptionInnerContainer = document.createElement("div");
-          eventDescriptionInnerContainer.classList = "align-self-center justify-content-center text-wrap";
-          eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer);
+        const eventDescriptionInnerContainer = document.createElement('div')
+        eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+        eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
 
-          let eventDescription = document.createElement("center");
-          eventDescription.innerHTML = description;
-          eventDescriptionOuterContainer.appendChild(eventDescription);
+        const eventDescription = document.createElement('center')
+        eventDescription.innerHTML = description
+        eventDescriptionOuterContainer.appendChild(eventDescription)
 
-          let eventEditButtonCol = document.createElement("div");
-          eventEditButtonCol.classList = "col-3 ml-0 pl-0";
-          eventRow.appendChild(eventEditButtonCol);
+        const eventEditButtonCol = document.createElement('div')
+        eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
+        eventRow.appendChild(eventEditButtonCol)
 
-          let eventEditButton = document.createElement("button");
-          eventEditButton.classList = "btn-info w-100 h-100 rounded-right";
-          eventEditButton.setAttribute("type", "button");
-          eventEditButton.style.borderStyle = "solid";
-          eventEditButton.style.border = "0px";
-          eventEditButton.innerHTML = "Edit";
-          eventEditButton.addEventListener("click", function(){
-            console.log(item)
-            scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value);
-          });
-          eventEditButtonCol.appendChild(eventEditButton);
-        }
-      });
-      // Sort the elements by time
-      let events = $(dayContainer).children(".eventListing");
-      events.sort(function(a, b) {
-        return $(a).data("time_in_seconds") - $(b).data("time_in_seconds");
-      });
-      $(dayContainer).append(events);
-      // html += "</div>";
-      // $("#scheduleContainer").append(html);
-  });
-  
-  $("#Schedule_next_event").html(populateScheduleDescriptionHelper(schedule.nextEvent, true));
+        const eventEditButton = document.createElement('button')
+        eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
+        eventEditButton.setAttribute('type', 'button')
+        eventEditButton.style.borderStyle = 'solid'
+        eventEditButton.style.border = '0px'
+        eventEditButton.innerHTML = 'Edit'
+        eventEditButton.addEventListener('click', function () {
+          console.log(item)
+          scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
+        })
+        eventEditButtonCol.appendChild(eventEditButton)
+      }
+    })
+    // Sort the elements by time
+    const events = $(dayContainer).children('.eventListing')
+    events.sort(function (a, b) {
+      return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+    })
+    $(dayContainer).append(events)
+    // html += "</div>";
+    // $("#scheduleContainer").append(html);
+  })
+
+  $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
 }
 
-function populateScheduleDescriptionHelper(eventList, includeTime) {
-
+function populateScheduleDescriptionHelper (eventList, includeTime) {
   // Helper function to create text strings that describe the upcoming action(s)
 
-  let description = "";
+  let description = ''
 
-  if (eventList.length == 0) {
-    return "No more actions today";
-  } else if (eventList.length == 1) {
-    let event = eventList[0]
-    description += scheduleActionToDescription(event.action) + " ";
-    description += scheduleTargetToDescription(event.target);
+  if (eventList.length === 0) {
+    return 'No more actions today'
+  } else if (eventList.length === 1) {
+    const event = eventList[0]
+    description += scheduleActionToDescription(event.action) + ' '
+    description += scheduleTargetToDescription(event.target)
   } else {
-    let action = eventList[0].action;
-    let allSame = true;
+    const action = eventList[0].action
+    let allSame = true
     eventList.forEach((event) => {
-      if (event.action != action) {
+      if (event.action !== action) {
         allSame = false
       }
-    });
+    })
     if (allSame) {
-      description += scheduleActionToDescription(action) + " multiple";
+      description += scheduleActionToDescription(action) + ' multiple'
     } else {
-      description = "Multiple actions"
+      description = 'Multiple actions'
     }
   }
   if (includeTime) {
-    description += " at " + eventList[0].time;
+    description += ' at ' + eventList[0].time
   }
 
-  return description;
+  return description
 }
 
-function scheduleActionToDescription(action) {
+function scheduleActionToDescription (action) {
   // Convert actions such as "power_on" to English text like "Power on"
 
   switch (action) {
-    case "power_off":
-      return "Power off";
-    case "power_on":
-      return "Power on";
-    case "refresh_page":
-      return "Refresh";
-    case "restart":
-      return "Restart";
-    case "set_content":
-      return "Set content for";
-    case "set_exhibit":
-      return "Set exhibit";
+    case 'power_off':
+      return 'Power off'
+    case 'power_on':
+      return 'Power on'
+    case 'refresh_page':
+      return 'Refresh'
+    case 'restart':
+      return 'Restart'
+    case 'set_content':
+      return 'Set content for'
+    case 'set_exhibit':
+      return 'Set exhibit'
     default:
-      return action;
+      return action
   }
 }
 
-function scheduleTargetToDescription(target) {
+function scheduleTargetToDescription (target) {
   // Convert targets such as "__id_TEST1" to English words like "TEST1"
-  
-  if (target == "__all") {
-    return "all components";
-  } else if (target.startsWith("__type_")) {
-    return "all " + target.slice(7);
-  } else if (target.startsWith("__id_")) {
-    return target.slice(5);
+
+  if (target === '__all') {
+    return 'all components'
+  } else if (target.startsWith('__type_')) {
+    return 'all ' + target.slice(7)
+  } else if (target.startsWith('__id_')) {
+    return target.slice(5)
   }
 }
 
-function setScheduleActionTargetSelector() {
-
+function setScheduleActionTargetSelector () {
   // Helper function to show/hide the select element for picking the target
   // of an action when appropriate
 
-  let action = $("#scheduleActionSelector").val();
-  let targetSelector = $("#scheduleTargetSelector");
+  const action = $('#scheduleActionSelector').val()
+  const targetSelector = $('#scheduleTargetSelector')
 
-  if (action == "set_exhibit") {
+  if (action === 'set_exhibit') {
     // Fill the target selector with a list of available exhiits
-    targetSelector.empty();
-    var availableExhibits = $.makeArray($("#exhibitSelect option"));
+    targetSelector.empty()
+    const availableExhibits = $.makeArray($('#exhibitSelect option'))
     availableExhibits.forEach((item) => {
-      targetSelector.append(new Option(item.value, item.value));
-    });
-    targetSelector.show();
-    $("#scheduleTargetSelectorLabel").show();
-  } else if (["power_on", "power_off", "refresh_page", "restart", "set_content"].includes(action)) {
+      targetSelector.append(new Option(item.value, item.value))
+    })
+    targetSelector.show()
+    $('#scheduleTargetSelectorLabel').show()
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action)) {
     // Fill the target selector with the list of types and ids, plus an option for all.
-    targetSelector.empty();
-    if (["power_on", "power_off", "refresh_page", "restart"].includes(action)) {
-      targetSelector.append(new Option("All", "__all"));
-      var sep = new Option("Types", null);
-      sep.setAttribute("disabled", true);
-      targetSelector.append(sep);
-      componentGroups.forEach((item) => {
-        targetSelector.append(new Option(item.type, "__type_" + item.type));
-      });
+    targetSelector.empty()
+    if (['power_on', 'power_off', 'refresh_page', 'restart'].includes(action)) {
+      targetSelector.append(new Option('All', '__all'))
+      const sep = new Option('Types', null)
+      sep.setAttribute('disabled', true)
+      targetSelector.append(sep)
+      constConfig.componentGroups.forEach((item) => {
+        targetSelector.append(new Option(item.type, '__type_' + item.type))
+      })
     }
-    var sep = new Option("IDs", null);
-    sep.setAttribute("disabled", true);
-    targetSelector.append(sep);
-    exhibitComponents.forEach((item) => {
-      if (item.constellationAppId != "static_component") {
-        targetSelector.append(new Option(item.id, "__id_" + item.id));
+    const sep = new Option('IDs', null)
+    sep.setAttribute('disabled', true)
+    targetSelector.append(sep)
+    constConfig.exhibitComponents.forEach((item) => {
+      if (item.constellationAppId !== 'static_component') {
+        targetSelector.append(new Option(item.id, '__id_' + item.id))
       }
-    });
-    targetSelector.show();
-    $("#scheduleTargetSelectorLabel").show();
-    setScheduleActionValueSelector();
+    })
+    targetSelector.show()
+    $('#scheduleTargetSelectorLabel').show()
+    setScheduleActionValueSelector()
   } else {
-    targetSelector.hide();
-    $("#scheduleTargetSelectorLabel").hide();
-    targetSelector.val(null);
+    targetSelector.hide()
+    $('#scheduleTargetSelectorLabel').hide()
+    targetSelector.val(null)
   }
 }
 
-function setScheduleActionValueSelector() {
+function setScheduleActionValueSelector () {
   // Helper function to show/hide the select element for picking the value
   // of an action when appropriate
 
-  let action = $("#scheduleActionSelector").val();
-  let target = $("#scheduleTargetSelector").val();
-  let valueSelector = $("#scheduleValueSelector");
-  valueSelector.empty();
+  const action = $('#scheduleActionSelector').val()
+  const target = $('#scheduleTargetSelector').val()
+  const valueSelector = $('#scheduleValueSelector')
+  valueSelector.empty()
 
-  if (action == "set_content") {
-    let component = getExhibitComponent(target.slice(5));
-    
+  if (action === 'set_content') {
+    const component = constExhibit.getExhibitComponent(target.slice(5))
+
     // Send a request to the helper for the available content
-    var requestString = JSON.stringify({"action": "getAvailableContent"});
+    const requestString = JSON.stringify({ action: 'getAvailableContent' })
 
-    var xhr = new XMLHttpRequest();
-    if (obj.helperAddress != null) {
-      xhr.open("POST", obj.helperAddress, true);
+    const xhr = new XMLHttpRequest()
+    if (component.helperAddress != null) {
+      xhr.open('POST', component.helperAddress, true)
     } else {
-      xhr.open("POST", component.helperAddress, true);
+      xhr.open('POST', `http://${component.ip}:${component.helperPort}`, true)
     }
-    xhr.timeout = 1000; // 10 seconds
+    xhr.timeout = 1000 // 1 seconds
     // xhr.ontimeout = showFailureMessage;
     // xhr.onerror = showFailureMessage;
-    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
+      if (this.readyState !== 4) return
 
-      if (this.status == 200) {
-        let response = JSON.parse(this.responseText);
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText)
         response.all_exhibits.forEach((item) => {
-          valueSelector.append(new Option(item, item));
-        });
+          valueSelector.append(new Option(item, item))
+        })
         // In the case of editing an action, preselect any existing values
-        valueSelector.val($("#scheduleEditModal").data("currentValue"));
-        valueSelector.show();
-        $("#scheduleValueSelectorLabel").show();
+        valueSelector.val($('#scheduleEditModal').data('currentValue'))
+        valueSelector.show()
+        $('#scheduleValueSelectorLabel').show()
       }
     }
-    xhr.send(requestString);
+    xhr.send(requestString)
   }
 }
 
-function scheduleConfigureEditModal(scheduleName,
-                                    type,
-                                    isAddition=true,
-                                    currentScheduleID=null,
-                                    currentTime=null,
-                                    currentAction=null,
-                                    currentTarget=null,
-                                    currentValue=null) {
-
+function scheduleConfigureEditModal (scheduleName,
+  type,
+  isAddition = true,
+  currentScheduleID = null,
+  currentTime = null,
+  currentAction = null,
+  currentTarget = null,
+  currentValue = null) {
   // Function to set up and then show the modal that enables editing a
   // scheduled event or adding a new one
 
   // If currentScheduleID == null, we are adding a new schedule item, so create a unique
   // ID from the current time.
   if (currentScheduleID == null) {
-    currentScheduleID = String(new Date().getTime());
+    currentScheduleID = String(new Date().getTime())
   }
 
   // Hide elements that aren't always visible
-  $("#scheduleTargetSelector").hide();
-  $("#scheduleTargetSelectorLabel").hide();
-  $("#scheduleValueSelector").hide();
-  $("#scheduleValueSelectorLabel").hide();
-  $("#scheduleEditErrorAlert").hide();
+  $('#scheduleTargetSelector').hide()
+  $('#scheduleTargetSelectorLabel').hide()
+  $('#scheduleValueSelector').hide()
+  $('#scheduleValueSelectorLabel').hide()
+  $('#scheduleEditErrorAlert').hide()
 
   // Tag the modal with a bunch of data that we can read if needed when
   // submitting the change
-  $("#scheduleEditModal").data("scheduleName", scheduleName);
-  $("#scheduleEditModal").data("scheduleID", currentScheduleID);
-  $("#scheduleEditModal").data("isAddition", isAddition);
-  $("#scheduleEditModal").data("currentTime", currentTime);
-  $("#scheduleEditModal").data("currentAction", currentAction);
-  $("#scheduleEditModal").data("currentTarget", currentTarget);
-  $("#scheduleEditModal").data("currentValue", currentValue);
+  $('#scheduleEditModal').data('scheduleName', scheduleName)
+  $('#scheduleEditModal').data('scheduleID', currentScheduleID)
+  $('#scheduleEditModal').data('isAddition', isAddition)
+  $('#scheduleEditModal').data('currentTime', currentTime)
+  $('#scheduleEditModal').data('currentAction', currentAction)
+  $('#scheduleEditModal').data('currentTarget', currentTarget)
+  $('#scheduleEditModal').data('currentValue', currentValue)
 
   // Set the modal title
   if (isAddition) {
-    $("#scheduleEditModalTitle").html("Add action");
+    $('#scheduleEditModalTitle').html('Add action')
   } else {
-    $("#scheduleEditModalTitle").html("Edit action");
+    $('#scheduleEditModalTitle').html('Edit action')
   }
 
   // Set the scope notice so that users know what their change will affect
   switch (type) {
-    case "date-specific":
-      $("#scheduleEditScopeAlert").html(`This change will only affect ${scheduleName}`);
-      break;
-    case "day-specific":
-      $("#scheduleEditScopeAlert").html(`This change will affect all ${scheduleName.charAt(0).toUpperCase() + scheduleName.slice(1)}s`);
-      break;
+    case 'date-specific':
+      $('#scheduleEditScopeAlert').html(`This change will only affect ${scheduleName}`)
+      break
+    case 'day-specific':
+      $('#scheduleEditScopeAlert').html(`This change will affect all ${scheduleName.charAt(0).toUpperCase() + scheduleName.slice(1)}s`)
+      break
     default:
-      break;
+      break
   }
 
   // If we're editing an existing action, pre-fill the current options
-  if (isAddition == false) {
-    $("#scheduleActionTimeInput").val(currentTime);
-    $("#scheduleActionSelector").val(currentAction);
+  if (isAddition === false) {
+    $('#scheduleActionTimeInput').val(currentTime)
+    $('#scheduleActionSelector').val(currentAction)
 
     if (currentTarget != null) {
-      setScheduleActionTargetSelector();
-      $("#scheduleTargetSelector").val(currentTarget)
-      $("#scheduleTargetSelector").show();
-      $("#scheduleTargetSelectorLabel").show();
+      setScheduleActionTargetSelector()
+      $('#scheduleTargetSelector').val(currentTarget)
+      $('#scheduleTargetSelector').show()
+      $('#scheduleTargetSelectorLabel').show()
     }
   } else {
-    $("#scheduleActionTimeInput").val(null);
-    $("#scheduleActionSelector").val(null);
-    $("#scheduleTargetSelector").val(null);
+    $('#scheduleActionTimeInput').val(null)
+    $('#scheduleActionSelector').val(null)
+    $('#scheduleTargetSelector').val(null)
   }
 
-  $("#scheduleEditModal").modal("show");
+  $('#scheduleEditModal').modal('show')
 }
 
-function sendScheduleUpdateFromModal() {
-
+function sendScheduleUpdateFromModal () {
   // Gather necessary info from the schedule editing modal and send a
   // message to the control server asking to add the given action
 
-  var scheduleName = $("#scheduleEditModal").data("scheduleName");
-  var time = $("#scheduleActionTimeInput").val().trim();
-  var action = $("#scheduleActionSelector").val();
-  var target = $("#scheduleTargetSelector").val();
-  var value = $("#scheduleValueSelector").val();
-  var isAddition = $("#scheduleEditModal").data("isAddition");
-  var scheduleID = $("#scheduleEditModal").data("scheduleID");
+  const scheduleName = $('#scheduleEditModal').data('scheduleName')
+  const time = $('#scheduleActionTimeInput').val().trim()
+  const action = $('#scheduleActionSelector').val()
+  const target = $('#scheduleTargetSelector').val()
+  const value = $('#scheduleValueSelector').val()
+  const isAddition = $('#scheduleEditModal').data('isAddition')
+  const scheduleID = $('#scheduleEditModal').data('scheduleID')
 
-  if (time == "" || time == null) {
-    $("#scheduleEditErrorAlert").html("You must specifiy a time for the action").show();
-    return;
+  if (time === '' || time == null) {
+    $('#scheduleEditErrorAlert').html('You must specifiy a time for the action').show()
+    return
   } else if (action == null) {
-    $("#scheduleEditErrorAlert").html("You must specifiy an action").show();
-    return;
-  } else if (action == "set_exhibit" && target == null) {
-    $("#scheduleEditErrorAlert").html("You must specifiy an exhibit to set").show();
-    return;
-  } else if (["power_on", "power_off", "refresh_page", "restart", "set_content"].includes(action) && target == null) {
-    $("#scheduleEditErrorAlert").html("You must specifiy a target for this action").show();
-    return;
-  } else if (action == "set_content" && value == null) {
-    $("#scheduleEditErrorAlert").html("You must specifiy a value for this action").show();
-    return;
+    $('#scheduleEditErrorAlert').html('You must specifiy an action').show()
+    return
+  } else if (action === 'set_exhibit' && target == null) {
+    $('#scheduleEditErrorAlert').html('You must specifiy an exhibit to set').show()
+    return
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action) && target == null) {
+    $('#scheduleEditErrorAlert').html('You must specifiy a target for this action').show()
+    return
+  } else if (action === 'set_content' && value == null) {
+    $('#scheduleEditErrorAlert').html('You must specifiy a value for this action').show()
+    return
   }
 
-  let requestDict = {"class": "webpage",
-                     "action": "updateSchedule",
-                     "name": scheduleName,
-                     "timeToSet": time,
-                     "actionToSet": action,
-                     "targetToSet": target,
-                     "valueToSet": value,
-                     "scheduleID": scheduleID,
-                     "isAddition": isAddition};
+  const requestDict = {
+    class: 'webpage',
+    action: 'updateSchedule',
+    name: scheduleName,
+    timeToSet: time,
+    actionToSet: action,
+    targetToSet: target,
+    valueToSet: value,
+    scheduleID,
+    isAddition
+  }
 
-  if (isAddition == false) {
-    requestDict.timeToReplace = $("#scheduleEditModal").data("currentTime");
+  if (isAddition === false) {
+    requestDict.timeToReplace = $('#scheduleEditModal').data('currentTime')
     requestDict.scheduleID = scheduleID
   }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 3000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {
-  };
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 3000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () {
+  }
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var update = JSON.parse(this.responseText);
-        if ("success" in update) {
-          if (update.success == true) {
-            if (update.class == "schedule") {
-              $("#scheduleEditModal").modal("hide");
-              populateSchedule(update);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        if ('success' in update) {
+          if (update.success === true) {
+            if (update.class === 'schedule') {
+              $('#scheduleEditModal').modal('hide')
+              populateSchedule(update)
             }
           } else {
-            $("#scheduleEditErrorAlert").html(update.reason).show();
-            return;
+            $('#scheduleEditErrorAlert').html(update.reason).show()
           }
         }
       }
     }
-  };
-  xhr.send(requestString);
+  }
+  xhr.send(requestString)
 }
 
-function scheduleDeleteActionFromModal() {
-
+function scheduleDeleteActionFromModal () {
   // Gather necessary info from the schedule editing modal and send a
   // message to the control server asking to delete the given action
 
-  let scheduleName = $("#scheduleEditModal").data("scheduleName");
-  let scheduleID = $("#scheduleEditModal").data("scheduleID");
+  const scheduleName = $('#scheduleEditModal').data('scheduleName')
+  const scheduleID = $('#scheduleEditModal').data('scheduleID')
 
-  console.log("Delete:", scheduleName, scheduleID);
+  console.log('Delete:', scheduleName, scheduleID)
 
-  var requestDict = {"class": "webpage",
-                     "action": "deleteScheduleAction",
-                     "from": scheduleName,
-                     "scheduleID": scheduleID};
+  const requestDict = {
+    class: 'webpage',
+    action: 'deleteScheduleAction',
+    from: scheduleName,
+    scheduleID
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 3000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {
-  };
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 3000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () {
+  }
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var update = JSON.parse(this.responseText);
-        if (update["class"] == "schedule") {
-          $("#scheduleEditModal").modal("hide");
-          populateSchedule(update);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        if (update.class === 'schedule') {
+          $('#scheduleEditModal').modal('hide')
+          populateSchedule(update)
         }
       }
     }
-  };
-  xhr.send(requestString);
-}
-
-function rebuildErrorList() {
-
-  // Function to use the errorDict to build a set of buttons indicating
-  // that there is a problem with a component.
-
-  // Clear the existing buttons
-  $("#errorDisplayRow").empty();
-  var html;
-
-  if (serverSoftwareUpdateAvailable) {
-    html = `
-      <div class="col-auto mt-3">
-        <button class='btn btn-info btn-block'>Server software update available</btn>
-      </div>
-    `;
-    $("#errorDisplayRow").append(html);
   }
-
-  // Iterate through the items in the errorDict. Each item should correspond
-  // to one component with an error.
-  Object.keys(errorDict).forEach((item, i) => {
-    // Then, iterate through the errors on that given item
-    Object.keys(errorDict[item]).forEach((itemError, j) => {
-      let itemErrorMsg = (errorDict[item])[itemError];
-      if (itemErrorMsg.length > 0) {
-        // By default, errors are bad
-        let labelName = item + ": " + itemError + ": " + itemErrorMsg;
-        let labelClass = "btn-danger";
-
-        // But, if we are indicating an available update, make that less bad
-        if (itemError == "helperSoftwareUpdateAvailable") {
-          labelName = item + ": System Helper software update available";
-          labelClass = "btn-info";
-        } else if (itemError == "softwareUpdateAvailable") {
-          labelName = item + ": Software update available";
-          labelClass = "btn-info";
-        }
-        // Create and add the button
-        html = `
-          <div class="col-auto mt-3">
-            <button class='btn ${labelClass} btn-block'>${labelName}</btn>
-          </div>
-        `;
-        $("#errorDisplayRow").append(html);
-      }
-
-    });
-  });
+  xhr.send(requestString)
 }
 
-function askForScheduleRefresh() {
-
+function askForScheduleRefresh () {
   // Send a message to the control server asking it to reload the schedule
   // from disk
 
-  $("#refreshScheduleButton").html("Refreshing...");
+  $('#refreshScheduleButton').html('Refreshing...')
 
-  var requestDict = {"class": "webpage",
-                     "action": "refreshSchedule"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'refreshSchedule'
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 3000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {
-    $("#refreshScheduleButton").html("Timed out!");
-    var temp = function() {
-      $("#refreshScheduleButton").html("Refresh schedule");
-    };
-    setTimeout(temp, 2000);
-  };
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 3000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () {
+    $('#refreshScheduleButton').html('Timed out!')
+    const temp = function () {
+      $('#refreshScheduleButton').html('Refresh schedule')
+    }
+    setTimeout(temp, 2000)
+  }
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var update = JSON.parse(this.responseText);
-        if (update["class"] == "schedule") {
-          populateSchedule(update);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        if (update.class === 'schedule') {
+          populateSchedule(update)
         }
-        $("#refreshScheduleButton").html("Success!");
-        var temp = function() {
-          $("#refreshScheduleButton").html("Refresh schedule");
-        };
-        setTimeout(temp, 2000);
+        $('#refreshScheduleButton').html('Success!')
+        const temp = function () {
+          $('#refreshScheduleButton').html('Refresh schedule')
+        }
+        setTimeout(temp, 2000)
       }
     }
-  };
-  xhr.send(requestString);
+  }
+  xhr.send(requestString)
 }
 
-function showIssueEditModal(issueType, target) {
-
+function showIssueEditModal (issueType, target) {
   // Show the modal and configure for either "new" or "edit"
 
   // Make sure we have all the current components listed as objections for
   // the issueRelatedComponentsSelector
-  for (var i=0; i<exhibitComponents.length; i++) {
+  for (let i = 0; i < constConfig.exhibitComponents.length; i++) {
     // Check if component already exists as an option. If not, add it
-    if ($(`#issueRelatedComponentsSelector option[value='${exhibitComponents[i].id}']`).length == 0) {
-      $("#issueRelatedComponentsSelector").append(new Option(exhibitComponents[i].id, exhibitComponents[i].id));
+    if ($(`#issueRelatedComponentsSelector option[value='${constConfig.exhibitComponents[i].id}']`).length === 0) {
+      $('#issueRelatedComponentsSelector').append(new Option(constConfig.exhibitComponents[i].id, constConfig.exhibitComponents[i].id))
     }
   }
 
   // Make sure we have all the assignable staff listed as options for
   // issueAssignedToSelector
-  for (var i=0; i<assignableStaff.length; i++) {
+  for (let i = 0; i < assignableStaff.length; i++) {
     // Check if component already exists as an option. If not, add it
-    if ($(`#issueAssignedToSelector option[value='${assignableStaff[i]}']`).length == 0) {
-      $("#issueAssignedToSelector").append(new Option(assignableStaff[i], assignableStaff[i]));
+    if ($(`#issueAssignedToSelector option[value='${assignableStaff[i]}']`).length === 0) {
+      $('#issueAssignedToSelector').append(new Option(assignableStaff[i], assignableStaff[i]))
     }
   }
 
   // Clear file upload interface elements
-  $("#issueMediaUploadFilename").html("Choose file");
-  $("#issueMediaUploadEqualSignWarning").hide();
-  $("#issueMediaUploadHEICWarning").hide();
-  $("#issueMediaUploadSubmitButton").hide();
-  $("#issueMediaUploadProgressBarContainer").hide();
-  $("#issueMediaUpload").val(null);
+  $('#issueMediaUploadFilename').html('Choose file')
+  $('#issueMediaUploadEqualSignWarning').hide()
+  $('#issueMediaUploadHEICWarning').hide()
+  $('#issueMediaUploadSubmitButton').hide()
+  $('#issueMediaUploadProgressBarContainer').hide()
+  $('#issueMediaUpload').val(null)
 
   // Clone the cancel button to remove any lingering event listeners
-  let old_element = document.getElementById("issueEditCancelButton");
-  let new_element = old_element.cloneNode(true);
-  old_element.parentNode.replaceChild(new_element, old_element);
+  const oldElement = document.getElementById('issueEditCancelButton')
+  const newElement = oldElement.cloneNode(true)
+  oldElement.parentNode.replaceChild(newElement, oldElement)
 
-
-  if (issueType == "new") {
+  if (issueType === 'new') {
     // Clear inputs
-    $("#issueTitleInput").val("");
-    $("#issueDescriptionInput").val("");
-    $("#issueAssignedToSelector").val(null);
-    $("#issueRelatedComponentsSelector").val(null);
+    $('#issueTitleInput').val('')
+    $('#issueDescriptionInput').val('')
+    $('#issueAssignedToSelector').val(null)
+    $('#issueRelatedComponentsSelector').val(null)
 
-    $("#issueEditModal").data("type", "new");
-    $("#issueEditModalTitle").html("Create Issue");
-    issueMediaUploadedFile(false);
-
+    $('#issueEditModal').data('type', 'new')
+    $('#issueEditModalTitle').html('Create Issue')
+    issueMediaUploadedFile(false)
   } else if (target != null) {
-      $("#issueEditModal").data("type", "edit");
-      $("#issueEditModal").data("target", target);
-      $("#issueEditModalTitle").html("Edit Issue");
+    $('#issueEditModal').data('type', 'edit')
+    $('#issueEditModal').data('target', target)
+    $('#issueEditModalTitle').html('Edit Issue')
 
-      let targetIssue = getIssue(target);
-      $("#issueTitleInput").val(targetIssue.issueName);
-      $("#issueDescriptionInput").val(targetIssue.issueDescription);
-      $("#issueAssignedToSelector").val(targetIssue.assignedTo);
-      $("#issueRelatedComponentsSelector").val(targetIssue.relatedComponentIDs);
-      if (targetIssue.media != null) {
-        issueMediaUploadedFile(true, targetIssue.media);
-      } else {
-        issueMediaUploadedFile(false);
-      }
+    const targetIssue = getIssue(target)
+    $('#issueTitleInput').val(targetIssue.issueName)
+    $('#issueDescriptionInput').val(targetIssue.issueDescription)
+    $('#issueAssignedToSelector').val(targetIssue.assignedTo)
+    $('#issueRelatedComponentsSelector').val(targetIssue.relatedComponentIDs)
+    if (targetIssue.media != null) {
+      issueMediaUploadedFile(true, targetIssue.media)
+    } else {
+      issueMediaUploadedFile(false)
+    }
   }
 
-  $("#issueEditModal").modal("show");
+  $('#issueEditModal').modal('show')
 }
 
-function onIssueMediaUploadChange() {
-
+function onIssueMediaUploadChange () {
   // When a file is selected, check if it contains an equal sign (not allowed).
   // If not, display it
 
-  $("#issueMediaUploadSubmitButton").show();
+  $('#issueMediaUploadSubmitButton').show()
   // Show the upload button (we may hide it later)
-  var fileInput = $("#issueMediaUpload")[0];
-  $("#issueMediaUploadFilename").html("File: " + fileInput.files[0].name);
+  const fileInput = $('#issueMediaUpload')[0]
+  $('#issueMediaUploadFilename').html('File: ' + fileInput.files[0].name)
   // Check for = in filename
-  if (fileInput.files[0].name.includes("=")) {
-    $("#issueMediaUploadEqualSignWarning").show();
-    $("#issueMediaUploadSubmitButton").hide();
+  if (fileInput.files[0].name.includes('=')) {
+    $('#issueMediaUploadEqualSignWarning').show()
+    $('#issueMediaUploadSubmitButton').hide()
   } else {
-    $("#issueMediaUploadEqualSignWarning").hide();
+    $('#issueMediaUploadEqualSignWarning').hide()
   }
   // Check for HEIC file
-  if (fileInput.files[0].type == "image/heic") {
-    $("#issueMediaUploadHEICWarning").show();
-    $("#issueMediaUploadSubmitButton").hide();
+  if (fileInput.files[0].type === 'image/heic') {
+    $('#issueMediaUploadHEICWarning').show()
+    $('#issueMediaUploadSubmitButton').hide()
   } else {
-      $("#issueMediaUploadHEICWarning").hide();
+    $('#issueMediaUploadHEICWarning').hide()
   }
 }
 
-function uploadIssueMediaFile() {
+function uploadIssueMediaFile () {
+  const fileInput = $('#issueMediaUpload')[0]
+  if (fileInput.files[0] != null) {
+    $('#issueMediaUploadSubmitButton').prop('disabled', true)
+    $('#issueMediaUploadSubmitButton').html('Working...')
 
-  var fileInput = $("#issueMediaUpload")[0];
-  if (fileInput.files[0] != null){
+    const file = fileInput.files[0]
+    const formData = new FormData()
+    formData.append('action', 'uploadIssueMedia')
+    formData.append('filename', file.name)
+    formData.append('mimetype', file.type)
+    formData.append('file', file)
 
-    $("#issueMediaUploadSubmitButton").prop("disabled", true);
-    $("#issueMediaUploadSubmitButton").html("Working...");
-
-    var file = fileInput.files[0];
-    var formData = new FormData();
-    formData.append("action", "uploadIssueMedia");
-    formData.append("filename", file.name);
-    formData.append("mimetype", file.type);
-    formData.append("file", file);
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", serverIP, true);
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', serverIP, true)
     xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
-      if (this.status == 200) {
-        var response = JSON.parse(this.responseText);
+      if (this.readyState !== 4) return
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText)
 
-        if ("success" in response) {
-          if (response["success"] == true) {
-            issueMediaUploadedFile(true, response.filename);
+        if ('success' in response) {
+          if (response.success === true) {
+            issueMediaUploadedFile(true, response.filename)
             // If we cancel without saving, need to delete this file.
-            document.getElementById("issueEditCancelButton").addEventListener("click", function(){
-              issueMediaDelete(response.filename);
-            });
+            document.getElementById('issueEditCancelButton').addEventListener('click', function () {
+              issueMediaDelete(response.filename)
+            })
           } else {
-            issueMediaUploadedFile(false);
+            issueMediaUploadedFile(false)
           }
         }
-        $("#issueMediaUploadSubmitButton").prop("disabled", false);
-        $("#issueMediaUploadSubmitButton").html("Upload");
-        $("#issueMediaUploadProgressBarContainer").hide();
-        $("#issueMediaUploadSubmitButton").hide();
-        $("#issueMediaUploadFilename").html("Choose file");
+        $('#issueMediaUploadSubmitButton').prop('disabled', false)
+        $('#issueMediaUploadSubmitButton').html('Upload')
+        $('#issueMediaUploadProgressBarContainer').hide()
+        $('#issueMediaUploadSubmitButton').hide()
+        $('#issueMediaUploadFilename').html('Choose file')
       }
-    };
+    }
 
-    xhr.upload.addEventListener("progress", function(evt) {
+    xhr.upload.addEventListener('progress', function (evt) {
       if (evt.lengthComputable) {
-        var percentComplete = evt.loaded / evt.total;
-        percentComplete = parseInt(percentComplete * 100);
-        $("#issueMediaUploadProgressBar").width(String(percentComplete) + "%");
+        let percentComplete = evt.loaded / evt.total
+        percentComplete = parseInt(percentComplete * 100)
+        $('#issueMediaUploadProgressBar').width(String(percentComplete) + '%')
         if (percentComplete > 0) {
-          $("#issueMediaUploadProgressBarContainer").show();
-        }
-        else if (percentComplete == 100) {
-          $("#issueMediaUploadProgressBarContainer").hide();
+          $('#issueMediaUploadProgressBarContainer').show()
+        } else if (percentComplete === 100) {
+          $('#issueMediaUploadProgressBarContainer').hide()
         }
       }
-    }, false);
+    }, false)
 
-    xhr.send(formData);
+    xhr.send(formData)
   }
 }
 
-function issueMediaView(filename) {
-
+function issueMediaView (filename) {
   // Open the media file given by filename in a new browser tab
 
   // First, determine if we have a picture or a video
-  const img_types = ["jpg", "jpeg", "png", "bmp", "gif", "tiff", "webp"];
-  const vid_types = ["mp4", "mov", "webm"];
+  const imgTypes = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff', 'webp']
+  const vidTypes = ['mp4', 'mov', 'webm']
 
-  fileType = null;
-  img_types.forEach((ext) => {
-    if (filename.toLowerCase().endsWith(ext)){
-      fileType = "image";
+  let fileType = null
+  imgTypes.forEach((ext) => {
+    if (filename.toLowerCase().endsWith(ext)) {
+      fileType = 'image'
     }
-  });
-  vid_types.forEach((ext) => {
-    if (filename.toLowerCase().endsWith(ext)){
-      fileType = "video";
+  })
+  vidTypes.forEach((ext) => {
+    if (filename.toLowerCase().endsWith(ext)) {
+      fileType = 'video'
     }
-  });
+  })
 
-  let html = null;
-  if (fileType == "image") {
+  let html = null
+  if (fileType === 'image') {
     html = `
           <html>
             <head>
@@ -2130,8 +1306,8 @@ function issueMediaView(filename) {
               }
             </script>
           </html>
-    `;
-  } else if (fileType == "video") {
+    `
+  } else if (fileType === 'video') {
     html = `
           <html>
             <head>
@@ -2166,1308 +1342,1356 @@ function issueMediaView(filename) {
             <script>
             </script>
           </html>
-    `;
+    `
   }
 
   if (html != null) {
-    const image_window = window.open("", "_blank");
-    image_window.document.write(html);
+    const imageWindow = window.open('', '_blank')
+    imageWindow.document.write(html)
   }
 }
 
-function issueMediaUploadedFile(fileExists, filename=null) {
-
+function issueMediaUploadedFile (fileExists, filename = null) {
   // Configure the file upload/view interface depending on whether a file has
   // been uploaded.
 
-  $('#issueMediaViewFromModal').data('filename', filename);
+  $('#issueMediaViewFromModal').data('filename', filename)
 
   if (fileExists) {
-    $("#issueMediaUploadCol").hide();
-    $("#issueMediaViewCol").show();
-    $("#issueMediaModalLabel").html("Uploaded image")
+    $('#issueMediaUploadCol').hide()
+    $('#issueMediaViewCol').show()
+    $('#issueMediaModalLabel').html('Uploaded image')
   } else {
-    $("#issueMediaModalLabel").html("Add image")
-    $("#issueMediaUploadCol").show();
-    $("#issueMediaViewCol").hide();
+    $('#issueMediaModalLabel').html('Add image')
+    $('#issueMediaUploadCol').show()
+    $('#issueMediaViewCol').hide()
   }
 }
 
-function issueMediaDelete(filename) {
-
+function issueMediaDelete (filename) {
   // Send a message to the control server, asking for the file to be deleted.
 
-  let requestDict = {"class": "webpage",
-                     "action": "issueMediaDelete",
-                     "filename": $('#issueMediaViewFromModal').data('filename')};
+  const requestDict = {
+    class: 'webpage',
+    action: 'issueMediaDelete',
+    filename: $('#issueMediaViewFromModal').data('filename')
+  }
   // If this is an existing issue, we need to say what the issue id is
-  let issueType = $("#issueEditModal").data("type");
-  if (issueType == "edit"){
-   requestDict.id = $("#issueEditModal").data("target");
+  const issueType = $('#issueEditModal').data('type')
+  if (issueType === 'edit') {
+    requestDict.id = $('#issueEditModal').data('target')
   }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result){
-          if (result.success == true) {
-            issueMediaUploadedFile(false);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result) {
+          if (result.success === true) {
+            issueMediaUploadedFile(false)
           }
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function submitIssueFromModal() {
-
+function submitIssueFromModal () {
   // Take the inputs from the modal, check that we have everything we need,
   // and submit it to the server.
 
-  let issueDict = {};
-  issueDict.issueName = $("#issueTitleInput").val();
-  issueDict.issueDescription = $("#issueDescriptionInput").val();
-  issueDict.relatedComponentIDs = $("#issueRelatedComponentsSelector").val();
-  issueDict.assignedTo = $("#issueAssignedToSelector").val();
-  issueDict.priority = $("#issuePrioritySelector").val();
-  if ($('#issueMediaViewFromModal').data('filename') != undefined) {
-    issueDict.media = $('#issueMediaViewFromModal').data('filename');
+  const issueDict = {}
+  issueDict.issueName = $('#issueTitleInput').val()
+  issueDict.issueDescription = $('#issueDescriptionInput').val()
+  issueDict.relatedComponentIDs = $('#issueRelatedComponentsSelector').val()
+  issueDict.assignedTo = $('#issueAssignedToSelector').val()
+  issueDict.priority = $('#issuePrioritySelector').val()
+  if ($('#issueMediaViewFromModal').data('filename') != null) {
+    issueDict.media = $('#issueMediaViewFromModal').data('filename')
   }
 
-  let error = false;
-  if (issueDict.issueName == "") {
-    console.log("Need issue name");
-    error = true;
+  let error = false
+  if (issueDict.issueName === '') {
+    console.log('Need issue name')
+    error = true
   }
-  // if (issueDict.issueDescription == "") {
+  // if (issueDict.issueDescription === "") {
   //   console.log("Need issue description");
   //   error = true;
   // }
 
-  if (error == false) {
-
-    let issueType = $("#issueEditModal").data("type");
-    let action;
-    if (issueType == "new") {
-      action = "createIssue";
+  if (error === false) {
+    const issueType = $('#issueEditModal').data('type')
+    let action
+    if (issueType === 'new') {
+      action = 'createIssue'
     } else {
-      issueDict.id = $("#issueEditModal").data("target");
-      action = "editIssue";
+      issueDict.id = $('#issueEditModal').data('target')
+      action = 'editIssue'
     }
-    $("#issueEditModal").modal("hide");
-    let requestDict = {"class": "webpage",
-                   "action": action,
-                   "details": issueDict};
-    var xhr = new XMLHttpRequest();
-    xhr.timeout = 2000;
-    xhr.open("POST", serverIP, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
+    $('#issueEditModal').modal('hide')
+    const requestDict = {
+      class: 'webpage',
+      action,
+      details: issueDict
+    }
+    const xhr = new XMLHttpRequest()
+    xhr.timeout = 2000
+    xhr.open('POST', serverIP, true)
+    xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
-      if (this.readyState != 4) return;
+      if (this.readyState !== 4) return
 
-      if (this.status == 200) {
-        if (this.responseText != "") {
-          let result = JSON.parse(this.responseText);
-          if ("success" in result && result.success == true) {
-            getIssueList();
+      if (this.status === 200) {
+        if (this.responseText !== '') {
+          const result = JSON.parse(this.responseText)
+          if ('success' in result && result.success === true) {
+            getIssueList()
           }
         }
       }
-    };
-    xhr.send(JSON.stringify(requestDict));
+    }
+    xhr.send(JSON.stringify(requestDict))
   }
 }
 
-function getIssueList() {
+function getIssueList () {
+  const requestDict = {
+    class: 'webpage',
+    action: 'getIssueList'
+  }
 
-  requestDict = {"class": "webpage",
-                 "action": "getIssueList"};
-
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        response = JSON.parse(this.responseText);
-        if ("success" in response) {
-          if (response.success == true) {
-            rebuildIssueList(response.issueList);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const response = JSON.parse(this.responseText)
+        if ('success' in response) {
+          if (response.success === true) {
+            rebuildIssueList(response.issueList)
           } else {
-            console.log("Error retrieving issueList: ", response.reason);
+            console.log('Error retrieving issueList: ', response.reason)
           }
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function getIssue(id) {
-
+function getIssue (id) {
   // Function to search the issueList for a given id
 
-  var result = issueList.find(obj => {
-    return obj.id === id;
-  });
+  const result = issueList.find(obj => {
+    return obj.id === id
+  })
 
-  return result;
+  return result
 }
 
-function deleteIssue(id) {
-
+function deleteIssue (id) {
   // Ask the control server to remove the specified issue
 
-  requestDict = {"class": "webpage",
-                 "action": "deleteIssue",
-                 "id": id};
+  const requestDict = {
+    class: 'webpage',
+    action: 'deleteIssue',
+    id
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
-          getIssueList();
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          getIssueList()
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function populateTrackerDataSelect(data) {
-
+function populateTrackerDataSelect (data) {
   // Take a list of data filenames and populate the TrackerDataSelect
 
-  let trackerDataSelect = $("#trackerDataSelect");
-  trackerDataSelect.empty();
+  const trackerDataSelect = $('#trackerDataSelect')
+  trackerDataSelect.empty()
 
   data.sort().forEach(item => {
-    var name = item.split(".").slice(0, -1).join(".");
-    var html = `<option value="${name}">${name}</option>`;
-    trackerDataSelect.append(html);
-  });
-
+    const name = item.split('.').slice(0, -1).join('.')
+    const html = `<option value="${name}">${name}</option>`
+    trackerDataSelect.append(html)
+  })
 }
 
-
-function downloadTrackerData() {
-
+function downloadTrackerData () {
   // Ask the server to send the data for the currently selected tracker as a CSV
   // and initiate a download.
 
-  let name = $("#trackerDataSelect").val();
+  const name = $('#trackerDataSelect').val()
 
-  requestDict = {"class": "tracker",
-                 "action": "downloadTrackerData",
-                 "name": name};
+  const requestDict = {
+    class: 'tracker',
+    action: 'downloadTrackerData',
+    name
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
           // Convert the text to a file and initiate download
-          let fileBlob = new Blob([result.csv], {
+          const fileBlob = new Blob([result.csv], {
             type: 'text/plain'
-          });
-          let a = document.createElement("a");
-          a.href = window.URL.createObjectURL(fileBlob);;
-          a.download = name + ".csv";
-          a.click();
+          })
+          const a = document.createElement('a')
+          a.href = window.URL.createObjectURL(fileBlob)
+          a.download = name + '.csv'
+          a.click()
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function showDeleteTrackerDataModal() {
-
+function showDeleteTrackerDataModal () {
   // Show a modal confirming the request to delete a specific dataset. To be sure
   // populate the modal with data for a test.
 
-  let name = $("#trackerDataSelect").val();
-  $("#deleteTrackerDataModalDeletedName").html(name);
-  $("#deleteTrackerDataModalDeletedInput").val("");
-  $("#deleteTrackerDataModalSpellingError").hide();
-  $("#deleteTrackerDataModal").modal("show");
+  const name = $('#trackerDataSelect').val()
+  $('#deleteTrackerDataModalDeletedName').html(name)
+  $('#deleteTrackerDataModalDeletedInput').val('')
+  $('#deleteTrackerDataModalSpellingError').hide()
+  $('#deleteTrackerDataModal').modal('show')
 }
 
-function deleteTrackerDataFromModal() {
-
+function deleteTrackerDataFromModal () {
   // Check inputed answer and confirm it is correct. If so, ask for the data to
   // be deleted.
 
-  let name = $("#deleteTrackerDataModalDeletedName").html();
-  let input = $("#deleteTrackerDataModalDeletedInput").val();
+  const name = $('#deleteTrackerDataModalDeletedName').html()
+  const input = $('#deleteTrackerDataModalDeletedInput').val()
 
-  if (name == input) {
-    deleteTrackerData();
+  if (name === input) {
+    deleteTrackerData()
   } else {
-    $("#deleteTrackerDataModalSpellingError").show();
+    $('#deleteTrackerDataModalSpellingError').show()
   }
 }
 
-function deleteTrackerData() {
-
+function deleteTrackerData () {
   // Send a message to the server asking it to delete the data for the currently
   // selected template
 
-  let name = $("#trackerDataSelect").val();
+  const name = $('#trackerDataSelect').val()
 
-  requestDict = {"class": "tracker",
-                 "action": "clearTrackerData",
-                 "name": name};
+  const requestDict = {
+    class: 'tracker',
+    action: 'clearTrackerData',
+    name
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
-          $("#deleteTrackerDataModal").modal("hide");
-          getAvailableTrackerData(populateTrackerDataSelect);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          $('#deleteTrackerDataModal').modal('hide')
+          constTracker.getAvailableTrackerData(populateTrackerDataSelect)
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function launchTracker() {
-
+function launchTracker () {
   // Open the tracker in a new tab with the currently selected layout
 
-  let name = $("#trackerTemplateSelect").val();
+  const name = $('#trackerTemplateSelect').val()
 
-  let url = serverIP + "/tracker.html";
+  let url = serverIP + '/tracker.html'
   if (name != null) {
-    url += "?layout=" + name;
+    url += '?layout=' + name
   }
-  window.open(url, '_blank').focus();
+  window.open(url, '_blank').focus()
 }
 
-function createTrackerTemplate(name="") {
-
+function createTrackerTemplate (name = '') {
   // Ask the server to create a template with the name provided in the text entry
   // field.
 
-
-  if (name == "") {
-    name = $("#createTrackerTemplateName").val();
+  if (name === '') {
+    name = $('#createTrackerTemplateName').val()
   }
 
-  requestDict = {"class": "tracker",
-                 "action": "createTemplate",
-                 "name": name,
-                 "template": {}};
+  const requestDict = {
+    class: 'tracker',
+    action: 'createTemplate',
+    name,
+    template: {}
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
-          $("#createTrackerTemplateName").val("");
-          getAvailableDefinitions(populateTrackerTemplateSelect);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          $('#createTrackerTemplateName').val('')
+          constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function deleteTrackerTemplate(name="") {
-
+function deleteTrackerTemplate (name = '') {
   // Ask the server to delete the specified tracker template
 
-
-  if (name == "") {
-    name = $("#trackerTemplateSelect").val();
+  if (name === '') {
+    name = $('#trackerTemplateSelect').val()
   }
 
-  requestDict = {"class": "tracker",
-                 "action": "deleteTemplate",
-                 "name": name};
+  const requestDict = {
+    class: 'tracker',
+    action: 'deleteTemplate',
+    name
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
-          getAvailableDefinitions(populateTrackerTemplateSelect);
-          $("#deleteTrackerTemplateModal").modal("hide");
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+          $('#deleteTrackerTemplateModal').modal('hide')
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function rebuildIssueList(issues) {
-
+function rebuildIssueList (issues) {
   // Take an array of issue dictionaries and build the GUI representation.
 
   // Gather the settings for the various filters
-  let filterPriority = $("#issueListFilterPrioritySelect").val();
-  let filterAssignedTo = $("#issueListFilterAssignedToSelect").val();
+  const filterPriority = $('#issueListFilterPrioritySelect').val()
+  const filterAssignedTo = $('#issueListFilterAssignedToSelect').val()
 
-  $("#issuesRow").empty();
+  $('#issuesRow').empty()
 
   issues.forEach((issue, i) => {
-
     // Check against the filters
-    if (filterPriority != "all" && filterPriority != issue.priority) {
+    if (filterPriority !== 'all' && filterPriority !== issue.priority) {
       return
     }
     if (
-      (filterAssignedTo != "all" && filterAssignedTo != "unassigned" && !issue.assignedTo.includes(filterAssignedTo))
-      || (filterAssignedTo == "unassigned" && issue.assignedTo.length > 0)
+      (filterAssignedTo !== 'all' && filterAssignedTo !== 'unassigned' && !issue.assignedTo.includes(filterAssignedTo)) ||
+      (filterAssignedTo === 'unassigned' && issue.assignedTo.length > 0)
     ) return
 
-    let col = document.createElement("div");
-    col.setAttribute("class", "col-12 col-sm-6 col-lg-4 mt-2");
+    const col = document.createElement('div')
+    col.setAttribute('class', 'col-12 col-sm-6 col-lg-4 mt-2')
 
-    let card = document.createElement("div");
+    const card = document.createElement('div')
     // Color the border based on the priority
-    let borderColor;
-    if (issue.priority == "low") {
-      borderColor = "border-primary";
-    } else if (issue.priority == "medium") {
-      borderColor = "border-warning";
+    let borderColor
+    if (issue.priority === 'low') {
+      borderColor = 'border-primary'
+    } else if (issue.priority === 'medium') {
+      borderColor = 'border-warning'
     } else {
-      borderColor = "border-danger";
+      borderColor = 'border-danger'
     }
-    card.setAttribute("class", `card h-100 border ${borderColor}`);
-    col.appendChild(card);
+    card.setAttribute('class', `card h-100 border ${borderColor}`)
+    col.appendChild(card)
 
-    let body = document.createElement("div");
-    body.setAttribute("class", "card-body");
-    card.appendChild(body);
+    const body = document.createElement('div')
+    body.setAttribute('class', 'card-body')
+    card.appendChild(body)
 
-    let title = document.createElement("H5");
-    title.setAttribute("class", "card-title");
-    title.innerHTML = issue.issueName;
-    body.appendChild(title);
+    const title = document.createElement('H5')
+    title.setAttribute('class', 'card-title')
+    title.innerHTML = issue.issueName
+    body.appendChild(title)
 
     issue.relatedComponentIDs.forEach((id, i) => {
-      let tag = document.createElement("span");
-      tag.setAttribute("class", "badge badge-secondary mr-1");
-      tag.innerHTML = id;
-      body.appendChild(tag);
-    });
+      const tag = document.createElement('span')
+      tag.setAttribute('class', 'badge badge-secondary mr-1')
+      tag.innerHTML = id
+      body.appendChild(tag)
+    })
 
     issue.assignedTo.forEach((name, i) => {
-      let tag = document.createElement("span");
-      tag.setAttribute("class", "badge badge-success mr-1");
-      tag.innerHTML = name;
-      body.appendChild(tag);
-    });
+      const tag = document.createElement('span')
+      tag.setAttribute('class', 'badge badge-success mr-1')
+      tag.innerHTML = name
+      body.appendChild(tag)
+    })
 
-    let desc = document.createElement("p");
-    desc.setAttribute("class", "card-text");
-    desc.style.whiteSpace = "pre-wrap"; // To preserve new lines
-    desc.innerHTML = issue.issueDescription;
-    body.appendChild(desc);
+    const desc = document.createElement('p')
+    desc.setAttribute('class', 'card-text')
+    desc.style.whiteSpace = 'pre-wrap' // To preserve new lines
+    desc.innerHTML = issue.issueDescription
+    body.appendChild(desc)
 
     if (issue.media != null) {
-      let mediaBut = document.createElement("button");
-      mediaBut.setAttribute("class", "btn btn-primary mr-1 mt-1");
-      mediaBut.innerHTML = "View image";
-      mediaBut.setAttribute("onclick", `issueMediaView('${issue.media}')`);
-      body.appendChild(mediaBut);
+      const mediaBut = document.createElement('button')
+      mediaBut.setAttribute('class', 'btn btn-primary mr-1 mt-1')
+      mediaBut.innerHTML = 'View image'
+      mediaBut.addEventListener('click', function () {
+        issueMediaView(issue.media)
+      }, false)
+      body.appendChild(mediaBut)
     }
 
-    let editBut = document.createElement("button");
-    editBut.setAttribute("class", "btn btn-info mr-1 mt-1");
-    editBut.innerHTML = "Edit";
-    editBut.setAttribute("onclick", `showIssueEditModal('edit', '${issue.id}')`);
-    body.appendChild(editBut);
+    const editBut = document.createElement('button')
+    editBut.setAttribute('class', 'btn btn-info mr-1 mt-1')
+    editBut.innerHTML = 'Edit'
+    editBut.addEventListener('click', function () {
+      showIssueEditModal('edit', issue.id)
+    })
+    body.appendChild(editBut)
 
-    let deleteBut = document.createElement("button");
-    deleteBut.setAttribute("type", "button");
-    deleteBut.setAttribute("class", "btn btn-danger mt-1");
-    deleteBut.setAttribute("data-toggle", "popover");
-    deleteBut.setAttribute("title", "Are you sure?");
-    deleteBut.setAttribute("data-content", `<a id="Popover${issue.id}" class='btn btn-danger w-100' onclick="deleteIssue('${issue.id}')">Confirm</a>`);
-    deleteBut.setAttribute("data-trigger", "focus");
-    deleteBut.setAttribute("data-html", "true");
-    $(document).on("click", `#Popover${issue.id}`, function() {
-        deleteIssue(issue.id);
-    });
-    deleteBut.addEventListener("click", function() {deleteBut.focus()})
-    deleteBut.innerHTML = "Delete";
-    body.appendChild(deleteBut);
-    $(deleteBut).popover();
+    const deleteBut = document.createElement('button')
+    deleteBut.setAttribute('type', 'button')
+    deleteBut.setAttribute('class', 'btn btn-danger mt-1')
+    deleteBut.setAttribute('data-toggle', 'popover')
+    deleteBut.setAttribute('title', 'Are you sure?')
+    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100' onclick="deleteIssue('${issue.id}')">Confirm</a>`)
+    deleteBut.setAttribute('data-trigger', 'focus')
+    deleteBut.setAttribute('data-html', 'true')
+    $(document).on('click', `#Popover${issue.id}`, function () {
+      deleteIssue(issue.id)
+    })
+    deleteBut.addEventListener('click', function () { deleteBut.focus() })
+    deleteBut.innerHTML = 'Delete'
+    body.appendChild(deleteBut)
+    $(deleteBut).popover()
 
-    $("#issuesRow").append(col);
-  });
+    $('#issuesRow').append(col)
+  })
 }
 
-function submitComponentMaintenanceStatusChange(type='component') {
-
+function submitComponentMaintenanceStatusChange (type = 'component') {
   // Take details from the maintenance tab of the componentInfoModal and send
   // a message to the server updating the given component.
 
-  let id, status, notes;
-  if (type == "component") {
-    id = $("#componentInfoModalTitle").html();
-    status = $("#componentInfoModalMaintenanceStatusSelector").val();
-    notes = $("#componentInfoModalMaintenanceNote").val();
-  } else if (type == 'projector') {
-
+  let id, status, notes
+  if (type === 'component') {
+    id = $('#componentInfoModalTitle').html()
+    status = $('#componentInfoModalMaintenanceStatusSelector').val()
+    notes = $('#componentInfoModalMaintenanceNote').val()
+  } else if (type === 'projector') {
+    //
   }
 
-  requestDict = {"class": "webpage",
-                 "action": "updateMaintenanceStatus",
-                 "id": id,
-                 "status": status,
-                 "notes": notes};
+  const requestDict = {
+    class: 'webpage',
+    action: 'updateMaintenanceStatus',
+    id,
+    status,
+    notes
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
-          $('#componentInfoModalMaintenanceSaveButton').hide();
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          $('#componentInfoModalMaintenanceSaveButton').hide()
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function setComponentInfoModalMaintenanceStatus(id) {
-
-  // Ask the server for the current maintenance status of the given component
-  // and then update the componentInfoModal with that info
-
-  requestDict = {"class": "webpage",
-                 "action": "getMaintenanceStatus",
-                 "id": id};
-
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("status" in result && "notes" in result) {
-          $("#componentInfoModalMaintenanceStatusSelector").val(result.status);
-          $("#componentInfoModalMaintenanceNote").val(result.notes);
-          $("#maintenanceHistoryWorkingBar").attr("ariaValueNow", result.working_pct);
-          $("#maintenanceHistoryWorkingBar").width(String(result.working_pct)+"%");
-          $("#maintenanceHistoryWorkingBar").attr("title", "Working: " + String(result.working_pct)+"%");
-          $("#maintenanceHistoryNotWorkingBar").attr("ariaValueNow", result.not_working_pct);
-          $("#maintenanceHistoryNotWorkingBar").width(String(result.not_working_pct)+"%");
-          $("#maintenanceHistoryNotWorkingBar").attr("title", "Not working: " + String(result.not_working_pct)+"%");
-          $('#componentInfoModalMaintenanceSaveButton').hide();
-        }
-      }
-    }
-  };
-  xhr.send(JSON.stringify(requestDict));
-}
-
-function refreshMaintenanceRecords() {
-
+function refreshMaintenanceRecords () {
   // Ask the server to send all the maintenance records and then rebuild the
   // maintanence overview from those data.
 
-  requestDict = {"class": "webpage",
-                 "action": "getAllMaintenanceStatuses"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'getAllMaintenanceStatuses'
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
 
-        $("#MaintenanceOverviewOnFloorWorkingPane").empty();
-        $("#MaintenanceOverviewOnFloorNotWorkingPane").empty();
-        $("#MaintenanceOverviewOffFloorWorkingPane").empty();
-        $("#MaintenanceOverviewOffFloorNotWorkingPane").empty();
+        $('#MaintenanceOverviewOnFloorWorkingPane').empty()
+        $('#MaintenanceOverviewOnFloorNotWorkingPane').empty()
+        $('#MaintenanceOverviewOffFloorWorkingPane').empty()
+        $('#MaintenanceOverviewOffFloorNotWorkingPane').empty()
 
         result.records.forEach((record, i) => {
-          let col = document.createElement("div");
-          col.setAttribute("class", "col-12 col-lg-6 mt-2");
+          const col = document.createElement('div')
+          col.setAttribute('class', 'col-12 col-lg-6 mt-2')
 
-          let card = document.createElement("div");
-          card.setAttribute("class", `card h-100 bg-secondary text-white`);
-          col.appendChild(card);
+          const card = document.createElement('div')
+          card.setAttribute('class', 'card h-100 bg-secondary text-white')
+          col.appendChild(card)
 
-          let body = document.createElement("div");
-          body.setAttribute("class", "card-body");
-          card.appendChild(body);
+          const body = document.createElement('div')
+          body.setAttribute('class', 'card-body')
+          card.appendChild(body)
 
-          let title = document.createElement("H5");
-          title.setAttribute("class", "card-title");
-          title.innerHTML = record.id;
-          body.appendChild(title);
+          const title = document.createElement('H5')
+          title.setAttribute('class', 'card-title')
+          title.innerHTML = record.id
+          body.appendChild(title)
 
-          let progress = document.createElement("div");
-          progress.setAttribute("class", "progress");
-          progress.style.height = "25px";
-          let working = document.createElement("div");
-          working.setAttribute("class", "progress-bar bg-success");
-          working.setAttribute("role", "progressbar");
-          working.style.width = String(record.working_pct) + "%";
-          working.title = "Working: " + String(record.working_pct) + "%";
-          working.innerHTML = "Working";
-          let not_working = document.createElement("div");
-          not_working.setAttribute("class", "progress-bar bg-danger");
-          not_working.setAttribute("role", "progressbar");
-          not_working.style.width = String(record.not_working_pct) + "%";
-          not_working.title = "Not working: " + String(record.not_working_pct) + "%";
-          not_working.innerHTML = "Not working";
-          progress.appendChild(working);
-          progress.appendChild(not_working);
-          body.appendChild(progress);
+          const progress = document.createElement('div')
+          progress.setAttribute('class', 'progress')
+          progress.style.height = '25px'
+          const working = document.createElement('div')
+          working.setAttribute('class', 'progress-bar bg-success')
+          working.setAttribute('role', 'progressbar')
+          working.style.width = String(record.working_pct) + '%'
+          working.title = 'Working: ' + String(record.working_pct) + '%'
+          working.innerHTML = 'Working'
+          const notWorking = document.createElement('div')
+          notWorking.setAttribute('class', 'progress-bar bg-danger')
+          notWorking.setAttribute('role', 'progressbar')
+          notWorking.style.width = String(record.not_working_pct) + '%'
+          notWorking.title = 'Not working: ' + String(record.not_working_pct) + '%'
+          notWorking.innerHTML = 'Not working'
+          progress.appendChild(working)
+          progress.appendChild(notWorking)
+          body.appendChild(progress)
 
-          let notes = document.createElement("p");
-          notes.setAttribute("class", "card-text mt-2");
-          notes.innerHTML = record.notes;
-          body.appendChild(notes);
+          const notes = document.createElement('p')
+          notes.setAttribute('class', 'card-text mt-2')
+          notes.innerHTML = record.notes
+          body.appendChild(notes)
 
-          let parentPane;
+          let parentPane
           switch (record.status) {
-            case "On floor, working":
-              parentPane = "MaintenanceOverviewOnFloorWorkingPane";
-              break;
-            case "On floor, not working":
-              parentPane = "MaintenanceOverviewOnFloorNotWorkingPane";
-              break;
-            case "Off floor, working":
-              parentPane = "MaintenanceOverviewOffFloorWorkingPane";
-              break;
-            case "Off floor, not working":
-              parentPane = "MaintenanceOverviewOffFloorNotWorkingPane";
-              break;
+            case 'On floor, working':
+              parentPane = 'MaintenanceOverviewOnFloorWorkingPane'
+              break
+            case 'On floor, not working':
+              parentPane = 'MaintenanceOverviewOnFloorNotWorkingPane'
+              break
+            case 'Off floor, working':
+              parentPane = 'MaintenanceOverviewOffFloorWorkingPane'
+              break
+            case 'Off floor, not working':
+              parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
+              break
             default:
               console.log(record.status)
-              parentPane = "MaintenanceOverviewOffFloorNotWorkingPane";
-
+              parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
           }
-          $("#"+parentPane).append(col);
-        });
+          $('#' + parentPane).append(col)
+        })
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function askForUpdate() {
-
+function askForUpdate () {
   // Send a message to the control server asking for the latest component
   // updates
 
-  requestDict = {"class": "webpage",
-                 "action": "fetchUpdate"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'fetchUpdate'
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.ontimeout = function() {console.log("Website update timed out");};
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.ontimeout = function () { console.log('Website update timed out') }
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let update = JSON.parse(this.responseText);
-        var n_comps = 0;
-        var n_online = 0;
-        for (var i=0; i<update.length; i++) {
-          var component = update[String(i)];
-          if ("class" in component) {
-            if (component["class"] == "exhibitComponent") {
-              n_comps += 1;
-              if ((component.status == "ONLINE") || (component.status == "STANDBY") || (component.status == "SYSTEM ON") || (component.status == "STATIC")) {
-                n_online += 1;
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const update = JSON.parse(this.responseText)
+        let numComps = 0
+        let numOnline = 0
+        for (let i = 0; i < update.length; i++) {
+          const component = update[String(i)]
+          if ('class' in component) {
+            if (component.class === 'exhibitComponent') {
+              numComps += 1
+              if ((component.status === 'ONLINE') || (component.status === 'STANDBY') || (component.status === 'SYSTEM ON') || (component.status === 'STATIC')) {
+                numOnline += 1
               }
-              updateComponentFromServer(component);
-            } else if (component.class == "gallery") {
-              setCurrentExhibitName(component.currentExhibit);
-              updateAvailableExhibits(component.availableExhibits);
-              if ("galleryName" in component) {
-                $("#galleryNameField").html(component.galleryName);
-                document.title = component.galleryName;
+              updateComponentFromServer(component)
+            } else if (component.class === 'gallery') {
+              setCurrentExhibitName(component.currentExhibit)
+              updateAvailableExhibits(component.availableExhibits)
+              if ('galleryName' in component) {
+                $('#galleryNameField').html(component.galleryName)
+                document.title = component.galleryName
               }
-              if ("updateAvailable" in component) {
-                if (component.updateAvailable == "true") {
-                  serverSoftwareUpdateAvailable = true;
-                  rebuildErrorList();
+              if ('updateAvailable' in component) {
+                if (component.updateAvailable === 'true') {
+                  constConfig.serverSoftwareUpdateAvailable = true
+                  constTools.rebuildErrorList()
                 }
               }
-            } else if (component.class == "schedule") {
-              if (scheduleUpdateTime != component.updateTime) {
-                populateSchedule(component);
+            } else if (component.class === 'schedule') {
+              if (scheduleUpdateTime !== component.updateTime) {
+                populateSchedule(component)
               }
-            } else if (component.class == "issues") {
+            } else if (component.class === 'issues') {
               // Check for the time of the most recent update. If it is more
               // recent than our existing date, rebuild the issue list
-              let currentLastDate = Math.max.apply(Math, issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
+              const currentLastDate = Math.max.apply(Math, issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
               // let updatedDate = Math.max.apply(Math, component.issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
-              let updatedDate = new Date(component.lastUpdateDate)
+              const updatedDate = new Date(component.lastUpdateDate)
               if (!arraysEqual(assignableStaff, component.assignable_staff)) {
-                assignableStaff = component.assignable_staff;
+                assignableStaff = component.assignable_staff
                 // Populate the filter
-                $("#issueListFilterAssignedToSelect").empty()
-                $("#issueListFilterAssignedToSelect").append(new Option("All", "all"));
-                $("#issueListFilterAssignedToSelect").append(new Option("Unassigned", "unassigned"));
-                for (var i=0; i<assignableStaff.length; i++) {
-                  $("#issueListFilterAssignedToSelect").append(new Option(assignableStaff[i], assignableStaff[i]));
+                $('#issueListFilterAssignedToSelect').empty()
+                $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
+                $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
+                for (let i = 0; i < assignableStaff.length; i++) {
+                  $('#issueListFilterAssignedToSelect').append(new Option(assignableStaff[i], assignableStaff[i]))
                 }
               }
               if (updatedDate > currentLastDate) {
-                issueList = component.issueList;
-                rebuildIssueList(issueList);
+                issueList = component.issueList
+                rebuildIssueList(issueList)
               }
             }
           }
         }
         // Set the favicon to reflect the aggregate status
-        if (n_online == n_comps) {
-          $("link[rel='icon']").attr("href", "icon/green.ico");
-        } else if (n_online == 0) {
-          $("link[rel='icon']").attr("href", "icon/red.ico");
+        if (numOnline === numComps) {
+          $("link[rel='icon']").attr('href', 'icon/green.ico')
+        } else if (numOnline === 0) {
+          $("link[rel='icon']").attr('href', 'icon/red.ico')
         } else {
-          $("link[rel='icon']").attr("href", "icon/yellow.ico");
+          $("link[rel='icon']").attr('href', 'icon/yellow.ico')
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function rebuildComponentInterface() {
-
-  // Clear the componentGroupsRow and rebuild it
-
-  document.getElementById('componentGroupsRow').innerHTML = "";
-  var i;
-  for (i=0; i<componentGroups.length; i++) {
-    componentGroups[i].buildHTML();
-  }
-  for (i=0; i<exhibitComponents.length; i++) {
-    exhibitComponents[i].buildHTML();
-  }
-}
-
-function populateHelpTab() {
-
+function populateHelpTab () {
   // Ask the server to send the latest README, convert the Markdown to
   // HTML, and add it to the Help tab.
 
-  var requestDict = {"class": "webpage",
-                     "action": "getHelpText"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'getHelpText'
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        var formatted_text = markdownConverter.makeHtml(this.responseText);
-        $("#helpTextDiv").html(formatted_text);
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const formattedText = markdownConverter.makeHtml(this.responseText)
+        $('#helpTextDiv').html(formattedText)
       } else {
-        $("#helpTextDiv").html("Help text not available.");
+        $('#helpTextDiv').html('Help text not available.')
       }
     }
-  };
-  xhr.send(requestString);
+  }
+  xhr.send(requestString)
 }
 
-function showEditGalleryConfigModal() {
-  
+function showEditGalleryConfigModal () {
   // Populate the galleryEditModal with information from galleryConfiguration.ini and show the modal.
 
-  requestDict = {"class": "webpage",
-                 "action": "getConfigurationRawText"};
+  const requestDict = {
+    class: 'webpage',
+    action: 'getConfigurationRawText'
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        if ("success" in result && result.success == true) {
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
           // Must show first so that we can calculate the heights appropriately.
-          $("#editGalleryConfigModal").modal("show");
-          populateEditGalleryConfigModal(result.configuration);
+          $('#editGalleryConfigModal').modal('show')
+          populateEditGalleryConfigModal(result.configuration)
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function populateEditGalleryConfigModal(configText) {
+function populateEditGalleryConfigModal (configText) {
   // Take the provided text and set up the edit modal
 
-  $("#editGalleryConfigTextArea").val(configText);
-  $("#galleryConfigEditModalErrorMessage").hide();
+  $('#editGalleryConfigTextArea').val(configText)
+  $('#galleryConfigEditModalErrorMessage').hide()
 
   // Calculate what the height of the text area should be an update it.
-  let colHeight = $("#editGalleryConfigTextArea").parent().parent().height();
-  let headerHeight = $("#editGalleryConfigTextArea").parent().siblings("h3").height();
-  let lineHeight = parseFloat($("#editGalleryConfigTextArea").css("lineHeight"));
-  let rows = Math.floor((colHeight - headerHeight)/lineHeight - 1);
-  $("#editGalleryConfigTextArea").attr("rows", rows);
+  const colHeight = $('#editGalleryConfigTextArea').parent().parent().height()
+  const headerHeight = $('#editGalleryConfigTextArea').parent().siblings('h3').height()
+  const lineHeight = parseFloat($('#editGalleryConfigTextArea').css('lineHeight'))
+  const rows = Math.floor((colHeight - headerHeight) / lineHeight - 1)
+  $('#editGalleryConfigTextArea').attr('rows', rows)
 }
 
-function submitGalleryConfigChangeFromModal() {
+function submitGalleryConfigChangeFromModal () {
   // Take the updated contents of the text input and send it to Control Server.
   // Control Server will perform a number of checks, which this function needs to
   // handle and return to the user.
 
-  requestDict = {class: "webpage",
-                 action: "updateConfigurationRawText",
-                 configuration: $("#editGalleryConfigTextArea").val()};
+  const requestDict = {
+    class: 'webpage',
+    action: 'updateConfigurationRawText',
+    configuration: $('#editGalleryConfigTextArea').val()
+  }
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return;
+    if (this.readyState !== 4) return
 
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let result = JSON.parse(this.responseText);
-        console.log(result  )
-        if ("success" in result && result.success == true) {
-          $("#editGalleryConfigModal").modal("hide");
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const result = JSON.parse(this.responseText)
+        if ('success' in result && result.success === true) {
+          $('#editGalleryConfigModal').modal('hide')
         } else {
-          $("#galleryConfigEditModalErrorMessage").html(result.reason);
-          $("#galleryConfigEditModalErrorMessage").show();
+          $('#galleryConfigEditModalErrorMessage').html(result.reason)
+          $('#galleryConfigEditModalErrorMessage').show()
         }
       }
     }
-  };
-  xhr.send(JSON.stringify(requestDict));
-
+  }
+  xhr.send(JSON.stringify(requestDict))
 }
 
-function populateTrackerTemplateSelect(definitionList) {
-
+function populateTrackerTemplateSelect (definitionList) {
   // Get a list of the available tracker layout templates and populate the
   // selector
 
-  let templateSelect = $("#trackerTemplateSelect");
-  templateSelect.empty();
+  const templateSelect = $('#trackerTemplateSelect')
+  templateSelect.empty()
 
   definitionList.forEach(item => {
-    var name = item.split(".").slice(0, -1).join(".");
-    var html = `<option value="${name}">${name}</option>`;
-    templateSelect.append(html);
-  });
+    const name = item.split('.').slice(0, -1).join('.')
+    const html = `<option value="${name}">${name}</option>`
+    templateSelect.append(html)
+  })
 }
 
-function showEditTrackerTemplateModal() {
-
+function showEditTrackerTemplateModal () {
   // Retrieve the currently-selected layout and use it to configure the
   // editTrackerTemplateModal
 
-  let layoutToLoad = $("#trackerTemplateSelect").val();
-  let lamda = function(template){_showEditTrackerTemplateModal(layoutToLoad, template)};
-  loadLayoutDefinition(layoutToLoad, lamda);
+  const layoutToLoad = $('#trackerTemplateSelect').val()
+  const lamda = function (template) { _showEditTrackerTemplateModal(layoutToLoad, template) }
+  constTracker.loadLayoutDefinition(layoutToLoad, lamda)
 }
 
-function _showEditTrackerTemplateModal(name, template) {
-
+function _showEditTrackerTemplateModal (name, template) {
   // Set the provided template in the data attributes, reset all the fields,
   // and show the modal
 
   // Set default values
-  $("#editTrackerTemplateNameInput").val("");
-  $("#editTrackerTemplateLabelInput").val("");
-  $("#editTrackerTemplateMultipleInputFalse").prop("checked", true)
-  $("#editTrackerTemplateExclusiveInputFalse").prop("checked", true)
-  $("#editTrackerTemplateSliderInputMin").val(1);
-  $("#editTrackerTemplateSliderInputMax").val(100);
-  $("#editTrackerTemplateSliderInputStep").val(1);
-  $("#editTrackerTemplateSliderInputStart").val(50);
-  $("#editTrackerTemplateLinesInput").val(5);
-  $("#editTrackerTemplateModalTitle").html("Edit template: " + name);
+  $('#editTrackerTemplateNameInput').val('')
+  $('#editTrackerTemplateLabelInput').val('')
+  $('#editTrackerTemplateMultipleInputFalse').prop('checked', true)
+  $('#editTrackerTemplateExclusiveInputFalse').prop('checked', true)
+  $('#editTrackerTemplateSliderInputMin').val(1)
+  $('#editTrackerTemplateSliderInputMax').val(100)
+  $('#editTrackerTemplateSliderInputStep').val(1)
+  $('#editTrackerTemplateSliderInputStart').val(50)
+  $('#editTrackerTemplateLinesInput').val(5)
+  $('#editTrackerTemplateModalTitle').html('Edit template: ' + name)
 
-  $("#editTrackerTemplateModal").data("template", template);
-  $("#editTrackerTemplateModal").data("templateName", name);
+  $('#editTrackerTemplateModal').data('template', template)
+  $('#editTrackerTemplateModal').data('templateName', name)
 
-  populateEditTrackerTemplateCurrentLayout();
-  configureEditTrackerTemplateModal(Object.keys(template)[0]);
-  $("#editTrackerTemplateModal").modal("show");
+  populateEditTrackerTemplateCurrentLayout()
+  configureEditTrackerTemplateModal(Object.keys(template)[0])
+  $('#editTrackerTemplateModal').modal('show')
 }
 
-function configureEditTrackerTemplateModal(key) {
-
+function configureEditTrackerTemplateModal (key) {
   // Read the layout for the given key and set the appropriate divs visible to
   // support editing it.
 
-  $(".editTrackerTemplateInputGroup").hide();
-  if (key == undefined) {
-    $("#editTrackerTemplateNameInputGroup").hide();
-    $("#editTrackerTemplateLabelInputGroup").hide();
-    $("#editTrackerTemplateModalDeleteWidgetButton").hide();
-    return;
+  $('.editTrackerTemplateInputGroup').hide()
+  if (key == null) {
+    $('#editTrackerTemplateNameInputGroup').hide()
+    $('#editTrackerTemplateLabelInputGroup').hide()
+    $('#editTrackerTemplateModalDeleteWidgetButton').hide()
+    return
   } else {
-    $("#editTrackerTemplateNameInputGroup").show();
-    $("#editTrackerTemplateLabelInputGroup").show();
-    $("#editTrackerTemplateModalDeleteWidgetButton").show();
+    $('#editTrackerTemplateNameInputGroup').show()
+    $('#editTrackerTemplateLabelInputGroup').show()
+    $('#editTrackerTemplateModalDeleteWidgetButton').show()
   }
 
-  let template = $("#editTrackerTemplateModal").data("template")[key];
+  const template = $('#editTrackerTemplateModal').data('template')[key]
 
-  $("#editTrackerTemplateModal").data("currentWidget", key);
-  $(".editTrackerTemplateInputGroup").hide();
+  $('#editTrackerTemplateModal').data('currentWidget', key)
+  $('.editTrackerTemplateInputGroup').hide()
 
-  $("#editTrackerTemplateNameInput").val(key);
-  $("#editTrackerTemplateLabelInput").val(template.label);
+  $('#editTrackerTemplateNameInput').val(key)
+  $('#editTrackerTemplateLabelInput').val(template.label)
 
-  if (["counter", "number"].includes(template.type)) {
+  if (['counter', 'number'].includes(template.type)) {
     // Only name and label
-  } else if (template.type == "dropdown") {
-    $("#editTrackerTemplateOptionsInput").val(template.options);
-    $("#editTrackerTemplateOptionsInputGroup").show();
-    if (template.multiple == "true") {
-      $("#editTrackerTemplateMultipleInputTrue").prop("checked", true)
+  } else if (template.type === 'dropdown') {
+    $('#editTrackerTemplateOptionsInput').val(template.options)
+    $('#editTrackerTemplateOptionsInputGroup').show()
+    if (template.multiple === 'true') {
+      $('#editTrackerTemplateMultipleInputTrue').prop('checked', true)
     } else {
-      $("#editTrackerTemplateMultipleInputFalse").prop("checked", true)
+      $('#editTrackerTemplateMultipleInputFalse').prop('checked', true)
     }
-    $("#editTrackerTemplateMultipleInputGroup").show();
-  } else if (template.type == "slider") {
-    $("#editTrackerTemplateSliderInputMin").val(template.min || 1);
-    $("#editTrackerTemplateSliderInputMax").val(template.max || 100);
-    $("#editTrackerTemplateSliderInputStep").val(template.step || 1);
-    $("#editTrackerTemplateSliderInputStart").val(template.start || 50);
-    $("#editTrackerTemplateSliderInputGroup").show();
-  } else if (template.type == "text") {
-    $("#editTrackerTemplateLinesInput").val(template.lines || 5);
-    $("#editTrackerTemplateLinesInputGroup").show();
-  } else if (template.type == "timer") {
-    if (template.exclusive == "true") {
-      $("#editTrackerTemplateExclusiveInputTrue").prop("checked", true)
+    $('#editTrackerTemplateMultipleInputGroup').show()
+  } else if (template.type === 'slider') {
+    $('#editTrackerTemplateSliderInputMin').val(template.min || 1)
+    $('#editTrackerTemplateSliderInputMax').val(template.max || 100)
+    $('#editTrackerTemplateSliderInputStep').val(template.step || 1)
+    $('#editTrackerTemplateSliderInputStart').val(template.start || 50)
+    $('#editTrackerTemplateSliderInputGroup').show()
+  } else if (template.type === 'text') {
+    $('#editTrackerTemplateLinesInput').val(template.lines || 5)
+    $('#editTrackerTemplateLinesInputGroup').show()
+  } else if (template.type === 'timer') {
+    if (template.exclusive === 'true') {
+      $('#editTrackerTemplateExclusiveInputTrue').prop('checked', true)
     } else {
-      $("#editTrackerTemplateExclusiveInputFalse").prop("checked", true)
+      $('#editTrackerTemplateExclusiveInputFalse').prop('checked', true)
     }
-    $("#editTrackerTemplateExclusiveInputGroup").show();
+    $('#editTrackerTemplateExclusiveInputGroup').show()
   }
 }
 
-function populateEditTrackerTemplateCurrentLayout() {
-
+function populateEditTrackerTemplateCurrentLayout () {
   // Take the current template dictionary and render a set of buttons
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let numItems = Object.keys(template).length;
+  const template = $('#editTrackerTemplateModal').data('template')
+  // const numItems = Object.keys(template).length
 
-  $("#editTrackerTemplateModalCurrentLayout").empty();
+  $('#editTrackerTemplateModalCurrentLayout').empty()
   Object.keys(template).forEach((key, i) => {
-    let col = document.createElement("div");
-    col.classList = 'col-12 col-md-6 col-lg-4 mt-2 w-100';
+    const col = document.createElement('div')
+    col.classList = 'col-12 col-md-6 col-lg-4 mt-2 w-100'
 
-    let widget = document.createElement("div");
+    const widget = document.createElement('div')
     widget.classList = 'mx-1'
-    let row1 = document.createElement("div");
-    row1.classList = "row";
-    widget.appendChild(row1);
-    let nameCol = document.createElement('div');
-    nameCol.classList = "col-12 bg-secondary rounded-top";
-    row1.appendChild(nameCol);
-    let name = document.createElement("div");
-    name.classList = ' text-light w-100 text-center font-weight-bold';
-    name.innerHTML = key;
-    nameCol.appendChild(name);
-    let row2 = document.createElement("div");
-    row2.classList = "row";
-    widget.appendChild(row2);
+    const row1 = document.createElement('div')
+    row1.classList = 'row'
+    widget.appendChild(row1)
+    const nameCol = document.createElement('div')
+    nameCol.classList = 'col-12 bg-secondary rounded-top'
+    row1.appendChild(nameCol)
+    const name = document.createElement('div')
+    name.classList = ' text-light w-100 text-center font-weight-bold'
+    name.innerHTML = key
+    nameCol.appendChild(name)
+    const row2 = document.createElement('div')
+    row2.classList = 'row'
+    widget.appendChild(row2)
 
-    let editCol = document.createElement("div");
-    editCol.classList = "col-6 mx-0 px-0";
-    row2.appendChild(editCol);
-    let edit = document.createElement('div');
-    edit.classList = "text-light bg-info w-100 h-100 justify-content-center d-flex pl-1";
-    edit.style.borderBottomLeftRadius = '0.25rem';
-    edit.innerHTML = "Edit"
-    edit.style.cursor = "pointer";
-    edit.addEventListener("click", function(){configureEditTrackerTemplateModal(key);});
+    const editCol = document.createElement('div')
+    editCol.classList = 'col-6 mx-0 px-0'
+    row2.appendChild(editCol)
+    const edit = document.createElement('div')
+    edit.classList = 'text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
+    edit.style.borderBottomLeftRadius = '0.25rem'
+    edit.innerHTML = 'Edit'
+    edit.style.cursor = 'pointer'
+    edit.addEventListener('click', function () { configureEditTrackerTemplateModal(key) })
     editCol.appendChild(edit)
 
-    let leftCol = document.createElement("div");
-    leftCol.classList = "col-3 mx-0 px-0";
-    row2.appendChild(leftCol);
-    let left = document.createElement("div");
-    left.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex';
+    const leftCol = document.createElement('div')
+    leftCol.classList = 'col-3 mx-0 px-0'
+    row2.appendChild(leftCol)
+    const left = document.createElement('div')
+    left.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex'
     left.innerHTML = '◀'
-    left.style.cursor = "pointer";
+    left.style.cursor = 'pointer'
 
-    left.addEventListener("click", function(){editTrackerTemplateModalMoveWidget(key, -1);});
-    leftCol.appendChild(left);
+    left.addEventListener('click', function () { editTrackerTemplateModalMoveWidget(key, -1) })
+    leftCol.appendChild(left)
 
-    let rightCol = document.createElement("div");
-    rightCol.classList = "col-3 mx-0 px-0";
-    row2.appendChild(rightCol);
-    let right = document.createElement("div");
-    right.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex pr-1';
-    right.style.borderBottomRightRadius = '0.25rem';
+    const rightCol = document.createElement('div')
+    rightCol.classList = 'col-3 mx-0 px-0'
+    row2.appendChild(rightCol)
+    const right = document.createElement('div')
+    right.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex pr-1'
+    right.style.borderBottomRightRadius = '0.25rem'
     right.innerHTML = '▶'
-    right.style.cursor = "pointer";
-    right.addEventListener("click", function(){editTrackerTemplateModalMoveWidget(key, 1);});
-    rightCol.appendChild(right);
+    right.style.cursor = 'pointer'
+    right.addEventListener('click', function () { editTrackerTemplateModalMoveWidget(key, 1) })
+    rightCol.appendChild(right)
 
     col.appendChild(widget)
-    $("#editTrackerTemplateModalCurrentLayout").append(col);
-  });
+    $('#editTrackerTemplateModalCurrentLayout').append(col)
+  })
 }
 
-function editTrackerTemplateModalMoveWidget(key, dir) {
-
+function editTrackerTemplateModalMoveWidget (key, dir) {
   // Reorder the dictionary of widgets, moving the given key the specified number
   // of places
 
-  if (dir == 0) {
-    populateEditTrackerTemplateCurrentLayout();
-    return;
+  if (dir === 0) {
+    populateEditTrackerTemplateCurrentLayout()
+    return
   }
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let keys = Object.keys(template);
-  let loc = keys.indexOf(key)
-  let newLoc = loc + dir;
-  newLoc = Math.max(newLoc, 0);
-  newLoc = Math.min(newLoc, keys.length-1);
+  const template = $('#editTrackerTemplateModal').data('template')
+  const keys = Object.keys(template)
+  const loc = keys.indexOf(key)
+  let newLoc = loc + dir
+  newLoc = Math.max(newLoc, 0)
+  newLoc = Math.min(newLoc, keys.length - 1)
 
   // Iterate through the keys, inserting key into its new place
-  newArray = []
+  const newArray = []
   keys.forEach((item, i) => {
     if (dir < 0) {
-      if (i == newLoc) {
-        newArray.push(key);
+      if (i === newLoc) {
+        newArray.push(key)
       }
     }
-    if (item != key) {
-      newArray.push(item);
+    if (item !== key) {
+      newArray.push(item)
     }
     if (dir > 0) {
-      if (item != key) {
-        newArray.push(item);
+      if (item !== key) {
+        newArray.push(item)
       }
-      if (i == newLoc) {
-        newArray.push(key);
+      if (i === newLoc) {
+        newArray.push(key)
       }
     }
-  });
+  })
 
   // Build a new dictionary with the new order
-  let newDict = {}
+  const newDict = {}
   newArray.forEach((item, i) => {
     newDict[item] = template[item]
-  });
+  })
 
   // Update the data attribute with the new dictionary
-  $("#editTrackerTemplateModal").data("template", newDict);
-  populateEditTrackerTemplateCurrentLayout();
+  $('#editTrackerTemplateModal').data('template', newDict)
+  populateEditTrackerTemplateCurrentLayout()
 }
 
-function editTrackerTemplateModalAddWidget(name, type) {
-
+function editTrackerTemplateModalAddWidget (name, type) {
   // Create a new widget with the given name and add it to the template.
   // If the name already exists, append a number
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let names = Object.keys(template);
+  const template = $('#editTrackerTemplateModal').data('template')
+  const names = Object.keys(template)
 
   // Check if name exists
-  let i = 2;
-  let workingName = name;
+  let i = 2
+  let workingName = name
   while (true) {
     if (names.includes(workingName)) {
-      workingName = name + " " + String(i);
-      i++;
+      workingName = name + ' ' + String(i)
+      i++
     } else {
-      name = workingName;
-      break;
+      name = workingName
+      break
     }
   }
 
-  template[name] = {type: type};
-  $("#editTrackerTemplateModal").data("template", template);
-  configureEditTrackerTemplateModal(name);
-  editTrackerTemplateModalUpdateFromInput();
-  populateEditTrackerTemplateCurrentLayout();
+  template[name] = { type }
+  $('#editTrackerTemplateModal').data('template', template)
+  configureEditTrackerTemplateModal(name)
+  editTrackerTemplateModalUpdateFromInput()
+  populateEditTrackerTemplateCurrentLayout()
 }
 
-function editTrackerTemplateModalDeleteWidget() {
-
+function editTrackerTemplateModalDeleteWidget () {
   // Delete the given widget and shift focus to the neighboring one
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let currentWidgetName = $("#editTrackerTemplateModal").data("currentWidget");
-  let originalPosition = Object.keys(template).indexOf(currentWidgetName);
+  const template = $('#editTrackerTemplateModal').data('template')
+  const currentWidgetName = $('#editTrackerTemplateModal').data('currentWidget')
+  const originalPosition = Object.keys(template).indexOf(currentWidgetName)
 
+  delete template[currentWidgetName]
+  $('#editTrackerTemplateModal').data('template', template)
+  const newPosition = Math.max(0, originalPosition - 1)
+  const newCurrentWidget = Object.keys(template)[newPosition]
+  $('#editTrackerTemplateModal').data('currentWidget', newCurrentWidget)
 
-  delete template[currentWidgetName];
-  $("#editTrackerTemplateModal").data("template", template);
-  let newPosition = Math.max(0, originalPosition-1);
-  let newCurrentWidget = Object.keys(template)[newPosition];
-  $("#editTrackerTemplateModal").data("currentWidget", newCurrentWidget);
-
-  configureEditTrackerTemplateModal(newCurrentWidget);
-  populateEditTrackerTemplateCurrentLayout();
+  configureEditTrackerTemplateModal(newCurrentWidget)
+  populateEditTrackerTemplateCurrentLayout()
 }
 
-function editTrackerTemplateModalUpdateFromInput() {
-
+function editTrackerTemplateModalUpdateFromInput () {
   // Fired when a change is made to a widget property. Write the new data into
   // the template
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let originalWidgetName = $("#editTrackerTemplateModal").data("currentWidget");
-  let originalPosition = Object.keys(template).indexOf(originalWidgetName);
-  let currentWidget = template[originalWidgetName];
+  const template = $('#editTrackerTemplateModal').data('template')
+  const originalWidgetName = $('#editTrackerTemplateModal').data('currentWidget')
+  const originalPosition = Object.keys(template).indexOf(originalWidgetName)
+  const currentWidget = template[originalWidgetName]
 
-  let currentWidgetName = $("#editTrackerTemplateNameInput").val();
+  const currentWidgetName = $('#editTrackerTemplateNameInput').val()
 
-  currentWidget.label = $("#editTrackerTemplateLabelInput").val();
-  if (["counter", "number"].includes(currentWidget.type)) {
+  currentWidget.label = $('#editTrackerTemplateLabelInput').val()
+  if (['counter', 'number'].includes(currentWidget.type)) {
     // Only name and label
-  } else if (currentWidget.type == "dropdown") {
-    currentWidget.options = $("#editTrackerTemplateOptionsInput").val();
-    currentWidget.multiple = String($("#editTrackerTemplateMultipleInputTrue").prop("checked"));
-  } else if (currentWidget.type == "slider") {
-    currentWidget.min = $("#editTrackerTemplateSliderInputMin").val();
-    currentWidget.max = $("#editTrackerTemplateSliderInputMax").val();
-    currentWidget.step = $("#editTrackerTemplateSliderInputStep").val();
-    currentWidget.start = $("#editTrackerTemplateSliderInputStart").val();
-  } else if (currentWidget.type == "text") {
-    currentWidget.lines = $("#editTrackerTemplateLinesInput").val();
-  } else if (currentWidget.type == "timer") {
-    currentWidget.exclusive = String($("#editTrackerTemplateExclusiveInputTrue").prop("checked"));
+  } else if (currentWidget.type === 'dropdown') {
+    currentWidget.options = $('#editTrackerTemplateOptionsInput').val()
+    currentWidget.multiple = String($('#editTrackerTemplateMultipleInputTrue').prop('checked'))
+  } else if (currentWidget.type === 'slider') {
+    currentWidget.min = $('#editTrackerTemplateSliderInputMin').val()
+    currentWidget.max = $('#editTrackerTemplateSliderInputMax').val()
+    currentWidget.step = $('#editTrackerTemplateSliderInputStep').val()
+    currentWidget.start = $('#editTrackerTemplateSliderInputStart').val()
+  } else if (currentWidget.type === 'text') {
+    currentWidget.lines = $('#editTrackerTemplateLinesInput').val()
+  } else if (currentWidget.type === 'timer') {
+    currentWidget.exclusive = String($('#editTrackerTemplateExclusiveInputTrue').prop('checked'))
   }
-  delete template[originalWidgetName];
-  template[currentWidgetName] = currentWidget;
-  $("#editTrackerTemplateModal").data("currentWidget", currentWidgetName);
+  delete template[originalWidgetName]
+  template[currentWidgetName] = currentWidget
+  $('#editTrackerTemplateModal').data('currentWidget', currentWidgetName)
 
-  $("#editTrackerTemplateModal").data("template", template);
-  $("#editTrackerTemplateModal").data("currentWidget", currentWidget.name);
+  $('#editTrackerTemplateModal').data('template', template)
+  $('#editTrackerTemplateModal').data('currentWidget', currentWidget.name)
   // We have changed the name and need to move it back to the right place
-  editTrackerTemplateModalMoveWidget(currentWidgetName, originalPosition - Object.keys(template).length + 1);
+  editTrackerTemplateModalMoveWidget(currentWidgetName, originalPosition - Object.keys(template).length + 1)
 }
 
-function editTrackerTemplateModalSubmitChanges() {
-
+function editTrackerTemplateModalSubmitChanges () {
   // Send a message to the server with the updated template
 
-  let template = $("#editTrackerTemplateModal").data("template");
-  let templateName = $("#editTrackerTemplateModal").data("templateName");
+  const template = $('#editTrackerTemplateModal').data('template')
+  const templateName = $('#editTrackerTemplateModal').data('templateName')
 
-  var requestDict = {"class": "tracker",
-                     "action": "createTemplate",
-                     "name": templateName,
-                     "template": template};
+  const requestDict = {
+    class: 'tracker',
+    action: 'createTemplate',
+    name: templateName,
+    template
+  }
 
-  requestString = JSON.stringify(requestDict);
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-        let response = JSON.parse(this.responseText);
-        if ("success" in response && response.success == true) {
-          $("#editTrackerTemplateModal").modal("hide");
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        const response = JSON.parse(this.responseText)
+        if ('success' in response && response.success === true) {
+          $('#editTrackerTemplateModal').modal('hide')
         }
       }
     }
-  };
-  xhr.send(requestString);
+  }
+  xhr.send(requestString)
 }
 
-function parseQueryString() {
-
+function parseQueryString () {
   // Read the query string to determine what options to set
 
-  var queryString = decodeURIComponent(window.location.search);
+  const queryString = decodeURIComponent(window.location.search)
 
-  var searchParams = new URLSearchParams(queryString);
+  const searchParams = new URLSearchParams(queryString)
 
-  if (searchParams.has("hideComponents")) {
-    $("#nav-components-tab").hide();
+  if (searchParams.has('hideComponents')) {
+    $('#nav-components-tab').hide()
   }
-  if (searchParams.has("hideSchedule")) {
-    $("#nav-schedule-tab").hide();
+  if (searchParams.has('hideSchedule')) {
+    $('#nav-schedule-tab').hide()
   }
-  if (searchParams.has("hideIssues")) {
-    $("#nav-issues-tab").hide();
+  if (searchParams.has('hideIssues')) {
+    $('#nav-issues-tab').hide()
   }
-  if (searchParams.has("hideSettings")) {
-    $("#nav-settings-tab").hide();
+  if (searchParams.has('hideSettings')) {
+    $('#nav-settings-tab').hide()
   }
-  if (searchParams.has("hideHelp")) {
-    $("#nav-help-tab").hide();
+  if (searchParams.has('hideHelp')) {
+    $('#nav-help-tab').hide()
   }
 }
 
-function createExhibit(name, cloneFrom) {
-
+function createExhibit (name, cloneFrom) {
   // Ask the control server to create a new exhibit with the given name.
   // set cloneFrom = null if we are making a new exhibit from scratch.
   // set cloneFrom to the name of an existing exhibit to copy that exhibit
 
-  var requestDict = {"class": "webpage",
-                     "action": "createExhibit",
-                     "name": name};
-
-  if (cloneFrom != null && cloneFrom != "") {
-    requestDict.cloneFrom = cloneFrom;
+  const requestDict = {
+    class: 'webpage',
+    action: 'createExhibit',
+    name
   }
-  requestString = JSON.stringify(requestDict);
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  if (cloneFrom != null && cloneFrom !== '') {
+    requestDict.cloneFrom = cloneFrom
+  }
+  const requestString = JSON.stringify(requestDict)
+
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
+    // if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-      }
-    }
-  };
-  xhr.send(requestString);
+    // if (this.status === 200) {
+    //   if (this.responseText !== '') {
+    //   }
+    // }
+  }
+  xhr.send(requestString)
 }
 
-function deleteExhibit(name) {
-
+function deleteExhibit (name) {
   // Ask the control server to delete the exhibit with the given name.
 
-  var requestDict = {"class": "webpage",
-                     "action": "deleteExhibit",
-                     "name": name};
-  requestString = JSON.stringify(requestDict);
+  const requestDict = {
+    class: 'webpage',
+    action: 'deleteExhibit',
+    name
+  }
+  const requestString = JSON.stringify(requestDict)
 
-  var xhr = new XMLHttpRequest();
-  xhr.timeout = 2000;
-  xhr.open("POST", serverIP, true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  xhr.open('POST', serverIP, true)
+  xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
+    // if (this.readyState !== 4) return
 
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      if (this.responseText != "") {
-      }
-    }
-  };
-  xhr.send(requestString);
+    // if (this.status === 200) {
+    //   if (this.responseText !== '') {
+    //   }
+    // }
+  }
+  xhr.send(requestString)
 }
 
-function checkDeleteSelection() {
-
+function checkDeleteSelection () {
   // Make sure the selected option is not hte current one.
 
-  if ($("#exhibitSelect").val() == $("#exhibitDeleteSelector").val()) {
-    $("#exhibitDeleteSelectorButton").prop("disabled", true);
-    $("#exhibitDeleteSelectorWarning").show();
+  if ($('#exhibitSelect').val() === $('#exhibitDeleteSelector').val()) {
+    $('#exhibitDeleteSelectorButton').prop('disabled', true)
+    $('#exhibitDeleteSelectorWarning').show()
   } else {
-    $("#exhibitDeleteSelectorButton").prop("disabled", false);
-    $("#exhibitDeleteSelectorWarning").hide();
+    $('#exhibitDeleteSelectorButton').prop('disabled', false)
+    $('#exhibitDeleteSelectorWarning').hide()
   }
 }
 
-function showExhibitDeleteModal() {
-
-  $('#deleteExhibitModal').modal('show');
+function showExhibitDeleteModal () {
+  $('#deleteExhibitModal').modal('show')
 }
 
-function deleteExhibitFromModal(){
-
+function deleteExhibitFromModal () {
   // Take the info from the selector and delete the correct exhibit
 
-  deleteExhibit($("#exhibitDeleteSelector").val());
-  $("#deleteExhibitModal").modal("hide");
+  deleteExhibit($('#exhibitDeleteSelector').val())
+  $('#deleteExhibitModal').modal('hide')
 }
 
-function arraysEqual(a, b) {
+function arraysEqual (a, b) {
+  if (a === b) return true
+  if (a == null || b == null) return false
+  if (a.length !== b.length) return false
 
-  if (a === b) return true;
-  if (a == null || b == null) return false;
-  if (a.length !== b.length) return false;
-
-  for (var i = 0; i < a.length; ++i) {
-    if (a[i] !== b[i]) return false;
+  for (let i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false
   }
-  return true;
+  return true
 }
+
+// Bind event listeners
+
+// Components tab
+// =========================
+// Component info modal
+$('#componentSaveConfirmationButton').click(submitComponentContentChange)
+$('#contentUploadSubmitButton').click(uploadComponentContentFile)
+$('#componentInfoModalMaintenanceSaveButton').click(function () {
+  submitComponentMaintenanceStatusChange('component')
+})
+$('#componentContentUpload').change(onUploadContentChange)
+$('#componentInfoModalMaintenanceStatusSelector').change(function () {
+  $('#componentInfoModalMaintenanceSaveButton').show()
+})
+// Schedule tab
+// =========================
+$('#scheduleEditDeleteActionButton').click(scheduleDeleteActionFromModal)
+$('#scheduleEditSubmitButton').click(sendScheduleUpdateFromModal)
+$('#refreshScheduleButton').click(askForScheduleRefresh)
+$('#scheduleActionSelector').change(setScheduleActionTargetSelector)
+$('#scheduleTargetSelector').change(setScheduleActionValueSelector)
+
+// Issues tab
+// =========================
+$('#issueMediaViewFromModal').click(function () {
+  issueMediaView($('#issueMediaViewFromModal').data('filename'))
+})
+$('#issueMediaDeleteButton').click(function () {
+  issueMediaDelete($('#issueMediaViewFromModal').data('filename'))
+})
+$('#issueMediaUploadSubmitButton').click(uploadIssueMediaFile)
+$('#issueMediaUpload').change(onIssueMediaUploadChange)
+$('#issueEditSubmitButton').click(submitIssueFromModal)
+$('#createIssueButton').click(function () {
+  showIssueEditModal('new')
+})
+$('#issueListFilterPrioritySelect').change(function () {
+  rebuildIssueList(issueList)
+})
+$('#issueListFilterAssignedToSelect').change(function () {
+  rebuildIssueList(issueList)
+})
+$('#refreshMaintenanceRecordsBUtton').click(refreshMaintenanceRecords)
+$('#componentInfoModalMaintenanceNote').on('input', function () {
+  $('#componentInfoModalMaintenanceSaveButton').show()
+})
+// Settings tab
+// =========================
+$('#exhibitSelect').change(function () {
+  changeExhibit(false)
+})
+$('#exhibitDeleteSelector').change(checkDeleteSelection)
+$('#createExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), null)
+  $('#createExhibitNameInput').val('')
+})
+$('#cloneExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), $('#exhibitSelect').val())
+  $('#createExhibitNameInput').val('')
+})
+$('#exhibitChangeConfirmationButton').click(function () {
+  changeExhibit(true)
+})
+$('#deleteExhibitButton').click(deleteExhibitFromModal)
+$('#submitGalleryConfigChangeFromModalButton').click(submitGalleryConfigChangeFromModal)
+$('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
+$('#reloadConfigurationButton').click(reloadConfiguration)
+$('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+// Tracker
+$('#createTrackerTemplateButton').click(createTrackerTemplate)
+$('#launchTrackerButton').click(launchTracker)
+$('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
+$('#deleteTrackerTemplateButton').click(function () {
+  $('#deleteTrackerTemplateModal').modal('show')
+})
+$('#deleteTrackerTemplateFromModalButton').click(deleteTrackerTemplate)
+$('#getAvailableTrackerDataButton').click(function () {
+  constTracker.getAvailableTrackerData(populateTrackerDataSelect)
+})
+$('#downloadTrackerDataButton').click(downloadTrackerData)
+$('#showDeleteTrackerDataModalButton').click(showDeleteTrackerDataModal)
+$('#deleteTrackerDataFromModalButton').click(deleteTrackerDataFromModal)
+$('#editTrackerTemplateModalAddCounterButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Counter', 'counter')
+})
+$('#editTrackerTemplateModalAddDropdownButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Dropdown', 'dropdown')
+})
+$('#editTrackerTemplateModalAddNumberButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Number', 'number')
+})
+$('#editTrackerTemplateModalAddSliderButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Slider', 'slider')
+})
+$('#editTrackerTemplateModalAddTextButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Text', 'text')
+})
+$('#editTrackerTemplateModalAddTimerButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Timer', 'timer')
+})
+$('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalDeleteWidget)
+$('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
+$('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
+
+askForUpdate()
+setInterval(askForUpdate, 5000)
+populateHelpTab()
+refreshMaintenanceRecords()
+parseQueryString()
+constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
