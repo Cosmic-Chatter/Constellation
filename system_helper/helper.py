@@ -158,7 +158,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
             # print(f"  Handling {mimetype}")
             if self.path[0] == '/':
                 self.path = self.path[1:]
+            # First look for user-supplied file
             file_path = helper_files.get_path([self.path], user_file=True)
+            # Else, look for a Constellation-supllied file
+            if not os.path.isfile(file_path):
+                file_path = helper_files.get_path([self.path], user_file=False)
             try:
                 # print(f"  Opening file {self.path}")
                 with open(file_path, 'rb') as f:
