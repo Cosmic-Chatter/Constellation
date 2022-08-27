@@ -90,7 +90,7 @@ def get_unique_values(dict_list: list, key: str) -> list:
     unique_values = set()
 
     for this_dict in dict_list:
-        if isinstance(this_dict[key], list):
+        if key in this_dict and isinstance(this_dict[key], list):
             for value in this_dict[key]:
                 unique_values.add(value)
 
@@ -129,11 +129,15 @@ def JSON_list_to_CSV(dict_list: list, filename: str = "") -> str:
         reformed_dict_list.append(new_dict)
 
     # Build the CSV, optionally write it to disk, and then return it
-    with io.StringIO(newline='') as f:
-        csv_writer = csv.DictWriter(f, reformed_dict_list[0].keys())
-        csv_writer.writeheader()
-        csv_writer.writerows(reformed_dict_list)
-        result = f.getvalue()
+    try:
+        with io.StringIO(newline='') as f:
+            csv_writer = csv.DictWriter(f, reformed_dict_list[0].keys())
+            csv_writer.writeheader()
+            csv_writer.writerows(reformed_dict_list)
+            result = f.getvalue()
+    except IndexError:
+        print("JSON_list_to_CSV: Error: Nothing to write")
+        result = ""
 
     if filename != "":
         with open(filename, 'w', encoding="UTF-8", newline="") as f:

@@ -441,7 +441,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     config_reader.optionxform = str  # Override default, which is case in-sensitive
                     try:
                         # Try to parse the raw text to look for errors
-
                         config_reader.read_string((data["configuration"]))
                         config_reader.get("CURRENT", "server_ip_address")
                         config_reader.get("CURRENT", "server_port")
