@@ -267,7 +267,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(bytes(json_string, encoding="UTF-8"))
             except BrokenPipeError:
                 pass
-
+            return
         elif ctype == "application/json":
 
             # Unpack the data
