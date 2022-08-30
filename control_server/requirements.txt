@@ -3,3 +3,4 @@ pyserial
 wakeonlan
 icmplib
 python-dateutil
+psutil
