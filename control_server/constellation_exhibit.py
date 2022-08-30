@@ -359,7 +359,7 @@ def poll_wake_on_LAN_devices():
     """
 
     for device in config.wakeOnLANList:
-        new_thread = threading.Thread(target=device.update)
+        new_thread = threading.Thread(target=device.update, name=f"Poll_WOL_{device.id}_{str(time.time())}")
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
 
@@ -489,12 +489,13 @@ def update_exhibit_component_status(data, ip: str):
     if "AnyDeskID" in data:
         component.config["AnyDeskID"] = data["AnyDeskID"]
     if "currentInteraction" in data:
-        if data["currentInteraction"].lower() == "true":
+        if data["currentInteraction"] == True or\
+                (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
             component.update_last_interaction_datetime()
     if "allowed_actions" in data:
         allowed_actions = data["allowed_actions"]
         for key in allowed_actions:
-            if allowed_actions[key].lower() in ["true", "yes", "1"]:
+            if allowed_actions[key] is True or allowed_actions[key].lower() in ["true", "yes", "1"]:
                 if key not in component.config["allowed_actions"]:
                     component.config["allowed_actions"].append(key)
             else:

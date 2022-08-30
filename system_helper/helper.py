@@ -69,6 +69,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         try:
             self.range = parse_byte_range(self.headers['Range'])
+            print(f"Range request: {self.headers['Range'], self.range}")
         except ValueError:
             self.send_error(400, 'Invalid byte range')
             return
@@ -77,6 +78,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         fs = os.fstat(f.fileno())
         file_len = fs[6]
         if first >= file_len:
+            print("Sending error: 426 - Requested Range Not Satisfiable")
             self.send_error(416, 'Requested Range Not Satisfiable')
             return None
 
@@ -98,10 +100,33 @@ class RequestHandler(SimpleHTTPRequestHandler):
         except Exception as e:
             print("Connection ended prematurely", e)
 
+    def configure_response(self, response_code, content_type: str = ""):
+        """Send the appropriate response headers"""
+
+        # 200 = OK, 204 = No content, 206 = Range, 404 = Not found
+
+        code_dict = {
+            200: "OK",
+            204: "No Content",
+            206: "Partial Content",
+            400: "Bad Request",
+            404: "Not Found"
+        }
+
+        self.send_response(response_code, code_dict[response_code])
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
+        if content_type != "":
+            self.send_header("Content-Type", content_type)
+        self.end_headers()
+
     def do_GET(self):
         """Receive a GET request and respond with a console webpage"""
 
-        # print("do_GET: ENTER")
+        print("do_GET: ENTER")
+        print(self.requestline)
         self.path = self.path.replace("%20", " ")
         # root_path = os.path.dirname(os.path.abspath(__file__))
         # print("  ", self.path)
@@ -132,13 +157,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # Then, insert that into the document
                     page = page.replace("INSERT_HELPERIP_HERE", address_to_insert)
                     try:
-                        self.send_response(200)
-                        self.send_header("Content-type", "text/html")
-                        self.send_header("Access-Control-Allow-Origin", "*")
-                        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-                        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-                        self.send_header('Access-Control-Allow-Credentials', 'true')
-                        self.end_headers()
+                        # self.send_response(200)
+                        # self.send_header("Content-type", "text/html")
+                        # self.send_header("Access-Control-Allow-Origin", "*")
+                        # self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+                        # self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+                        # self.send_header('Access-Control-Allow-Credentials', 'true')
+                        # self.end_headers()
+                        self.configure_response(200, "text/html")
                         self.wfile.write(bytes(page, encoding="UTF-8"))
                     except BrokenPipeError:
                         print("Connection closed prematurely")
@@ -171,13 +197,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.handle_range_request(f)
                     else:
                         try:
-                            self.send_response(200)
-                            self.send_header('Content-type', mimetype)
-                            self.send_header("Access-Control-Allow-Origin", "*")
-                            self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-                            self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-                            self.send_header('Access-Control-Allow-Credentials', 'true')
-                            self.end_headers()
+                            # self.send_response(200)
+                            # self.send_header('Content-type', mimetype)
+                            # self.send_header("Access-Control-Allow-Origin", "*")
+                            # self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+                            # self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+                            # self.send_header('Access-Control-Allow-Credentials', 'true')
+                            # self.end_headers()
+                            self.configure_response(200, mimetype)
                             # print(f"    Writing data to client")
                             self.wfile.write(f.read())
                         except BrokenPipeError:
@@ -197,28 +224,19 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def do_OPTIONS(self):
         # print("do_OPTIONS: ENTER")
-        self.send_response(200, "OK")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        self.end_headers()
+        # self.send_response(200, "OK")
+        # self.send_header("Access-Control-Allow-Origin", "*")
+        # self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        # self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        # self.send_header('Access-Control-Allow-Credentials', 'true')
+        # self.end_headers()
+        self.configure_response(200)
         # print("do_OPTIONS: EXIT")
 
     def do_POST(self):
         """Receives pings from client devices and respond with any updated information"""
 
         print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
-
-        # print("do_POST: ENTER")
-        # print(f"POST from: {self.client_address[0]}")
-
-        self.send_response(200, "OK")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        self.end_headers()
 
         # Get the data from the request
         ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
@@ -244,6 +262,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 print("Exception in multi-part form data:", type(e).__name__, e)
                 json_string = json.dumps({"success": False})
 
+            self.configure_response(200, "application/json")
             try:
                 self.wfile.write(bytes(json_string, encoding="UTF-8"))
             except BrokenPipeError:
@@ -318,12 +337,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     config_to_send["contentPath"] = content_path
                     # config_to_send["helperAddress"] = get_local_address()
                     json_string = json.dumps(config_to_send)
+                    self.configure_response(200, "application/json")
                     try:
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                    return
                 elif data["action"] == "setDefaults":
                     if "defaults" not in data:
+                        self.configure_response(204)
                         return
                     # Add the contents field, if it doesn't exist
                     if "config" not in data["defaults"] and "content" in config.defaults_dict:
@@ -349,16 +371,20 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                 "system_stats": get_system_stats()}
 
                     json_string = json.dumps(response)
+                    self.configure_response(200, "application/json")
                     try:
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                    return
                 elif data["action"] == "getCurrentExhibit":
+                    self.configure_response(200, "application/json")
                     try:
                         self.wfile.write(bytes(config.defaults_dict["current_exhibit"],
                                                encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                    return
                 elif data["action"] == "deleteFile":
                     if "file" in data:
                         helper_files.delete_file(data["file"])
@@ -367,10 +393,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response = {"success": False,
                                     "reason": "Request missing field 'file'"}
                     json_string = json.dumps(response)
+                    self.configure_response(200, "application/json")
                     try:
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                    return
                 elif data["action"] == "updateClipList":
                     if "clipList" in data:
                         config.clipList["clipList"] = data["clipList"]
@@ -399,11 +427,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 elif data["action"] == "getUpdate":
                     response_dict = {"commands": config.commandList,
                                      "missingContentWarnings": config.missingContentWarningList}
-
-                    # event_content = check_event_schedule()
-                    # if event_content is not None:
-                    #     response_dict["content"] = event_content
-
+                    self.configure_response(200, "application/json")
                     json_string = json.dumps(response_dict)
                     try:
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
@@ -412,6 +436,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     except BrokenPipeError:
                         pass
                     config.commandList = []
+                    return
                 elif data["action"] == "setAutoplay":
                     if "state" in data:
                         if data["state"] == "on":
@@ -442,7 +467,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         except FileNotFoundError:
                             print(
                                 f"Error: Unknown label {data['name']} requested in language {lang} for exhibit {config.defaults_dict['current_exhibit']}")
-                            return ()
+                            self.configure_response(204)
+                            return
+                        self.configure_response(200, "application/json")
                         try:
                             self.wfile.write(bytes(label, encoding="UTF-8"))
                         except BrokenPipeError:
@@ -451,6 +478,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         print("Error: Label requested without name")
                 else:
                     print("Error: unrecognized action:", data["action"])
+        self.configure_response(204)
         # print("do_POST: EXIT")
 
 

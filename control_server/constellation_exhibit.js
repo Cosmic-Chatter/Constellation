@@ -413,6 +413,7 @@ export function showExhibitComponentInfo (id) {
         infostation: 'InfoStation',
         media_browser: 'Media Browser',
         media_player: 'Media Player',
+        media_player_kiosk: 'Media Player Kiosk',
         sos_kiosk: 'SOS Kiosk',
         sos_screen_player: 'SOS Screen Player',
         static_component: 'Static component',
@@ -500,12 +501,19 @@ export function showExhibitComponentInfo (id) {
       // This component may be accessible over the network.
 
       const requestString = JSON.stringify({ action: 'getAvailableContent' })
-
       const xhr = new XMLHttpRequest()
       if (obj.helperAddress != null) {
         xhr.open('POST', obj.helperAddress, true)
-      } else {
+      } else if (obj.ip != null && obj.helperPort != null) {
         xhr.open('POST', `http://${obj.ip}:${obj.helperPort}`, true)
+      } else {
+        // We don't have enough information to contact the helper
+        showFailureMessage()
+        // Show the maintenance tab
+        $('#componentInfoModalMaintenanceTabButton').tab('show')
+        // Make the modal visible
+        $('#componentInfoModal').modal('show')
+        return
       }
       xhr.timeout = 10000 // 10 seconds
       xhr.ontimeout = showFailureMessage

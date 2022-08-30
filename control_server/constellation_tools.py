@@ -1,11 +1,14 @@
 """"""
 
 # Standard imports
+from functools import partial
 import os
 import sys
+import threading
 import _thread
 
 # Non-standard imports
+import psutil
 
 # Constellation imports
 import config
@@ -27,3 +30,16 @@ def reboot_server(*args, **kwargs) -> None:
 
     config.rebooting = True
     _thread.interrupt_main()
+
+
+def print_debug_details(loop: bool = False) -> None:
+    """Print useful debug info to the console"""
+
+    print("================= Debug details =================")
+    print(f"Active threads: {threading.active_count()}")
+    print([x.name for x in threading.enumerate()])
+    print(f"Memory used: {psutil.Process().memory_info().rss/1024/1024} Mb")
+    print("=================================================", flush=True)
+
+    if loop:
+        threading.Timer(10, partial(print_debug_details, loop=True)).start()

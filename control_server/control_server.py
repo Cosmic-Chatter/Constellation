@@ -47,6 +47,28 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 class RequestHandler(SimpleHTTPRequestHandler):
     """Handle incoming requests to the control server"""
 
+    def configure_response(self, response_code, content_type: str = ""):
+        """Send the appropriate response headers"""
+
+        # 200 = OK, 204 = No content, 206 = Range, 404 = Not found
+
+        code_dict = {
+            200: "OK",
+            204: "No Content",
+            206: "Partial Content",
+            400: "Bad Request",
+            404: "Not Found"
+        }
+
+        self.send_response(response_code, code_dict[response_code])
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
+        if content_type != "":
+            self.send_header("Content-Type", content_type)
+        self.end_headers()
+
     def send_current_configuration(self, id_):
         """Function to respond to a POST with a dictionary defining the current exhibit configuration"""
 
@@ -54,6 +76,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if len(c_exhibit.get_exhibit_component(id_).config["commands"]) > 0:
             # Clear the command list now that we have sent
             c_exhibit.get_exhibit_component(id_).config["commands"] = []
+        self.configure_response(200, "application/json")
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
     def send_webpage_update(self):
@@ -132,7 +155,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             component_dict_list.append(temp)
 
         json_string = json.dumps(component_dict_list, default=str)
-
+        self.configure_response(200, "application/json")
         self.wfile.write(bytes(json_string, encoding="UTF-8"))
 
     def log_request(self, code='-', size='-'):
@@ -199,7 +222,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         # print("+++++++++++++++")
         # print("BEGIN GET")
-        print(f" Active threads: {threading.active_count()}       ", end="\r", flush=True)
 
         # print(f"  path = {self.path}")
 
@@ -277,13 +299,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         """Respond to an OPTIONS request"""
         # print("---------------")
         # print("BEGIN OPTIONS")
-
-        self.send_response(200, "OK")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        self.end_headers()
+        self.configure_response(200)
 
         # print("END OPTIONS")
         # print("---------------")
@@ -294,15 +310,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         # print("===============")
         # print("BEGIN POST")
-
-        print(f" Active threads: {threading.active_count()}      ", end="\r", flush=True)
-
-        self.send_response(200, "OK")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        self.end_headers()
 
         # Get the data from the request
         try:
@@ -341,10 +348,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
             except:
                 json_string = json.dumps({"success": False})
 
+            self.configure_response(200, "application/json")
             try:
                 self.wfile.write(bytes(json_string, encoding="UTF-8"))
             except BrokenPipeError:
                 pass
+            return
 
         elif ctype == "application/json":
             # print("  application/json")
@@ -367,6 +376,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 print("Error: ping received without class field")
                 response = {"success": False,
                             "reason": "Request missing 'class' field."}
+                self.configure_response(200, "application/json")
                 self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 return
 
@@ -381,16 +391,19 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     # print("===============")
                     response = {"success": True,
                                 "reason": "Missing required field 'action'."}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                     return
                 # print(f"    action = {action}")
                 if action == "fetchUpdate":
                     self.send_webpage_update()
+                    return
                 elif action == "fetchProjectorUpdate":
                     if "id" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing required field 'id'.",
                                          "status": None}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                         return
                     proj = c_proj.get_projector(data["id"])
@@ -401,12 +414,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response_dict = {"success": False,
                                          "reason": f"Projector {data['id']} does not exist",
                                          "status": "DELETE"}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "reloadConfiguration":
                     load_default_configuration()
 
                     json_string = json.dumps({"success": True})
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "getConfiguration":
 
                     config_reader = configparser.ConfigParser(delimiters="=")
@@ -422,17 +439,22 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             config_dict[section][key] = val
 
                     json_string = json.dumps({"success": True, "configuration": config_dict})
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "getConfigurationRawText":
                     gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
                     with open(gal_path, 'r', encoding='UTF-8') as f:
                         text = f.read()
 
                     json_string = json.dumps({"success": True, "configuration": text})
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "updateConfigurationRawText":
                     if "configuration" not in data:
                         json_string = json.dumps({"success": False, "reason": "Missing required field 'configuration'"})
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         return
 
@@ -468,34 +490,44 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     except configparser.NoOptionError as e:
                         response_dict["success"] = False
                         response_dict["reason"] = f"You must have the {e.option} setting in the [{e.section}] section"
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "queueCommand":
                     if "command" not in data or "id" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing required field 'id' or 'command'."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                         return
                     c_exhibit.get_exhibit_component(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "queueProjectorCommand":
                     if "command" not in data or "id" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing required field 'id' or 'command'."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                         return
                     c_proj.get_projector(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "queueWOLCommand":
                     if "command" not in data or "id" not in data:
                         response_dict = {"success": False,
                                          "reason": "Missing required field 'id' or 'command'."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
                         return
                     c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "updateSchedule":
                     # This command handles both adding a new scheduled action
                     # and editing an existing action
@@ -504,6 +536,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response_dict = {"success": False,
                                          "reason": "Missing one or more required keys"}
                         json_string = json.dumps(response_dict, default=str)
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         return
 
@@ -514,6 +547,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response_dict = {"success": False,
                                          "reason": "Time not valid"}
                         json_string = json.dumps(response_dict, default=str)
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         return
 
@@ -538,7 +572,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response_dict["success"] = False
                         response_dict["reason"] = error_message
                     json_string = json.dumps(response_dict, default=str)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
 
                 elif action == 'refreshSchedule':
                     # This command reloads the schedule from disk. Normal schedule
@@ -554,11 +590,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                          "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "convertSchedule":
                     if "date" not in data or "from" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'date' or 'from' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
 
@@ -578,11 +617,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                          "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "deleteSchedule":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     with config.scheduleLock:
@@ -600,11 +642,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                          "schedule": config.json_schedule_list,
                                          "nextEvent": config.json_next_event}
                     json_string = json.dumps(response_dict, default=str)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "deleteScheduleAction":
                     if "from" not in data or "scheduleID" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'from' or 'scheduleID' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
 
@@ -620,11 +665,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                          "nextEvent": config.json_next_event}
 
                     json_string = json.dumps(response_dict, default=str)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json_string, encoding="UTF-8"))
+                    return
                 elif action == "setExhibit":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     print("Changing exhibit to:", data["name"])
@@ -634,11 +682,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     for component in config.componentList:
                         component.update_configuration()
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "createExhibit":
                     if "name" not in data or data["name"] == "":
                         response = {"success": False,
                                     "reason": "Request missing 'name' field or name is blank."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     clone = None
@@ -646,20 +697,26 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         clone = data["cloneFrom"]
                     c_exhibit.create_new_exhibit(data["name"], clone)
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "deleteExhibit":
                     if "name" not in data or data["name"] == "":
                         response = {"success": False,
                                     "reason": "Request missing 'name' field or name is empty."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     c_exhibit.delete_exhibit(data["name"])
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "setComponentContent":
                     if "id" not in data or "content" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'id' or 'content' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     content_to_set = data["content"]
@@ -668,7 +725,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         content_to_set = [data["content"]]
                     c_exhibit.set_component_content(data['id'], content_to_set)
                     response = {"success": True, "reason": ""}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "getHelpText":
                     try:
                         readme_path = os.path.join(config.APP_PATH,
@@ -678,10 +737,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             readme_path = os.path.join(config.EXEC_PATH, "README.md")
                         with open(readme_path, 'r', encoding='UTF-8') as f:
                             text = f.read()
-                            self.wfile.write(bytes(text, encoding="UTF-8"))
+                        response = {"success": True, "text": text}
                     except FileNotFoundError:
                         with config.logLock:
                             logging.error("Unable to read README.md")
+                        response = {"success": False, "reason": "Unable to read README.md"}
+                    self.configure_response(200, "application/json")
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "createIssue":
                     if "details" in data:
                         with config.issueLock:
@@ -692,7 +755,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     else:
                         response_dict = {"success": False,
                                          "reason": "Must include field 'details'"}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "editIssue":
                     if "details" in data and "id" in data["details"]:
                         c_issues.edit_issue(data["details"])
@@ -704,7 +769,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             "reason": "Must include field 'details' with proper"
                                       "ty 'id'"
                         }
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "deleteIssue":
                     if "id" in data:
                         c_issues.remove_issue(data["id"])
@@ -712,17 +779,22 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         response_dict = {"success": True, "reason": ""}
                     else:
                         response_dict = {"success": False, "reason": "Must include field 'id'"}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "getIssueList":
                     response = {
                         "success": True,
                         "issueList": [x.details for x in config.issueList]
                     }
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "issueMediaDelete":
                     if "filename" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'filename' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     this_id = None
@@ -730,11 +802,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         this_id = data["id"]
                     c_issues.delete_issue_media_file(data["filename"], owner=this_id)
                     response = {"success": True}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == 'updateMaintenanceStatus':
                     if "id" not in data or "status" not in data or "notes" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'id', 'status', or 'notes' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     file_path = os.path.join(config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
@@ -754,31 +829,36 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         except PermissionError:
                             success = False
                             reason = f"You do not have write permission for the file {file_path}"
+                    self.configure_response(200, "application/json")
                     response_dict = {"success": success, "reason": reason}
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == 'deleteMaintenanceRecord':
+                    self.configure_response(200, "application/json")
                     if "id" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'id' field."}
-                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                        return
                     else:
                         file_path = os.path.join(config.APP_PATH,
                                                  "maintenance-logs", data["id"] + ".txt")
                         with config.maintenanceLock:
                             response = delete_file(file_path)
-                            self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == 'getMaintenanceStatus':
                     if "id" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'id' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     file_path = os.path.join(config.APP_PATH,
                                              "maintenance-logs", data["id"] + ".txt")
                     with config.maintenanceLock:
                         response_dict = c_maint.get_maintenance_report(file_path)
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 elif action == "getAllMaintenanceStatuses":
                     record_list = []
                     maintenance_path = os.path.join(config.APP_PATH,
@@ -790,7 +870,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                 record_list.append(c_maint.get_maintenance_report(file_path))
                     response_dict = {"success": True,
                                      "records": record_list}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response_dict), encoding="UTF-8"))
+                    return
                 else:
                     print(f"Error: Unknown webpage command received: {action}")
                     with config.logLock:
@@ -799,21 +881,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             elif ping_class == "exhibitComponent":
                 if "action" in data:  # not a ping
                     action = data["action"]
-                    # if "id" in data:
-                    #     print(f"    id = {data['id']}")
-                    # print(f"    action = {action}")
-                    # if action == "getUploadedFile":
-                    #     if "id" not in data:
-                    #         response = {"success": False,
-                    #                     "reason": "Request missing 'id' field."}
-                    #         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
-                    #         return
-                    #     component = c_exhibit.get_exhibit_component(data["id"])
-                    #     if len(component.dataToUpload) > 0:
-                    #         upload = component.dataToUpload.pop(0)
-                    #         # json_string = json.dumps(upload)
-                    #         # self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                    #         self.wfile.write(upload)
+
                     if action == "beginSynchronization":
                         if "synchronizeWith" in data:
                             c_exhibit.update_synchronization_list(data["id"], data["synchronizeWith"])
@@ -823,6 +891,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         # type = data["type"]
                         if id == "UNKNOWN":
                             print(f"Warning: exhibitComponent ping with id=UNKNOWN coming from {self.address_string()}")
+                            self.configure_response(200, "application/json")
                             self.wfile.write(bytes(json.dumps({}), encoding='UTF-8'))
                             # print("END POST")
                             # print("===============")
@@ -831,6 +900,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         print("Error: exhibitComponent ping received without id or type field")
                         # print("END POST")
                         # print("===============")
+                        self.configure_response(204)
                         return  # No id or type, so bail out
 
                     # print(f"    id = {id}")
@@ -838,10 +908,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                     c_exhibit.update_exhibit_component_status(data, self.address_string())
                     self.send_current_configuration(id)
+                    return
             elif ping_class == "tracker":
                 if "action" not in data:
                     response = {"success": False,
                                 "reason": "Request missing 'action' field."}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                     return
                 action = data["action"]
@@ -850,6 +922,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -860,11 +933,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     response = {"success": success,
                                 "reason": reason,
                                 "layout": layout_definition}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "submitData":
                     if "data" not in data or "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'data' or 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -872,11 +947,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = c_tools.get_path([kind, "data", data["name"] + ".txt"], user_file=True)
                     success, reason = c_track.write_JSON(data["data"], file_path)
                     response = {"success": success, "reason": reason}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "submitRawText":
                     if "text" not in data or "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'text' or 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -884,31 +962,40 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if mode != "a" and mode != "w":
                         response = {"success": False,
                                     "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind=kind, mode=mode)
                     response = {"success": success, "reason": reason}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "retrieveRawText":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
                     result, success, reason = c_track.get_raw_text(data["name"] + ".txt", kind)
                     response = {"success": success, "reason": reason, "text": result}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "submitAnalytics":
                     if "data" not in data or 'name' not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'data' or 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     file_path = os.path.join(config.APP_PATH, "analytics", data["name"] + ".txt")
                     success, reason = c_track.write_JSON(data["data"], file_path)
                     response = {"success": success, "reason": reason}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "getAvailableDefinitions":
                     kind = data.get("kind", "flexible-tracker")
                     definition_list = []
@@ -917,7 +1004,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         if file.lower().endswith(".ini"):
                             definition_list.append(file)
 
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(definition_list), encoding="UTF-8"))
+                    return
                 elif action == "getAvailableTrackerData":
                     kind = data.get("kind", "flexible-tracker")
                     data_path = os.path.join(config.APP_PATH, kind, "data")
@@ -927,11 +1016,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             data_list.append(file)
                     response = {"success": True,
                                 "data": data_list}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "downloadTrackerData":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -942,11 +1034,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     result = c_track.create_CSV(data_path)
                     response = {"success": True,
                                 "csv": result}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "clearTrackerData":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -954,6 +1049,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if name is None:
                         response = {"success": False,
                                     "reason": "'name' field is blank."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     if not name.lower().endswith(".txt"):
@@ -974,11 +1070,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         print(reason)
                     response = {"success": success,
                                 "reason": reason}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "createTemplate":
                     if "name" not in data or "template" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' or 'template' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
@@ -988,19 +1087,24 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = os.path.join(config.APP_PATH, kind, "templates", name)
                     success = c_track.create_template(file_path, data["template"])
                     response = {"success": success}
+                    self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "deleteTemplate":
                     if "name" not in data:
                         response = {"success": False,
                                     "reason": "Request missing 'name' field."}
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                         return
                     kind = data.get("kind", "flexible-tracker")
                     file_path = os.path.join(config.APP_PATH, kind, "templates", data["name"] + ".ini")
                     with config.trackerTemplateWriteLock:
                         response = delete_file(file_path)
+                        self.configure_response(200, "application/json")
                         self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 elif action == "checkConnection":
+                    self.configure_response(200, "application/json")
                     try:
                         self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
                     except BrokenPipeError:
@@ -1009,10 +1113,12 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 print(f"Error: ping with unknown class '{ping_class}' received")
                 response = {"success": False,
                             "reason": f"Unknown class {ping_class}"}
+                self.configure_response(200, "application/json")
                 self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
                 # print("END POST")
                 # print("===============")
                 return
+        self.configure_response(204)
         # print("END POST")
         # print("===============")
 
@@ -1110,7 +1216,8 @@ def load_default_configuration():
     # First, retrieve the config filename that defines the desired gallery
     config_reader = configparser.ConfigParser(delimiters="=")
     config_reader.optionxform = str  # Override default, which is case in-sensitive
-    gal_path = os.path.join(config.APP_PATH, "galleryConfiguration.ini")
+    # gal_path = os.path.join(config.APP_PATH, "galleryConfiguration.ini")
+    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
     with config.galleryConfigurationLock:
         config_reader.read(gal_path)
     try:
@@ -1125,9 +1232,15 @@ def load_default_configuration():
     server_port = current.getint("server_port", 8080)
     ip_address = current.get("server_ip_address", socket.gethostbyname(socket.gethostname()))
     gallery_name = current.get("gallery_name", "Constellation")
-    staff_list = current.get("assignable_staff", [])
+    staff_list = current.get("assignable_staff", "")
+    config.debug = current.getboolean("debug", False)
+    if config.debug:
+        c_tools.print_debug_details(loop=True)
+
     if len(staff_list) > 0:
         config.assignable_staff = [x.strip() for x in staff_list.split(",")]
+    else:
+        config.assignable_staff = []
 
     c_sched.retrieve_json_schedule()
 

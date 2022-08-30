@@ -11,6 +11,8 @@ APP_PATH: str = ""
 # Path to the directory the code is actually running from (different from APP_PATH when using Pyinstaller)
 EXEC_PATH: str = ""
 
+debug: bool = False  # True means print various debug info
+
 # Threading resources
 polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures
 logLock: threading.Lock = threading.Lock()
@@ -49,6 +51,6 @@ rebooting: bool = False  # This will be set to True from a background thread whe
 
 # Exhibit stuff
 currentExhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
-galleryConfiguration: Union[configparser.ConfigParser, None] = None  # the configParser object holding the current config
+galleryConfiguration: Union[configparser.ConfigParser, None] = None  # The configParser object holding the current config
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []

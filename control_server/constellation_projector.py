@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import threading
+import time
 
 # Constellation imports
 import config
@@ -88,7 +89,7 @@ class Projector:
         """
 
         print(f"Queuing command {cmd} for {self.id}")
-        thread_ = threading.Thread(target=self.send_command, args=[cmd])
+        thread_ = threading.Thread(target=self.send_command, args=[cmd], name=f"CommandProjector_{self.id}_{str(time.time())}")
         thread_.daemon = True
         thread_.start()
 
@@ -132,7 +133,7 @@ def poll_projectors():
     """
 
     for projector in config.projectorList:
-        new_thread = threading.Thread(target=projector.update)
+        new_thread = threading.Thread(target=projector.update, name=f"PollProjector_{projector.id}_{str(time.time())}")
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
 

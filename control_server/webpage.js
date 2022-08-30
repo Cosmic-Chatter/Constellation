@@ -2055,8 +2055,9 @@ function populateHelpTab () {
     if (this.readyState !== 4) return
 
     if (this.status === 200) {
-      if (this.responseText !== '') {
-        const formattedText = markdownConverter.makeHtml(this.responseText)
+      const result = JSON.parse(this.responseText)
+      if (result.success === true) {
+        const formattedText = markdownConverter.makeHtml(result.text)
         $('#helpTextDiv').html(formattedText)
       } else {
         $('#helpTextDiv').html('Help text not available.')
