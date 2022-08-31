@@ -1656,7 +1656,7 @@ function createTrackerTemplate (name = '') {
   if (name === '') {
     name = $('#createTrackerTemplateName').val()
   }
-
+  console.log(name)
   const requestDict = {
     class: 'tracker',
     action: 'createTemplate',
@@ -2655,7 +2655,9 @@ $('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
 $('#reloadConfigurationButton').click(reloadConfiguration)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
 // Tracker
-$('#createTrackerTemplateButton').click(createTrackerTemplate)
+$('#createTrackerTemplateButton').click(function() {
+  createTrackerTemplate()
+  })
 $('#launchTrackerButton').click(launchTracker)
 $('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
 $('#deleteTrackerTemplateButton').click(function () {
