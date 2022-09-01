@@ -1111,6 +1111,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(bytes(json.dumps({"success": True}), encoding="UTF-8"))
                     except BrokenPipeError:
                         pass
+                    return
             else:
                 print(f"Error: ping with unknown class '{ping_class}' received")
                 response = {"success": False,
