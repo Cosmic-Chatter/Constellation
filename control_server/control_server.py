@@ -935,6 +935,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                                 "layout": layout_definition}
                     self.configure_response(200, "application/json")
                     self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "submitData":
                     if "data" not in data or "name" not in data:
                         response = {"success": False,
@@ -1101,8 +1102,9 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = os.path.join(config.APP_PATH, kind, "templates", data["name"] + ".ini")
                     with config.trackerTemplateWriteLock:
                         response = delete_file(file_path)
-                        self.configure_response(200, "application/json")
-                        self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    self.configure_response(200, "application/json")
+                    self.wfile.write(bytes(json.dumps(response), encoding="UTF-8"))
+                    return
                 elif action == "checkConnection":
                     self.configure_response(200, "application/json")
                     try:

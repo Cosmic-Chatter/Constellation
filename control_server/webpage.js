@@ -2663,7 +2663,9 @@ $('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
 $('#deleteTrackerTemplateButton').click(function () {
   $('#deleteTrackerTemplateModal').modal('show')
 })
-$('#deleteTrackerTemplateFromModalButton').click(deleteTrackerTemplate)
+$('#deleteTrackerTemplateFromModalButton').click(function() {
+  deleteTrackerTemplate()
+})
 $('#getAvailableTrackerDataButton').click(function () {
   constTracker.getAvailableTrackerData(populateTrackerDataSelect)
 })
