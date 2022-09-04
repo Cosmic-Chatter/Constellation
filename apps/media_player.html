@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <title>Constellation Media Player</title>
+
+    <link rel="stylesheet" href="media_player/css/bootstrap.min.css">
+
+    <style>
+      body,html {
+        margin: 0;
+        padding: 0;
+        background-color: black;
+        overflow: hidden;
+      }
+      #imageOverlay {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        line-height: 100%;
+        top: 0px;
+        left: 0px;
+        opacity: 0;
+        margin: 0;
+        padding: 0;
+        cursor: none;
+      }
+      #fullscreenImage {
+        max-width: 100vw;
+        max-height: 100vh;
+        vertical-align: middle;
+        margin: 0;
+        padding: 0;
+      }
+      #videoOverlay {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        opacity: 0;
+        cursor: none;
+      }
+      #fullscreenVideo {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+
+  <div id="helperConnectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
+    <div class="alert alert-danger col-auto mx-auto" role="alert">
+      <center>
+        <H4>Error: Cannot connect to System Helper!</H4>
+        Make sure the helper is running at <span id='helperConnectionWarningAddress'></span> and then restart Media Player
+      </center>
+    </div>
+  </div>
+
+  <div id="videoOverlay">
+    <video id="fullscreenVideo" muted>
+    </video>
+  </div>
+
+  <div id="imageOverlay" class="d-flex">
+    <center class="mx-auto my-auto">
+      <img id="fullscreenImage">
+    </center>
+  </img>
+  </div>
+
+  <script src="media_player/js/jquery-3.5.1.slim.min.js"></script>
+  <script src="media_player/js/bootstrap.min.js"></script>
+  <script src="js/platform.js"></script>
+
+  <!-- Load js file with helperAddress -->
+  <script src="media_player/config.js"></script>
+  <script type="module" src="media_player/media_player.js"></script>
+
+  </body>
+
+</html>

@@ -220,6 +220,61 @@ function uploadComponentContentFile () {
     }
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
+      if (this.status === 422) {
+        uploadComponentContentFileFastAPI()
+      }
+      if (this.status === 200) {
+        const response = JSON.parse(this.responseText)
+
+        if ('success' in response) {
+          constExhibit.queueCommand(id, 'reloadDefaults')
+          constExhibit.showExhibitComponentInfo('')
+        }
+      }
+    }
+
+    xhr.upload.addEventListener('progress', function (evt) {
+      if (evt.lengthComputable) {
+        let percentComplete = evt.loaded / evt.total
+        percentComplete = parseInt(percentComplete * 100)
+        $('#contentUploadProgressBar').width(String(percentComplete) + '%')
+        if (percentComplete > 0) {
+          $('#contentUploadProgressBarContainer').show()
+        } else if (percentComplete === 100) {
+          $('#contentUploadProgressBarContainer').hide()
+        }
+      }
+    }, false)
+
+    xhr.send(formData)
+  }
+}
+
+function uploadComponentContentFileFastAPI () {
+  const fileInput = $('#componentContentUpload')[0]
+  if (fileInput.files[0] != null) {
+    const id = $('#componentInfoModalTitle').html().trim()
+
+    const component = constExhibit.getExhibitComponent(id)
+
+    $('#contentUploadSubmitButton').prop('disabled', true)
+    $('#contentUploadSubmitButton').html('Working...')
+
+    const file = fileInput.files[0]
+    const formData = new FormData()
+    formData.append('exhibit', getCurrentExhibitName())
+    formData.append('filename', file.name)
+    formData.append('mimetype', file.type)
+    formData.append('file', file)
+
+    const xhr = new XMLHttpRequest()
+    if (component.helperAddress != null) {
+      xhr.open('POST', component.helperAddress + '/uploadContent', true)
+    } else {
+      xhr.open('POST', `http://${component.ip}:${component.helperPort}` + '/uploadContent', true)
+    }
+    xhr.onreadystatechange = function () {
+      if (this.readyState !== 4) return
       if (this.status === 200) {
         const response = JSON.parse(this.responseText)
 
@@ -2655,15 +2710,15 @@ $('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
 $('#reloadConfigurationButton').click(reloadConfiguration)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
 // Tracker
-$('#createTrackerTemplateButton').click(function() {
+$('#createTrackerTemplateButton').click(function () {
   createTrackerTemplate()
-  })
+})
 $('#launchTrackerButton').click(launchTracker)
 $('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
 $('#deleteTrackerTemplateButton').click(function () {
   $('#deleteTrackerTemplateModal').modal('show')
 })
-$('#deleteTrackerTemplateFromModalButton').click(function() {
+$('#deleteTrackerTemplateFromModalButton').click(function () {
   deleteTrackerTemplate()
 })
 $('#getAvailableTrackerDataButton').click(function () {

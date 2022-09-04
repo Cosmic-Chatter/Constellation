@@ -1,0 +1,8 @@
+aiofiles
+sockio
+pyserial
+psutil
+python-dateutil
+requests
+pyffmpeg
+python-multipart
