@@ -351,11 +351,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     if "config" not in data["defaults"] and "content" in config.defaults_dict:
                         (data["defaults"])["content"] = config.defaults_dict["content"]
                     set_defaults(data["defaults"])
-                    # response = {"success": True, "helperAddress": get_local_address()}
-                    # json_string = json.dumps(response)
-                    # try:
-                    #     self.wfile.write(bytes(json_string, encoding="UTF-8"))
-                    # except BrokenPipeError:
                     #     pass
                 elif data["action"] == "updateDefaults":
                     # This action is for legacy support only. New applications should utilize the setDefaults action.
@@ -421,6 +416,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             self.wfile.write(bytes(json_string, encoding="UTF-8"))
                         except BrokenPipeError:
                             pass
+                    return
                 elif data["action"] == 'gotoClip':
                     if "clipNumber" in data:
                         config.commandList.append("gotoClip_" + str(data["clipNumber"]))
@@ -474,6 +470,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                             self.wfile.write(bytes(label, encoding="UTF-8"))
                         except BrokenPipeError:
                             pass
+                        return
                     else:
                         print("Error: Label requested without name")
                 else:
