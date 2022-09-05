@@ -257,4 +257,7 @@ if __name__ == "__main__":
     helper_utilities.check_for_software_update()
 
     # Must use only one worker, since we are relying on the config module being in global
-    uvicorn.run("helper_fastapi:app", host="0.0.0.0", port=8000, reload=False, workers=1)
+    uvicorn.run("helper_fastapi:app",
+                host="0.0.0.0",
+                port=int(const_config.defaults_dict["helper_port"]),
+                reload=False, workers=1)

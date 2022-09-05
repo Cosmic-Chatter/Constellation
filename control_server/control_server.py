@@ -1164,6 +1164,7 @@ def clear_terminal():
 
     os.system('cls' if os.name == 'nt' else 'clear')
 
+
 def command_line_setup():
     """Prompt the user for several pieces of information on first-time setup"""
 

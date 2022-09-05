@@ -1,12 +1,14 @@
 # Standard modules
 import configparser
 import errno
+import functools
 import psutil
 import os
 import socket
 import urllib, urllib.request, urllib.error
 import shutil
 import sys
+import threading
 from typing import Union
 import webbrowser
 
@@ -97,7 +99,7 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         else:
             handle_missing_defaults_file()
             read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)
-            webbrowser.open(f"http://localhost:{config.defaults_dict['helper_port']}")
+            threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}")).start()
             return
 
     default = config.defaults_object["CURRENT"]
@@ -113,37 +115,72 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         helper_files.check_directory_structure()
 
 
+def clear_terminal():
+    """Clear the terminal"""
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
 def handle_missing_defaults_file():
     """Create a stub defaults.ini file and launch setup.html for configuration"""
 
-    # Determine an available port
-    port = 8000
+    """Prompt the user for several pieces of information on first-time setup"""
+
+    settings_dict = {"current_exhibit": "default"}
+
+    clear_terminal()
+    print("##########################################################")
+    print("Welcome to Constellation Apps!")
+    print("")
+    print("This appears to be your first time running an app in this")
+    print("directory. In order to set up your configuration, you will")
+    print("be asked a few questions. If you don't know the answer, or")
+    print("wish to accept the default, just press the enter key.")
+    print("")
+    this_id = input("Enter a unique ID for this app (default: TEMP): ").strip()
+    if this_id == "":
+        this_id = "TEMP"
+    settings_dict["id"] = this_id
+
+    this_type = input("Enter a type for this app (no spaces, default: TEMP): ").strip().replace(' ', '-')
+    if this_type == "":
+        this_type = "TEMP"
+    settings_dict["type"] = this_type
+
+    ip_address = input(f"Enter the static Constellation Control Server IP address. If you do not know what this is, ask your system administrator. (default: localhost): ").strip()
+    if ip_address == "":
+        ip_address = 'localhost'
+    settings_dict["server_ip_address"] = ip_address
+
+    server_port = input(
+        f"Enter the port for the Constellation Control Server. If you do not know what this is, ask your system administrator. (default: 8082): ").strip()
+    if server_port == "":
+        port = '8082'
+    settings_dict["server_port"] = server_port
+
+    this_port = 8000
     port_available = False
     while port_available is False:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s.bind(("127.0.0.1", port))
+            s.bind(("127.0.0.1", this_port))
             port_available = True
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
-                port += 1
+                this_port += 1
             else:
                 # Something else raised the socket.error exception
                 print(e)
 
         s.close()
+    helper_port = input(
+        f"Enter the port for this app. If you do not know what this is, ask your system administrator. (default: {this_port}): ").strip()
+    if helper_port == "":
+        helper_port = str(this_port)
+    settings_dict["helper_port"] = helper_port
 
-    # Add bare-bones defaults to get things off the ground
-    config.defaults_dict = {
-        "id": "TEMP",
-        "type": "TEMP",
-        "current_exhibit": "default",
-        "helper_port": port,
-        "server_ip_address": "240.0.0.0",
-        "server_port": 8082
-    }
-    config.defaults_object.read_dict({"CURRENT": config.defaults_dict})
-    update_defaults(config.defaults_dict, force=True)
+    config.defaults_object.read_dict({"CURRENT": settings_dict})
+    update_defaults(settings_dict, force=True)
 
 
 def str_to_bool(val: str) -> bool:
