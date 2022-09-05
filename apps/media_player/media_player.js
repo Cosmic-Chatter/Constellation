@@ -1,5 +1,3 @@
-/* global helperAddress */
-
 import * as constCommon from '../js/constellation_app_common.js'
 
 function updateFunc (update) {
@@ -131,7 +129,7 @@ function updateClipList (list) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', helperAddress, true)
+  xhr.open('POST', constCommon.config.helperAddress, true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.send(requestString)
 }
@@ -147,7 +145,7 @@ function updateActiveClip (index) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', helperAddress + '/updateActiveClip', true)
+  xhr.open('POST', constCommon.config.helperAddress + '/updateActiveClip', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.send(requestString)
 }
@@ -243,7 +241,6 @@ function changeMedia (source, delayPlay, playOnly) {
     imageContainer.style.opacity = 0
   }
 }
-
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.softwareVersion = 2.0
 constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/FWMSH/Constellation/main/media_player/version.txt'
@@ -260,7 +257,7 @@ constCommon.config.allowAudio = false
 constCommon.config.debug = true
 document.addEventListener('click', unmute)
 
-constCommon.config.helperAddress = helperAddress
+constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
 constCommon.checkForSoftwareUpdate()

@@ -224,7 +224,6 @@ export function askForDefaults () {
 
     if (this.status === 200) {
       $('#helperConnectionWarning').hide()
-      console.log(JSON.parse(this.responseText))
       readUpdate(JSON.parse(this.responseText))
     }
   }
@@ -294,6 +293,16 @@ export function arraysEqual (arr1, arr2) {
       }
     }
     return true
+  }
+}
+
+export function stringToBool (str) {
+  // Parse a given string and return an appropriate bool
+
+  if (['True', 'true', 'TRUE', '1', 'yes', 'Yes', 'YES'].includes(str)) {
+    return true
+  } else {
+    return false
   }
 }
 
