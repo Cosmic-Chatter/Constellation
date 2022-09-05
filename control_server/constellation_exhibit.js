@@ -632,6 +632,9 @@ export function showExhibitComponentInfo (id) {
                   thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
                   thumb.setAttribute('loop', true)
                   thumb.setAttribute('autoplay', true)
+                  thumb.setAttribute('disablePictureInPicture', true)
+                  thumb.setAttribute('webkit-playsinline', true)
+                  thumb.setAttribute('playsinline', true)
                   button.appendChild(thumb)
                 }
               }
