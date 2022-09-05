@@ -210,8 +210,8 @@ function handleScroll (event) {
   hideAttractor()
   constCommon.config.currentInteraction = true
 
-  const dx = event.originalEvent.deltaY
-  const velocity = Math.abs(dx)
+  const dy = event.originalEvent.deltaY
+  const velocity = Math.abs(dy)
   let sourceIncrement
   if (velocity < 500) {
     // Slow scroll
@@ -232,7 +232,7 @@ function handleScroll (event) {
     }
   }
   if (stopInput === false) {
-    if (dx < 0) {
+    if (dy < 0) {
       changeSource(sourceIncrement)
     } else {
       changeSource(-1 * sourceIncrement)
