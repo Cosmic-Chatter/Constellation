@@ -155,7 +155,7 @@ def handle_missing_defaults_file():
     server_port = input(
         f"Enter the port for the Constellation Control Server. If you do not know what this is, ask your system administrator. (default: 8082): ").strip()
     if server_port == "":
-        port = '8082'
+        server_port = '8082'
     settings_dict["server_port"] = server_port
 
     this_port = 8000
@@ -200,38 +200,47 @@ def str_to_bool(val: str) -> bool:
     return val_to_return
 
 
+def check_dict_equality(dict1: dict, dict2: dict):
+    """Return True if every key/value pair in both dicts is the same and False otherwise"""
+
+    for key in dict1:
+        if key in dict2 and dict1[key] == dict2[key]:
+            pass
+        else:
+            return False
+
+    for key in dict2:
+        if key in dict1 and dict1[key] == dict2[key]:
+            pass
+        else:
+            return False
+    return True
+
+
 def update_defaults(data: dict, force: bool = False):
     """Take a dictionary 'data' and write relevant parameters to disk if they have changed."""
 
     update_made = force
     if "content" in data:
-        if isinstance(data["content"], str):
-            content = data["content"]
-        elif isinstance(data["content"], list):
+        if isinstance(data["content"], list):
             content = ""
             for i in range(len(data["content"])):
                 file = (data["content"])[i]
                 if i != 0:
                     content += ', '
                 content += file
+            data["content"] = content
         else:
             # Unsupported data type, so don't make a change
             content = config.defaults_dict["content"]
 
-        # If content has changed, update our configuration
-        if ("content" not in config.defaults_dict) or (content != config.defaults_dict["content"]):
-            config.defaults_object.set("CURRENT", "content", content)
-            config.defaults_dict["content"] = content
-            update_made = True
-    if "current_exhibit" in data:
-        if ("current_exhibit" not in config.defaults_dict) \
-                or (data["current_exhibit"] != config.defaults_dict["current_exhibit"]):
-            config.defaults_object.set("CURRENT", "current_exhibit", data["current_exhibit"])
-            config.defaults_dict["current_exhibit"] = data["current_exhibit"]
-            update_made = True
+    new_dict = config.defaults_dict.copy()
+    new_dict.update(data)
 
     # Update file
-    if update_made:
+    if check_dict_equality(new_dict, config.defaults_dict) is False:
+        config.defaults_dict = new_dict
+        read_default_configuration(check_directories=False, dict_to_read=new_dict)
         with config.defaults_file_lock:
             defaults_path = helper_files.get_path(['defaults.ini'], user_file=True)
             with open(defaults_path, 'w', encoding='UTF-8') as f:

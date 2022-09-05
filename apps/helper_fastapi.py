@@ -33,6 +33,7 @@ app.add_middleware(
 app.mount("/media_player",  StaticFiles(directory="media_player"), name="media_player")
 app.mount("/timelapse_viewer",  StaticFiles(directory="timelapse_viewer"), name="timelapse_viewer")
 app.mount("/js",  StaticFiles(directory="js"), name="js")
+app.mount("/css",  StaticFiles(directory="css"), name="css")
 app.mount("/content",  StaticFiles(directory="content"), name="content")
 app.mount("/thumbnails",  StaticFiles(directory="thumbnails"), name="thumbnails")
 
