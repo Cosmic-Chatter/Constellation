@@ -20,6 +20,16 @@ import helper_files
 import helper_system
 import helper_utilities
 
+
+const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    # If the application is run as a --onefile bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app
+    # path into variable sys.executable.
+    const_config.application_path = os.path.dirname(sys.executable)
+else:
+    const_config.application_path = const_config.exec_path
+
 helper_utilities.read_default_configuration()
 
 app = FastAPI()
@@ -32,22 +42,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/media_player",  StaticFiles(directory="media_player"), name="media_player")
-app.mount("/timelapse_viewer",  StaticFiles(directory="timelapse_viewer"), name="timelapse_viewer")
-app.mount("/js",  StaticFiles(directory="js"), name="js")
-app.mount("/css",  StaticFiles(directory="css"), name="css")
-app.mount("/content",  StaticFiles(directory="content"), name="content")
-app.mount("/thumbnails",  StaticFiles(directory="thumbnails"), name="thumbnails")
+app.mount("/media_player",  StaticFiles(directory=helper_files.get_path(["media_player"])), name="media_player")
+app.mount("/timelapse_viewer",  StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])), name="timelapse_viewer")
+app.mount("/js",  StaticFiles(directory=helper_files.get_path(["js"])), name="js")
+app.mount("/css",  StaticFiles(directory=helper_files.get_path(["css"])), name="css")
+app.mount("/content",  StaticFiles(directory=helper_files.get_path(["content"], user_file=True)), name="content")
+app.mount("/thumbnails",  StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)), name="thumbnails")
 
-
-const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
-if getattr(sys, 'frozen', False):
-    # If the application is run as a --onefile bundle, the PyInstaller bootloader
-    # extends the sys module by a flag frozen=True and sets the app
-    # path into variable sys.executable.
-    const_config.application_path = os.path.dirname(sys.executable)
-else:
-    const_config.application_path = const_config.exec_path
 
 @lru_cache()
 def get_config():
@@ -258,8 +259,8 @@ if __name__ == "__main__":
     # Check the GitHub server for an available software update
     helper_utilities.check_for_software_update()
 
-    # Must use only one worker, since we are relying on the config module being in global
-    uvicorn.run("helper_fastapi:app",
+    # Must use only one worker, since we are relying on the config module being in global)
+    uvicorn.run(helper_files.get_path([""]) + ".helper_fastapi:app",
                 host="0.0.0.0",
                 port=int(const_config.defaults_dict["helper_port"]),
                 reload=False, workers=1)
