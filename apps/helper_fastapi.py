@@ -20,6 +20,8 @@ import helper_files
 import helper_system
 import helper_utilities
 
+helper_utilities.read_default_configuration()
+
 app = FastAPI()
 
 app.add_middleware(
@@ -37,7 +39,6 @@ app.mount("/css",  StaticFiles(directory="css"), name="css")
 app.mount("/content",  StaticFiles(directory="content"), name="content")
 app.mount("/thumbnails",  StaticFiles(directory="thumbnails"), name="thumbnails")
 
-helper_utilities.read_default_configuration()
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
