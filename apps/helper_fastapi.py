@@ -1,5 +1,6 @@
 # Standard modules
 from functools import lru_cache
+import mimetypes
 import os
 import sys
 import time
@@ -11,7 +12,6 @@ from fastapi import FastAPI, Depends, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import mimetypes
 import uvicorn
 
 # Constellation modules

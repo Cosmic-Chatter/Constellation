@@ -1,5 +1,4 @@
 aiofiles
-mimetypes
 fastapi
 psutil
 pyffmpeg
