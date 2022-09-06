@@ -1,8 +1,11 @@
 aiofiles
-sockio
-pyserial
+mimetypes
+fastapi
 psutil
-python-dateutil
-requests
 pyffmpeg
+pyserial
+python-dateutil
 python-multipart
+requests
+sockio
+uvicorn
