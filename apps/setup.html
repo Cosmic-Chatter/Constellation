@@ -233,11 +233,11 @@
       // Send a message to the local helper and ask for the latest configuration
       // defaults, then use them.
 
-      var requestString = JSON.stringify({"action": "getDefaults"});
+      // var requestString = JSON.stringify({"action": "getDefaults"});
 
       let xhr = new XMLHttpRequest();
       xhr.timeout = 2000;
-      xhr.open("POST", helperAddress, true);
+      xhr.open("GET", helperAddress + '/getDefaults', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = function () {
 
@@ -247,7 +247,7 @@
           readDefaults(this.responseText);
         }
       };
-      xhr.send(requestString);
+      xhr.send();
     }
 
     function readDefaults(response) {
@@ -289,11 +289,11 @@
       })
 
       // Send the new defaults back to the helper for committing.
-      var requestString = JSON.stringify({"action": "setDefaults", "defaults": newDefaults});
+      var requestString = JSON.stringify({"defaults": newDefaults});
 
       let xhr = new XMLHttpRequest();
       xhr.timeout = 2000;
-      xhr.open("POST", helperAddress, true);
+      xhr.open("POST", helperAddress + '/setDefaults', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = function () {
 
@@ -306,7 +306,7 @@
     }
 
 
-    var helperAddress = INSERT_HELPERIP_HERE ;
+    var helperAddress = window.location.origin;
 
     // For known keys, define their options
     let knownKeys = [

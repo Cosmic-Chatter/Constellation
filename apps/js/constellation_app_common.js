@@ -253,7 +253,9 @@ export function sendConfigUpdate (update) {
   // Send a message to the helper with the latest configuration to set as
   // the default
 
-  const requestDict = { action: 'updateDefaults', defaults: update }
+  const defaults = { content: update.content, current_exhibit: update.current_exhibit }
+
+  const requestDict = { action: 'updateDefaults', defaults }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 1000

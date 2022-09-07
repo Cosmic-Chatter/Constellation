@@ -42,18 +42,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/media_player",  StaticFiles(directory=helper_files.get_path(["media_player"])), name="media_player")
-app.mount("/timelapse_viewer",  StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])), name="timelapse_viewer")
-app.mount("/js",  StaticFiles(directory=helper_files.get_path(["js"])), name="js")
-app.mount("/css",  StaticFiles(directory=helper_files.get_path(["css"])), name="css")
-app.mount("/content",  StaticFiles(directory=helper_files.get_path(["content"], user_file=True)), name="content")
-app.mount("/thumbnails",  StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)), name="thumbnails")
+app.mount("/media_player",
+          StaticFiles(directory=helper_files.get_path(["media_player"])),
+          name="media_player")
+app.mount("/timelapse_viewer",
+          StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])),
+          name="timelapse_viewer")
+app.mount("/js",
+          StaticFiles(directory=helper_files.get_path(["js"])),
+          name="js")
+app.mount("/css",
+          StaticFiles(directory=helper_files.get_path(["css"])),
+          name="css")
+app.mount("/content",
+          StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
+          name="content")
+app.mount("/thumbnails",
+          StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)),
+          name="thumbnails")
 
 
 @lru_cache()
 def get_config():
-    print(const_config.HELPER_SOFTWARE_VERSION)
-    print("get_config")
     return const_config
 
 
@@ -64,9 +74,13 @@ async def root():
 
 @app.get("/{file_name}.html", response_class=HTMLResponse)
 async def serve_html(file_name):
-    with open(file_name+".html", "r") as f:
+    # First try a local file and then a Constellation file
+    file_path = helper_files.get_path([file_name+".html"], user_file=True)
+    if not os.path.isfile(file_path):
+        file_path = helper_files.get_path([file_name + ".html"], user_file=False)
+    with open(file_path, "r") as f:
         page = str(f.read())
-        page = page.replace("INSERT_HELPERIP_HERE", "localhost:8000")
+        # page = page.replace("INSERT_HELPERIP_HERE", "localhost:8000")
     return page
 
 
@@ -260,7 +274,7 @@ if __name__ == "__main__":
     helper_utilities.check_for_software_update()
 
     # Must use only one worker, since we are relying on the config module being in global)
-    uvicorn.run(helper_files.get_path([""]) + ".helper_fastapi:app",
+    uvicorn.run(app,
                 host="0.0.0.0",
                 port=int(const_config.defaults_dict["helper_port"]),
                 reload=False, workers=1)
