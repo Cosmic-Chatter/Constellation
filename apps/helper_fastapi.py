@@ -10,7 +10,7 @@ from typing import Any
 import aiofiles
 from fastapi import FastAPI, Depends, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
@@ -41,9 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/infostation",
-          StaticFiles(directory=helper_files.get_path(["infostation"])),
-          name="infostation")
+app.mount("/InfoStation",
+          StaticFiles(directory=helper_files.get_path(["InfoStation"])),
+          name="InfoStation")
 app.mount("/media_player",
           StaticFiles(directory=helper_files.get_path(["media_player"])),
           name="media_player")
@@ -62,6 +62,9 @@ app.mount("/content",
 app.mount("/images",
           StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
           name="images")
+app.mount("/style",
+          StaticFiles(directory=helper_files.get_path(["style"], user_file=True)),
+          name="style")
 app.mount("/text",
           StaticFiles(directory=helper_files.get_path(["text"], user_file=True)),
           name="thumbs")
@@ -94,7 +97,6 @@ async def serve_html(file_name):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
     with open(file_path, "r") as f:
         page = str(f.read())
-        # page = page.replace("INSERT_HELPERIP_HERE", "localhost:8000")
     return page
 
 
