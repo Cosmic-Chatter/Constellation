@@ -41,7 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.mount("/infostation",
+          StaticFiles(directory=helper_files.get_path(["infostation"])),
+          name="infostation")
 app.mount("/media_player",
           StaticFiles(directory=helper_files.get_path(["media_player"])),
           name="media_player")
@@ -57,9 +59,21 @@ app.mount("/css",
 app.mount("/content",
           StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
           name="content")
+app.mount("/images",
+          StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
+          name="images")
+app.mount("/text",
+          StaticFiles(directory=helper_files.get_path(["text"], user_file=True)),
+          name="thumbs")
+app.mount("/thumbs",
+          StaticFiles(directory=helper_files.get_path(["thumbs"], user_file=True)),
+          name="thumbs")
 app.mount("/thumbnails",
           StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)),
           name="thumbnails")
+app.mount("/videos",
+          StaticFiles(directory=helper_files.get_path(["videos"], user_file=True)),
+          name="videos")
 
 
 @lru_cache()
