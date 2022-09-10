@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <title>Constellation Time-Lapse Viewer</title>
+
+    <link rel="stylesheet" href="css/bootstrap_4_6/bootstrap.min.css">
+
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        background-color: black;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+      }
+      .fullscreenImage {
+        max-width: 100vw;
+        max-height: 100vh;
+        vertical-align: middle;
+        margin: 0;
+        padding: 0;
+      }
+      #hand {
+        position: relative;
+        width: 6vw;
+        -webkit-animation: backandforth 3s ease 0s;
+        -webkit-animation-iteration-count:infinite;
+        animation: backandforth 3s ease 0s;
+        animation-iteration-count:infinite;
+      }
+      #handContainer {
+        position: absolute;
+        left: 45vw;
+        top: 80vh;
+        width: 10vw;
+      }
+      #imageContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+      }
+
+      @-webkit-keyframes backandforth {0%{left:-57%;} 50%{left:100%;} 100%{left:-57%;}}
+
+      @keyframes backandforth {0%{left:-57%;} 50%{left:100%;} 100%{left:-57%;}}
+
+    </style>
+  </head>
+
+  <body  oncontextmenu="return false">
+    <div id="helperConnectionWarning" class="position-fixed row w-100" style="display: none; z-index:999;">
+      <div class="alert alert-danger col-auto mx-auto" role="alert">
+        <center>
+          <H4>Error: Cannot connect to System Helper!</H4>
+          Make sure the helper is running at <span id='helperConnectionWarningAddress'></span> and then restart Time-Lapse Viewer
+        </center>
+      </div>
+    </div>
+
+    <div id='imageContainer'>
+      <img id='img1' class="fullscreenImage" draggable="false"></img>
+      <img id='img2' class="fullscreenImage" draggable="false"></img>
+    </div>
+
+    <div id="handContainer">
+      <img id="hand" src="timelapse_viewer/hand.svg"></img>
+    </div>
+
+
+  <script src="js/jquery-3.5.1.slim.min.js"></script>
+  <script src="js/bootstrap_4_6/bootstrap.min.js"></script>
+  <script src="js/platform.js"></script>
+  <script type="module" src="timelapse_viewer/timelapse_viewer.js"></script>
+  </body>
+</html>
