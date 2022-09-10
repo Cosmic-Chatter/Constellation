@@ -88,39 +88,6 @@ function getFileType (filename) {
   return 'other'
 }
 
-function parseINIString (data) {
-  // Take an INI file and return an object with the settings
-  // From https://stackoverflow.com/questions/3870019/javascript-parser-for-a-string-which-contains-ini-data
-
-  const regex = {
-    section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
-    param: /^\s*([^=]+?)\s*=\s*(.*?)\s*$/,
-    comment: /^\s*;.*$/
-  }
-  const value = {}
-  const lines = data.split(/[\r\n]+/)
-  let section = null
-  lines.forEach(function (line) {
-    if (regex.comment.test(line)) {
-      return
-    } else if (regex.param.test(line)) {
-      const match = line.match(regex.param)
-      if (section) {
-        value[section][match[1]] = match[2]
-      } else {
-        value[match[1]] = match[2]
-      }
-    } else if (regex.section.test(line)) {
-      const match = line.match(regex.section)
-      value[match[1]] = {}
-      section = match[1]
-    } else if (line.length === 0 && section) {
-      section = null
-    };
-  })
-  return value
-}
-
 function createButton (title, id) {
   // Create a button in the bottom bar that shows the pane with the given id
 
@@ -233,7 +200,7 @@ function _createImageTabContent (tabId, contentStr) {
   $('#' + tabId).append(row)
   const overlayId = tabId + '_overlay'
 
-  const content = parseINIString(contentStr)
+  const content = constCommon.parseINIString(contentStr)
   const images = Object.keys(content)
 
   // Then, iterate through the content and build a card for each image
@@ -470,7 +437,7 @@ function _createVideoTabContent (tabId, contentStr) {
   $('#' + tabId).append(row)
   const overlayId = tabId + '_overlay'
 
-  const content = parseINIString(contentStr)
+  const content = constCommon.parseINIString(contentStr)
   const videos = Object.keys(content)
 
   // Iterate through the content and build a card for each image
@@ -654,7 +621,7 @@ function updateFunc (update) {
       const xhr = new XMLHttpRequest()
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
-          updateContent(parseINIString(xhr.responseText))
+          updateContent(constCommon.parseINIString(xhr.responseText))
         }
       }
       xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
@@ -832,7 +799,7 @@ function videoOverlayShow (id, card) {
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.softwareVersion = 2.0
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/infostation/version.txt'
+constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/InfoStation/version.txt'
 constCommon.config.constellationAppID = 'infostation'
 constCommon.config.debug = true
 
