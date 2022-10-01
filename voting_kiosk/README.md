@@ -63,6 +63,7 @@ The `[SETTINGS]` section provides Voting Kiosk with details on how to configure 
 | recording_interval | How many seconds of data to batch for sending to Control Server | No | 60 | Numnber |
 | subfooter | The small text at the bottom of hte screen | No | - | Text |
 | subheader | The small text at the top of the screen | No | - | Text |
+| success | A short message to be displayed when a vote is submitted | No | Thank You! | Text |
 | top_height | Percent of the screen that should be used for the header/subheader. **Number only** | No | 20 | Number |
 | touch_cooldown | Number of seconds that must pass before another vote is accepted. This is an anti-spam feature. | No | 2 | Number |
 

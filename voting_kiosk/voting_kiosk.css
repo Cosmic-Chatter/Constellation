@@ -111,6 +111,12 @@ body {
     font-family: var(--subheader-font);
 }
 
+#successMessageBody {
+    font-size: 3vw!important;
+    font-family: var(--button-font);
+    background-color: var(--success-message-color);
+}
+
 #topRow {
     height: 20vh;
 }
