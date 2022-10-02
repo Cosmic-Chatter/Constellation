@@ -3,6 +3,7 @@ from functools import lru_cache
 import mimetypes
 import os
 import sys
+import threading
 import time
 from typing import Any
 
@@ -206,7 +207,8 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
         response = {"all_exhibits": helper_files.get_all_directory_contents(),
                     "thumbnails": helper_files.get_directory_contents("thumbnails"),
                     "active_content": active_content,
-                    "system_stats": helper_utilities.get_system_stats()}
+                    "system_stats": helper_utilities.get_system_stats(),
+                    "multiple_file_upload": True}
 
         return response
     elif action == "restart":
@@ -253,21 +255,23 @@ async def update_clip_list(data: dict[str, Any], config: const_config = Depends(
 
 
 @app.post("/uploadContent")
-async def upload_content(exhibit: str = Form(),
-                         filename: str = Form(),
-                         mimetype: str = Form(),
-                         file: UploadFile = File(),
+async def upload_content(files: list[UploadFile] = File(),
                          config: const_config = Depends(get_config)):
-    """Receive an uploaded file and save it to disk"""
-    file_path = helper_files.get_path(["content", filename], user_file=True)
-    print(f"Saving uploaded file to {file_path}")
-    with config.content_file_lock:
-        async with aiofiles.open(file_path, 'wb') as out_file:
-            content = await file.read()  # async read
-            await out_file.write(content)  # async write
-    mimetype = mimetypes.guess_type(file_path, strict=False)[0]
-    if mimetype is not None:
-        helper_files.create_thumbnail(filename, mimetype.split("/")[0])
+    """Receive uploaded files and save them to disk"""
+
+    for file in files:
+        filename = file.filename
+        file_path = helper_files.get_path(["content", filename], user_file=True)
+        print(f"Saving uploaded file to {file_path}")
+        with config.content_file_lock:
+            async with aiofiles.open(file_path, 'wb') as out_file:
+                content = await file.read()  # async read
+                await out_file.write(content)  # async write
+        mimetype = mimetypes.guess_type(file_path, strict=False)[0]
+        if mimetype is not None:
+            th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]), daemon=True)
+            th.start()
+            # helper_files.create_thumbnail(filename, mimetype.split("/")[0])
     return {"success": True}
 
 

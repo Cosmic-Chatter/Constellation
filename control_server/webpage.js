@@ -175,19 +175,36 @@ function onUploadContentChange () {
   // (as defined by their buttons) and warn if we will overwrite. Also
   // check if the filename contains an =, which is not allowed
 
-  $('#contentUploadSubmitButton').show()
   // Show the upload button (we may hide it later)
+  $('#contentUploadSubmitButton').show()
+
   const fileInput = $('#componentContentUpload')[0]
-  // Check for filename collision
-  const currentFiles = $('.componentContentButton').map(function () { return $(this).html() }).toArray()
-  $('#componentContentUploadfilename').html('File: ' + fileInput.files[0].name)
-  if (currentFiles.includes(fileInput.files[0].name)) {
+
+  // Check for filename collision and = sign in filename
+  const currentFiles = $('.componentContentButton').map(function () { return $(this).find('span').html() }).toArray()
+  let collision = false
+  let equals = false
+  for (let i = 0; i < fileInput.files.length; i++) {
+    const file = fileInput.files[i]
+    if (currentFiles.includes(file.name)) {
+      collision = true
+    }
+    if (file.name.includes('=')) {
+      equals = true
+    }
+  }
+  // Format button text
+  if (fileInput.files.length === 1) {
+    $('#componentContentUploadfilename').html('File: ' + fileInput.files[0].name)
+  } else {
+    $('#componentContentUploadfilename').html('Files: ' + fileInput.files[0].name + ` + ${fileInput.files.length - 1} more`)
+  }
+  if (collision) {
     $('#uploadOverwriteWarning').show()
   } else {
     $('#uploadOverwriteWarning').hide()
   }
-  // Check for = in filename
-  if (fileInput.files[0].name.includes('=')) {
+  if (equals) {
     $('#contentUploadEqualSignWarning').show()
     $('#contentUploadSubmitButton').hide()
   } else {
@@ -251,7 +268,9 @@ function uploadComponentContentFile () {
 }
 
 function uploadComponentContentFileFastAPI () {
+  // Handle uploading files to the FastAPI-based system helper
   const fileInput = $('#componentContentUpload')[0]
+
   if (fileInput.files[0] != null) {
     const id = $('#componentInfoModalTitle').html().trim()
 
@@ -260,12 +279,17 @@ function uploadComponentContentFileFastAPI () {
     $('#contentUploadSubmitButton').prop('disabled', true)
     $('#contentUploadSubmitButton').html('Working...')
 
-    const file = fileInput.files[0]
     const formData = new FormData()
-    formData.append('exhibit', getCurrentExhibitName())
-    formData.append('filename', file.name)
-    formData.append('mimetype', file.type)
-    formData.append('file', file)
+
+    for (let i = 0; i < fileInput.files.length; i++) {
+      const file = fileInput.files[i]
+      console.log(file)
+      formData.append('files', file)
+    }
+
+    // formData.append('filenames', filenames)
+    // formData.append('files', files)
+    console.log(formData)
 
     const xhr = new XMLHttpRequest()
     if (component.helperAddress != null) {
@@ -282,6 +306,8 @@ function uploadComponentContentFileFastAPI () {
           constExhibit.queueCommand(id, 'reloadDefaults')
           constExhibit.showExhibitComponentInfo('')
         }
+      } else if (this.status === 422) {
+        console.log(JSON.parse(this.responseText))
       }
     }
 
@@ -2654,6 +2680,14 @@ $('#componentInfoModalMaintenanceSaveButton').click(function () {
 $('#componentContentUpload').change(onUploadContentChange)
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
+})
+$('#componentInfoModalThumbnailCheckbox').change(function () {
+  const checked = $('#componentInfoModalThumbnailCheckbox').prop('checked')
+  if (checked) {
+    $('.contentThumbnail').show()
+  } else {
+    $('.contentThumbnail').hide()
+  }
 })
 // Schedule tab
 // =========================

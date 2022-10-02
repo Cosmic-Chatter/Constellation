@@ -60,44 +60,34 @@ def create_thumbnail(filename: str, mimetype: str):
 
     If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
 
-    with config.content_file_lock:
-        # try:
-        #     image = Image.open(helper_files.get_path(["content", filename], user_file=True))
-        # except UnidentifiedImageError:
-        #     pass
-        # max_size = (400, 400)
-        #
-        # image.thumbnail(max_size, resample=Image.LANCZOS, reducing_gap=3.0)
-        # image = image.convert('RGB')
-        # image.save(helper_files.get_path(["thumbnails", helper_files.with_extension(filename, "jpg")], user_file=True))
+    # with config.content_file_lock:
+    try:
+        ff = pyffmpeg.FFmpeg()
+        if mimetype == "image":
+            subprocess.call([ff.get_ffmpeg_bin(), "-y",
+                             "-i", get_path(['content', filename], user_file=True),
+                             "-vf", "scale=400:-1",
+                             get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+        elif mimetype == "video":
+            # First, find the length of the video
+            file_path = get_path(['content', filename], user_file=True)
+            pipe = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
+            ffmpeg_text = pipe.stderr.read()
+            duration_index = ffmpeg_text.find("Duration")
+            duration_str = ffmpeg_text[duration_index + 10: duration_index + 21]  # Format: HH:MM:SS.SS
+            duration_split = duration_str.split(":")
+            duration_sec = int(duration_split[0]) * 3600 + int(duration_split[1]) * 60 + round(
+                float(duration_split[2]))
+            subprocess.Popen([ff.get_ffmpeg_bin(), "-y",
+                              "-i", file_path,
+                              "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
+                              "-an",
+                              get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
 
-        try:
-            ff = pyffmpeg.FFmpeg()
-            if mimetype == "image":
-                subprocess.call([ff.get_ffmpeg_bin(), "-y",
-                                 "-i", get_path(['content', filename], user_file=True),
-                                 "-vf", "scale=400:-1",
-                                 get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
-            elif mimetype == "video":
-                # First, find the length of the video
-                file_path = get_path(['content', filename], user_file=True)
-                pipe = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
-                ffmpeg_text = pipe.stderr.read()
-                duration_index = ffmpeg_text.find("Duration")
-                duration_str = ffmpeg_text[duration_index + 10: duration_index + 21]  # Format: HH:MM:SS.SS
-                duration_split = duration_str.split(":")
-                duration_sec = int(duration_split[0]) * 3600 + int(duration_split[1]) * 60 + round(
-                    float(duration_split[2]))
-                subprocess.Popen([ff.get_ffmpeg_bin(), "-y",
-                                  "-i", file_path,
-                                  "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
-                                  "-an",
-                                  get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
-
-        except OSError as e:
-            print("create_thumbnail: error:", e)
-        except ImportError as e:
-            print("create_thumbnail: error loading FFmpeg: ", e)
+    except OSError as e:
+        print("create_thumbnail: error:", e)
+    except ImportError as e:
+        print("create_thumbnail: error loading FFmpeg: ", e)
 
 
 def load_dictionary():
