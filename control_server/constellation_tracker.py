@@ -131,7 +131,7 @@ def JSON_list_to_CSV(dict_list: list, filename: str = "") -> str:
     # Build the CSV, optionally write it to disk, and then return it
     try:
         with io.StringIO(newline='') as f:
-            csv_writer = csv.DictWriter(f, reformed_dict_list[0].keys())
+            csv_writer = csv.DictWriter(f, get_unique_keys(reformed_dict_list))
             csv_writer.writeheader()
             csv_writer.writerows(reformed_dict_list)
             result = f.getvalue()
