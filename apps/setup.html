@@ -9,7 +9,7 @@
     <meta name="description" content="A GUI for configuring the System Helper">
     <meta name="author" content="Morgan Rehnberg">
 
-    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap_4_6/bootstrap.min.css">
 
     <style>
     </style>
@@ -52,6 +52,7 @@
               </div>
               <div class='row'>
                 <div class='col-6 col-md-5'>
+                  <select id="availableKeys" class="form-control mt-1"></select>
                   <small id="settingKeyInputTip" class="form-text text-muted">Setting keys are always lowercase.</small>
                 </div>
                 <div class='col-6 col-md-5 offset-md-2'>
@@ -91,10 +92,10 @@
       <div id='cardRowCurrent' class='row mx-2 mb-5'></div>
     </div>
 
-  <script type="text/javascript" src="js/jquery-3.5.1.slim.min.js"></script>
-  <script type="text/javascript" src="js/popper.min.js"></script>
-  <script type="text/javascript" src="js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="js/showdown.min.js"></script>
+  <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
+  <!-- <script type="text/javascript" src="js/popper.min.js"></script> -->
+  <script type="text/javascript" src="js/bootstrap_4_6/bootstrap.min.js"></script>
+  <!-- <script type="text/javascript" src="js/showdown.min.js"></script> -->
 
   <script>
 
@@ -112,6 +113,23 @@
       $("#settingKeyInputField").val("");
       $("#settingValueInputField").val("");
       $("#modalEqualSignWarning").hide()
+
+      // Update the select with any unused/available keys
+      $("#availableKeys").empty()
+      let blank = document.createElement("option")
+      blank.value = ""
+      blank.innerHTML = ""
+      $("#availableKeys").append(blank)
+      let currentKeys = getExistingKeys()
+      knownKeys.forEach(function(key, identifies) {
+        if (!currentKeys.includes(key.key)) {
+          let option = document.createElement("option")
+          option.value = key.key
+          option.innerHTML = key.key
+          $("#availableKeys").append(option)
+        }
+      })
+
       $("#addSettingModal").modal("show");
     }
 
@@ -228,6 +246,21 @@
         return keyInfo;
     }
 
+    function getExistingKeys() {
+
+      // Return the keys for all the currently-created cards
+
+      let currentKeys = [];
+
+      $(".defaultsCol").each(function(i){
+        if ($(this).find(".defaultsValue").val() == "") {
+          $(this).find(".defaultsValue").val("null")
+        }
+        currentKeys.push($(this).data("key"))
+      })
+      return currentKeys
+    }
+
     function askForDefaults() {
 
       // Send a message to the local helper and ask for the latest configuration
@@ -310,6 +343,8 @@
 
     // For known keys, define their options
     let knownKeys = [
+      {key: "active_hours_end", type: "text", required: false, description: "Some actions, such as Smart Restart, will be blocked before this time (e.g., '9 pm')."},
+      {key: "active_hours_start", type: "text", required: false, description: "Some actions, such as Smart Restart, will be blocked after this time (e.g., '6 am')."},
       {key: "allow_restart", type: "bool", required: false, description: "Allow the component to restart the PC."},
       {key: "allow_shutdown", type: "bool", required: false, description: "Allow the component to shutdown the PC. This should only be enabled in Wake on LAN is set up."},
       {key: "allow_sleep", type: "bool", required: false, description: "Allow the component to sleep the screen. This may not work on all devices."},
@@ -324,9 +359,16 @@
       {key: "kiosk_type", type: "text", required: false, description: "A user-defined grouping for this component."},
       {key: "server_ip_address", type: "text", required: true, description: "The IP address of the Constellation Control Server that this component should connect to."},
       {key: "server_port", type: "number", required: true, description: "The port of the Constellation Control Server that this component should connect to."},
+      {key: "smart_restart", type: "text", required: false, description: "Smart Restart mode (off | patient | aggressive)."},
+      {key: "smart_restart_interval", type: "number", required: false, description: "Time in seconds to poll Control Server."},
+      {key: "smart_restart_threshold", type: "number", required: false, description: "Time in seconds since last connection before reboot should be triggered."},
       {key: "sos_ip_address", type: "text", required: false, description: "The IP address of the Science ona Sphere control computer."},
       {key: "type", type: "text", required: true, description: "A user-defined grouping for this component."},
     ]
+
+    $("#availableKeys").change(function() {
+      $("#settingKeyInputField").val($("#availableKeys").val())
+    })
 
     askForDefaults();
   </script>
