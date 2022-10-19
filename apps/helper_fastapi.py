@@ -277,6 +277,17 @@ async def upload_content(files: list[UploadFile] = File(),
 
 @app.post("/setDefaults")
 async def set_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
+    """Update the given defaults with the specified values"""
+
+    if "defaults" not in data:
+        raise HTTPException(status_code=400, detail="Must include field 'defaults'")
+
+    helper_utilities.update_defaults(data["defaults"], force=True)
+
+
+@app.post("/rewriteDefaults")
+async def rewrite_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
+    """Replace all defaults with only the given values."""
 
     if "defaults" not in data:
         raise HTTPException(status_code=400, detail="Must include field 'defaults'")

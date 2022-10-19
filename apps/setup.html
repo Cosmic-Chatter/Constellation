@@ -320,13 +320,13 @@
         }
         newDefaults[$(this).data("key")] = $(this).find(".defaultsValue").val()
       })
-
+      
       // Send the new defaults back to the helper for committing.
       var requestString = JSON.stringify({"defaults": newDefaults});
 
       let xhr = new XMLHttpRequest();
       xhr.timeout = 2000;
-      xhr.open("POST", helperAddress + '/setDefaults', true);
+      xhr.open("POST", helperAddress + '/rewriteDefaults', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = function () {
 
