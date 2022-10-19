@@ -97,8 +97,6 @@ def smart_restart_check():
         "action": "checkConnection"
     }
 
-    print(config.smart_restart)
-
     headers = {'Content-type': 'application/json'}
 
     server_address = f'http://{config.defaults_dict["server_ip_address"]}:{config.defaults_dict["server_port"]}'
