@@ -281,7 +281,7 @@ async def set_defaults(data: dict, force: bool = False, config: const_config = D
     if "defaults" not in data:
         raise HTTPException(status_code=400, detail="Must include field 'defaults'")
 
-    helper_utilities.update_defaults(data["defaults"], force=True)
+    helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
 
 if __name__ == "__main__":
     # Check for missing content thumbnails and create them
@@ -292,6 +292,9 @@ if __name__ == "__main__":
 
     # Check the GitHub server for an available software update
     helper_utilities.check_for_software_update()
+
+    # Activate Smart Restart
+    helper_system.smart_restart_check()
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,

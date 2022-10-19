@@ -2,6 +2,7 @@
 
 import datetime
 import threading
+from typing import Any
 
 # Path to the directory where the server is being launched from
 application_path: str = ""
@@ -17,6 +18,15 @@ missingContentWarningList: list[dict] = []  # Holds a list of warning about miss
 NEXT_EVENT: tuple[datetime.time, list[str]] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
 HELPER_SOFTWARE_VERSION: float = 2.0
+
+smart_restart: dict[str: Any] = {
+    "mode": "patient",  # off | aggressive | patient
+    "interval": 60,  # seconds between pings of the server
+    "last_contact_datetime": datetime.datetime(year=3000, month=1, day=1),
+    "threshold": 3600,  # seconds since last_contact_datetime
+    "active_hours_start": "6 am",
+    "active_hours_end": "10 pm",
+}
 
 helper_software_update_available: bool = False
 # If we are serving the HTML file from over the network, this will be set

@@ -110,6 +110,17 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         print(
             "Warning: You have enabled audio. Make sure the file is whitelisted in the browser or media will not play.")
 
+    if "smart_restart" in config.defaults_dict:
+        config.smart_restart["mode"] = config.defaults_dict["smart_restart"]
+    if "active_hours_start" in config.defaults_dict:
+        config.smart_restart["active_hours_start"] = config.defaults_dict["active_hours_start"]
+    if "active_hours_end" in config.defaults_dict:
+        config.smart_restart["active_hours_end"] = config.defaults_dict["active_hours_end"]
+    if "smart_restart_interval" in config.defaults_dict:
+        config.smart_restart["interval"] = float(config.defaults_dict["smart_restart_interval"])
+    if "smart_restart_threshold" in config.defaults_dict:
+        config.smart_restart["threshold"] = float(config.defaults_dict["smart_restart_threshold"])
+
     # Make sure we have the appropriate file system set up
     if check_directories:
         helper_files.check_directory_structure()
@@ -217,8 +228,11 @@ def check_dict_equality(dict1: dict, dict2: dict):
     return True
 
 
-def update_defaults(data: dict, force: bool = False):
-    """Take a dictionary 'data' and write relevant parameters to disk if they have changed."""
+def update_defaults(data: dict, cull: bool = False, force: bool = False):
+    """Take a dictionary 'data' and write relevant parameters to disk if they have changed.
+
+    If cull == True, remove any entries not included in 'data'
+    """
 
     update_made = force
     if "content" in data:
@@ -233,9 +247,11 @@ def update_defaults(data: dict, force: bool = False):
         else:
             # Unsupported data type, so don't make a change
             content = config.defaults_dict["content"]
-
-    new_dict = config.defaults_dict.copy()
-    new_dict.update(data)
+    if cull:
+        new_dict = data
+    else:
+        new_dict = config.defaults_dict.copy()
+        new_dict.update(data)
 
     # Update file
     if check_dict_equality(new_dict, config.defaults_dict) is False:

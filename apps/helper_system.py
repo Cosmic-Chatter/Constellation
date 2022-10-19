@@ -1,6 +1,12 @@
 # Standard imports
+import datetime
 import os
 import sys
+import threading
+
+# Non-standard imports
+import dateutil.parser
+import requests
 
 # Constellation imports
 import config
@@ -57,6 +63,65 @@ def sleep_display():
         elif sys.platform == "win32":
             nircmd_path = helper_files.get_path(["nircmd.exe"])
             os.system(nircmd_path + " monitor async_off")
+
+
+def smart_restart_act():
+    """Attempt to process a restart by following the rules"""
+
+    if config.smart_restart["mode"] == "off":
+        print("Smart Restart off")
+        return
+    elif config.smart_restart["mode"] == "aggressive":
+        # In aggressive mode, we reboot right away
+        print("Aggressive reboot")
+        # reboot()
+    elif config.smart_restart["mode"] == "patient":
+        # In patient mode, we only restart when not in active hours
+        now = datetime.datetime.now()
+        active_start = dateutil.parser.parse(config.smart_restart["active_hours_start"])
+        active_end = dateutil.parser.parse(config.smart_restart["active_hours_end"])
+
+        if now < active_start or now > active_end:
+            #reboot()
+            print("Patient reboot")
+        else:
+            print("Patient reboot denied by active hours")
+
+
+def smart_restart_check():
+    """Restart the PC if we have lost connection to Control Server. This is often because the Wi-Fi has dropped."""
+
+    # First, ping the server
+    request_dict = {
+        "class": "tracker",
+        "action": "checkConnection"
+    }
+
+    print(config.smart_restart)
+
+    headers = {'Content-type': 'application/json'}
+
+    server_address = f'http://{config.defaults_dict["server_ip_address"]}:{config.defaults_dict["server_port"]}'
+    error = False
+    try:
+        _ = requests.post(server_address, headers=headers, json=request_dict, timeout=5)
+    except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+        error = True
+
+    if not error:
+        config.smart_restart["last_contact_datetime"] = datetime.datetime.now()
+    else:
+        # Connection check failed, so let's see how long it has been
+        sec_since_last_contact = (datetime.datetime.now() - config.smart_restart["last_contact_datetime"]).total_seconds()
+        print(f"Smart Restart: connection check failed. Seconds since last connection: {sec_since_last_contact}")
+        if sec_since_last_contact > config.smart_restart["threshold"]:
+            # A reboot may be necessary
+            smart_restart_act()
+
+    # Start the next cycle
+    timer = threading.Timer(config.smart_restart["interval"], smart_restart_check)
+    timer.daemon = True
+    timer.start()
 
 
 def wake_display():
