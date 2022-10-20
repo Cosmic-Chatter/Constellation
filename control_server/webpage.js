@@ -2111,6 +2111,7 @@ function askForUpdate () {
         } else {
           $("link[rel='icon']").attr('href', 'icon/yellow.ico')
         }
+        constExhibit.rebuildComponentInterface()
       }
     }
   }
