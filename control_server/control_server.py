@@ -1375,8 +1375,10 @@ def load_default_configuration():
         for this_type in static_components:
             split = static_components[this_type].split(",")
             for this_id in split:
-                static_component = c_exhibit.add_exhibit_component(this_id.strip(), this_type, category="static")
-                static_component.constellation_app_id = "static_component"
+                this_id = this_id.strip()
+                if c_exhibit.get_exhibit_component(this_id) is None:
+                    static_component = c_exhibit.add_exhibit_component(this_id, this_type, category="static")
+                    static_component.constellation_app_id = "static_component"
         print("done")
     except KeyError:
         print("none specified")
