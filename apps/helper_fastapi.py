@@ -271,7 +271,6 @@ async def upload_content(files: list[UploadFile] = File(),
         if mimetype is not None:
             th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]), daemon=True)
             th.start()
-            # helper_files.create_thumbnail(filename, mimetype.split("/")[0])
     return {"success": True}
 
 

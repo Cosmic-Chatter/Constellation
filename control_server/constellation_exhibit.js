@@ -462,6 +462,7 @@ export function showExhibitComponentInfo (id) {
       $('#componentInfoModalDescription').html(obj.description)
       $('#componentInfoModalDescription').show()
     }
+    $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
     $('#componentAvailableContentList').empty()
     $('#contentUploadSubmitButton').prop('disabled', false)
     $('#contentUploadSubmitButton').html('Upload')
@@ -529,6 +530,15 @@ export function showExhibitComponentInfo (id) {
           $('#componentInfoConnectingNotice').hide()
 
           const availableContent = JSON.parse(this.response)
+
+          // If available, configure for multiple file upload
+          if ('multiple_file_upload' in availableContent) {
+            $('#componentContentUpload').prop('multiple', true)
+            $('#componentContentUploadfilename').html('Choose files')
+          } else {
+            $('#componentContentUpload').prop('multiple', false)
+            $('#componentContentUploadfilename').html('Choose file')
+          }
 
           // If it is provided, show the system stats
           if ('system_stats' in availableContent) {

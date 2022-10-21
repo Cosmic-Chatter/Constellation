@@ -283,7 +283,6 @@ function uploadComponentContentFileFastAPI () {
 
     for (let i = 0; i < fileInput.files.length; i++) {
       const file = fileInput.files[i]
-      console.log(file)
       formData.append('files', file)
     }
 
