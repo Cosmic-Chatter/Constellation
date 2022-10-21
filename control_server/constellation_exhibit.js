@@ -161,9 +161,9 @@ export class ExhibitComponent {
     // space, so each component needs a smaller amount of grid.
     let classString
     if (getExhibitComponentGroup(this.type).components.length > 7) {
-      classString = 'col-12 col-sm-6 col-md-3 mt-1'
+      classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
-      classString = 'col-12 col-sm-6 mt-1'
+      classString = 'col-12 col-sm-4 col-md-6 mt-1'
     }
 
     const col = document.createElement('div')

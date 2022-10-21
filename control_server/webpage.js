@@ -83,9 +83,9 @@ class ExhibitComponentGroup {
     // Allow groups with lots of components to display with double width
     let classString
     if (this.components.length > 7) {
-      classString = 'col-12 col-xl-8 mt-4'
+      classString = 'col-12 col-lg-8 col-xl-6 mt-4'
     } else {
-      classString = 'col-12 col-md-6 col-xl-4 mt-4'
+      classString = 'col-12 col-md-6 col-lg-4 col-xl-3 mt-4'
     }
 
     const col = document.createElement('div')
