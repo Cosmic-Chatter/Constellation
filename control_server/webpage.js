@@ -40,12 +40,33 @@ class ExhibitComponentGroup {
 
     if (this.components.length > 1) {
       // This line does the sorting
-      this.components.sort((a, b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0))
+      // this.components.sort((a, b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0))
+      this.components.sort(
+        function (a, b) {
+          if (a.status === constConfig.STATUS.STATIC && b.status !== constConfig.STATUS.STATIC) {
+            return 1
+          } else if (b.status === constConfig.STATUS.STATIC && a.status !== constConfig.STATUS.STATIC) {
+            return -1
+          }
+          if (a.status.value > b.status.value) {
+            return -1
+          } else if (b.status.value > a.status.value) {
+            return 1
+          } else if (a.id > b.id) {
+            return 1
+          } else if (b.id > a.id) {
+            return -1
+          }
+          return 0
+        }
+      )
 
       document.getElementById(this.type + 'ComponentList').innerHTML = ''
       for (let i = 0; i < this.components.length; i++) {
         this.components[i].buildHTML()
       }
+    } else {
+      this.components[0].buildHTML()
     }
   }
 
@@ -147,24 +168,6 @@ class ExhibitComponentGroup {
     componentList.classList = 'row'
     componentList.setAttribute('id', thisType + 'ComponentList')
     col.appendChild(componentList)
-
-    // const html = `
-    //   <div class= "${classString}">
-    //     <div class="btn-group btn-block">
-    //       <button type="button" class="btn btn-secondary btn-block btn-lg">${this.type}</button>
-    //       <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    //         <span class="sr-only">Toggle Dropdown</span>
-    //       </button>
-    //       <div class="dropdown-menu">
-    //         <a class="dropdown-item handCursor" style="display:${displayRefresh};" onclick="sendGroupCommand('${this.type}', 'refresh_page')">Refresh all components</a>
-    //         <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'wakeDisplay')">${onCmdName}</a>
-    //         <a class="dropdown-item handCursor" onclick="sendGroupCommand('${this.type}', 'sleepDisplay')">${offCmdName}</a>
-    //       </div>
-    //     </div>
-
-    //     </div>
-    //   </div>
-    // `
 
     $('#componentGroupsRow').append(col)
   }
@@ -2058,7 +2061,7 @@ function askForUpdate () {
           if ('class' in component) {
             if (component.class === 'exhibitComponent') {
               numComps += 1
-              if ((component.status === 'ONLINE') || (component.status === 'STANDBY') || (component.status === 'SYSTEM ON') || (component.status === 'STATIC')) {
+              if ((component.status === constConfig.STATUS.ONLINE) || (component.status === constConfig.STATUS.STANDBY) || (component.status === constConfig.STATUS['SYSTEM ON']) || (component.status === constConfig.STATUS.STATIC)) {
                 numOnline += 1
               }
               updateComponentFromServer(component)

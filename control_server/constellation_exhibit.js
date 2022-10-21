@@ -13,7 +13,7 @@ export class ExhibitComponent {
     this.helperPort = 8000 // Default; will be replaced when component pings in
     this.helperAddress = null // Full address to the helper
     this.state = {}
-    this.status = 'OFFLINE'
+    this.status = constConfig.STATUS.OFFLINE
     this.lastContactDateTime = null
     this.allowed_actions = []
     this.AnyDeskID = ''
@@ -98,37 +98,37 @@ export class ExhibitComponent {
   }
 
   setStatus (status) {
-    this.status = status
-    $('#' + this.id + 'StatusField').html(status)
+    this.status = constConfig.STATUS[status]
+    $('#' + this.id + 'StatusField').html(this.status.name)
 
-    const btnClass = this.getButtonColorClass()
+    const btnClass = this.status.colorClass
     // Strip all existing classes, then add the new one
     $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
     $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
   }
 
-  getButtonColorClass () {
-    // Get the Bootstrap class based on the current status
+  // getButtonColorClass () {
+  //   // Get the Bootstrap class based on the current status
 
-    switch (this.status) {
-      case 'ACTIVE':
-        return 'btn-primary'
-      case 'ONLINE':
-        return 'btn-success'
-      case 'WAITING':
-        return 'btn-warning'
-      case 'UNKNOWN':
-        return 'btn-warning'
-      case 'STANDBY':
-        return 'btn-info'
-      case 'SYSTEM ON':
-        return 'btn-info'
-      case 'STATIC':
-        return 'btn-secondary'
-      default:
-        return 'btn-danger'
-    }
-  }
+  //   switch (this.status) {
+  //     case 'ACTIVE':
+  //       return 'btn-primary'
+  //     case 'ONLINE':
+  //       return 'btn-success'
+  //     case 'WAITING':
+  //       return 'btn-warning'
+  //     case 'UNKNOWN':
+  //       return 'btn-warning'
+  //     case 'STANDBY':
+  //       return 'btn-info'
+  //     case 'SYSTEM ON':
+  //       return 'btn-info'
+  //     case 'STATIC':
+  //       return 'btn-secondary'
+  //     default:
+  //       return 'btn-danger'
+  //   }
+  // }
 
   buildHTML () {
     // Function to build the HTML representation of this component
@@ -174,7 +174,7 @@ export class ExhibitComponent {
     col.appendChild(btnGroup)
 
     const mainButton = document.createElement('button')
-    mainButton.classList = 'btn btn-block componentStatusButton ' + this.getButtonColorClass()
+    mainButton.classList = 'btn btn-block componentStatusButton ' + this.status.colorClass
     mainButton.setAttribute('type', 'button')
     mainButton.setAttribute('id', this.id + 'MainButton')
     mainButton.addEventListener('click', function () {
@@ -188,11 +188,11 @@ export class ExhibitComponent {
 
     const statusFieldEl = document.createElement('div')
     statusFieldEl.setAttribute('id', this.id + 'StatusField')
-    statusFieldEl.innerHTML = this.status
+    statusFieldEl.innerHTML = this.status.name
     mainButton.appendChild(statusFieldEl)
 
     const dropdownButton = document.createElement('button')
-    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.getButtonColorClass()
+    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.status.colorClass
     dropdownButton.setAttribute('id', this.id + 'DropdownButton')
     dropdownButton.setAttribute('type', 'button')
     dropdownButton.setAttribute('data-toggle', 'dropdown')
@@ -498,7 +498,7 @@ export function showExhibitComponentInfo (id) {
       $('#componentInfoConnectionStatusInPrograss').hide()
     }
 
-    if (obj.status !== 'STATIC') {
+    if (obj.status !== constConfig.STATUS.STATIC) {
       // This component may be accessible over the network.
 
       const requestString = JSON.stringify({ action: 'getAvailableContent' })
@@ -790,10 +790,11 @@ export function rebuildComponentInterface () {
   let i
   for (i = 0; i < constConfig.componentGroups.length; i++) {
     constConfig.componentGroups[i].buildHTML()
+    constConfig.componentGroups[i].sortComponentList()
   }
-  for (i = 0; i < constConfig.exhibitComponents.length; i++) {
-    constConfig.exhibitComponents[i].buildHTML()
-  }
+  // for (i = 0; i < constConfig.exhibitComponents.length; i++) {
+  //   constConfig.exhibitComponents[i].buildHTML()
+  // }
 }
 
 export function queueCommand (id, cmd) {
