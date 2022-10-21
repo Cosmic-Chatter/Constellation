@@ -134,6 +134,11 @@ export class ExhibitComponent {
     // Function to build the HTML representation of this component
     // and add it to the row of the parent group
 
+    // If the element is static and the 'Show STATIC' checkbox is ticked, bail out
+    if (this.status === constConfig.STATUS.STATIC && $("#componentsTabSettingsShowStatic").prop("checked") === false) {
+      return
+    }
+
     let onCmdName = ''
     let offCmdName = ''
     let offCmd = ''
