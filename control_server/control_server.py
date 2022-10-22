@@ -1536,7 +1536,7 @@ server_port: int = 8080  # Default; should be set in galleryConfiguration.ini
 ip_address: str = socket.gethostbyname(socket.gethostname())  # Default; should be set in galleryConfiguration.ini
 ADDR: str = ""  # Accept connections from all interfaces
 gallery_name: str = ""
-SOFTWARE_VERSION = 1.1
+SOFTWARE_VERSION = 2.0
 software_update_available: bool = False
 
 # Set up log file
@@ -1565,6 +1565,8 @@ app = FastAPI()
 @lru_cache()
 def get_config():
     return config
+
+
 
 
 app.add_middleware(
