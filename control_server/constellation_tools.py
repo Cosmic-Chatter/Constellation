@@ -43,3 +43,17 @@ def print_debug_details(loop: bool = False) -> None:
 
     if loop:
         threading.Timer(10, partial(print_debug_details, loop=True)).start()
+
+
+def delete_file(file_path) -> dict:
+    """Delete the specified file and return a dictionary with the result"""
+
+    response = {"success": False}
+    try:
+        os.remove(file_path)
+        response["success"] = True
+    except FileNotFoundError:
+        response["reason"] = f"File {file_path} does not exist"
+    except PermissionError:
+        response["reason"] = f"You do not have permission for the file f{file_path}"
+    return response

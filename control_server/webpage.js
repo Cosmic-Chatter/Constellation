@@ -2579,7 +2579,7 @@ function parseQueryString () {
     $('#nav-help-tab').hide()
   }
   if (searchParams.has('hideSTATIC')) {
-    $("#componentsTabSettingsShowStatic").prop("checked", false)
+    $('#componentsTabSettingsShowStatic').prop('checked', false)
   }
 }
 
@@ -2677,15 +2677,15 @@ function arraysEqual (a, b) {
 
 // Components tab
 // =========================
-$("#componentsTabSettingsShowStatic").change( function() {
+$('#componentsTabSettingsShowStatic').change(function () {
   // Modify the search params to soft-save the change
-  const urlParams = new URLSearchParams(window.location.search);
-  if ($("#componentsTabSettingsShowStatic").prop('checked') === true) {
+  const urlParams = new URLSearchParams(window.location.search)
+  if ($('#componentsTabSettingsShowStatic').prop('checked') === true) {
     urlParams.delete('hideSTATIC')
   } else {
-    urlParams.set('hideSTATIC', 'true');
+    urlParams.set('hideSTATIC', 'true')
   }
-  window.history.replaceState('', '', '?' + urlParams);
+  window.history.replaceState('', '', '?' + urlParams)
 
   // Rebuild the interface with the new option
   constExhibit.rebuildComponentInterface()

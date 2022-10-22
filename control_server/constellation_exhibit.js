@@ -135,7 +135,7 @@ export class ExhibitComponent {
     // and add it to the row of the parent group
 
     // If the element is static and the 'Show STATIC' checkbox is ticked, bail out
-    if (this.status === constConfig.STATUS.STATIC && $("#componentsTabSettingsShowStatic").prop("checked") === false) {
+    if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
       return
     }
 
