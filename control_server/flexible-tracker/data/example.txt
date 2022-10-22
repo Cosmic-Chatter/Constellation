@@ -1,1 +1,2 @@
-{"Interactiontime": 24.784, "Observingtime": 4.376, "Questionsasked": 2, "Visitortype": ["Adult", "Child", "Family"], "Visitorenjoyment": 4, "Observations": "This is some test text", "Date": "2022-02-18T15:11:35.613"}
+{"Interaction time": 5.727, "Observing time": 0, "Questions asked": 3, "Visitor type": "Child", "Group size": null, "Visitor enjoyment": 3, "Observations": "dsfsdfsd", "Date": "2022-08-27T13:30:13.293"}
+{"Interaction time": 0, "Observing time": 3.428, "Questions asked": 2, "Visitor type": "Adult", "Visitor enjoyment": 5, "Observations": "dsfsd", "Date": "2022-08-27T13:30:57.824"}
