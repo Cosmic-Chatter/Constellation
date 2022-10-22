@@ -1,6 +1,8 @@
+fastapi
+icmplib
+psutil
 pypjlink2
 pyserial
-wakeonlan
-icmplib
 python-dateutil
-psutil
+uvicorn
+wakeonlan
