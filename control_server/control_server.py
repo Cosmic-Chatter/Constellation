@@ -7,6 +7,10 @@
 import cgi
 import configparser
 import datetime
+from fastapi import FastAPI, Depends, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from functools import lru_cache
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
@@ -24,6 +28,7 @@ import threading
 import time
 import traceback
 import urllib.request
+import uvicorn
 
 # Non-standard modules
 import dateutil.parser
@@ -1555,12 +1560,31 @@ try:
 except (FileNotFoundError, EOFError):
     print("Could not load previous server state")
 
-check_file_structure()
-c_exhibit.check_available_exhibits()
-load_default_configuration()
-c_proj.poll_projectors()
-c_exhibit.poll_wake_on_LAN_devices()
-check_for_software_update()
+app = FastAPI()
 
-httpd = ThreadedHTTPServer((ADDR, server_port), RequestHandler)
-httpd.serve_forever()
+@lru_cache()
+def get_config():
+    return config
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+if __name__ == "__main__":
+    check_file_structure()
+    c_exhibit.check_available_exhibits()
+    load_default_configuration()
+    c_proj.poll_projectors()
+    c_exhibit.poll_wake_on_LAN_devices()
+    check_for_software_update()
+
+    # Must use only one worker, since we are relying on the config module being in global)
+    uvicorn.run(app,
+                host=ADDR,
+                port=int(server_port),
+                reload=False, workers=1)
