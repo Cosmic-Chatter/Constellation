@@ -99,64 +99,8 @@ def do_POST(data, ip_address):
             response = {"success": True,
                         "reason": "Missing required field 'action'."}
             return response
-        if action == "setExhibit":
-            if "name" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'name' field."}
-                return response
-            print("Changing exhibit to:", data["name"])
-            c_exhibit.read_exhibit_configuration(data["name"], update_default=True)
 
-            # Update the components that the configuration has changed
-            for component in c_config.componentList:
-                component.update_configuration()
-            return {"success": True, "reason": ""}
-        elif action == "createExhibit":
-            if "name" not in data or data["name"] == "":
-                response = {"success": False,
-                            "reason": "Request missing 'name' field or name is blank."}
-                return response
-            clone = None
-            if "cloneFrom" in data and data["cloneFrom"] != "":
-                clone = data["cloneFrom"]
-            c_exhibit.create_new_exhibit(data["name"], clone)
-            return {"success": True, "reason": ""}
-        elif action == "deleteExhibit":
-            if "name" not in data or data["name"] == "":
-                response = {"success": False,
-                            "reason": "Request missing 'name' field or name is empty."}
-                return response
-            c_exhibit.delete_exhibit(data["name"])
-            response = {"success": True, "reason": ""}
-            return response
-        elif action == "setComponentContent":
-            if "id" not in data or "content" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'id' or 'content' field."}
-                return response
-            content_to_set = data["content"]
-            print(f"Changing content for {data['id']}:", content_to_set)
-            if not isinstance(content_to_set, list):
-                content_to_set = [data["content"]]
-            c_exhibit.set_component_content(data['id'], content_to_set)
-            return {"success": True, "reason": ""}
-
-        elif action == "getHelpText":
-            try:
-                readme_path = os.path.join(c_config.APP_PATH,
-                                           "README.md")
-                if not os.path.isfile(readme_path):
-                    # Handle the case of a Pyinstaller --onefile binary
-                    readme_path = os.path.join(c_config.EXEC_PATH, "README.md")
-                with open(readme_path, 'r', encoding='UTF-8') as f:
-                    text = f.read()
-                response = {"success": True, "text": text}
-            except FileNotFoundError:
-                with c_config.logLock:
-                    logging.error("Unable to read README.md")
-                response = {"success": False, "reason": "Unable to read README.md"}
-            return response
-        elif action == "createIssue":
+        if action == "createIssue":
             if "details" in data:
                 with c_config.issueLock:
                     new_issue = c_issues.Issue(data["details"])

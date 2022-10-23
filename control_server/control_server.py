@@ -729,6 +729,37 @@ def get_config():
 
 
 # Exhibit component actions
+@app.post("/exhibit/create")
+async def create_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Create a new exhibit INI file.
+
+    If 'data' includes the 'clone' field, the specified 'clone'.ini file will be copied.
+    """
+
+    if "name" not in data or data["name"] == "":
+        response = {"success": False,
+                    "reason": "Request missing 'name' field or name is blank."}
+        return response
+    clone = None
+    if "cloneFrom" in data and data["cloneFrom"] != "":
+        clone = data["cloneFrom"]
+    c_exhibit.create_new_exhibit(data["name"], clone)
+    return {"success": True, "reason": ""}
+
+
+@app.post("/exhibit/delete")
+async def delete_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Delete the specified exhibit."""
+
+    if "name" not in data or data["name"] == "":
+        response = {"success": False,
+                    "reason": "Request missing 'name' field or name is empty."}
+        return response
+    c_exhibit.delete_exhibit(data["name"])
+    response = {"success": True, "reason": ""}
+    return response
+    
+
 @app.post("/exhibit/queueCommand")
 async def queue_command(data: dict[str, Any], config: c_config = Depends(get_config)):
     """Queue the specified command for the exhibit component to retrieve."""
@@ -741,7 +772,19 @@ async def queue_command(data: dict[str, Any], config: c_config = Depends(get_con
     return {"success": True, "reason": ""}
 
 
-@app.post("/exhibit/setExhibit")
+@app.post("/exhibit/queueWOLCommand")
+async def queue_WOL_command(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Queue the Wake on Lan command for the exhibit component to retrieve."""
+
+    if "command" not in data or "id" not in data:
+        response_dict = {"success": False,
+                         "reason": "Missing required field 'id' or 'command'."}
+        return response_dict
+    c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
+    return {"success": True, "reason": ""}
+
+
+@app.post("/exhibit/set")
 async def set_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
     """Set the specified exhibit as the current one."""
 
@@ -758,15 +801,19 @@ async def set_exhibit(data: dict[str, Any], config: c_config = Depends(get_confi
     return {"success": True, "reason": ""}
 
 
-@app.post("/exhibit/queueWOLCommand")
-async def queue_WOL_command(data: dict[str, Any], config: c_config = Depends(get_config)):
-    """Queue the Wake on Lan command for the exhibit component to retrieve."""
+@app.post("/exhibit/setComponentContent")
+async def set_component_content(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Change the active content for the given exhibit component."""
 
-    if "command" not in data or "id" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing required field 'id' or 'command'."}
-        return response_dict
-    c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
+    if "id" not in data or "content" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'id' or 'content' field."}
+        return response
+    content_to_set = data["content"]
+    print(f"Changing content for {data['id']}:", content_to_set)
+    if not isinstance(content_to_set, list):
+        content_to_set = [data["content"]]
+    c_exhibit.set_component_content(data['id'], content_to_set)
     return {"success": True, "reason": ""}
 
 

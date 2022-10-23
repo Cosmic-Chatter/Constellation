@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+  </head>
+  <body>
+    <script>
+        let times = []
+        
+        function sendComponentContentChangeRequest (id, content) {
+          // Send a request to the server to initiate a content change
+
+          const requestString = JSON.stringify({
+            id,
+            content
+          })
+          const xhr = new XMLHttpRequest()
+          xhr.timeout = 2000
+          xhr.open('POST', "http://localhost:8082/exhibit/setComponentContent", true)
+          xhr.setRequestHeader('Content-Type', 'application/json')
+          xhr.send(requestString)
+        }
+
+        function getHTMLNew() {
+          // const requestString = JSON.stringify({ action: 'getDefaults' })
+          const d1 = new Date()
+          const xhr = new XMLHttpRequest()
+          xhr.timeout = 2000
+          xhr.open('GET', 'http://localhost:8000/server_test.html', true)
+          xhr.setRequestHeader('Content-Type', 'application/json')
+          xhr.onreadystatechange = function () {
+              if (this.readyState !== 4) return
+
+              if (this.status === 200) {
+                  times.push(new Date() - d1)
+                  // console.log(JSON.parse(this.responseText))
+              }
+          }
+          xhr.send()
+        }
+
+        function askForDefaultsNew () {
+            // Send a message to the local helper and ask for the latest configuration
+            // defaults, then use them.
+
+            // const requestString = JSON.stringify({ action: 'getDefaults' })
+            const d1 = new Date()
+            const xhr = new XMLHttpRequest()
+            xhr.timeout = 2000
+            xhr.open('GET', 'http://localhost:8000/getDefaults', true)
+            xhr.setRequestHeader('Content-Type', 'application/json')
+            xhr.onreadystatechange = function () {
+                if (this.readyState !== 4) return
+
+                if (this.status === 200) {
+                    times.push(new Date() - d1)
+                    console.log(JSON.parse(this.responseText))
+                }
+            }
+            xhr.send()
+        }
+
+        function askForDefaultsOld () {
+            // Send a message to the local helper and ask for the latest configuration
+            // defaults, then use them.
+
+            const d1 = new Date()
+            const requestString = JSON.stringify({ action: 'getDefaults' })
+            const xhr = new XMLHttpRequest()
+            xhr.timeout = 2000
+            xhr.open('POST', 'http://localhost:8000', true)
+            xhr.setRequestHeader('Content-Type', 'application/json')
+            xhr.onreadystatechange = function () {
+                if (this.readyState !== 4) return
+
+                if (this.status === 200) {
+                    times.push(new Date() - d1)
+                    // console.log(JSON.parse(this.responseText))
+                }
+            }
+            xhr.send(requestString)
+        }
+
+        function runTest(type=1, num=10) {
+          times = []
+          if (type ===1) {
+            for (let i=0; i < num; i++) {
+              askForDefaultsNew()
+            }
+          } else {
+            for (let i=0; i < num; i++) {
+              askForDefaultsOld()
+            }
+          }
+        }
+
+        function runHTMLTest(type=1, num=10) {
+          times = []
+          if (type ===1) {
+            for (let i=0; i < num; i++) {
+              getHTMLNew()
+            }
+          } else {
+            for (let i=0; i < num; i++) {
+              askForDefaultsOld()
+            }
+          }
+        }
+          
+          
+
+        function stats() {
+          console.log("Mean: ", times.reduce((a, b) => a + b, 0)/times.length)
+        }
+    </script>
+  </body>

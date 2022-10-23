@@ -354,14 +354,12 @@ function sendComponentContentChangeRequest (id, content) {
   // Send a request to the server to initiate a content change
 
   const requestString = JSON.stringify({
-    class: 'webpage',
-    action: 'setComponentContent',
     id,
     content
   })
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/exhibit/setComponentContent', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.send(requestString)
 }
@@ -487,13 +485,11 @@ function changeExhibit (warningShown) {
     $('#changeExhibitModal').modal('hide')
 
     const requestDict = {
-      class: 'webpage',
-      action: 'setExhibit',
       name: $('#exhibitSelect').val()
     }
     const xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP, true)
+    xhr.open('POST', serverIP + '/exhibit/set', true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.send(JSON.stringify(requestDict))
 
@@ -2548,8 +2544,6 @@ function createExhibit (name, cloneFrom) {
   // set cloneFrom to the name of an existing exhibit to copy that exhibit
 
   const requestDict = {
-    class: 'webpage',
-    action: 'createExhibit',
     name
   }
 
@@ -2560,7 +2554,7 @@ function createExhibit (name, cloneFrom) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/exhibit/create', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     // if (this.readyState !== 4) return
@@ -2576,16 +2570,12 @@ function createExhibit (name, cloneFrom) {
 function deleteExhibit (name) {
   // Ask the control server to delete the exhibit with the given name.
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'deleteExhibit',
-    name
-  }
+  const requestDict = { name }
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/exhibit/delete', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     // if (this.readyState !== 4) return
