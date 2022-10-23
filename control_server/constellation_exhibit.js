@@ -43,14 +43,12 @@ export class ExhibitComponent {
     // Function to ask the server to ping the projector
     const thisInstance = this
     const requestDict = {
-      class: 'webpage',
-      action: 'fetchProjectorUpdate',
       id: this.id
     }
 
     const xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP, true)
+    xhr.open('POST', serverIP + '/projector/getUpdate', true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
@@ -825,15 +823,19 @@ export function queueCommand (id, cmd) {
   } else {
     // We send these commands to the server to pass to the component itself
     let cmdType = ''
+    let cmdPath = ''
     switch (obj.type) {
       case 'PROJECTOR':
         cmdType = 'queueProjectorCommand'
+        cmdPath = '/projector/queueCommand'
         break
       case 'WAKE_ON_LAN':
         cmdType = 'queueWOLCommand'
+        cmdPath = '/exhibit/queueWOLCommand'
         break
       default:
         cmdType = 'queueCommand'
+        cmdPath = '/exhibit/queueCommand'
     }
 
     requestDict = {
@@ -845,7 +847,7 @@ export function queueCommand (id, cmd) {
 
     xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP, true)
+    xhr.open('POST', serverIP + cmdPath, true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.send(JSON.stringify(requestDict))
   }

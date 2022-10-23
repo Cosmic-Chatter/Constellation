@@ -92,17 +92,12 @@ def smart_restart_check():
     """Restart the PC if we have lost connection to Control Server. This is often because the Wi-Fi has dropped."""
 
     # First, ping the server
-    request_dict = {
-        "class": "tracker",
-        "action": "checkConnection"
-    }
-
     headers = {'Content-type': 'application/json'}
 
     server_address = f'http://{config.defaults_dict["server_ip_address"]}:{config.defaults_dict["server_port"]}'
     error = False
     try:
-        _ = requests.post(server_address, headers=headers, json=request_dict, timeout=5)
+        _ = requests.get(server_address + '/system/checkConnection', headers=headers, timeout=5)
     except (ConnectionRefusedError, requests.exceptions.ConnectionError):
         error = True
 

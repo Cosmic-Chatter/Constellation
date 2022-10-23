@@ -5,15 +5,8 @@ export function getAvailableDefinitions (complete) {
   // Pass a function and it will be called with the list as the
   // only parameter
 
-  const requestDict = {
-    class: 'tracker',
-    action: 'getAvailableDefinitions'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/tracker/flexible-tracker/getAvailableDefinitions', true)
   xhr.timeout = 3000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -27,7 +20,7 @@ export function getAvailableDefinitions (complete) {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 export function getAvailableTrackerData (complete) {

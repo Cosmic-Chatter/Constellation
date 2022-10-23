@@ -547,8 +547,6 @@ function deleteSchedule (name) {
   // file with the given name. The name should not include ".ini"
 
   const requestDict = {
-    class: 'webpage',
-    action: 'deleteSchedule',
     name
   }
 
@@ -556,7 +554,7 @@ function deleteSchedule (name) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/schedule/deleteSchedule', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -580,8 +578,6 @@ function scheduleConvertToDateSpecific (date, dayName) {
   // schedule out of the given day name
 
   const requestDict = {
-    class: 'webpage',
-    action: 'convertSchedule',
     date,
     from: dayName
   }
@@ -590,7 +586,7 @@ function scheduleConvertToDateSpecific (date, dayName) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + 'schedule/convert', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1048,8 +1044,6 @@ function sendScheduleUpdateFromModal () {
   }
 
   const requestDict = {
-    class: 'webpage',
-    action: 'updateSchedule',
     name: scheduleName,
     timeToSet: time,
     actionToSet: action,
@@ -1068,7 +1062,7 @@ function sendScheduleUpdateFromModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/schedule/update', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1104,8 +1098,6 @@ function scheduleDeleteActionFromModal () {
   console.log('Delete:', scheduleName, scheduleID)
 
   const requestDict = {
-    class: 'webpage',
-    action: 'deleteScheduleAction',
     from: scheduleName,
     scheduleID
   }
@@ -1114,7 +1106,7 @@ function scheduleDeleteActionFromModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/schedule/deleteAction', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1140,16 +1132,9 @@ function askForScheduleRefresh () {
 
   $('#refreshScheduleButton').html('Refreshing...')
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'refreshSchedule'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/schedule/refresh', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
     $('#refreshScheduleButton').html('Timed out!')
@@ -1175,7 +1160,7 @@ function askForScheduleRefresh () {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 function showIssueEditModal (issueType, target) {
@@ -1916,8 +1901,6 @@ function submitComponentMaintenanceStatusChange (type = 'component') {
   }
 
   const requestDict = {
-    class: 'webpage',
-    action: 'updateMaintenanceStatus',
     id,
     status,
     notes
@@ -1925,7 +1908,7 @@ function submitComponentMaintenanceStatusChange (type = 'component') {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/maintenance/updateStatus', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1946,14 +1929,9 @@ function refreshMaintenanceRecords () {
   // Ask the server to send all the maintenance records and then rebuild the
   // maintanence overview from those data.
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'getAllMaintenanceStatuses'
-  }
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/maintenance/getAllStatuses', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2031,21 +2009,16 @@ function refreshMaintenanceRecords () {
       }
     }
   }
-  xhr.send(JSON.stringify(requestDict))
+  xhr.send()
 }
 
 function askForUpdate () {
   // Send a message to the control server asking for the latest component
   // updates
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'fetchUpdate'
-  }
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/system/getUpdate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () { console.log('Website update timed out') }
   xhr.onreadystatechange = function () {
@@ -2117,23 +2090,16 @@ function askForUpdate () {
       }
     }
   }
-  xhr.send(JSON.stringify(requestDict))
+  xhr.send()
 }
 
 function populateHelpTab () {
   // Ask the server to send the latest README, convert the Markdown to
   // HTML, and add it to the Help tab.
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'getHelpText'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/system/getHelpText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2148,20 +2114,15 @@ function populateHelpTab () {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 function showEditGalleryConfigModal () {
   // Populate the galleryEditModal with information from galleryConfiguration.ini and show the modal.
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'getConfigurationRawText'
-  }
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/system/getConfigurationRawText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2177,7 +2138,7 @@ function showEditGalleryConfigModal () {
       }
     }
   }
-  xhr.send(JSON.stringify(requestDict))
+  xhr.send()
 }
 
 function populateEditGalleryConfigModal (configText) {
@@ -2200,14 +2161,12 @@ function submitGalleryConfigChangeFromModal () {
   // handle and return to the user.
 
   const requestDict = {
-    class: 'webpage',
-    action: 'updateConfigurationRawText',
     configuration: $('#editGalleryConfigTextArea').val()
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/system/updateConfigurationRawText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return

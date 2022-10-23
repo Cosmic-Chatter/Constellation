@@ -402,19 +402,12 @@ function buildLayout (definition) {
 function checkConnection () {
   // Send a message to the server checking that the connection is stable.
 
-  const requestDict = {
-    class: 'tracker',
-    action: 'checkConnection'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   function badConnection () {
     $('#connectionWarning').show()
     $('#recordButton').prop('disabled', true)
   }
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/system/checkConnection', true)
   xhr.timeout = 1000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -431,7 +424,7 @@ function checkConnection () {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 function clearInput () {

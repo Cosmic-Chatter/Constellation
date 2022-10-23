@@ -12,6 +12,8 @@ APP_PATH: str = ""
 EXEC_PATH: str = ""
 
 debug: bool = False  # True means print various debug info
+software_update_available: bool = False
+gallery_name: str = "Constellation"
 
 # Threading resources
 polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures

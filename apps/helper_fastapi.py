@@ -101,7 +101,7 @@ async def serve_html(file_name):
     return page
 
 
-@app.get("getClipList")
+@app.get("/getClipList")
 async def send_clip_list(config: const_config = Depends(get_config)):
     """Get the list of currently playing content"""
 
