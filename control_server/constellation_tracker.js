@@ -29,7 +29,7 @@ export function getAvailableTrackerData (complete) {
   // only parameter
 
   const xhr = new XMLHttpRequest()
-  xhr.open('GET', serverIP + '/tracker/getAvailableData', true)
+  xhr.open('GET', serverIP + '/tracker/flexible-tracker/getAvailableData', true)
   xhr.timeout = 3000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -47,7 +47,7 @@ export function getAvailableTrackerData (complete) {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 export function loadLayoutDefinition (name, complete) {
