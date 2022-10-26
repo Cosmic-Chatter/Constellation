@@ -32,6 +32,7 @@ import urllib.request
 import uvicorn
 
 # Non-standard modules
+import aiofiles
 import dateutil.parser
 
 # Constellation modules
@@ -1085,6 +1086,23 @@ async def get_issue_list(config: c_config = Depends(get_config)):
     return response
 
 
+@app.post("/issue/uploadMedia")
+async def upload_issue_media(files: list[UploadFile] = File(), config: c_config = Depends(get_config)):
+    """Upload a media file and attach it to a specific issue."""
+
+    filename = None
+    for file in files:
+        ext = os.path.splitext(file.filename)[1]
+        filename = str(round(time.time()*1e6)) + ext
+        file_path = c_tools.get_path(["issues", "media", filename], user_file=True)
+        print(f"Saving uploaded file to {file_path}")
+        with c_config.issueMediaLock:
+            async with aiofiles.open(file_path, 'wb') as out_file:
+                content = await file.read()  # async read
+                await out_file.write(content)  # async write
+    return {"success": True, "filename": filename}
+
+
 # Maintenance actions
 @app.post("/maintenance/deleteRecord")
 async def delete_maintenance_record(data: dict[str, Any], config: c_config = Depends(get_config)):
@@ -1404,13 +1422,16 @@ async def get_help_text(config: c_config = Depends(get_config)):
 @app.get("/system/getUpdate")
 async def get_update(config: c_config = Depends(get_config)):
     """Retrieve an update of everything being managed by Control Server"""
+
     return c_tools.send_webpage_update()
 
 
 @app.get("/system/reloadConfiguration")
 async def reload_configuration(config: c_config = Depends(get_config)):
     """Reload galleryConfiguration.ini"""
+
     load_default_configuration()
+    return {"success": True}
 
 
 @app.post("/system/ping")

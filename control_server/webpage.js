@@ -289,10 +289,6 @@ function uploadComponentContentFileFastAPI () {
       formData.append('files', file)
     }
 
-    // formData.append('filenames', filenames)
-    // formData.append('files', files)
-    console.log(formData)
-
     const xhr = new XMLHttpRequest()
     if (component.helperAddress != null) {
       xhr.open('POST', component.helperAddress + '/uploadContent', true)
@@ -501,14 +497,10 @@ function reloadConfiguration () {
   // This function will send a message to the server asking it to reload
   // the current exhibit configuration file and update all the components
 
-  const requestDict = {
-    class: 'webpage',
-    action: 'reloadConfiguration'
-  }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/system/reloadConfiguration', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -524,7 +516,7 @@ function reloadConfiguration () {
       }
     }
   }
-  xhr.send(JSON.stringify(requestDict))
+  xhr.send()
 }
 
 function sendGroupCommand (group, cmd) {
@@ -1255,13 +1247,10 @@ function uploadIssueMediaFile () {
 
     const file = fileInput.files[0]
     const formData = new FormData()
-    formData.append('action', 'uploadIssueMedia')
-    formData.append('filename', file.name)
-    formData.append('mimetype', file.type)
-    formData.append('file', file)
+    formData.append('files', file)
 
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', serverIP, true)
+    xhr.open('POST', serverIP + '/issue/uploadMedia', true)
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
       if (this.status === 200) {
@@ -1739,7 +1728,7 @@ function deleteTrackerTemplate (name = '') {
   }
 
   const requestDict = {
-\    name
+    name
   }
 
   const xhr = new XMLHttpRequest()
@@ -1773,14 +1762,13 @@ function rebuildIssueList (issues) {
 
   issues.forEach((issue, i) => {
     // Check against the filters
-    if (filterPriority !== 'all' && filterPriority !== issue.priority) {
+    if (filterPriority !== 'all' && filterPriority !== issue.priority && filterPriority != null) {
       return
     }
     if (
-      (filterAssignedTo !== 'all' && filterAssignedTo !== 'unassigned' && !issue.assignedTo.includes(filterAssignedTo)) ||
+      (filterAssignedTo != null && filterAssignedTo !== 'all' && filterAssignedTo !== 'unassigned' && !issue.assignedTo.includes(filterAssignedTo)) ||
       (filterAssignedTo === 'unassigned' && issue.assignedTo.length > 0)
     ) return
-
     const col = document.createElement('div')
     col.setAttribute('class', 'col-12 col-sm-6 col-lg-4 mt-2')
 
