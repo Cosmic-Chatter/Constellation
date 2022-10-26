@@ -94,13 +94,6 @@ function logVote (name, numVotes) {
 function checkConnection () {
   // Send a message to the server checking that the connection is stable.
 
-  const requestDict = {
-    class: 'tracker',
-    action: 'checkConnection'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   function badConnectionHandler () {
     if (debug) {
       $('#connectionWarning').show()
@@ -108,7 +101,7 @@ function checkConnection () {
     badConnection = true
   }
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverAddress, true)
+  xhr.open('GET', serverAddress + '/system/checkConnection', true)
   xhr.timeout = 1000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -125,7 +118,7 @@ function checkConnection () {
       }
     }
   }
-  xhr.send(requestString)
+  xhr.send()
 }
 
 function stringToBool (str) {

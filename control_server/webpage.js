@@ -1602,14 +1602,12 @@ function downloadTrackerData () {
   const name = $('#trackerDataSelect').val()
 
   const requestDict = {
-    class: 'tracker',
-    action: 'downloadTrackerData',
     name
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/getDataAsCSV', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1665,14 +1663,12 @@ function deleteTrackerData () {
   const name = $('#trackerDataSelect').val()
 
   const requestDict = {
-    class: 'tracker',
-    action: 'clearTrackerData',
     name
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/deleteData', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1711,15 +1707,13 @@ function createTrackerTemplate (name = '') {
   }
   console.log(name)
   const requestDict = {
-    class: 'tracker',
-    action: 'createTemplate',
     name,
     template: {}
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/createTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1745,14 +1739,12 @@ function deleteTrackerTemplate (name = '') {
   }
 
   const requestDict = {
-    class: 'tracker',
-    action: 'deleteTemplate',
-    name
+\    name
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/deleteTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2473,8 +2465,6 @@ function editTrackerTemplateModalSubmitChanges () {
   const templateName = $('#editTrackerTemplateModal').data('templateName')
 
   const requestDict = {
-    class: 'tracker',
-    action: 'createTemplate',
     name: templateName,
     template
   }
@@ -2483,7 +2473,7 @@ function editTrackerTemplateModalSubmitChanges () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/createTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return

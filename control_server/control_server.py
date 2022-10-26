@@ -818,9 +818,91 @@ async def set_component_content(data: dict[str, Any], config: c_config = Depends
 
 
 # Flexible Tracker actions
+@app.post("/tracker/{tracker_type}/createTemplate")
+async def create_tracker_template(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Create a new tracker template, overwriting if necessary."""
+
+    if "name" not in data or "template" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' or 'template' field."}
+        return response
+    name = data["name"]
+    if not name.lower().endswith(".ini"):
+        name += ".ini"
+    # file_path = os.path.join(c_config.APP_PATH, kind, "templates", name)
+    file_path = c_tools.get_path([tracker_type, "templates", name], user_file=True)
+    success = c_track.create_template(file_path, data["template"])
+    response = {"success": success}
+    return response
+
+
+@app.post("/tracker/{tracker_type}/deleteData")
+async def delete_tracker_data(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Delete the specified tracker data file."""
+
+    if "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' field."}
+        return response
+    name = data["name"]
+    if name is None or name.strip() == "":
+        response = {"success": False,
+                    "reason": "'name' field is blank."}
+        return response
+    if not name.lower().endswith(".txt"):
+        name += ".txt"
+    # data_path = os.path.join(c_config.APP_PATH, tracker_type, "data", name)
+    data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    success = True
+    reason = ""
+    with c_config.trackingDataWriteLock:
+        try:
+            os.remove(data_path)
+        except PermissionError:
+            success = False
+            reason = f"You do not have write permission for the file {data_path}"
+        except FileNotFoundError:
+            success = True  # This error results in the user's desired action!
+            reason = f"File does not exist: {data_path}"
+    if reason != "":
+        print(reason)
+    response = {"success": success,
+                "reason": reason}
+    return response
+
+
+@app.post("/tracker/{tracker_type}/deleteTemplate")
+async def delete_tracker_template(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Delete the specified tracker template."""
+
+    if "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' field."}
+        return response
+    # file_path = os.path.join(c_config.APP_PATH, kind, "templates", data["name"] + ".ini")
+    file_path = c_tools.get_path([tracker_type, "templates", data["name"] + ".ini"], user_file=True)
+    with c_config.trackerTemplateWriteLock:
+        response = c_tools.delete_file(file_path)
+    return response
+
+
+@app.get("/tracker/{tracker_type}/getAvailableData")
+async def get_available_tracker_data(tracker_type: str, config: c_config = Depends(get_config)):
+    """Send a list of all the available data files for the given tracker type."""
+
+    data_path = os.path.join(c_config.APP_PATH, tracker_type, "data")
+    data_list = []
+    for file in os.listdir(data_path):
+        if file.lower().endswith(".txt"):
+            data_list.append(file)
+    response = {"success": True,
+                "data": data_list}
+    return response
+
+
 @app.get("/tracker/{tracker_type}/getAvailableDefinitions")
 async def get_available_tracker_definitions(tracker_type: str, config: c_config = Depends(get_config)):
-    """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)"""
+    """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
 
     definition_list = []
     template_path = os.path.join(c_config.APP_PATH, tracker_type, "templates")
@@ -829,6 +911,26 @@ async def get_available_tracker_definitions(tracker_type: str, config: c_config 
             definition_list.append(file)
 
     return definition_list
+
+
+@app.post("/tracker/{tracker_type}/getDataAsCSV")
+async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Return the requested data file as a CSV string."""
+
+    if "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' field."}
+        return response
+    name = data["name"]
+    if not name.lower().endswith(".txt"):
+        name += ".txt"
+    # data_path = os.path.join(c_config.APP_PATH, tracker_type, "data", name)
+    data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    result = c_track.create_CSV(data_path)
+    response = {"success": True,
+                "csv": result}
+    return response
+
 
 
 @app.post("/tracker/{tracker_type}/getLayoutDefinition")
@@ -1233,6 +1335,20 @@ async def update_schedule(data: dict[str, Any], config: c_config = Depends(get_c
 
 
 # System actions
+@app.post("/system/beginSynchronization")
+async def begin_synchronization(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Initiate a synchronization attempt between the specified components."""
+
+    if "synchronizeWith" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'synchronizeWith' field."}
+        return response
+
+    c_exhibit.update_synchronization_list(data["id"], data["synchronizeWith"])
+
+    return {"success": True}
+
+
 @app.get("/system/checkConnection")
 async def check_connection(config: c_config = Depends(get_config)):
     """Respond to request to confirm that the connection is active"""
@@ -1296,6 +1412,25 @@ async def get_update(config: c_config = Depends(get_config)):
 async def reload_configuration(config: c_config = Depends(get_config)):
     """Reload galleryConfiguration.ini"""
     load_default_configuration()
+
+
+@app.post("/system/ping")
+async def handle_ping(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Respond to an incoming heartbeat signal with ahy updates."""
+
+    if "id" not in data or "type" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'id' or 'type' field."}
+        return response
+
+    this_id = data['id']
+    c_exhibit.update_exhibit_component_status(data, ip_address)
+
+    if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
+        # Clear the command list now that we have sent
+        c_exhibit.get_exhibit_component(this_id).config["commands"] = []
+    return c_exhibit.get_exhibit_component(this_id).config
+
 
 
 @app.post("/system/updateConfigurationRawText")

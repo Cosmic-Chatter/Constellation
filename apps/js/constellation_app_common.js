@@ -28,7 +28,6 @@ export function sendPing () {
 
   if (config.serverAddress !== '') {
     const requestDict = {
-      class: 'exhibitComponent',
       id: config.id,
       type: config.type,
       helperPort: config.helperAddress.split(':')[2], // Depreciated
@@ -48,7 +47,7 @@ export function sendPing () {
     const requestString = JSON.stringify(requestDict)
 
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', config.serverAddress, true)
+    xhr.open('POST', config.serverAddress + '/system/ping', true)
     xhr.timeout = 2000
     xhr.setRequestHeader('Content-Type', 'application/json')
 

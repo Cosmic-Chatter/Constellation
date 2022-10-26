@@ -28,15 +28,8 @@ export function getAvailableTrackerData (complete) {
   // Pass a function and it will be called with the list as the
   // only parameter
 
-  const requestDict = {
-    class: 'tracker',
-    action: 'getAvailableTrackerData'
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/tracker/getAvailableData', true)
   xhr.timeout = 3000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')

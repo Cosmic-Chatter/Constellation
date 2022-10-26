@@ -80,16 +80,14 @@ function askToSynchronize (otherIDs) {
   console.log('Asking to synchronize with', otherIDs)
 
   const requestString = JSON.stringify({
-    class: 'exhibitComponent',
     id: constCommon.config.id,
     type: constCommon.config.type,
-    action: 'beginSynchronization',
     synchronizeWith: otherIDs.split(',')
   })
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 1000
-  xhr.open('POST', constCommon.config.serverAddress, true)
+  xhr.open('POST', constCommon.config.serverAddress + '/system/beginSynchronization', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.send(requestString)
 }
