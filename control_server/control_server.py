@@ -38,7 +38,6 @@ import dateutil.parser
 import config as c_config
 import constellation_exhibit as c_exhibit
 import constellation_issues as c_issues
-import constellation_legacy as c_legacy
 import constellation_maintenance as c_maint
 import constellation_projector as c_proj
 import constellation_schedule as c_sched
@@ -1426,11 +1425,11 @@ async def handle_ping(data: dict[str, Any], config: c_config = Depends(get_confi
     this_id = data['id']
     c_exhibit.update_exhibit_component_status(data, ip_address)
 
+    dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()
     if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
-        # Clear the command list now that we have sent
+        # Clear the command list now that we are sending
         c_exhibit.get_exhibit_component(this_id).config["commands"] = []
-    return c_exhibit.get_exhibit_component(this_id).config
-
+    return dict_to_send
 
 
 @app.post("/system/updateConfigurationRawText")
@@ -1483,8 +1482,9 @@ async def do_post(data: dict[str, Any], request: Request, config: c_config = Dep
     client_ip = request.client.host
     if client_ip == "::1":
         client_ip = "localhost"
-    result = c_legacy.do_POST(data, client_ip)
-    return result
+    print(f"Received unexpected legacy connection from ip {client_ip}:", data)
+    logging.error(f"Received unexpected legacy connection from ip {client_ip}:", data)
+    return {"success": False, "reason": "Must conform to Constellation 2.0 API."}
 
 
 app.mount("/js",

@@ -26,42 +26,43 @@ config.platformDetails = {
 export function sendPing () {
   // Contact the control server and ask for any updates
 
-  if (config.serverAddress !== '') {
-    const requestDict = {
-      id: config.id,
-      type: config.type,
-      helperPort: config.helperAddress.split(':')[2], // Depreciated
-      helperAddress: config.helperAddress,
-      allowed_actions: config.allowedActionsDict,
-      constellation_app_id: config.constellationAppID,
-      platform_details: config.platformDetails,
-      AnyDeskID: config.AnyDeskID,
-      currentInteraction: config.currentInteraction
-    }
+  if (config.serverAddress === '') {
+    console.log("Aborting ping... no config.serverAddress")
+  }
+  const requestDict = {
+    id: config.id,
+    type: config.type,
+    helperPort: config.helperAddress.split(':')[2], // Depreciated
+    helperAddress: config.helperAddress,
+    allowed_actions: config.allowedActionsDict,
+    constellation_app_id: config.constellationAppID,
+    platform_details: config.platformDetails,
+    AnyDeskID: config.AnyDeskID,
+    currentInteraction: config.currentInteraction
+  }
 
-    // See if there is an error to report
-    const errorString = JSON.stringify(config.errorDict)
-    if (errorString !== '') {
-      requestDict.error = errorString
-    }
-    const requestString = JSON.stringify(requestDict)
+  // See if there is an error to report
+  const errorString = JSON.stringify(config.errorDict)
+  if (errorString !== '') {
+    requestDict.error = errorString
+  }
+  const requestString = JSON.stringify(requestDict)
 
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', config.serverAddress + '/system/ping', true)
-    xhr.timeout = 2000
-    xhr.setRequestHeader('Content-Type', 'application/json')
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', config.serverAddress + '/system/ping', true)
+  xhr.timeout = 2000
+  xhr.setRequestHeader('Content-Type', 'application/json')
 
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
+  xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
 
-      if (this.status === 200) {
-        if (this.responseText !== '') {
-          readUpdate(JSON.parse(this.responseText))
-        }
+    if (this.status === 200) {
+      if (this.responseText !== '') {
+        readUpdate(JSON.parse(this.responseText))
       }
     }
-    xhr.send(requestString)
   }
+  xhr.send(requestString)
 }
 
 export function wakeDisplay () {
