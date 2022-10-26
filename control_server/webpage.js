@@ -1436,8 +1436,6 @@ function issueMediaDelete (filename) {
   // Send a message to the control server, asking for the file to be deleted.
 
   const requestDict = {
-    class: 'webpage',
-    action: 'issueMediaDelete',
     filename: $('#issueMediaViewFromModal').data('filename')
   }
   // If this is an existing issue, we need to say what the issue id is
@@ -1448,7 +1446,7 @@ function issueMediaDelete (filename) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/issue/deleteMedia', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1493,22 +1491,20 @@ function submitIssueFromModal () {
 
   if (error === false) {
     const issueType = $('#issueEditModal').data('type')
-    let action
+    let endpoint
     if (issueType === 'new') {
-      action = 'createIssue'
+      endpoint = '/issue/create'
     } else {
       issueDict.id = $('#issueEditModal').data('target')
-      action = 'editIssue'
+      endpoint = '/issue/edit'
     }
     $('#issueEditModal').modal('hide')
     const requestDict = {
-      class: 'webpage',
-      action,
       details: issueDict
     }
     const xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP, true)
+    xhr.open('POST', serverIP + endpoint, true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
@@ -1527,14 +1523,9 @@ function submitIssueFromModal () {
 }
 
 function getIssueList () {
-  const requestDict = {
-    class: 'webpage',
-    action: 'getIssueList'
-  }
-
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('GET', serverIP + '/issue/list', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1552,7 +1543,7 @@ function getIssueList () {
       }
     }
   }
-  xhr.send(JSON.stringify(requestDict))
+  xhr.send()
 }
 
 function getIssue (id) {
@@ -1569,14 +1560,12 @@ function deleteIssue (id) {
   // Ask the control server to remove the specified issue
 
   const requestDict = {
-    class: 'webpage',
-    action: 'deleteIssue',
     id
   }
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/issue/delete', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return

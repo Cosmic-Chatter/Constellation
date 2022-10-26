@@ -449,33 +449,33 @@ function wakeDisplay () {
   xhr.send(requestString)
 }
 
-function loadLayoutDefinition (name) {
-  // Ask the control server to send a JSON dict with the layout definition
-  // from the file with `name`
+// function loadLayoutDefinition (name) {
+//   // Ask the control server to send a JSON dict with the layout definition
+//   // from the file with `name`
 
-  const requestDict = {
-    class: 'voter',
-    action: 'getLayoutDefinition',
-    name
-  }
+//   const requestDict = {
+//     class: 'voter',
+//     action: 'getLayoutDefinition',
+//     name
+//   }
 
-  const requestString = JSON.stringify(requestDict)
+//   const requestString = JSON.stringify(requestDict)
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverAddress, true)
-  xhr.timeout = 1000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.overrideMimeType('text/plain; charset=x-user-defined')
-  xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return
+//   const xhr = new XMLHttpRequest()
+//   xhr.open('POST', serverAddress, true)
+//   xhr.timeout = 1000
+//   xhr.setRequestHeader('Content-Type', 'application/json')
+//   xhr.overrideMimeType('text/plain; charset=x-user-defined')
+//   xhr.onreadystatechange = function () {
+//     if (this.readyState != 4) return
 
-    if (this.status == 200) {
-      const definition = JSON.parse(this.responseText)
-      buildLayout(definition)
-    }
-  }
-  xhr.send(requestString)
-}
+//     if (this.status == 200) {
+//       const definition = JSON.parse(this.responseText)
+//       buildLayout(definition)
+//     }
+//   }
+//   xhr.send(requestString)
+// }
 
 function sendData () {
   // Collect the current value from each card, build a dictionary, and
@@ -490,12 +490,12 @@ function sendData () {
     }
     return
   }
-  resultDict = {}
+  const resultDict = {}
 
   // Append the date and time of this recording
   const tzoffset = (new Date()).getTimezoneOffset() * 60000 // Time zone offset in milliseconds
-  const date_str = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1)
-  resultDict.Date = date_str
+  const dateStr = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1)
+  resultDict.Date = dateStr
 
   let totalVotes = 0
   Object.keys(voteCounts).forEach((entry) => {
@@ -507,13 +507,11 @@ function sendData () {
   })
 
   // If there are no votes to record, bail out.
-  if (totalVotes == 0) {
+  if (totalVotes === 0) {
     return
   }
 
   const requestDict = {
-    class: 'tracker',
-    action: 'submitData',
     data: resultDict,
     name: configurationName
   }
@@ -521,13 +519,13 @@ function sendData () {
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverAddress, true)
+  xhr.open('POST', serverAddress + '/tracker/flexible-tracker/submitData', true)
   xhr.timeout = 5000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
   xhr.onreadystatechange = function () {
-    if (this.readyState != 4) return
-    if (this.status == 200) {
+    if (this.readyState !== 4) return
+    if (this.status === 200) {
     }
   }
   xhr.send(requestString)

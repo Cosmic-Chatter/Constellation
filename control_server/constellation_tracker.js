@@ -64,14 +64,12 @@ export function loadLayoutDefinition (name, complete) {
   // with the layout as the only parameter
 
   const requestDict = {
-    class: 'tracker',
-    action: 'getLayoutDefinition',
     name
   }
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverIP, true)
+  xhr.open('POST', serverIP + '/tracker/flexible-tracker/getLayoutDefinition', true)
   xhr.timeout = 1000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')

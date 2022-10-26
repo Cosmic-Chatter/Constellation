@@ -831,10 +831,163 @@ async def get_available_tracker_definitions(tracker_type: str, config: c_config 
     return definition_list
 
 
+@app.post("/tracker/{tracker_type}/getLayoutDefinition")
+async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Load the requested INI file and return it as a dictionary."""
+
+    if "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' field."}
+        return response
+
+    layout_definition, success, reason = c_track.get_layout_definition(data["name"] + ".ini", kind=tracker_type)
+
+    response = {"success": success,
+                "reason": reason,
+                "layout": layout_definition}
+    return response
+
+
+@app.post("/tracker/{tracker_type}/getRawText")
+async def get_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Load the contents of the appropriate file and return them."""
+
+    if "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'name' field."}
+        return response
+    result, success, reason = c_track.get_raw_text(data["name"] + ".txt", tracker_type)
+    response = {"success": success, "reason": reason, "text": result}
+    return response
+
+
+@app.post("/tracker/submitAnalytics")
+async def submit_analytics(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Write the provided analytics data to file."""
+
+    if "data" not in data or 'name' not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'data' or 'name' field."}
+        return response
+    file_path = os.path.join(c_config.APP_PATH, "analytics", data["name"] + ".txt")
+    success, reason = c_track.write_JSON(data["data"], file_path)
+    response = {"success": success, "reason": reason}
+    return response
+
+
+@app.post("/tracker/{tracker_type}/submitData")
+async def submit_tracker_data(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Record the submitted data to file."""
+
+    if "data" not in data or "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'data' or 'name' field."}
+        return response
+    file_path = c_tools.get_path([tracker_type, "data", data["name"] + ".txt"], user_file=True)
+    success, reason = c_track.write_JSON(data["data"], file_path)
+    response = {"success": success, "reason": reason}
+    return response
+    
+
+@app.post("/tracker/{tracker_type}/submitRawText")
+async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+    """Write the raw text in data['text'] to file.
+
+    Set data['mode'] == 'a' to append or 'w' to overwrite the file.
+    """
+
+    if "text" not in data or "name" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'text' or 'name' field."}
+        return response
+    mode = data.get("mode", "a")
+    if mode != "a" and mode != "w":
+        response = {"success": False,
+                    "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
+        return response
+    success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind=tracker_type, mode=mode)
+    response = {"success": success, "reason": reason}
+    return response
+
+
+# Issue actions
+@app.post("/issue/create")
+async def create_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Create a new issue."""
+
+    if "details" in data:
+        with c_config.issueLock:
+            new_issue = c_issues.Issue(data["details"])
+            c_config.issueList.append(new_issue)
+            c_issues.save_issueList()
+        response_dict = {"success": True}
+    else:
+        response_dict = {"success": False,
+                         "reason": "Must include field 'details'"}
+    return response_dict
+
+
+@app.post("/issue/delete")
+async def delete_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Delete an issue."""
+
+    if "id" in data:
+        c_issues.remove_issue(data["id"])
+        c_issues.save_issueList()
+        response_dict = {"success": True, "reason": ""}
+    else:
+        response_dict = {"success": False, "reason": "Must include field 'id'"}
+    return response_dict
+
+
+@app.post("/issue/deleteMedia")
+async def delete_issue_media(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Delete the media file linked to an issue and remove the reference."""
+
+    if "filename" not in data:
+        response = {"success": False,
+                    "reason": "Request missing 'filename' field."}
+        return response
+    this_id = None
+    if "id" in data:
+        this_id = data["id"]
+    c_issues.delete_issue_media_file(data["filename"], owner=this_id)
+    response = {"success": True}
+    return response
+
+
+@app.post("/issue/edit")
+async def edit_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+    """Make changes to an existing issue."""
+
+    if "details" in data and "id" in data["details"]:
+        c_issues.edit_issue(data["details"])
+        c_issues.save_issueList()
+        response_dict = {"success": True}
+    else:
+        response_dict = {
+            "success": False,
+            "reason": "Must include field 'details' with proper"
+                      "ty 'id'"
+        }
+    return response_dict
+
+
+@app.get("/issue/list")
+async def get_issue_list(config: c_config = Depends(get_config)):
+    """Return a list of open issues."""
+
+    response = {
+        "success": True,
+        "issueList": [x.details for x in c_config.issueList]
+    }
+    return response
+
+
 # Maintenance actions
 @app.post("/maintenance/deleteRecord")
 async def delete_maintenance_record(data: dict[str, Any], config: c_config = Depends(get_config)):
-    """Delete the specified maintenance record"""
+    """Delete the specified maintenance record."""
 
     if "id" not in data:
         response = {"success": False,

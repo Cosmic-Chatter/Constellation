@@ -320,8 +320,6 @@ export function sendAnalytics (data) {
   data.exhibit = config.current_exhibit
 
   const requestDict = {
-    class: 'tracker',
-    action: 'submitAnalytics',
     data,
     name: config.id
   }
@@ -329,7 +327,7 @@ export function sendAnalytics (data) {
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', config.serverAddress, true)
+  xhr.open('POST', config.serverAddress + '/tracker/submitAnalytics', true)
   xhr.timeout = 5000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')

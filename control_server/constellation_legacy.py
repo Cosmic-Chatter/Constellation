@@ -99,104 +99,9 @@ def do_POST(data, ip_address):
             response = {"success": True,
                         "reason": "Missing required field 'action'."}
             return response
-
-        if action == "createIssue":
-            if "details" in data:
-                with c_config.issueLock:
-                    new_issue = c_issues.Issue(data["details"])
-                    c_config.issueList.append(new_issue)
-                    c_issues.save_issueList()
-                response_dict = {"success": True}
-            else:
-                response_dict = {"success": False,
-                                 "reason": "Must include field 'details'"}
-            return response_dict
-        elif action == "editIssue":
-            if "details" in data and "id" in data["details"]:
-                c_issues.edit_issue(data["details"])
-                c_issues.save_issueList()
-                response_dict = {"success": True}
-            else:
-                response_dict = {
-                    "success": False,
-                    "reason": "Must include field 'details' with proper"
-                              "ty 'id'"
-                }
-            return response_dict
-        elif action == "deleteIssue":
-            if "id" in data:
-                c_issues.remove_issue(data["id"])
-                c_issues.save_issueList()
-                response_dict = {"success": True, "reason": ""}
-            else:
-                response_dict = {"success": False, "reason": "Must include field 'id'"}
-            return response_dict
-        elif action == "getIssueList":
-            response = {
-                "success": True,
-                "issueList": [x.details for x in c_config.issueList]
-            }
-            return response
-        elif action == "issueMediaDelete":
-            if "filename" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'filename' field."}
-                return response
-            this_id = None
-            if "id" in data:
-                this_id = data["id"]
-            c_issues.delete_issue_media_file(data["filename"], owner=this_id)
-            response = {"success": True}
-            return response
-        elif action == 'updateMaintenanceStatus':
-            if "id" not in data or "status" not in data or "notes" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'id', 'status', or 'notes' field."}
-                return response
-            file_path = os.path.join(c_config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
-            record = {"id": data["id"],
-                      "date": datetime.datetime.now().isoformat(),
-                      "status": data['status'],
-                      "notes": data["notes"]}
-            with c_config.maintenanceLock:
-                try:
-                    with open(file_path, 'a', encoding='UTF-8') as f:
-                        f.write(json.dumps(record) + "\n")
-                    success = True
-                    reason = ""
-                except FileNotFoundError:
-                    success = False
-                    reason = f"File path {file_path} does not exist"
-                except PermissionError:
-                    success = False
-                    reason = f"You do not have write permission for the file {file_path}"
-            return {"success": success, "reason": reason}
-        elif action == 'getMaintenanceStatus':
-            if "id" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'id' field."}
-                return response
-            file_path = os.path.join(c_config.APP_PATH,
-                                     "maintenance-logs", data["id"] + ".txt")
-            with c_config.maintenanceLock:
-                response_dict = c_maint.get_maintenance_report(file_path)
-            return response_dict
-        elif action == "getAllMaintenanceStatuses":
-            record_list = []
-            maintenance_path = os.path.join(c_config.APP_PATH,
-                                            "maintenance-logs")
-            for file in os.listdir(maintenance_path):
-                if file.lower().endswith(".txt"):
-                    with c_config.maintenanceLock:
-                        file_path = os.path.join(maintenance_path, file)
-                        record_list.append(c_maint.get_maintenance_report(file_path))
-            response_dict = {"success": True,
-                             "records": record_list}
-            return response_dict
-        else:
-            print(f"Error: Unknown webpage command received: {action}")
-            with c_config.logLock:
-                logging.error(f"Unknown webpage command received: {action}")
+        print(f"Error: Unknown webpage command received: {action}")
+        with c_config.logLock:
+            logging.error(f"Unknown webpage command received: {action}")
 
     elif ping_class == "exhibitComponent":
         if "action" in data:  # not a ping
@@ -228,64 +133,7 @@ def do_POST(data, ip_address):
             return response
         action = data["action"]
 
-        if action == "getLayoutDefinition":
-            if "name" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'name' field."}
-                return response
-            kind = data.get("kind", "flexible-tracker")
-
-            layout_definition, success, reason = c_track.get_layout_definition(data["name"] + ".ini",
-                                                                               kind=kind)
-
-            response = {"success": success,
-                        "reason": reason,
-                        "layout": layout_definition}
-            return response
-        elif action == "submitData":
-            if "data" not in data or "name" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'data' or 'name' field."}
-                return response
-            kind = data.get("kind", "flexible-tracker")
-            # file_path = os.path.join(config.APP_PATH, kind, "data", data["name"] + ".txt")
-            file_path = c_tools.get_path([kind, "data", data["name"] + ".txt"], user_file=True)
-            success, reason = c_track.write_JSON(data["data"], file_path)
-            response = {"success": success, "reason": reason}
-            return response
-        elif action == "submitRawText":
-            if "text" not in data or "name" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'text' or 'name' field."}
-                return response
-            kind = data.get("kind", "flexible-tracker")
-            mode = data.get("mode", "a")
-            if mode != "a" and mode != "w":
-                response = {"success": False,
-                            "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
-                return response
-            success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind=kind, mode=mode)
-            response = {"success": success, "reason": reason}
-            return response
-        elif action == "retrieveRawText":
-            if "name" not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'name' field."}
-                return response
-            kind = data.get("kind", "flexible-tracker")
-            result, success, reason = c_track.get_raw_text(data["name"] + ".txt", kind)
-            response = {"success": success, "reason": reason, "text": result}
-            return response
-        elif action == "submitAnalytics":
-            if "data" not in data or 'name' not in data:
-                response = {"success": False,
-                            "reason": "Request missing 'data' or 'name' field."}
-                return response
-            file_path = os.path.join(c_config.APP_PATH, "analytics", data["name"] + ".txt")
-            success, reason = c_track.write_JSON(data["data"], file_path)
-            response = {"success": success, "reason": reason}
-            return response
-        elif action == "getAvailableDefinitions":
+        if action == "getAvailableDefinitions":
             kind = data.get("kind", "flexible-tracker")
             definition_list = []
             template_path = os.path.join(c_config.APP_PATH, kind, "templates")

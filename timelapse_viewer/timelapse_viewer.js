@@ -601,15 +601,13 @@ function sendAnalytics(data) {
     data.date = new Date().toISOString()
   }
   console.log(data)
-  var requestDict = {class: "tracker",
-                     action: "submitAnalytics",
-                     name: id,
+  var requestDict = {name: id,
                      data: data,
                     };
 
   var xhr = new XMLHttpRequest();
   xhr.timeout = 1000;
-  xhr.open("POST", serverAddress, true);
+  xhr.open("POST", serverAddress + '/tracker/submitAnalytics', true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send(JSON.stringify(requestDict));
 }

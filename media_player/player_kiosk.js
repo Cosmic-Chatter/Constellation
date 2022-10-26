@@ -284,15 +284,13 @@ function sendAnalytics(data) {
   // Append the current exhibit
   data.exhibit = current_config.current_exhibit;
 
-  var requestDict = {"class": "tracker",
-                     "action": "submitAnalytics",
-                     "data": data,
+  var requestDict = {"data": data,
                      "name": id};
 
   var requestString = JSON.stringify(requestDict);
 
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", serverAddress, true);
+  xhr.open("POST", serverAddress + '/tracker/submitAnalytics', true);
   xhr.timeout = 5000;
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.overrideMimeType( "text/plain; charset=x-user-defined" );
