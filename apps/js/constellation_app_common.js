@@ -69,26 +69,17 @@ export function wakeDisplay () {
   // Send a message to the local helper process and ask it to sleep the
   // displays
 
-  // const requestString = JSON.stringify({ action: 'wakeDisplay' })
 
   const xhr = new XMLHttpRequest()
   xhr.open('GET', config.helperAddress + '/wakeDisplay', true)
   xhr.timeout = 2000
   xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.onreadystatechange = function () {
-  //   if (this.readyState !== 4) return
-
-  //   if (this.status === 200) {
-  //   }
-  // }
   xhr.send()
 }
 
 function sleepDisplay () {
   // Send a message to the local helper process and ask it to sleep the
   // displays
-
-  // const requestString = JSON.stringify({ action: 'sleepDisplay' })
 
   const xhr = new XMLHttpRequest()
   xhr.open('GET', config.helperAddress + '/sleepDisplay', true)
@@ -100,8 +91,6 @@ function sleepDisplay () {
 export function askForRestart () {
   // Send a message to the local helper and ask for it to restart the PC
 
-  // const requestString = JSON.stringify({ action: 'restart' })
-
   const xhr = new XMLHttpRequest()
   xhr.open('GET', config.helperAddress + '/restart', true)
   xhr.timeout = 2000
@@ -111,8 +100,6 @@ export function askForRestart () {
 
 export function askForShutdown () {
   // Send a message to the local helper and ask for it to shutdown the PC
-
-  // const requestString = JSON.stringify({ action: 'shutdown' })
 
   const xhr = new XMLHttpRequest()
   xhr.open('GET', config.helperAddress + 'shutdown', true)
@@ -206,7 +193,6 @@ export function askForDefaults () {
   // Send a message to the local helper and ask for the latest configuration
   // defaults, then use them.
 
-  // const requestString = JSON.stringify({ action: 'getDefaults' })
   const checkAgain = function () {
     $('#helperConnectionWarningAddress').text(config.helperAddress)
     $('#helperConnectionWarning').show()
@@ -232,8 +218,6 @@ export function askForDefaults () {
 
 export function checkForHelperUpdates () {
   // Function to ask the helper for any new updates
-
-  // const requestString = JSON.stringify({ action: 'getUpdate' })
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 50
@@ -331,11 +315,6 @@ export function sendAnalytics (data) {
   xhr.timeout = 5000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
-  // xhr.onreadystatechange = function () {
-  //   if (this.readyState !== 4) return
-  //   if (this.status === 200) {
-  //   }
-  // }
   xhr.send(requestString)
 }
 
