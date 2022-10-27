@@ -39,6 +39,84 @@ import constellation_tools as c_tools
 import constellation_tracker as c_track
 
 
+def send_webpage_update():
+    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page."""
+
+    component_dict_list = []
+    for item in c_config.componentList:
+        temp = {"id": item.id,
+                "type": item.type}
+        if "content" in item.config:
+            temp["content"] = item.config["content"]
+        if "error" in item.config:
+            temp["error"] = item.config["error"]
+        if "allowed_actions" in item.config:
+            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "description" in item.config:
+            temp["description"] = item.config["description"]
+        if "AnyDeskID" in item.config:
+            temp["AnyDeskID"] = item.config["AnyDeskID"]
+        temp["class"] = "exhibitComponent"
+        temp["status"] = item.current_status()
+        temp["lastContactDateTime"] = item.last_contact_datetime
+        temp["ip_address"] = item.ip
+        temp["helperPort"] = item.helperPort
+        temp["helperAddress"] = item.helperAddress
+        temp["constellation_app_id"] = item.constellation_app_id
+        temp["platform_details"] = item.platform_details
+        component_dict_list.append(temp)
+
+    for item in c_config.projectorList:
+        temp = {"id": item.id,
+                "type": 'PROJECTOR',
+                "ip_address": item.ip}
+        if "allowed_actions" in item.config:
+            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "description" in item.config:
+            temp["description"] = item.config["description"]
+        temp["class"] = "exhibitComponent"
+        temp["status"] = item.state["status"]
+        component_dict_list.append(temp)
+
+    for item in c_config.wakeOnLANList:
+        temp = {"id": item.id,
+                "type": 'WAKE_ON_LAN',
+                "ip_address": item.ip}
+        if "allowed_actions" in item.config:
+            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "description" in item.config:
+            temp["description"] = item.config["description"]
+        temp["class"] = "exhibitComponent"
+        temp["status"] = item.state["status"]
+        component_dict_list.append(temp)
+
+    # Also include an object with the status of the overall gallery
+    temp = {"class": "gallery",
+            "currentExhibit": c_config.currentExhibit,
+            "availableExhibits": c_config.exhibit_list,
+            "galleryName": c_config.gallery_name,
+            "updateAvailable": str(c_config.software_update_available).lower()}
+    component_dict_list.append(temp)
+
+    # Also include an object containing the current issues
+    temp = {"class": "issues",
+            "issueList": [x.details for x in c_config.issueList],
+            "lastUpdateDate": c_config.issueList_last_update_date,
+            "assignable_staff": c_config.assignable_staff}
+    component_dict_list.append(temp)
+
+    # Also include an object containing the current schedule
+    c_sched.retrieve_json_schedule()
+    with c_config.scheduleLock:
+        temp = {"class": "schedule",
+                "updateTime": c_config.scheduleUpdateTime,
+                "schedule": c_config.json_schedule_list,
+                "nextEvent": c_config.json_next_event}
+        component_dict_list.append(temp)
+
+    return component_dict_list
+
+
 def clear_terminal():
     """Clear the terminal"""
 
@@ -1080,7 +1158,7 @@ async def get_help_text(config: c_config = Depends(get_config)):
 async def get_update(config: c_config = Depends(get_config)):
     """Retrieve an update of everything being managed by Control Server"""
 
-    return c_tools.send_webpage_update()
+    return send_webpage_update()
 
 
 @app.get("/system/reloadConfiguration")

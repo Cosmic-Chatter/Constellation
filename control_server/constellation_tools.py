@@ -12,7 +12,6 @@ import psutil
 
 # Constellation imports
 import config
-import constellation_schedule as c_sched
 
 
 def get_path(path_list: list[str], user_file: bool = False) -> str:
@@ -58,85 +57,6 @@ def delete_file(file_path) -> dict:
     except PermissionError:
         response["reason"] = f"You do not have permission for the file f{file_path}"
     return response
-
-
-def send_webpage_update():
-    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page."""
-
-    component_dict_list = []
-    for item in config.componentList:
-        temp = {"id": item.id,
-                "type": item.type}
-        if "content" in item.config:
-            temp["content"] = item.config["content"]
-        if "error" in item.config:
-            temp["error"] = item.config["error"]
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
-        if "description" in item.config:
-            temp["description"] = item.config["description"]
-        if "AnyDeskID" in item.config:
-            temp["AnyDeskID"] = item.config["AnyDeskID"]
-        temp["class"] = "exhibitComponent"
-        temp["status"] = item.current_status()
-        temp["lastContactDateTime"] = item.last_contact_datetime
-        temp["ip_address"] = item.ip
-        temp["helperPort"] = item.helperPort
-        temp["helperAddress"] = item.helperAddress
-        temp["constellation_app_id"] = item.constellation_app_id
-        temp["platform_details"] = item.platform_details
-        component_dict_list.append(temp)
-
-    for item in config.projectorList:
-        temp = {"id": item.id,
-                "type": 'PROJECTOR',
-                "ip_address": item.ip}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
-        if "description" in item.config:
-            temp["description"] = item.config["description"]
-        temp["class"] = "exhibitComponent"
-        temp["status"] = item.state["status"]
-        component_dict_list.append(temp)
-
-    for item in config.wakeOnLANList:
-        temp = {"id": item.id,
-                "type": 'WAKE_ON_LAN',
-                "ip_address": item.ip}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
-        if "description" in item.config:
-            temp["description"] = item.config["description"]
-        temp["class"] = "exhibitComponent"
-        temp["status"] = item.state["status"]
-        component_dict_list.append(temp)
-
-    # Also include an object with the status of the overall gallery
-    temp = {"class": "gallery",
-            "currentExhibit": config.currentExhibit,
-            "availableExhibits": config.exhibit_list,
-            "galleryName": config.gallery_name,
-            "updateAvailable": str(config.software_update_available).lower()}
-    component_dict_list.append(temp)
-
-    # Also include an object containing the current issues
-    temp = {"class": "issues",
-            "issueList": [x.details for x in config.issueList],
-            "lastUpdateDate": config.issueList_last_update_date,
-            "assignable_staff": config.assignable_staff}
-    component_dict_list.append(temp)
-
-    # Also include an object containing the current schedule
-    c_sched.retrieve_json_schedule()
-    with config.scheduleLock:
-        temp = {"class": "schedule",
-                "updateTime": config.scheduleUpdateTime,
-                "schedule": config.json_schedule_list,
-                "nextEvent": config.json_next_event}
-        component_dict_list.append(temp)
-
-    # json_string = json.dumps(component_dict_list, default=str)
-    return component_dict_list
 
 
 def check_file_structure():
