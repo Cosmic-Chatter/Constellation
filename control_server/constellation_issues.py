@@ -8,6 +8,7 @@ from typing import Union
 
 # Constellation imports
 import config
+import constellation_tools as c_tools
 
 
 class Issue:
@@ -36,7 +37,7 @@ class Issue:
 def delete_issue_media_file(file: str, owner: str = None):
     """Delete a media file from an issue"""
 
-    file_path = os.path.join(config.APP_PATH, "issues", "media", file)
+    file_path = c_tools.get_path(["issues", "media", file], user_file=True)
     print("Deleting issue media file:", file)
     with config.logLock:
         logging.info("Deleting issue media file %s", file)
@@ -98,14 +99,14 @@ def remove_issue(this_id: str):
 def save_issueList():
     """Write the current issueList to file"""
 
-    issue_file = os.path.join(config.APP_PATH, "issues", "issues.json")
+    issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
 
     with open(issue_file, "w", encoding="UTF-8") as file_object:
         json.dump([x.details for x in config.issueList], file_object)
 
 
 # Set up log file
-log_path = os.path.join(config.APP_PATH, "control_server.log")
+log_path = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

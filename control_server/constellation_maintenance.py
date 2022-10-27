@@ -8,6 +8,7 @@ from typing import Union
 
 # Constellation imports
 import config
+import constellation_tools as c_tools
 
 
 def get_maintenance_report(file_path: Union[str, os.PathLike]) -> dict:
@@ -147,7 +148,7 @@ def summarize_segments(segments: list[dict]) -> dict[str, float]:
 
 
 # Set up log file
-log_path = os.path.join(config.APP_PATH, "control_server.log")
+log_path = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

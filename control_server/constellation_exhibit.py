@@ -267,7 +267,7 @@ def check_available_exhibits():
     """Get a list of available "*.exhibit" configuration files"""
 
     config.exhibit_list = []
-    exhibits_path = os.path.join(config.APP_PATH, "exhibits")
+    exhibits_path = c_tools.get_path(["exhibits"], user_file=True)
 
     with config.exhibitsLock:
         for file in os.listdir(exhibits_path):
@@ -302,7 +302,7 @@ def create_new_exhibit(name: str, clone: str):
     if not name.lower().endswith(".exhibit"):
         name += ".exhibit"
 
-    new_file = os.path.join(config.APP_PATH, "exhibits", name)
+    new_file = c_tools.get_path(["exhibits", name], user_file=True)
 
     if clone is not None:
         # Copy an existing file
@@ -310,7 +310,7 @@ def create_new_exhibit(name: str, clone: str):
         # Make sure we have the proper extension on the file we're copying from
         if not clone.lower().endswith(".exhibit"):
             clone += ".exhibit"
-        existing_file = os.path.join(config.APP_PATH, "exhibits", clone)
+        existing_file = c_tools.get_path(["exhibits", clone], user_file=True)
         shutil.copyfile(existing_file, new_file)
 
     else:
@@ -331,7 +331,7 @@ def delete_exhibit(name: str):
     if not name.lower().endswith(".exhibit"):
         name += ".exhibit"
 
-    file_to_delete = os.path.join(config.APP_PATH, "exhibits", name)
+    file_to_delete = c_tools.get_path(["exhibits", name], user_file=True)
 
     with config.exhibitsLock:
         try:
@@ -393,14 +393,12 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
 
     config.currentExhibit = name
     config.galleryConfiguration = configparser.ConfigParser()
-    exhibit_path = os.path.join(config.APP_PATH, "exhibits")
+    exhibit_path = c_tools.get_path(["exhibits"], user_file=True)
     config.galleryConfiguration.read(exhibit_path)
 
     if update_default:
         config_reader = configparser.ConfigParser(delimiters="=")
         config_reader.optionxform = str  # Override default, which is case in-sensitive
-        # config_path = os.path.join(config.APP_PATH,
-        #                         'galleryConfiguration.ini')
         config_path = c_tools.get_path(['galleryConfiguration.ini'], user_file=True)
         with config.galleryConfigurationLock:
             config_reader.read(config_path)
@@ -426,8 +424,7 @@ def set_component_content(id_: str, content_list: list[str]):
 
     # Write new configuration to file
     with config.galleryConfigurationLock:
-        with open(os.path.join(config.APP_PATH, "exhibits", config.currentExhibit),
-                  'w', encoding="UTF-8") as f:
+        with open(c_tools.get_path(["exhibits", config.currentExhibit], user_file=True), 'w', encoding="UTF-8") as f:
             config.galleryConfiguration.write(f)
 
 
@@ -513,7 +510,7 @@ def update_exhibit_component_status(data, ip: str):
 
 
 # Set up log file
-log_path = os.path.join(config.APP_PATH, "control_server.log")
+log_path = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

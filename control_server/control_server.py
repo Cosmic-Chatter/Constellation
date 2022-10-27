@@ -4,27 +4,20 @@
 # Released under the MIT license
 
 # Standard modules
-import cgi
 import configparser
 import datetime
-from fastapi import FastAPI, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, Depends, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from functools import lru_cache
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
 import logging
-import mimetypes
 import os
 import pickle
-import re
 import shutil
 import signal
 import socket
-from socketserver import ThreadingMixIn
 import sys
-import threading
 import time
 import traceback
 from typing import Any
@@ -44,279 +37,6 @@ import constellation_projector as c_proj
 import constellation_schedule as c_sched
 import constellation_tools as c_tools
 import constellation_tracker as c_track
-
-
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    """Stub which triggers dispatch of requests into individual threads."""
-
-    daemon_threads = True
-
-
-class RequestHandler(SimpleHTTPRequestHandler):
-    """Handle incoming requests to the control server"""
-
-    def configure_response(self, response_code, content_type: str = ""):
-        """Send the appropriate response headers"""
-
-        # 200 = OK, 204 = No content, 206 = Range, 404 = Not found
-
-        code_dict = {
-            200: "OK",
-            204: "No Content",
-            206: "Partial Content",
-            400: "Bad Request",
-            404: "Not Found"
-        }
-
-        self.send_response(response_code, code_dict[response_code])
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        self.send_header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        if content_type != "":
-            self.send_header("Content-Type", content_type)
-        self.end_headers()
-
-    # def send_current_configuration(self, id_):
-    #     """Function to respond to a POST with a dictionary defining the current exhibit configuration"""
-    #
-    #     json_string = json.dumps(c_exhibit.get_exhibit_component(id_).config)
-    #     if len(c_exhibit.get_exhibit_component(id_).config["commands"]) > 0:
-    #         # Clear the command list now that we have sent
-    #         c_exhibit.get_exhibit_component(id_).config["commands"] = []
-    #     self.configure_response(200, "application/json")
-    #     self.wfile.write(bytes(json_string, encoding="UTF-8"))
-
-    # def send_webpage_update(self):
-    #     """Function to collect the current exhibit status, format it, and send it back to the web client to update the page"""
-    #
-    #     component_dict_list = []
-    #     for item in c_config.componentList:
-    #         temp = {"id": item.id,
-    #                 "type": item.type}
-    #         if "content" in item.config:
-    #             temp["content"] = item.config["content"]
-    #         if "error" in item.config:
-    #             temp["error"] = item.config["error"]
-    #         if "allowed_actions" in item.config:
-    #             temp["allowed_actions"] = item.config["allowed_actions"]
-    #         if "description" in item.config:
-    #             temp["description"] = item.config["description"]
-    #         if "AnyDeskID" in item.config:
-    #             temp["AnyDeskID"] = item.config["AnyDeskID"]
-    #         temp["class"] = "exhibitComponent"
-    #         temp["status"] = item.current_status()
-    #         temp["lastContactDateTime"] = item.last_contact_datetime
-    #         temp["ip_address"] = item.ip
-    #         temp["helperPort"] = item.helperPort
-    #         temp["helperAddress"] = item.helperAddress
-    #         temp["constellation_app_id"] = item.constellation_app_id
-    #         temp["platform_details"] = item.platform_details
-    #         component_dict_list.append(temp)
-    #
-    #     for item in c_config.projectorList:
-    #         temp = {"id": item.id,
-    #                 "type": 'PROJECTOR',
-    #                 "ip_address": item.ip}
-    #         if "allowed_actions" in item.config:
-    #             temp["allowed_actions"] = item.config["allowed_actions"]
-    #         if "description" in item.config:
-    #             temp["description"] = item.config["description"]
-    #         temp["class"] = "exhibitComponent"
-    #         temp["status"] = item.state["status"]
-    #         component_dict_list.append(temp)
-    #
-    #     for item in c_config.wakeOnLANList:
-    #         temp = {"id": item.id,
-    #                 "type": 'WAKE_ON_LAN',
-    #                 "ip_address": item.ip}
-    #         if "allowed_actions" in item.config:
-    #             temp["allowed_actions"] = item.config["allowed_actions"]
-    #         if "description" in item.config:
-    #             temp["description"] = item.config["description"]
-    #         temp["class"] = "exhibitComponent"
-    #         temp["status"] = item.state["status"]
-    #         component_dict_list.append(temp)
-    #
-    #     # Also include an object with the status of the overall gallery
-    #     temp = {"class": "gallery",
-    #             "currentExhibit": c_config.currentExhibit,
-    #             "availableExhibits": c_config.exhibit_list,
-    #             "galleryName": gallery_name,
-    #             "updateAvailable": str(software_update_available).lower()}
-    #     component_dict_list.append(temp)
-    #
-    #     # Also include an object containing the current issues
-    #     temp = {"class": "issues",
-    #             "issueList": [x.details for x in c_config.issueList],
-    #             "lastUpdateDate": c_config.issueList_last_update_date,
-    #             "assignable_staff": c_config.assignable_staff}
-    #     component_dict_list.append(temp)
-    #
-    #     # Also include an object containing the current schedule
-    #     c_sched.retrieve_json_schedule()
-    #     with c_config.scheduleLock:
-    #         temp = {"class": "schedule",
-    #                 "updateTime": c_config.scheduleUpdateTime,
-    #                 "schedule": c_config.json_schedule_list,
-    #                 "nextEvent": c_config.json_next_event}
-    #         component_dict_list.append(temp)
-    #
-    #     json_string = json.dumps(component_dict_list, default=str)
-    #     self.configure_response(200, "application/json")
-    #     self.wfile.write(bytes(json_string, encoding="UTF-8"))
-
-    def log_request(self, code='-', size='-'):
-
-        # Override to suppress the automatic logging
-
-        pass
-
-    def copy_byte_range(self, infile, start=None, stop=None, bufsize=16 * 1024):
-        """Like shutil.copyfileobj, but only copy a range of the streams.
-        Both start and stop are inclusive.
-        """
-
-        if start is not None:
-            infile.seek(start)
-        while 1:
-            to_read = min(bufsize, stop + 1 - infile.tell() if stop else bufsize)
-            buf = infile.read(to_read)
-            if not buf:
-                break
-            self.wfile.write(buf)
-
-    def handle_range_request(self, f):
-
-        """Handle a GET request using a byte range.
-
-        Inspired by https://github.com/danvk/RangeHTTPServer
-        """
-
-        try:
-            self.range = parse_byte_range(self.headers['Range'])
-        except ValueError:
-            self.send_error(400, 'Invalid byte range')
-            return
-        first, last = self.range
-
-        fs = os.fstat(f.fileno())
-        file_len = fs[6]
-        if first >= file_len:
-            self.send_error(416, 'Requested Range Not Satisfiable')
-            return None
-
-        ctype = self.guess_type(self.translate_path(self.path))
-
-        if last is None or last >= file_len:
-            last = file_len - 1
-        response_length = last - first + 1
-        try:
-            self.send_response(206)
-            self.send_header('Content-type', ctype)
-            self.send_header('Accept-Ranges', 'bytes')
-            self.send_header('Content-Range',
-                             'bytes %s-%s/%s' % (first, last, file_len))
-            self.send_header('Content-Length', str(response_length))
-            self.send_header('Last-Modified', self.date_time_string(fs.st_mtime))
-            self.end_headers()
-            self.copy_byte_range(f)
-        except IOError as e:
-            print(e)
-
-    def do_GET(self):
-
-        # Receive a GET request and respond with a console webpage
-
-        # print("+++++++++++++++")
-        # print("BEGIN GET")
-
-        # print(f"  path = {self.path}")
-
-        # Strip out any options from the query string
-        self.path = self.path.split("?")[0]
-        if self.path.lower().endswith("html") or self.path == "/":
-            if self.path == "/":
-                file_path = os.path.join(c_config.APP_PATH, "index.html")
-                if not os.path.isfile(file_path):
-                    # Handle the case of a Pyinstaller --onefile binary
-                    file_path = os.path.join(c_config.EXEC_PATH, "index.html")
-                f = open(file_path, "r", encoding='UTF-8')
-            else:
-                if self.path.startswith("/"):
-                    self.path = self.path[1:]
-
-                file_path = os.path.join(c_config.APP_PATH, self.path)
-                if not os.path.isfile(file_path):
-                    # Handle the case of a Pyinstaller --onefile binary
-                    file_path = os.path.join(c_config.EXEC_PATH, self.path)
-                f = open(file_path, "r", encoding='UTF-8')
-
-            page = str(f.read())
-
-            # Build the address that the webpage should contact to reach this server
-            address_to_insert = "'http://" + str(ip_address) + ":" + str(server_port) + "'"
-            # Then, insert that into the document
-            page = page.replace("INSERT_SERVERIP_HERE", address_to_insert)
-
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(bytes(page, encoding="UTF-8"))
-
-            f.close()
-            # print("END GET")
-            # print("+++++++++++++++")
-            return
-        else:
-            # Open the file requested and send it
-            mimetype = mimetypes.guess_type(self.path, strict=False)[0]
-            if self.path[0] == '/':
-                # Strip out leading /, as it screws up os.path.join
-                self.path = self.path[1:]
-            try:
-                file_path = os.path.join(c_config.APP_PATH, self.path)
-                if not os.path.isfile(file_path):
-                    # Handle the case of a Pyinstaller --onefile binary
-                    file_path = os.path.join(c_config.EXEC_PATH, self.path)
-                with open(file_path, 'rb') as f:
-                    if "Range" in self.headers:
-                        self.handle_range_request(f)
-                    else:
-                        try:
-                            self.send_response(200)
-                            self.send_header('Content-type', mimetype)
-                            self.end_headers()
-                            # print(f"    Writing data to client")
-                            self.wfile.write(f.read())
-                        except BrokenPipeError:
-                            print("Connection closed prematurely")
-                # print("END GET")
-                # print("+++++++++++++++")
-                return
-            except IOError:
-                self.send_error(404, f"File Not Found: {self.path}")
-                with c_config.logLock:
-                    logging.error("GET for unexpected file %s", self.path)
-
-
-def parse_byte_range(byte_range):
-    """Returns the two numbers in 'bytes=123-456' or throws ValueError.
-    The last number or both numbers may be None.
-    """
-
-    BYTE_RANGE_RE = re.compile(r'bytes=(\d+)-(\d+)?$')
-    if byte_range.strip() == '':
-        return None, None
-
-    m = BYTE_RANGE_RE.match(byte_range)
-    if not m:
-        raise ValueError(f'Invalid byte range {byte_range}')
-
-    first, last = [x and int(x) for x in m.groups()]
-    if last and last < first:
-        raise ValueError(f'Invalid byte range {byte_range}')
-    return first, last
 
 
 def clear_terminal():
@@ -379,7 +99,6 @@ def load_default_configuration():
     # First, retrieve the config filename that defines the desired gallery
     config_reader = configparser.ConfigParser(delimiters="=")
     config_reader.optionxform = str  # Override default, which is case in-sensitive
-    # gal_path = os.path.join(config.APP_PATH, "galleryConfiguration.ini")
     gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
 
     with c_config.galleryConfigurationLock:
@@ -390,7 +109,7 @@ def load_default_configuration():
         # We don't have a config file, so let's get info from the user to create one
         settings_dict = command_line_setup()
         config_reader.read_dict(settings_dict)
-        with open(os.path.join(c_config.APP_PATH, "galleryConfiguration.ini"), "w", encoding="UTF-8") as f:
+        with open(c_tools.get_path(["galleryConfiguration.ini"], user_file=True), "w", encoding="UTF-8") as f:
             config_reader.write(f)
         current = config_reader["CURRENT"]
     server_port = current.getint("server_port", 8080)
@@ -516,7 +235,7 @@ def load_default_configuration():
 
     # Build any existing issues
     try:
-        issue_file = os.path.join(c_config.APP_PATH, "issues", "issues.json")
+        issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
         with open(issue_file, "r", encoding="UTF-8") as file_object:
             issues = json.load(file_object)
         print("Reading stored issues...", end="", flush=True)
@@ -559,59 +278,6 @@ def load_default_configuration():
         component.update_configuration()
 
 
-def check_file_structure():
-    """Check to make sure we have the appropriate file structure set up"""
-
-    schedules_dir = os.path.join(c_config.APP_PATH, "schedules")
-    exhibits_dir = os.path.join(c_config.APP_PATH, "exhibits")
-
-    misc_dirs = {"analytics": os.path.join(c_config.APP_PATH, "analytics"),
-                 "flexible-tracker": os.path.join(c_config.APP_PATH, "flexible-tracker"),
-                 "flexible-tracker/data": os.path.join(c_config.APP_PATH, "flexible-tracker", "data"),
-                 "flexible-tracker/templates": os.path.join(c_config.APP_PATH, "flexible-tracker", "templates"),
-                 "issues": os.path.join(c_config.APP_PATH, "issues"),
-                 "issues/media": os.path.join(c_config.APP_PATH, "issues", "media"),
-                 "maintenance-logs": os.path.join(c_config.APP_PATH, "maintenance-logs")}
-
-    try:
-        os.listdir(schedules_dir)
-    except FileNotFoundError:
-        print("Missing schedules directory. Creating now...")
-        try:
-            os.mkdir(schedules_dir)
-            default_schedule_list = ["monday.json", "tuesday.json",
-                                     "wednesday.json", "thursday.json",
-                                     "friday.json", "saturday.json",
-                                     "sunday.json"]
-
-            for file in default_schedule_list:
-                with open(os.path.join(schedules_dir, file), 'w', encoding="UTF-8") as f:
-                    f.write("{}")
-        except PermissionError:
-            print("Error: unable to create 'schedules' directory. Do you have write permission?")
-
-    try:
-        os.listdir(exhibits_dir)
-    except FileNotFoundError:
-        print("Missing exhibits directory. Creating now...")
-        try:
-            os.mkdir(exhibits_dir)
-            with open(os.path.join(exhibits_dir, "default.exhibit"), 'w', encoding="UTF-8") as f:
-                f.write("")
-        except PermissionError:
-            print("Error: unable to create 'exhibits' directory. Do you have write permission?")
-
-    for key in misc_dirs:
-        try:
-            os.listdir(misc_dirs[key])
-        except FileNotFoundError:
-            print(f"Missing {key} directory. Creating now...")
-            try:
-                os.mkdir(misc_dirs[key])
-            except PermissionError:
-                print(f"Error: unable to create '{key}' directory. Do you have write permission?")
-
-
 def quit_handler(*args):
     """Handle cleanly shutting down the server"""
 
@@ -627,7 +293,7 @@ def quit_handler(*args):
 
     # Save the current component lists to a pickle file so that
     # we can resume from the current state
-    path_to_write = os.path.join(c_config.APP_PATH, "current_state.dat")
+    path_to_write = c_tools.get_path(["current_state.dat"])
     with open(path_to_write, 'wb') as f:
         pickle.dump(c_config.componentList, f)
 
@@ -690,7 +356,7 @@ ADDR: str = ""  # Accept connections from all interfaces
 SOFTWARE_VERSION = 2.0
 
 # Set up log file
-log_path: str = os.path.join(c_config.APP_PATH, "control_server.log")
+log_path: str = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
@@ -703,7 +369,7 @@ with c_config.logLock:
 
 # Try to reload the previous state from the pickle file current_state.dat
 try:
-    state_path = os.path.join(c_config.APP_PATH, "current_state.dat")
+    state_path = c_tools.get_path(["current_state.dat"], user_file=True)
     with open(state_path, "rb") as previous_state:
         c_config.componentList = pickle.load(previous_state)
         print("Previous server state loaded")
@@ -719,8 +385,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 
 @lru_cache()
@@ -829,7 +493,6 @@ async def create_tracker_template(data: dict[str, Any], tracker_type: str, confi
     name = data["name"]
     if not name.lower().endswith(".ini"):
         name += ".ini"
-    # file_path = os.path.join(c_config.APP_PATH, kind, "templates", name)
     file_path = c_tools.get_path([tracker_type, "templates", name], user_file=True)
     success = c_track.create_template(file_path, data["template"])
     response = {"success": success}
@@ -851,7 +514,6 @@ async def delete_tracker_data(data: dict[str, Any], tracker_type: str, config: c
         return response
     if not name.lower().endswith(".txt"):
         name += ".txt"
-    # data_path = os.path.join(c_config.APP_PATH, tracker_type, "data", name)
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
     success = True
     reason = ""
@@ -879,7 +541,6 @@ async def delete_tracker_template(data: dict[str, Any], tracker_type: str, confi
         response = {"success": False,
                     "reason": "Request missing 'name' field."}
         return response
-    # file_path = os.path.join(c_config.APP_PATH, kind, "templates", data["name"] + ".ini")
     file_path = c_tools.get_path([tracker_type, "templates", data["name"] + ".ini"], user_file=True)
     with c_config.trackerTemplateWriteLock:
         response = c_tools.delete_file(file_path)
@@ -890,7 +551,7 @@ async def delete_tracker_template(data: dict[str, Any], tracker_type: str, confi
 async def get_available_tracker_data(tracker_type: str, config: c_config = Depends(get_config)):
     """Send a list of all the available data files for the given tracker type."""
 
-    data_path = os.path.join(c_config.APP_PATH, tracker_type, "data")
+    data_path = c_tools.get_path([tracker_type, "data"], user_file=True)
     data_list = []
     for file in os.listdir(data_path):
         if file.lower().endswith(".txt"):
@@ -905,7 +566,7 @@ async def get_available_tracker_definitions(tracker_type: str, config: c_config 
     """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
 
     definition_list = []
-    template_path = os.path.join(c_config.APP_PATH, tracker_type, "templates")
+    template_path = c_tools.get_path([tracker_type, "templates"])
     for file in os.listdir(template_path):
         if file.lower().endswith(".ini"):
             definition_list.append(file)
@@ -924,7 +585,6 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str, config: 
     name = data["name"]
     if not name.lower().endswith(".txt"):
         name += ".txt"
-    # data_path = os.path.join(c_config.APP_PATH, tracker_type, "data", name)
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
     result = c_track.create_CSV(data_path)
     response = {"success": True,
@@ -971,7 +631,7 @@ async def submit_analytics(data: dict[str, Any], tracker_type: str, config: c_co
         response = {"success": False,
                     "reason": "Request missing 'data' or 'name' field."}
         return response
-    file_path = os.path.join(c_config.APP_PATH, "analytics", data["name"] + ".txt")
+    file_path = c_tools.get_path(["analytics", data["name"] + ".txt"], user_file=True)
     success, reason = c_track.write_JSON(data["data"], file_path)
     response = {"success": success, "reason": reason}
     return response
@@ -1112,7 +772,7 @@ async def delete_maintenance_record(data: dict[str, Any], config: c_config = Dep
         response = {"success": False,
                     "reason": "Request missing 'id' field."}
     else:
-        file_path = os.path.join(c_config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
+        file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
         with c_config.maintenanceLock:
             response = c_tools.delete_file(file_path)
     return response
@@ -1123,7 +783,7 @@ async def get_all_maintenance_statuses(config: c_config = Depends(get_config)):
     """Send a list of all the maintenance statuses for known components"""
 
     record_list = []
-    maintenance_path = os.path.join(c_config.APP_PATH, "maintenance-logs")
+    maintenance_path = c_tools.get_path(["maintenance-logs"], user_file=True)
     for file in os.listdir(maintenance_path):
         if file.lower().endswith(".txt"):
             with c_config.maintenanceLock:
@@ -1142,7 +802,7 @@ async def get_maintenance_status(data: dict[str, Any], config: c_config = Depend
         response = {"success": False,
                     "reason": "Request missing 'id' field."}
         return response
-    file_path = os.path.join(c_config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
+    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
     with c_config.maintenanceLock:
         response_dict = c_maint.get_maintenance_report(file_path)
     return response_dict
@@ -1156,7 +816,7 @@ async def update_maintenance_status(data: dict[str, Any], config: c_config = Dep
         response = {"success": False,
                     "reason": "Request missing 'id', 'status', or 'notes' field."}
         return response
-    file_path = os.path.join(c_config.APP_PATH, "maintenance-logs", data["id"] + ".txt")
+    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
     record = {"id": data["id"],
               "date": datetime.datetime.now().isoformat(),
               "status": data['status'],
@@ -1405,10 +1065,7 @@ async def get_configuration_raw_text(config: c_config = Depends(get_config)):
 async def get_help_text(config: c_config = Depends(get_config)):
     """Send the contents of README.md"""
     try:
-        readme_path = os.path.join(c_config.APP_PATH, "README.md")
-        if not os.path.isfile(readme_path):
-            # Handle the case of a Pyinstaller --onefile binary
-            readme_path = os.path.join(c_config.EXEC_PATH, "README.md")
+        readme_path = c_tools.get_path(["README.md"])
         with open(readme_path, 'r', encoding='UTF-8') as f:
             text = f.read()
         response = {"success": True, "text": text}
@@ -1519,7 +1176,7 @@ app.mount("/",
           name="root")
 
 if __name__ == "__main__":
-    check_file_structure()
+    c_tools.check_file_structure()
     c_exhibit.check_available_exhibits()
     load_default_configuration()
     c_proj.poll_projectors()

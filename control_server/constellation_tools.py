@@ -136,3 +136,56 @@ def send_webpage_update():
 
     # json_string = json.dumps(component_dict_list, default=str)
     return component_dict_list
+
+
+def check_file_structure():
+    """Check to make sure we have the appropriate file structure set up"""
+
+    schedules_dir = get_path(["schedules"], user_file=True)
+    exhibits_dir = get_path(["exhibits"], user_file=True)
+
+    misc_dirs = {"analytics": get_path(["analytics"], user_file=True),
+                 "flexible-tracker": get_path(["flexible-tracker"], user_file=True),
+                 "flexible-tracker/data": get_path(["flexible-tracker", "data"], user_file=True),
+                 "flexible-tracker/templates": get_path(["flexible-tracker", "templates"], user_file=True),
+                 "issues": get_path(["issues"], user_file=True),
+                 "issues/media": get_path(["issues", "media"], user_file=True),
+                 "maintenance-logs": get_path(["maintenance-logs"], user_file=True)}
+
+    try:
+        os.listdir(schedules_dir)
+    except FileNotFoundError:
+        print("Missing schedules directory. Creating now...")
+        try:
+            os.mkdir(schedules_dir)
+            default_schedule_list = ["monday.json", "tuesday.json",
+                                     "wednesday.json", "thursday.json",
+                                     "friday.json", "saturday.json",
+                                     "sunday.json"]
+
+            for file in default_schedule_list:
+                with open(os.path.join(schedules_dir, file), 'w', encoding="UTF-8") as f:
+                    f.write("{}")
+        except PermissionError:
+            print("Error: unable to create 'schedules' directory. Do you have write permission?")
+
+    try:
+        os.listdir(exhibits_dir)
+    except FileNotFoundError:
+        print("Missing exhibits directory. Creating now...")
+        try:
+            os.mkdir(exhibits_dir)
+            with open(os.path.join(exhibits_dir, "default.exhibit"), 'w', encoding="UTF-8") as f:
+                f.write("")
+        except PermissionError:
+            print("Error: unable to create 'exhibits' directory. Do you have write permission?")
+
+    for key in misc_dirs:
+        try:
+            os.listdir(misc_dirs[key])
+        except FileNotFoundError:
+            print(f"Missing {key} directory. Creating now...")
+            try:
+                os.mkdir(misc_dirs[key])
+            except PermissionError:
+                print(f"Error: unable to create '{key}' directory. Do you have write permission?")

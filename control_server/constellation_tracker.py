@@ -46,7 +46,7 @@ def get_layout_definition(name: str, kind: str = "flexible-tracker") -> tuple[di
     success = True
     reason = ""
     try:
-        template_path = os.path.join(config.APP_PATH, kind, "templates", name)
+        template_path = c_tools.get_path([kind, "templates", name], user_file=True)
         layout.read(template_path)
         layout_definition = {s: dict(layout.items(s)) for s in layout.sections()}
     except configparser.DuplicateSectionError:
@@ -148,7 +148,6 @@ def JSON_list_to_CSV(dict_list: list, filename: str = "") -> str:
 def write_JSON(data: dict, file_path: Union[str, os.PathLike]) -> tuple[bool, str]:
     """Take a dictionary, convert it to JSON and append it to the appropriate file."""
 
-    # file_path = os.path.join(config.APP_PATH, kind, "data", name)
     success = True
     reason = ""
 
@@ -195,7 +194,7 @@ def write_raw_text(data: str, name: str, kind: str = "flexible-tracker", mode: s
 
 
 # Set up log file
-log_path = os.path.join(config.APP_PATH, "control_server.log")
+log_path = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
