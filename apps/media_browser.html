@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <link rel="stylesheet" href="css/bootstrap_5_0/bootstrap.min.css">
+    <link rel="stylesheet" href="css/simple-keyboard.css">
+
+    <style>
+      html {
+        touch-action: manipulation;
+        -webkit-user-select: none;  /* Chrome all / Safari all */
+        -moz-user-select: none;/* Firefox all */
+        -ms-user-select: none;
+        user-select: none;
+      }
+      body {
+        overflow: hidden;
+      }
+      .card-body {
+      }
+      .cardCol {
+        height: 30vh;
+        margin-y: 1.25vh;
+      }
+      .card-img-top {
+        width: 100%;
+        max-height: 50%;
+        object-fit: contain;
+      }
+      .cardTitle {
+        margin-top: 15px;
+      }
+      .container-fluid {
+        touch-action: manipulation;
+      }
+      .filterSelect {
+        font-size: 20px;
+        outline: none;
+      }
+      .hg-button {
+        height: 5.5vh!important;
+      }
+      .hg-standardBtn {
+        height: 5.5vh!important;
+      }
+      .imageLightboxImageShort {
+        height: 60%;
+      }
+      .imageLightboxImageTall {
+        height: 85%;
+      }
+      .input {
+        font-size: 30px;
+        border: 0px;
+      }
+      .pageButton {
+        font-size: min(8vw, 60px);
+        background-color: RGBA(97,92,92,0.5)!important;
+        outline: none;
+      }
+      .resultCard {
+      }
+      .resultImg {
+        max-width: 100%;
+        max-height: 20vh;
+      }
+      .resultTitleSmall {
+        font-size: 20px;
+      }
+      .resultTitleMedium {
+        font-size: 22px;
+      }
+      .resultTitleLarge {
+        font-size: 25px;
+      }
+      #attractorOverlay {
+        position: fixed;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.9);
+        z-index: 2;
+        cursor: pointer;
+        justify-content: center;
+        align-items: center;
+      }
+      #attractorVideo {
+        position: fixed;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+      #filterRegion {
+        height: 100%;
+        align-items: flex-end;
+      }
+      #imageLightbox {
+        position: absolute;
+        height: 100vh;
+        width: 100vw;
+        top: 0vh;
+        left: 0px;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        opacity: 0;
+      }
+      #imageLightboxCaption {
+        font-size: 40px;
+        color: white;
+        height: 25%;
+        overflow-y: scroll;
+      }
+      #imageLightboxCredit {
+        font-size: 30px;
+        color: white;
+        padding-top: 10px;
+        height: 40px;
+      }
+      #imageLightboxImage {
+        /* max-height: 60%; */
+        max-width: 100%;
+        display: block;
+        margin: auto;
+      }
+      #imageLightboxTitle {
+        text-align: center;
+        font-size: 50px;
+        color: white;
+        height: 70px;
+      }
+      #keyboard {
+      }
+      #keyboardRegion {
+        height: 100%;
+      }
+      #logoRegion {
+        height: 100%;
+      }
+      #resultsPane {
+      }
+      #searchInput {
+        outline: none;
+      }
+      #searchPane {
+        background-color: gray;
+      }
+
+    </style>
+
+    <title>Media Browser</title>
+
+  </head>
+
+  <body>
+    <div class="container-fluid">
+
+      <div id="attractorOverlay">
+        <video id="attractorVideo" autoplay loop src='media/attractor.mp4'></video>
+      </div>
+
+      <div id="imageLightbox">
+        <div style='width: 100vw; height: 100vh;'>
+          <div class='row' style="height: 100%;">
+            <div class='hideLightboxTrigger col-2 pt-4'>
+            </div>
+            <div class='col-8 pt-4 pb-2' style="max-height: 100%;">
+              <div>
+              </div>
+              <img id="imageLightboxImage">
+              </img>
+              <div id='imageLightboxTitle'>
+              </div>
+              <div id='imageLightboxCaption'>
+              </div>
+              <div id='imageLightboxCredit'>
+              </div>
+            </div>
+            <div class='hideLightboxTrigger col-1 pt-4'>
+            </div>
+            <div class="hideLightboxTrigger col-1 pt-4">
+              <button class='hideLightboxTrigger btn btn-lg btn-secondary' style="font-size: 50px;">╳</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row w-100 align-items-center justify-items-center" style="height:70vh; overflow: hidden;">
+
+        <div class="col-2 col-lg-1 text-center">
+          <button id="previousPageButton" class='pageButton btn btn-lg btn-secondary'>←</button>
+        </div>
+        <div id="resultsPane" class="col-8 col-offset-2 col-offset-lg-0 col-lg-10">
+          <div id="resultsRow" class="row">
+          </div>
+        </div>
+        <div class="col-2 col-lg-1 text-center">
+          <button id="nextPageButton" class='pageButton btn btn-lg btn-secondary'>→</button>
+        </div>
+      </div>
+      <div class="row" style="height:30vh;">
+          <div id="logoRegion" class="col-3">
+          </div>
+          <div id="keyboardRegion" class="col-6">
+            <div class="row">
+              <div class='col-10'>
+                <input id="searchInput" class="input w-100" placeholder="Begin typing to search" readonly/>
+              </div>
+              <div class='col-2'>
+                <button id="clearButton" class='btn btn-secondary w-100'>Clear all</button>
+              </div>
+            </div>
+            <div class="simple-keyboard"></div>
+          </div>
+          <div id="filterRegion" class="col-3">
+              <center><H1>Filter Options</H1></center>
+              <div id="filterOptionsRow" class="row">
+              </div>
+          </div>
+      </div>
+    </div>
+
+  <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap_5_0/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/simple-keyboard.js"></script>
+  <script type="text/javascript" src="js/platform.js"></script>
+
+  <script type="text/javascript" src="data.js"></script>
+  <script type="module" src="media_browser/media_browser.js"></script>
+  </body>
+
+</html>
