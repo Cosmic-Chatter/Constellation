@@ -59,8 +59,9 @@ def delete_file(file_path) -> dict:
         response["reason"] = f"You do not have permission for the file f{file_path}"
     return response
 
+
 def send_webpage_update():
-    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page"""
+    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page."""
 
     component_dict_list = []
     for item in config.componentList:
