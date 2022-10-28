@@ -371,7 +371,7 @@ def quit_handler(*args):
 
     # Save the current component lists to a pickle file so that
     # we can resume from the current state
-    path_to_write = c_tools.get_path(["current_state.dat"])
+    path_to_write = c_tools.get_path(["current_state.dat"], user_file=True)
     with open(path_to_write, 'wb') as f:
         pickle.dump(c_config.componentList, f)
 
