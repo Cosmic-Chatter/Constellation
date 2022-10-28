@@ -574,7 +574,7 @@ function scheduleConvertToDateSpecific (date, dayName) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP + 'schedule/convert', true)
+  xhr.open('POST', serverIP + '/schedule/convert', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
