@@ -4,7 +4,7 @@
 
 <img src="images/Components_overview_tab.png" style="width: 40%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-The control server coordinates communication between **_Constellation_** components and provides a web-based interface for controlling them. The server is implemented in Python 3 and the web console in Javascript.
+Control Server coordinates communication between **_Constellation_** components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.
 
 
 ## Terminology
@@ -16,54 +16,52 @@ The control server coordinates communication between **_Constellation_** compone
 * `id`: A unique identifier for a given `component`. No two `component`s can have the same `id`.
 * `type`: A user-defined grouping of `component`s. For example, if you have multiple screens each displaying similar information, you might assign them all the `type` of "INFO_SCREEN". `type`s allow you to send the same command to multiple devices. Every component must have a `type`.
 
-## Setting up the Control Server
+## Setting up Control Server
 
-### Installation
+### Configuring your environment
+Many **_Constellation_** `components` will lose functionality if they cannot connect to Control Server. Thus, it is paramount that Control Server runs in a computing environment that is as stable as possible.
 
-This application requires Python 3.9 or later. To install, follow these steps:
+#### Environment requirements
+* A static IP address
+* On Windows, some secondary functionality requires running Control Server with administrator privileges
 
-1. Download the files from GitHub and place them somewhere permanent.
-2. From a terminal within the directory, run `python3 -m pip install --upgrade -r requirements.txt` or ensure you have the below requirements satisfied.
-3. Run `python3 start_control_server.py` to start the server.
-4. If this is your first time launching Control Server, a setup wizard will ask you several questions in the terminal. These questions will generate a starter `galleryConfiguration.ini` file.
-5. To use the web console, open a browser and go to `http://<control_server_ip>:<control_server_port>`.
+#### Environment recommendations
+* Linux is strongly recommended as the operating system, followed by macOS. Everything should work under Windows, but testing is less thorough and the OS has lower uptime.
+* A wired network connection is important to ensure a consistent connection.
+* No aspect of **_Constellation_** requires access to the public internet, although Control Server should be on a machine with accurate network time.
 
-If you wish to run multiple control servers so you can manage separate galleries independently, you must create a separate directory and instance of the server files for each server you wish to instantiate. Each server will need its own port, but they can all share the same IP address.
+### First-time setup
+The first time you launch Control Server, the terminal will launch an interactive setup wizard to walk you through basic configuration.
 
-#### Required packages
+Once the wizard has completed, the server will start. After this point, all configuration will take place via the web console.
 
-The following packages are required to install the control server. For `pip`, they are listed in `requirements.txt`.
+### Connecting to the web console
+To access the web console from any device on the same subnet, open a browser and enter `http://[static_ip]:[port]`. Note that **_Constellation_** does not support HTTPS.
 
-* [`dateutil`](https://github.com/dateutil/dateutil)
-* [`icmplib`](https://github.com/ValentinBELYN/icmplib)
-* [`pypjlink2`](https://github.com/benoitlouy/pypjlink)
-* [`pyserial`](https://github.com/pyserial/pyserial)
-* [`pywakeonlan`](https://github.com/remcohaszing/pywakeonlan)
-
+For example, if your static IP is 10.8.2.100, and your port is the default, 8082, your web address would be `http://10.8.2.100:8082`. You can bookmark this address for future access.
 
 ### Configuration
 
-#### galleryConfiguration.ini
+To edit your configuration from the web console, navigate to the Settings tab and click _Edit Settings_. This will open a dialog with a basic configuration guide on the left and an editable text field on the right. When you are done making changes, click _Save_ to exit, then click _Reload Settings_ for them to take effect. Some significant changes, such as editing the IP address or port, will require you to shut down Control Server and launch it again.
 
-When you launch Control Server for the first time, a setup wizard will ask several questions. This will generate your first `galleryConfiguration.ini` file, which contains the basic setup parameters for the server. The delimiter for this INI file is the equals sign (=).
+Under the hood, the configuration is stored in the file, `galleryConfiguration.ini`. This file, located in the root of your Control Server installation, can also be edited in any text editor.
 
-##### Basic configuration
-The following keywords are required in your `galleryConfiguration.ini`:
+#### Basic configuration
+The following keywords are required:
 
-* `server_ip_address`: This is the public IP address of the control server. Note that a static IP address needs to be set at the OS or network level—this value merely records what that address is for distribution to remote clients.
-* `server_port`: The port you wish the control server to be accessible at. This port must not already be in use. Make sure that this port is not being blocked by a firewall.
+* `server_ip_address`: This is the public IP address of the Control Server PC. Note that a static IP address needs to be set at the OS or network level—this value merely records what that address is for distribution to remote clients.
+* `server_port`: The port you wish Control Server to be accessible at. This port must not already be in use. Make sure that this port is not being blocked by a firewall.
 * `current_exhibit`: The name of the current exhibit configuration file in the form of `<name>.exhibit`. Once the control server is initialized, it will automatically adjust the value of this keyword as you change exhibits using the web console.
 
 The following keywords are optional:
 
 * `gallery_name`: The name of the physical space this control server corresponds to, such as "The Smith Dinosaur Hall."
-* `reboot_time`: A time (e.g., "3 AM", "23:59") at which the server will be automatically restarted every day. This helps prevent memory leaks and long-term instability, but is not strictly necessary.
 * `assignable_staff`: A comma-separated list of names to whom issues can be assigned in the `Issues` tab.
 
-##### Controlling projectors
+#### Controlling projectors
 Control Server can manage projectors over IP using the PJLink protocol or serial commands. Since this happens independently of whatever device is actually connected to the projector, projectors are not considered a `component` and do not have `content`. All projectors are assigned the `type` of "PROJECTOR".
 
-###### PJLink
+##### PJLink
 The PJLink protocol returns a defined set of information about the state of the connected projector. Each manufacturer implements the protocol slightly differently, so the available information may vary marginally.
 
 PJLink projectors are defined in the `[PJLINK_PROJECTORS]` section as such:
@@ -75,7 +73,7 @@ secureProjector = 10.8.1.235, thePassword
 ```
 Each line defines one projector, in which the keyword becomes the `id`. If a projector has a password for access to PJLink, specify it with a comma after the IP address.
 
-###### Serial (RS-232)
+##### Serial (RS-232)
 Control Server can also manage projectors that implement a serial-over-IP interface. You can also use a wireless serial adapter for projectors that do not implement serial-over-IP. Because every manufacturer implements a different set of functionality, the returned information is much more variable than over PJLink. **If PJLink is available, it is highly recommended.**
 
 Serial projectors are defined in the `[SERIAL_PROJECTORS]` section as such:
@@ -95,7 +93,7 @@ In addition to their IP address, you must specify the manufacturer of your devic
 | Optoma    |                          |
 | Viewsonic |                          |
 
-##### Wake on LAN
+#### Wake on LAN
 
 Control Server can send Wake on LAN magic packets to power on machines connected to its network. These devices are specified using MAC addresses, as such:
 
@@ -106,7 +104,7 @@ MY_PC2 = F1-E3-D1-51-B5-A1, 10.8.0.85
 ```
 If the given machine has a static IP address, you can specify it on the same line, after a comma. The control server will ping that address at intervals to check if the machine is powered on. **To send pings on Windows, you must run the control server with administrator privileges.**
 
-##### Tracking non-**_Constellation_** components
+#### Tracking non-**_Constellation_** components
 
 In order to view the real-time status of a `component`, it must be either  running a **_Constellation_** software system, or sending pings that conform to the API. However, non-**_Constellation_** `component`s can be added to the system in order to make use of the maintenance tracking system.
 
@@ -120,7 +118,7 @@ DISPLAY = BODY_TYPES
 
 will create three static components, HAND_SIZE and FOOT_SIZE of `type` INTERACTIVE, and BODY_TYPES of `type` DISPLAY.
 
-##### Providing component descriptions
+#### Providing component descriptions
 
 You can optionally specify a description for a `component`, which is displayed in the web console on that `component`'s status page. These are specified as such:
 
@@ -130,19 +128,6 @@ HEADER = The projector for the header at the entrance to the gallery
 S_KIOSK = The kiosk near the exit where survey data is collected
 ```
 where the `id` is given to the left of the equals sign and the description to the right.
-
-#### Exhibit files
-An exhibit file defines the content for a particular exhibit. It is in INI format, with the equals sign (=) as the separator. Each component has its own section. The `content` keyword defines the files that component should use. To specify multiple media pieces, separate them by a comma. For example, the content definition for two displays with `id`s of DISPLAY1 and DISPLAY2 would look like:
-
-```
-[DISPLAY1]
-content = myvideo.mp4
-
-[DISPLAY2]
-content = anImage.jpg, myVideo2.MOV
-```
-
-Exhibit files should have the extension `.exhibit`, such as `space.exhibit`.
 
 ## Using the web console
 
@@ -161,7 +146,7 @@ The components tab lists every managed `component` and `projector`. Each receive
 | ONLINE  | Component is responding | Projector is responding, and powered on | - |
 | OFFLINE | Component is not responding | Projector is not responding | WoL system is not responding |
 | STANDBY | - | Projector is responding, but powered off | - |
-| STATIC | Component has been added for maintenance tracking purposes through galleryConfiguration.ini. | - | - |
+| STATIC | Component has been added for maintenance tracking purposes. | - | - |
 | SYSTEM ON | The computer is on, but no **_Constellation_** software is responding. | - | The WoL system is responding to pings |
 | WAITING | The component was recently ONLINE. There may only be a temporary connectivity issue.  This is common if a display is sleeping. | - | - |
 | UNKONWN | - | - | No IP address was supplied for this WoL system, so we cannot ping it to check its status. |
@@ -190,9 +175,9 @@ The content management area allows you to manipulate the displayed `content` for
 
 ##### Content upload
 
-New `content` can be uploaded using the bottom part of the Content pane. Click the "Choose file" button and select a file you wish to upload.
+New `content` can be uploaded using the bottom part of the Content pane. Click the "Choose files" button and select one or more files that you wish to upload.
 
-**Note that uploaded filenames cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing `content`, the old file will be overwritten.
+**Note that uploaded filenames cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing `content`, the old file will be overwritten. The name of the file on your device will be carried over to the client.
 
 #### Maintenance pane
 
@@ -203,7 +188,7 @@ The maintenance pane allow you to track the maintenance status of the component.
 * Off floor, working
 * Off floor, not working
 
-In addition, you may add notes using the provided text box. Changes to the notes or status are not saved until the "Save changes" button has been pressed.
+In addition, you may add notes using the provided text box. Changes to the notes or status are not saved until the _Save changes_ button has been pressed.
 
 Changes to the maintenance status of a `component` are logged by the control server. These logs are in plain-text format in the `maintenance-logs` directory. Each line of a log is a JSON object containing the state at the time of submission.
 
@@ -215,18 +200,18 @@ Clicking on a `projector` that is `ONLINE` or `STANDBY` will bring up its status
 
 The schedule tab allows you to set recurring or one-off events within the `gallery`. The following options are available:
 
-* Send power off and power on commands
-* Refresh the `component`s
+* Send power on, power off, and restart commands
+* Refresh `components`
 * Set the `exhibit`
 * Set `content` for a single `component`
 
-Note that sending power off and power on commands may affect different `component`s differently. For `Projector`s, this will sleep or wake them. For `Wake on LAN` devices with shutdown permitted, the machine will be shutdown.
+Note that sending power off and power on commands may affect different `component`s differently. For `projectors`, this will sleep or wake them. For `Wake on LAN` devices with shutdown permitted, the machine will be shutdown.
 
 ### Issues tab
 
 <img src="images/issue_creation_modal.jpg" style="width: 50%; float: left; border: 2px solid gray; margin: 5px;"></img>
 
-The issues tab organizes information about the current state of the `gallery` and its `component`s. It provides an easy interface for non-technical users to alert maintenance staff about a problem, as well as to see a summary of the overall `gallery` health.
+The issues tab organizes information about the current state of the `gallery` and its `components`. It provides an easy interface for non-technical users to alert maintenance staff about a problem, as well as to see a summary of the overall `gallery` health.
 
 #### Issues
 
