@@ -1249,6 +1249,14 @@ app.mount("/js",
 app.mount("/css",
           StaticFiles(directory=c_tools.get_path(["css"])),
           name="css")
+try:
+    app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
+              name="static")
+except RuntimeError:
+    # Directory does not exist, so create it
+    os.mkdir(c_tools.get_path(["static"], user_file=True))
+    app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
+              name="static")
 app.mount("/",
           StaticFiles(directory=c_tools.get_path([""]), html=True),
           name="root")
