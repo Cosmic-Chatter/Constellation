@@ -506,6 +506,7 @@ export function showExhibitComponentInfo (id) {
 
       const requestString = JSON.stringify({ action: 'getAvailableContent' })
       const xhr = new XMLHttpRequest()
+
       if (obj.helperAddress != null) {
         xhr.open('POST', obj.helperAddress, true)
       } else if (obj.ip != null && obj.helperPort != null) {

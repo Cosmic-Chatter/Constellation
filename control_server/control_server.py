@@ -536,7 +536,6 @@ async def set_exhibit(data: dict[str, Any], config: c_config = Depends(get_confi
         return response
     print("Changing exhibit to:", data["name"])
     c_exhibit.read_exhibit_configuration(data["name"], update_default=True)
-
     # Update the components that the configuration has changed
     for component in c_config.componentList:
         component.update_configuration()

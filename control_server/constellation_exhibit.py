@@ -393,7 +393,7 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
 
     config.currentExhibit = name
     config.galleryConfiguration = configparser.ConfigParser()
-    exhibit_path = c_tools.get_path(["exhibits"], user_file=True)
+    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
     config.galleryConfiguration.read(exhibit_path)
 
     if update_default:
@@ -470,6 +470,9 @@ def update_exhibit_component_status(data, ip: str):
     this_id = data["id"]
     this_type = data["type"]
 
+    if ip == "::1":
+        ip = "localhost"
+
     component = get_exhibit_component(this_id)
     if component is None:  # This is a new id, so make the component
         component = add_exhibit_component(this_id, this_type)
@@ -478,6 +481,7 @@ def update_exhibit_component_status(data, ip: str):
     if "helperPort" in data:
         component.helperPort = data["helperPort"]
     component.helperAddress = f"http://{ip}:{component.helperPort}"
+
     if "helperIPSameAsClient" in data and data["helperIPSameAsClient"] is False:
         if "helperAddress" in data:
             component.helperAddress = data["helperAddress"]
