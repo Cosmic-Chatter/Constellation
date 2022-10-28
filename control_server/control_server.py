@@ -644,7 +644,7 @@ async def get_available_tracker_definitions(tracker_type: str, config: c_config 
     """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
 
     definition_list = []
-    template_path = c_tools.get_path([tracker_type, "templates"])
+    template_path = c_tools.get_path([tracker_type, "templates"], user_file=True)
     for file in os.listdir(template_path):
         if file.lower().endswith(".ini"):
             definition_list.append(file)
@@ -1170,7 +1170,7 @@ async def reload_configuration(config: c_config = Depends(get_config)):
 
 
 @app.post("/system/ping")
-async def handle_ping(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def handle_ping(data: dict[str, Any], request: Request, config: c_config = Depends(get_config)):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
     if "id" not in data or "type" not in data:
@@ -1179,7 +1179,7 @@ async def handle_ping(data: dict[str, Any], config: c_config = Depends(get_confi
         return response
 
     this_id = data['id']
-    c_exhibit.update_exhibit_component_status(data, ip_address)
+    c_exhibit.update_exhibit_component_status(data, request.client.host)
 
     dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()
     if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
