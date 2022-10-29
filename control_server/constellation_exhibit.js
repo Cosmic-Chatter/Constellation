@@ -496,6 +496,39 @@ export function showExhibitComponentInfo (id) {
       $('#AnyDeskLabel').removeClass('d-sm-inline d-md-none').hide()
     }
 
+    // Configure the settings page with the current settings
+    $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
+    $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
+    $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
+    if ('AnyDeskID' in obj) {
+      $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
+    } else {
+      $('#componentInfoModalSettingsAnyDeskID').val('')
+    }
+    if ('autoplay_audio' in obj) {
+      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', obj.autoplay_audio)
+    } else {
+      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
+    }
+    if (obj.constellationAppId === 'media_player') {
+      $('#componentInfoModalSettingsImageDuration').parent().parent().show()
+      if ('image_duration' in obj) {
+        $('#componentInfoModalSettingsImageDuration').val(obj.image_duration)
+      }
+    } else {
+      $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
+    }
+
+    // Must be after all the settings are configured
+    toggleExhibitComponentInfoSettingWarnings()
+    $('#componentInfoModalSettingsSaveButton').hide()
+    // Hide settings for static components
+    if (obj.status === constConfig.STATUS.STATIC) {
+      $('#componentInfoModalSettingsTabButton').hide()
+    } else {
+      $('#componentInfoModalSettingsTabButton').show()
+    }
+
     const showFailureMessage = function () {
       $('#componentInfoConnectionStatusFailed').show()
       $('#componentInfoConnectionStatusInPrograss').hide()
@@ -713,6 +746,72 @@ export function showExhibitComponentInfo (id) {
     // Make the modal visible
     $('#componentInfoModal').modal('show')
   }
+}
+
+export function toggleExhibitComponentInfoSettingWarnings () {
+  // Show or hide the exhibit component setting warnings based on their state
+
+  // Enable all tooltips
+  $('[data-toggle="tooltip"]').tooltip()
+
+  if ($('#componentInfoModalSettingsAllowShutdown').prop('checked')) {
+    $('#componentInfoModalSettingsAllowShutdownWarning').show()
+  } else {
+    $('#componentInfoModalSettingsAllowShutdownWarning').hide()
+  }
+
+  if ($('#componentInfoModalSettingsAutoplayAudio').prop('checked')) {
+    $('#componentInfoModalSettingsAutoplayAudioWarning').show()
+  } else {
+    $('#componentInfoModalSettingsAutoplayAudioWarning').hide()
+  }
+}
+
+export function submitComponentSettingsChange () {
+  // Collect the current settings and send them to the component's helper for saving.
+
+  const obj = getExhibitComponent($('#componentInfoModalTitle').html())
+
+  const settings = {}
+
+  settings.allow_refresh = $('#componentInfoModalSettingsAllowRefresh').prop('checked')
+  settings.allow_restart = $('#componentInfoModalSettingsAllowRestart').prop('checked')
+  settings.allow_shutdown = $('#componentInfoModalSettingsAllowShutdown').prop('checked')
+  settings.autoplay_audio = $('#componentInfoModalSettingsAutoplayAudio').prop('checked')
+
+  const imageDuration = $('#componentInfoModalSettingsImageDuration').val().trim()
+  if (imageDuration !== '') {
+    settings.image_duration = parseFloat(imageDuration)
+  }
+
+  const AnyDeskID = $('#componentInfoModalSettingsAnyDeskID').val().trim()
+  if (AnyDeskID !== '') {
+    settings.anydesk_id = AnyDeskID
+  }
+
+  const requestString = JSON.stringify({ defaults: settings })
+
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 2000
+  if (obj.helperAddress != null) {
+    xhr.open('POST', obj.helperAddress + '/setDefaults', true)
+  } else {
+    xhr.open('POST', `http://${obj.ip}:${obj.helperPort}` + '/setDefaults', true)
+  }
+  xhr.setRequestHeader('Content-Type', 'application/json')
+  xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
+    if (this.status === 200) {
+      const response = JSON.parse(this.responseText)
+
+      if ('success' in response) {
+        if (response.success === true) {
+          $('#componentInfoModalSettingsSaveButton').hide()
+        }
+      }
+    }
+  }
+  xhr.send(requestString)
 }
 
 export function getExhibitComponent (id) {

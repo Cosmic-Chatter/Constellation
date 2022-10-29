@@ -56,6 +56,10 @@ def send_webpage_update():
             temp["description"] = item.config["description"]
         if "AnyDeskID" in item.config:
             temp["AnyDeskID"] = item.config["AnyDeskID"]
+        if "image_duration" in item.config:
+            temp["image_duration"] = item.config["image_duration"]
+        if "autoplay_audio" in item.config:
+            temp["autoplay_audio"] = item.config["autoplay_audio"]
         temp["class"] = "exhibitComponent"
         temp["status"] = item.current_status()
         temp["lastContactDateTime"] = item.last_contact_datetime

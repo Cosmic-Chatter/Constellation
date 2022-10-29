@@ -151,8 +151,16 @@ async def send_defaults(config: const_config = Depends(get_config)):
 
 @app.get("/getUpdate")
 async def send_update(config: const_config = Depends(get_config)):
-    response_dict = {"commands": config.commandList,
-                     "missingContentWarnings": config.missingContentWarningList}
+    response_dict = {
+        "allow_refresh": config.defaults_dict["allow_refresh"],
+        "allow_restart": config.defaults_dict["allow_restart"],
+        "allow_shutdown": config.defaults_dict["allow_shutdown"],
+        "anydesk_id": config.defaults_dict["anydesk_id"],
+        "autoplay_audio": config.defaults_dict["autoplay_audio"],
+        "commands": config.commandList,
+        "image_duration":  config.defaults_dict["image_duration"],
+        "missingContentWarnings": config.missingContentWarningList
+    }
     return response_dict
 
 
@@ -283,6 +291,8 @@ async def set_defaults(data: dict, force: bool = False, config: const_config = D
 
     helper_utilities.update_defaults(data["defaults"], force=True)
 
+    return {"success": True}
+
 
 @app.post("/rewriteDefaults")
 async def rewrite_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
@@ -292,6 +302,8 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
         raise HTTPException(status_code=400, detail="Must include field 'defaults'")
 
     helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
+
+    return {"success": True}
 
 if __name__ == "__main__":
     # Check for missing content thumbnails and create them

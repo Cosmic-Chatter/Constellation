@@ -395,6 +395,12 @@ function updateComponentFromServer (component) {
     if ('AnyDeskID' in component) {
       obj.AnyDeskID = component.AnyDeskID
     }
+    if ('autoplay_audio' in component) {
+      obj.autoplay_audio = component.autoplay_audio
+    }
+    if ('image_duration' in component) {
+      obj.image_duration = component.image_duration
+    }
     if ('error' in component) {
       try {
         const newError = JSON.parse(component.error)
@@ -496,7 +502,6 @@ function changeExhibit (warningShown) {
 function reloadConfiguration () {
   // This function will send a message to the server asking it to reload
   // the current exhibit configuration file and update all the components
-
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
@@ -2623,6 +2628,19 @@ $('#componentInfoModalThumbnailCheckbox').change(function () {
   } else {
     $('.contentThumbnail').hide()
   }
+})
+$('#componentInfoModalSettingsAutoplayAudio').change(function () {
+  constExhibit.toggleExhibitComponentInfoSettingWarnings()
+})
+$('#componentInfoModalSettingsAllowShutdown').change(function () {
+  constExhibit.toggleExhibitComponentInfoSettingWarnings()
+})
+$('.componentInfoSetting').change(function () {
+  $('#componentInfoModalSettingsSaveButton').show()
+})
+$('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSettingsChange)
+$('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID').on('input', function () {
+  $('#componentInfoModalSettingsSaveButton').show()
 })
 // Schedule tab
 // =========================

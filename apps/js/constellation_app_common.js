@@ -3,6 +3,7 @@
 export const config = {
   allowedActionsDict: { refresh: 'true' },
   AnyDeskID: '',
+  autoplayAudio: false,
   constellationAppID: '',
   contentPath: 'content',
   currentExhibit: 'default',
@@ -10,6 +11,7 @@ export const config = {
   errorDict: {},
   helperAddress: 'http://localhost:8000',
   id: 'TEMP',
+  imageDuration: 10, // seconds
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: '', // URL to the version.txt file for this app
@@ -27,7 +29,7 @@ export function sendPing () {
   // Contact the control server and ask for any updates
 
   if (config.serverAddress === '') {
-    console.log("Aborting ping... no config.serverAddress")
+    console.log('Aborting ping... no config.serverAddress')
   }
   const requestDict = {
     id: config.id,
@@ -38,7 +40,9 @@ export function sendPing () {
     constellation_app_id: config.constellationAppID,
     platform_details: config.platformDetails,
     AnyDeskID: config.AnyDeskID,
-    currentInteraction: config.currentInteraction
+    currentInteraction: config.currentInteraction,
+    imageDuration: config.imageDuration,
+    autoplayAudio: config.autoplayAudio
   }
 
   // See if there is an error to report
@@ -68,7 +72,6 @@ export function sendPing () {
 export function wakeDisplay () {
   // Send a message to the local helper process and ask it to sleep the
   // displays
-
 
   const xhr = new XMLHttpRequest()
   xhr.open('GET', config.helperAddress + '/wakeDisplay', true)
@@ -128,7 +131,7 @@ function readUpdate (update) {
       } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
         wakeDisplay()
       } else if (cmd === 'refresh_page') {
-        if ('refresh' in config.allowedActionsDict && config.allowedActionsDict.refresh === 'true') {
+        if ('refresh' in config.allowedActionsDict && stringToBool(config.allowedActionsDict.refresh) === true) {
           location.reload()
         }
       } else if (cmd === 'reloadDefaults') {
@@ -165,6 +168,9 @@ function readUpdate (update) {
 
   if ('allow_sleep' in update) {
     config.allowedActionsDict.sleep = update.allow_sleep
+  }
+  if ('allow_refresh' in update) {
+    config.allowedActionsDict.refresh = update.allow_refresh
   }
   if ('allow_restart' in update) {
     config.allowedActionsDict.restart = update.allow_restart
@@ -284,6 +290,10 @@ export function arraysEqual (arr1, arr2) {
 
 export function stringToBool (str) {
   // Parse a given string and return an appropriate bool
+
+  if (typeof str === 'boolean') {
+    return str
+  }
 
   if (['True', 'true', 'TRUE', '1', 'yes', 'Yes', 'YES'].includes(str)) {
     return true

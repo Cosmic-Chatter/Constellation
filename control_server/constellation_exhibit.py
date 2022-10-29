@@ -489,6 +489,10 @@ def update_exhibit_component_status(data, ip: str):
     component.update_last_contact_datetime()
     if "AnyDeskID" in data:
         component.config["AnyDeskID"] = data["AnyDeskID"]
+    if "autoplayAudio" in data:
+        component.config["autoplay_audio"] = data["autoplayAudio"]
+    if "imageDuration" in data:
+        component.config["image_duration"] = data["imageDuration"]
     if "currentInteraction" in data:
         if data["currentInteraction"] == True or\
                 (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):

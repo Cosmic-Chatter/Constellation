@@ -39,19 +39,21 @@ function updateFunc (update) {
     // If desired, unmute the video
     // Note that the file will need to be whitelisted by the browser; otherwise,
     // it will not autoplay
-
-    if (update.autoplay_audio.toLowerCase() === 'true') {
+    if (constCommon.stringToBool(update.autoplay_audio)) {
       document.getElementById('fullscreenVideo').muted = false
+      constCommon.config.autoplayAudio = true
     } else {
       document.getElementById('fullscreenVideo').muted = true
+      constCommon.config.autoplayAudio = false
     }
   }
   if ('image_duration' in update) {
     if (isFinite(parseInt(update.image_duration))) {
       // Image duration is specified in seconds in defaults.ini
       // but needs to be converted to milliseconds
+      constCommon.config.imageDuration = update.image_duration
       imageDuration = update.image_duration * 1000
-      console.log(`Setting image duration: ${update.image_duration * 1000} seconds`)
+      // console.log(`Setting image duration: ${update.image_duration * 1000} ms`)
     }
   }
 
@@ -170,7 +172,8 @@ function gotoNextSource () {
   // necessary
 
   if (constCommon.config.debug) {
-    console.log('gotoNextSource')
+    console.log('gotoNextSource: image duration:', imageDuration)
+    console.log('Sources:', constCommon.config.sourceList)
   }
 
   if (constCommon.config.activeIndex + 1 >= constCommon.config.sourceList.length) {

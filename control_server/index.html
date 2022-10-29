@@ -158,10 +158,13 @@
 
                   <ul class="nav nav-tabs mt-3" id="componentInfoModalTabList" role="tablist">
                     <li class="nav-item">
-                      <a class="nav-link active" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="true">Content</a>
+                      <a class="nav-link active px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="true">Content</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" id="componentInfoModalMaintenanceTabButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
+                      <a class="nav-link px-3 px-sm-4" id="componentInfoModalMaintenanceTabButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link px-3 px-sm-4" id="componentInfoModalSettingsTabButton" data-toggle="tab" href="#componentInfoModalSettingsTab" role="tab" aria-controls="Settings" aria-selected="false">Settings</a>
                     </li>
                   </ul>
 
@@ -247,6 +250,64 @@
                         </div>
                         <div class='col-12 mt-2'>
                           <button id='componentInfoModalMaintenanceSaveButton' class='btn btn-primary'>Save changes</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
+                      <div class="row mt-3">
+                        <div class="col-6 mt-1">
+                          <div class="form-check">
+                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRefresh">
+                            <label class="form-check-label" for="componentInfoModalSettingsAllowRefresh">
+                              Allow refresh
+                            </label>
+                          </div>
+                        </div>
+                        <div class="col-6 mt-1">
+                          <div class="form-check">
+                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRestart">
+                            <label class="form-check-label" for="componentInfoModalSettingsAllowRestart">
+                              Allow restart
+                            </label>
+                          </div>
+                        </div>
+                        <div class="col-6 mt-1">
+                          <div class="form-check">
+                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowShutdown">
+                            <label class="form-check-label" for="componentInfoModalSettingsAllowShutdown">
+                              Allow shutdown <span id="componentInfoModalSettingsAllowShutdownWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Shutdown is enabled; ensure Wake on LAN is set up or you have another way to turn the component on.">!</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div class="col-6 mt-1">
+                          <div class="form-check">
+                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAutoplayAudio">
+                            <label class="form-check-label" for="componentInfoModalSettingsAutoplayAudio">
+                              Autoplay audio <span id="componentInfoModalSettingsAutoplayAudioWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Audio autoplay is enabled; ensure it is also enabled in the component's browser.">!</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div class="col-8 col-sm-6 mt-1">
+                          <div class="form-group row mb-0">
+                            <div class="col-5 pr-0">
+                              <input type="text" class="form-control form-control-sm componentInfoSetting" id="componentInfoModalSettingsAnyDeskID" placeholder="12345678">
+                            </div>
+                            <label for="componentInfoModalSettingsAnyDeskID" class="col col-form-label pl-1">AnyDesk ID</label>
+                            
+                          </div>
+                        </div>
+                        <div class="col-8 col-sm-6 mt-1">
+                          <div class="form-group row mb-0">
+                            <div class="col-3 pr-0">
+                              <input type="text" class="form-control form-control-sm componentInfoSetting" id="componentInfoModalSettingsImageDuration" placeholder="10">
+                            </div>
+                            <label for="componentInfoModalSettingsImageDuration" class="col col-form-label pl-1">Image duration (sec)</label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row mt-3">
+                        <div class="col">
+                          <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                     </div>
