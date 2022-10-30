@@ -20,7 +20,7 @@
 
   <body>
     <div class="container-fluid">
-      <div class="row mt-2">
+      <div class="row my-2">
         <div class='col-12'>
           <H2 class="d-none d-lg-inline">Constellation Component Configuration</H2>
           <H3 class="d-none d-md-inline d-lg-none">Constellation Component Configuration</H3>
@@ -32,6 +32,7 @@
         <div class="nav nav-tabs" id="nav-tab" role="tablist">
           <a class="nav-item nav-link active" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="true">Settings</a>
           <a class="nav-item nav-link" id="nav-apps-tab" data-toggle="tab" href="#nav-apps" role="tab" aria-controls="nav-apps" aria-selected="false">Apps</a>
+          <a class="nav-item nav-link" id="nav-help-tab" data-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
         </div>
       </nav>
 
@@ -93,7 +94,8 @@
           <div class='row'>
             <div class="col-12 mt-3">
               <button class='btn btn-primary' onclick="updateDefaults();">Save changes</button>
-              <button class='btn btn-info' onclick="showAddDefaultModal();">Add setting</button>
+              <button class='btn btn-info ml-2' onclick="showAddDefaultModal();">Add setting</button>
+              <span class="ml-3">Version: <span id="versionSpan"></span></span>
             </div>
           </div>
           <div class='row mt-3'>
@@ -155,6 +157,13 @@
               </div>
             </div>
 
+          </div>
+        </div>
+        <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
+          <div class="row">
+            <div class="col-12 mt-4">
+              Help text coming soon.
+            </div>
           </div>
         </div>
       </div>
@@ -406,6 +415,24 @@
       xhr.send(requestString);
     }
 
+    function loadVersion() {
+      // Load version.txt and update the GUI with the current version
+
+      let xhr = new XMLHttpRequest();
+      xhr.timeout = 2000;
+      xhr.open("GET", helperAddress + '/_static/version.txt', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+
+        if (this.readyState != 4) return;
+
+        if (this.status == 200) {
+          $("#versionSpan").html(this.responseText)
+        }
+      };
+      xhr.send();
+    }
+
 
     var helperAddress = window.location.origin;
 
@@ -439,6 +466,7 @@
     })
 
     askForDefaults();
+    loadVersion();
   </script>
 
   </body>

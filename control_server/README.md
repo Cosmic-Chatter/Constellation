@@ -378,7 +378,7 @@ To send a ping, you create a JSON object as shown below and send it to the IP ad
   "helperAddress": "10.8.0.12:8082",
   "allowed_actions": ["sleep", "restart"],
   "AnyDeskID": "123456678"
- };
+ }
 ```
 
 Control Server will send a response to this request with the following form:

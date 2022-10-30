@@ -63,6 +63,12 @@ app.mount("/content",
 app.mount("/images",
           StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
           name="images")
+app.mount("/_static",
+          StaticFiles(directory=helper_files.get_path(["_static"])),
+          name="_static")
+app.mount("/static",
+          StaticFiles(directory=helper_files.get_path(["static"], user_file=True)),
+          name="static")
 app.mount("/style",
           StaticFiles(directory=helper_files.get_path(["style"], user_file=True)),
           name="style")
