@@ -45,6 +45,9 @@ app.add_middleware(
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
+app.mount("/media_browser",
+          StaticFiles(directory=helper_files.get_path(["media_browser"])),
+          name="media_browser")
 app.mount("/media_player",
           StaticFiles(directory=helper_files.get_path(["media_player"])),
           name="media_player")

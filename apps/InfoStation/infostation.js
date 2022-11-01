@@ -6,7 +6,7 @@ function updateContent (definition) {
   // Parse the current content file and build the interface correspondingly.
 
   if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS]section!')
+    console.log('Error: The INI file must include a [SETTINGS] section!')
     return
   }
 

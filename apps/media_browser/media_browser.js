@@ -37,9 +37,9 @@ function createCard (obj) {
   let thumb
 
   if (thumbnailKey != null && thumbnailKey !== '') {
-    thumb = 'thumbs/' + String(obj[thumbnailKey])
+    thumb = 'thumbnails/' + String(obj[thumbnailKey])
   } else {
-    thumb = 'thumbs/' + String(obj[mediaKey])
+    thumb = 'thumbnails/' + String(obj[mediaKey])
   }
 
   let title = ''
@@ -60,18 +60,31 @@ function createCard (obj) {
     titleClass = 'resultTitleLarge'
   }
 
-  const html = `
-    <div class='cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'>
-      <div class="resultCard row my-2 w-100" onclick="displayMedia('${id}')">
-        <center>
-          <img class='resultImg' src="${thumb}" id=Entry_${id}>
-          <p class='cardTitle ${titleClass}'>${title}</p>
-        </center>
-      </div>
-    </div>
-  `
+  const col = document.createElement('div')
+  col.classList = 'cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'
 
-  $('#resultsRow').append(html)
+  const card = document.createElement('div')
+  card.classList = 'resultCard row my-2 w-100'
+  card.addEventListener('click', function () {
+    displayMedia(id)
+  })
+  col.appendChild(card)
+
+  const center = document.createElement('center')
+  card.appendChild(center)
+
+  const img = document.createElement('img')
+  img.classList = 'resultImg'
+  img.src = thumb
+  img.setAttribute('id', 'Entry_' + id)
+  center.appendChild(img)
+
+  const p = document.createElement('p')
+  p.classList = 'cardTitle ' + titleClass
+  p.innerHTML = title
+  center.appendChild(p)
+
+  $('#resultsRow').append(col)
 }
 
 function hideImageLightBox () {
@@ -227,8 +240,53 @@ function updateParser (update) {
 
   // This should be last to make sure the path has been updated
   if ('content' in update) {
-    console.log(`Received content update: ${update.content}`)
+    if (!constCommon.arraysEqual(update.content, currentContent)) {
+      currentContent = update.content
+
+      // Get the file from the helper and build the interface
+      const definition = currentContent[0] // Only one INI file at a time
+
+      const xhr = new XMLHttpRequest()
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
+        }
+      }
+      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
+      xhr.send(null)
+    }
   }
+}
+
+function loadContentFromINI (definition) {
+  // Take an object parsed from an INI string and use it to load a new set of contet
+  console.log(definition)
+
+  if (!('SETTINGS' in definition)) {
+    console.log('Error: The INI file must include a [SETTINGS] section!')
+  }
+
+  // Send a GET request for the content and then build the tab
+  const xhr = new XMLHttpRequest()
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      // Set the global data variable
+      data = constCommon.csvToJSON(xhr.responseText)
+
+      // Create a new property, searchData, for each data element that includes
+      // everything we can search against as a string.
+      console.log(data)
+      data.forEach((item, i) => {
+        item.searchData = ''
+        searchKeys.forEach((key, j) => {
+          item.searchData += String(item[key]) + ' '
+        })
+      })
+      populateResultsRow()
+    }
+  }
+  xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
+  xhr.send(null)
 }
 
 function showAttractor () {
@@ -305,7 +363,7 @@ function showImageInLightBox (image, title = '', caption = '', credit = '') {
       $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
       $('#imageLightboxCaption').fadeIn()
     }
-  }).attr('src', 'media/' + image)
+  }).attr('src', 'content/' + image)
 
   $('#imageLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)
 }
@@ -350,24 +408,18 @@ const keyboard = new Keyboard({
 })
 
 // THIS USED TO BE PROVIDED BY data.js
-const data = [{}]
 const mediaKey = 'Media'
 const thumbnailKey = null
-const searchKeys = ['Last Name', 'First']
-const titleKey = 'Entry Title'
+const searchKeys = []
+const titleKey = 'Title'
 const captionKey = null
-const creditKey = 'credit'
-const filterKeys = ['Grade Level']
+const creditKey = null
+const filterKeys = []
 
-// Create a new property, searchData, for each data element that includes
-// everything we can search against as a string.
-
-data.forEach((item, i) => {
-  item.searchData = ''
-  searchKeys.forEach((key, j) => {
-    item.searchData += String(item[key]) + ' '
-  })
-})
+let data // This will be loaded when an INI file is parsed
+let currentContent = []
+let currentPage = 0
+let cardsPerPage
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
@@ -383,8 +435,6 @@ constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 
-let currentPage = 0
-let cardsPerPage
 setCardCount()
 window.addEventListener('resize', setCardCount)
 document.getElementById('clearButton').addEventListener('click', clear)
