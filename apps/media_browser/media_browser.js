@@ -138,7 +138,6 @@ function _populateResultsRow (currentKey) {
   $('#resultsRow').empty()
 
   const input = $('#searchInput').val()
-
   // Filter on search terms
   const searchTerms = (input).split(' ')
   const searchedData = []
@@ -266,6 +265,58 @@ function loadContentFromINI (definition) {
     console.log('Error: The INI file must include a [SETTINGS] section!')
   }
 
+  if ('attractor' in definition.SETTINGS) {
+    $('#attractorVideo').attr('src', 'content/' + definition.SETTINGS.attractor)
+    document.getElementById('attractorVideo').play()
+    attractorAvailable = true
+  } else {
+    hideAttractor()
+    attractorAvailable = false
+  }
+  if ('media_key' in definition.SETTINGS) {
+    mediaKey = definition.SETTINGS.media_key
+  } else {
+    mediaKey = 'Media'
+  }
+  if ('thumbnail_key' in definition.SETTINGS) {
+    thumbnailKey = definition.SETTINGS.thumbnail_key
+  } else {
+    thumbnailKey = mediaKey
+  }
+  if ('search_keys' in definition.SETTINGS) {
+    // Split and trim the entries in a list
+    searchKeys = definition.SETTINGS.search_keys.split(',').map(function (item) {
+      return item.trim()
+    })
+  } else {
+    searchKeys = []
+  }
+  if ('title_key' in definition.SETTINGS) {
+    titleKey = definition.SETTINGS.title_key
+  } else {
+    titleKey = 'Title'
+  }
+  if ('caption_key' in definition.SETTINGS) {
+    captionKey = definition.SETTINGS.caption_key
+  } else {
+    captionKey = 'Caption'
+  }
+  if ('credit_key' in definition.SETTINGS) {
+    creditKey = definition.SETTINGS.credit_key
+  } else {
+    creditKey = 'Credit'
+  }
+  if ('filter_keys' in definition.SETTINGS) {
+    // Split and trim the entries in a list
+    filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
+      return item.trim()
+    })
+    $('#filterRegion').show()
+  } else {
+    filterKeys = []
+    $('#filterRegion').hide()
+  }
+
   // Send a GET request for the content and then build the tab
   const xhr = new XMLHttpRequest()
   xhr.onreadystatechange = function () {
@@ -275,7 +326,6 @@ function loadContentFromINI (definition) {
 
       // Create a new property, searchData, for each data element that includes
       // everything we can search against as a string.
-      console.log(data)
       data.forEach((item, i) => {
         item.searchData = ''
         searchKeys.forEach((key, j) => {
@@ -283,6 +333,7 @@ function loadContentFromINI (definition) {
         })
       })
       populateResultsRow()
+      populateFilterOptions()
     }
   }
   xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
@@ -292,13 +343,18 @@ function loadContentFromINI (definition) {
 function showAttractor () {
   // Make the attractor layer visible
 
-  document.getElementById('attractorVideo').play()
-    .then(result => {
-      $('#attractorOverlay').show()
-      hideImageLightBox()
-      clear()
-      constCommon.config.currentInteraction = false
-    })
+  constCommon.config.currentInteraction = false
+  if (attractorAvailable) {
+    document.getElementById('attractorVideo').play()
+      .then(result => {
+        $('#attractorOverlay').show()
+        hideImageLightBox()
+        clear()
+      })
+  } else {
+    hideImageLightBox()
+    clear()
+  }
 }
 
 function hideAttractor () {
@@ -407,16 +463,8 @@ const keyboard = new Keyboard({
   }
 })
 
-// THIS USED TO BE PROVIDED BY data.js
-const mediaKey = 'Media'
-const thumbnailKey = null
-const searchKeys = []
-const titleKey = 'Title'
-const captionKey = null
-const creditKey = null
-const filterKeys = []
-
-let data // This will be loaded when an INI file is parsed
+// These will be loaded when an INI file is parsed
+let data, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
 let currentContent = []
 let currentPage = 0
 let cardsPerPage
@@ -429,6 +477,7 @@ constCommon.config.constellationAppID = 'media_browser'
 constCommon.config.debug = true
 
 let inactivityTimer = null
+let attractorAvailable = false
 
 constCommon.askForDefaults()
 constCommon.checkForSoftwareUpdate()
@@ -438,7 +487,6 @@ setInterval(constCommon.sendPing, 5000)
 setCardCount()
 window.addEventListener('resize', setCardCount)
 document.getElementById('clearButton').addEventListener('click', clear)
-populateFilterOptions()
 
 // Attach event listeners
 $('#previousPageButton').click(function () {
