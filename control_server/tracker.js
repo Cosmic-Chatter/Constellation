@@ -139,6 +139,7 @@ function buildLayout (definition) {
   $('#cardRow').empty()
 
   // Clear existing references to cards
+  counterList = []
   dropdownList = []
   numberList = []
   sliderList = []
@@ -584,7 +585,7 @@ $('#definitionListDropdown').change(function () { loadLayout() })
 let configurationName = 'test'
 
 // initialize arrays to hold references to each of our types of cards
-const counterList = []
+let counterList = []
 let dropdownList = []
 let numberList = []
 let sliderList = []
