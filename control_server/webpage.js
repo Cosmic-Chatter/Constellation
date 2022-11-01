@@ -709,6 +709,7 @@ function populateSchedule (schedule) {
       const target = item.target
       const value = item.value
 
+      // Create the plain-language description of the action
       if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_content'].includes(action)) {
         description = populateScheduleDescriptionHelper([item], false)
       } else if (action === 'set_exhibit') {
@@ -842,6 +843,8 @@ function scheduleTargetToDescription (target) {
     return 'all ' + target.slice(7)
   } else if (target.startsWith('__id_')) {
     return target.slice(5)
+  } else if (target.endsWith('.exhibit')) {
+    return target.slice(0, -8)
   }
 }
 
