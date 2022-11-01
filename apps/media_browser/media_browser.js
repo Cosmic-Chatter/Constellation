@@ -109,7 +109,7 @@ function populateFilterOptions () {
 
   filterKeys.forEach((key, i) => {
     const newCol = document.createElement('div')
-    newCol.className = 'col-12 col-xl-6'
+    newCol.className = 'col-3 col-xl-6'
     $('#filterOptionsRow').append(newCol)
 
     const newSelect = document.createElement('select')
@@ -379,17 +379,33 @@ function setCardCount () {
   // cards we will be showing per page.
 
   const windowWidth = window.innerWidth
-  if (windowWidth >= 1200) {
-    cardsPerPage = 12
-  } else if (windowWidth >= 992) {
-    cardsPerPage = 8
-  } else if (windowWidth >= 768) {
-    cardsPerPage = 6
-  } else if (windowWidth >= 576) {
-    cardsPerPage = 4
+  let orientation
+  if (window.innerWidth > window.innerHeight) {
+    if (windowWidth >= 1200) {
+      cardsPerPage = 12
+    } else if (windowWidth >= 992) {
+      cardsPerPage = 8
+    } else if (windowWidth >= 768) {
+      cardsPerPage = 6
+    } else if (windowWidth >= 576) {
+      cardsPerPage = 4
+    } else {
+      cardsPerPage = 2
+    }
   } else {
-    cardsPerPage = 2
+    if (windowWidth >= 1000) {
+      cardsPerPage = 16
+    } else if (windowWidth >= 992) {
+      cardsPerPage = 8
+    } else if (windowWidth >= 768) {
+      cardsPerPage = 9
+    } else if (windowWidth >= 576) {
+      cardsPerPage = 6
+    } else {
+      cardsPerPage = 3
+    }
   }
+
   populateResultsRow()
 }
 
