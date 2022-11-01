@@ -1999,13 +1999,17 @@ function askForUpdate () {
         const update = JSON.parse(this.responseText)
         let numComps = 0
         let numOnline = 0
+        let numStatic = 0
         for (let i = 0; i < update.length; i++) {
           const component = update[String(i)]
           if ('class' in component) {
             if (component.class === 'exhibitComponent') {
               numComps += 1
-              if ((component.status === constConfig.STATUS.ONLINE) || (component.status === constConfig.STATUS.STANDBY) || (component.status === constConfig.STATUS['SYSTEM ON']) || (component.status === constConfig.STATUS.STATIC)) {
+              if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC).name) {
                 numOnline += 1
+              }
+              if (component.status === constConfig.STATUS.STATIC.name) {
+                numStatic += 1
               }
               updateComponentFromServer(component)
             } else if (component.class === 'gallery') {
@@ -2056,6 +2060,13 @@ function askForUpdate () {
         } else {
           $("link[rel='icon']").attr('href', 'icon/yellow.ico')
         }
+        // If there are no static components, hide the "SHow STATIC" button
+        if (numStatic === 0) {
+          $('#componentsTabSettingsShowStatic').parent().parent().hide()
+        } else {
+          $('#componentsTabSettingsShowStatic').parent().parent().show()
+        }
+
         constExhibit.rebuildComponentInterface()
       }
     }
