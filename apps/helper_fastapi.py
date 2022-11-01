@@ -161,6 +161,7 @@ async def send_update(config: const_config = Depends(get_config)):
         "allow_refresh": config.defaults_dict["allow_refresh"],
         "allow_restart": config.defaults_dict["allow_restart"],
         "allow_shutdown": config.defaults_dict["allow_shutdown"],
+        "allow_sleep": config.defaults_dict["allow_sleep"],
         "anydesk_id": config.defaults_dict["anydesk_id"],
         "autoplay_audio": config.defaults_dict["autoplay_audio"],
         "commands": config.commandList,

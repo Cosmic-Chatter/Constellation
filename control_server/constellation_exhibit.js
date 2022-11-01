@@ -777,6 +777,7 @@ export function submitComponentSettingsChange () {
   settings.allow_refresh = $('#componentInfoModalSettingsAllowRefresh').prop('checked')
   settings.allow_restart = $('#componentInfoModalSettingsAllowRestart').prop('checked')
   settings.allow_shutdown = $('#componentInfoModalSettingsAllowShutdown').prop('checked')
+  settings.allow_sleep = $('#componentInfoModalSettingsAllowSleep').prop('checked')
   settings.autoplay_audio = $('#componentInfoModalSettingsAutoplayAudio').prop('checked')
 
   const imageDuration = $('#componentInfoModalSettingsImageDuration').val().trim()
