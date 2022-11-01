@@ -39,7 +39,11 @@ function createCard (obj) {
   if (thumbnailKey != null && thumbnailKey !== '') {
     thumb = 'thumbnails/' + String(obj[thumbnailKey])
   } else {
-    thumb = 'thumbnails/' + String(obj[mediaKey])
+    // Change the file extension to .jpg, since that is the default for Constellation
+    let thumbName = String(obj[mediaKey])
+    const dotIndex = thumbName.lastIndexOf('.')
+    thumbName = thumbName.substring(0, dotIndex < 0 ? thumbName.length : dotIndex) + '.jpg'
+    thumb = 'thumbnails/' + thumbName
   }
 
   let title = ''
@@ -99,7 +103,7 @@ function onFilterOptionChange () {
   populateResultsRow()
 }
 
-function populateFilterOptions () {
+function populateFilterOptions (titles) {
   // Read the filterKeys and create a dropdown for each
 
   if (filterKeys == null) {
@@ -112,6 +116,11 @@ function populateFilterOptions () {
     newCol.className = 'col-3 col-xl-6'
     $('#filterOptionsRow').append(newCol)
 
+    if (titles != null) {
+      const title = document.createElement('H3')
+      title.innerHTML = titles[i]
+      newCol.append(title)
+    }
     const newSelect = document.createElement('select')
     newSelect.className = 'form-select filterSelect'
     newSelect.multiple = true
@@ -236,7 +245,6 @@ function displayMedia (id) {
 
 function updateParser (update) {
   // Read updates specific to the media browser
-
   // This should be last to make sure the path has been updated
   if ('content' in update) {
     if (!constCommon.arraysEqual(update.content, currentContent)) {
@@ -281,7 +289,7 @@ function loadContentFromINI (definition) {
   if ('thumbnail_key' in definition.SETTINGS) {
     thumbnailKey = definition.SETTINGS.thumbnail_key
   } else {
-    thumbnailKey = mediaKey
+    thumbnailKey = null
   }
   if ('search_keys' in definition.SETTINGS) {
     // Split and trim the entries in a list
@@ -289,7 +297,7 @@ function loadContentFromINI (definition) {
       return item.trim()
     })
   } else {
-    searchKeys = []
+    searchKeys = ['Title']
   }
   if ('title_key' in definition.SETTINGS) {
     titleKey = definition.SETTINGS.title_key
@@ -316,6 +324,21 @@ function loadContentFromINI (definition) {
     filterKeys = []
     $('#filterRegion').hide()
   }
+  let filterTitles = null
+  if ('filter_titles' in definition.SETTINGS) {
+    // Split and trim the entries in a list
+    filterTitles = definition.SETTINGS.filter_titles.split(',').map(function (item) {
+      return item.trim()
+    })
+  }
+  if ('items_per_page' in definition.SETTINGS) {
+    cardsPerPage = parseInt(definition.SETTINGS.items_per_page)
+    customCardsPerPage = true
+  } else {
+    cardsPerPage = null
+    customCardsPerPage = false
+    setCardCount()
+  }
 
   // Send a GET request for the content and then build the tab
   const xhr = new XMLHttpRequest()
@@ -333,7 +356,7 @@ function loadContentFromINI (definition) {
         })
       })
       populateResultsRow()
-      populateFilterOptions()
+      populateFilterOptions(filterTitles)
     }
   }
   xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
@@ -378,31 +401,32 @@ function setCardCount () {
   // Based on the window size and the Bootstrap grid, calculate the number of
   // cards we will be showing per page.
 
-  const windowWidth = window.innerWidth
-  let orientation
-  if (window.innerWidth > window.innerHeight) {
-    if (windowWidth >= 1200) {
-      cardsPerPage = 12
-    } else if (windowWidth >= 992) {
-      cardsPerPage = 8
-    } else if (windowWidth >= 768) {
-      cardsPerPage = 6
-    } else if (windowWidth >= 576) {
-      cardsPerPage = 4
+  if (customCardsPerPage === false) {
+    const windowWidth = window.innerWidth
+    if (window.innerWidth > window.innerHeight) {
+      if (windowWidth >= 1200) {
+        cardsPerPage = 12
+      } else if (windowWidth >= 992) {
+        cardsPerPage = 8
+      } else if (windowWidth >= 768) {
+        cardsPerPage = 6
+      } else if (windowWidth >= 576) {
+        cardsPerPage = 4
+      } else {
+        cardsPerPage = 2
+      }
     } else {
-      cardsPerPage = 2
-    }
-  } else {
-    if (windowWidth >= 1000) {
-      cardsPerPage = 16
-    } else if (windowWidth >= 992) {
-      cardsPerPage = 8
-    } else if (windowWidth >= 768) {
-      cardsPerPage = 9
-    } else if (windowWidth >= 576) {
-      cardsPerPage = 6
-    } else {
-      cardsPerPage = 3
+      if (windowWidth >= 1000) {
+        cardsPerPage = 16
+      } else if (windowWidth >= 992) {
+        cardsPerPage = 8
+      } else if (windowWidth >= 768) {
+        cardsPerPage = 9
+      } else if (windowWidth >= 576) {
+        cardsPerPage = 6
+      } else {
+        cardsPerPage = 3
+      }
     }
   }
 
@@ -484,6 +508,7 @@ let data, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, f
 let currentContent = []
 let currentPage = 0
 let cardsPerPage
+let customCardsPerPage = false
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
@@ -500,7 +525,6 @@ constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 
-setCardCount()
 window.addEventListener('resize', setCardCount)
 document.getElementById('clearButton').addEventListener('click', clear)
 

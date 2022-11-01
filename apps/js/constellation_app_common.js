@@ -375,12 +375,36 @@ export function csvToJSON (csv) {
       continue
     }
 
-    const words = lines[i].split(',')
+    // regex to split on comma, but ignore inside of ""
+    const words = splitCsv(lines[i])
     for (let j = 0; j < words.length; j++) {
-      obj[headers[j].trim()] = words[j].trim()
+      // Clean up "" used to escape commas in the CSV
+      let word = words[j].trim()
+      if (word.slice(0, 1) === '"' && word.slice(-1) === '"') {
+        word = word.slice(1, -1)
+      }
+
+      word = word.replaceAll('""', '"')
+      obj[headers[j].trim()] = word.trim()
     }
 
     result.push(obj)
   }
   return result
+}
+
+function splitCsv (str) {
+  // From https://stackoverflow.com/a/31955570
+
+  return str.split(',').reduce((accum, curr) => {
+    if (accum.isConcatting) {
+      accum.soFar[accum.soFar.length - 1] += ',' + curr
+    } else {
+      accum.soFar.push(curr)
+    }
+    if (curr.split('"').length % 2 === 0) {
+      accum.isConcatting = !accum.isConcatting
+    }
+    return accum
+  }, { soFar: [], isConcatting: false }).soFar
 }
