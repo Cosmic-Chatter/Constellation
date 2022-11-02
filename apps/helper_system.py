@@ -73,8 +73,7 @@ def smart_restart_act():
         return
     elif config.smart_restart["mode"] == "aggressive":
         # In aggressive mode, we reboot right away
-        print("Aggressive reboot")
-        # reboot()
+        reboot()
     elif config.smart_restart["mode"] == "patient":
         # In patient mode, we only restart when not in active hours
         now = datetime.datetime.now()
@@ -82,8 +81,7 @@ def smart_restart_act():
         active_end = dateutil.parser.parse(config.smart_restart["active_hours_end"])
 
         if now < active_start or now > active_end:
-            #reboot()
-            print("Patient reboot")
+            reboot()
         else:
             print("Patient reboot denied by active hours")
 
