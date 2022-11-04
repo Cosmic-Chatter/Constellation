@@ -33,7 +33,6 @@ function loadContentFromINI (definition) {
     updateSourceList(definition.SETTINGS.files)
   }
   if ('animation_length' in definition.SETTINGS) {
-    console.log(definition.SETTINGS.animation_length)
     animationCustomDuration = parseFloat(definition.SETTINGS.animation_length)
   } else {
     animationCustomDuration = null
@@ -279,9 +278,11 @@ function changeSource (dist) {
 
   activeSourceIndex += dist
   if (activeSourceIndex > sourceListLength - 1) {
-    activeSourceIndex = sourceListLength - 1
+    // activeSourceIndex = sourceListLength - 1
+    activeSourceIndex -= sourceListLength
   } else if (activeSourceIndex < 0) {
-    activeSourceIndex = 0
+    // activeSourceIndex = 0
+    activeSourceIndex = sourceListLength - 1
   }
   displayImage(sourceList[activeSourceIndex])
 }
@@ -305,7 +306,6 @@ function animateTimelapse () {
   if (animationCustomDuration != null) {
     // The user has set a custom animation length in the defintion
     animationFramerate = sourceListLength / animationCustomDuration
-    console.log(animationFramerate, sourceListLength, animationCustomDuration)
     if (animationFramerate > 30) {
       animationStepSize = Math.round(animationFramerate / 30)
       animationFramerate = animationFramerate / animationStepSize
