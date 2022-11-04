@@ -3,92 +3,49 @@ import * as constCommon from '../js/constellation_app_common.js'
 function updateFunc (update) {
   // Function to parse timelapse-specific updates
 
-  if ('current_exhibit' in update) {
-    if (currentExhibit !== update.current_exhibit) {
-      currentExhibit = update.current_exhibit
-      updateSourceList(true)
+  if ('content' in update) {
+    if (!constCommon.arraysEqual(update.content, currentContent)) {
+      currentContent = update.content
+
+      // Get the file from the helper and build the interface
+      const definition = currentContent[0] // Only one INI file at a time
+
+      const xhr = new XMLHttpRequest()
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
+        }
+      }
+      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
+      xhr.send(null)
     }
   }
 }
 
-// function readUpdate (responseText) {
-//   // Function to read a message from the server and take action based
-//   // on the contents
+function loadContentFromINI (definition) {
+  // Receive a definition in the form of an object and set up the viewer appropriately.
 
-//   const update = JSON.parse(responseText)
-//   sendConfigUpdate(update) // Send to helper to update the default config
+  if (!('SETTINGS' in definition)) {
+    console.log('Error: The INI file must include a [SETTINGS] section!')
+    return
+  }
+  if ('files' in definition.SETTINGS) {
+    updateSourceList(definition.SETTINGS.files)
+  }
+  if ('animation_length' in definition.SETTINGS) {
+    console.log(definition.SETTINGS.animation_length)
+    animationCustomDuration = parseFloat(definition.SETTINGS.animation_length)
+  } else {
+    animationCustomDuration = null
+  }
+  if ('attractor_timeout' in definition.SETTINGS) {
+    attractorTimeout = parseFloat(definition.SETTINGS.attractor_timeout * 1000)
+  }
+}
 
-//   if ('commands' in update) {
-//     for (let i = 0; i < update.commands.length; i++) {
-//       const cmd = (update.commands)[i]
-
-//       if (cmd === 'restart') {
-//         askForRestart()
-//       } else if (cmd === 'shutdown' || cmd === 'power_off') {
-//         askForShutdown()
-//       } else if (cmd === 'sleepDisplay') {
-//         sleepDisplay()
-//       } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
-//         wakeDisplay()
-//       } else if (cmd === 'refresh_page') {
-//         if ('refresh' in allowedActionsDict && allowedActionsDict.refresh === 'true') {
-//           location.reload()
-//         }
-//       } else if (cmd === 'reloadDefaults') {
-//         askForDefaults()
-//       } else if (cmd.startsWith('gotoClip')) {
-//         const clipNumber = cmd.split('_')[1]
-//         gotoSource(clipNumber)
-//       } else {
-//         console.log(`Command not recognized: ${cmd}`)
-//       }
-//     }
-//   }
-//   if ('id' in update) {
-//     id = update.id
-//   }
-//   if ('type' in update) {
-//     type = update.type
-//   }
-//   if ('operating_system' in update) {
-//     operatingSystem = update.operating_system
-//   }
-//   if (('server_ip_address' in update) && ('server_port' in update)) {
-//     serverAddress = 'http://' + update.server_ip_address + ':' + update.server_port
-//   }
-//   if ('helperAddress' in update) {
-//     constCommon.config.helperAddress = update.helperAddress
-//   }
-//   if ('enable_analytics' in update) {
-//     enableAnalytics = stringToBool(update.enable_analytics)
-//   }
-//   if ('contentPath' in update) {
-//     contentPath = update.contentPath
-//   }
-
-//   if ('missingContentWarnings' in update) {
-//     errorDict.missingContentWarnings = update.missingContentWarnings
-//   }
-//   if ('allow_sleep' in update) {
-//     allowedActionsDict.sleep = update.allow_sleep
-//   }
-//   if ('allow_restart' in update) {
-//     allowedActionsDict.restart = update.allow_restart
-//   }
-//   if ('allow_shutdown' in update) {
-//     allowedActionsDict.shutdown = update.allow_shutdown
-//   }
-//   if ('helperSoftwareUpdateAvailable' in update) {
-//     if (update.helperSoftwareUpdateAvailable === 'true') { errorDict.helperSoftwareUpdateAvailable = 'true' }
-//   }
-//   if ('anydesk_id' in update) {
-//     AnyDeskID = update.anydesk_id
-//   }
-// }
-
-function updateSourceList (first = false) {
-  // Function to ask the helper for any new updates, like switching between
-  // media clips
+function updateSourceList (matchString) {
+  // Given a string containing a wildcard expression (*), retreive all the available content
+  // and set the source to only the matching files.
 
   const requestString = JSON.stringify({ action: 'getAvailableContent' })
 
@@ -101,17 +58,20 @@ function updateSourceList (first = false) {
 
     if (this.status === 200) {
       const content = JSON.parse(this.responseText)
-      sourceList = content.all_exhibits.filter(file => file.startsWith(currentExhibit))
-        .sort(function (a, b) {
-          return a.localeCompare(b)
-        })
+      sourceList = content.all_exhibits.filter(
+        item => new RegExp('^' + matchString.replace(/\*/g, '.*') + '$').test(item)
+      ).sort(function (a, b) {
+        return a.localeCompare(b)
+      })
       sourceListLength = sourceList.length
-      if (first) {
-        activeSourceIndex = 0
-        displayImage(sourceList[0])
-        if (continueAnimating) {
-          animateTimelapse()
-        }
+      if (sourceListLength == 0) {
+        continueAnimating = false
+        return
+      }
+      activeSourceIndex = 0
+      displayImage(sourceList[0])
+      if (continueAnimating) {
+        animateTimelapse()
       }
     }
   }
@@ -342,19 +302,31 @@ function animateNextFrame () {
 function animateTimelapse () {
   // Start the process of animating the timelapse
 
-  animationStepSize = 1
-  if (sourceListLength < 50) {
-    animationFramerate = 5
-  } else if (sourceListLength < 200) {
-    animationFramerate = 10
-  } else if (sourceListLength < 500) {
-    animationFramerate = 20
-  } else if (sourceListLength < 2000) {
-    animationFramerate = 30
+  if (animationCustomDuration != null) {
+    // The user has set a custom animation length in the defintion
+    animationFramerate = sourceListLength / animationCustomDuration
+    console.log(animationFramerate, sourceListLength, animationCustomDuration)
+    if (animationFramerate > 30) {
+      animationStepSize = Math.round(animationFramerate / 30)
+      animationFramerate = animationFramerate / animationStepSize
+    }
   } else {
-    animationFramerate = 30
-    animationStepSize = 2
+    // Compute a sensible animation speed based on the number of files
+    animationStepSize = 1
+    if (sourceListLength < 50) {
+      animationFramerate = 5
+    } else if (sourceListLength < 200) {
+      animationFramerate = 10
+    } else if (sourceListLength < 500) {
+      animationFramerate = 20
+    } else if (sourceListLength < 2000) {
+      animationFramerate = 30
+    } else {
+      animationFramerate = 30
+      animationStepSize = 2
+    }
   }
+
   continueAnimating = true
   clearTimeout(animationTimer)
   animateNextFrame()
@@ -386,7 +358,7 @@ function hideAttractor () {
 
   // Set the attractor to start again in 30 s
   clearTimeout(attractorTimer)
-  attractorTimer = setTimeout(showAttractor, 30000)
+  attractorTimer = setTimeout(showAttractor, attractorTimeout)
 }
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
@@ -399,19 +371,21 @@ let lastTouchX = null // X cordinate of the last touchmove event
 let currentClick = false
 let stopInput = false
 
-let continueAnimating = false // true when we are animating for the attractor
+let continueAnimating = true // true when we are animating for the attractor
 let animationFramerate = 30
 let animationStepSize = 1
 let animationTimer = null // Will be replaced with index of setTimeout
+let animationCustomDuration = null
 
 let attractorTimer = null // Will be replaced with index of setTimeout
+let attractorTimeout = 30000 // ms
 
+let currentContent = []
 let sourceList = []
 let sourceListLength = 0
 let activeSourceIndex = 0 // Index of the file from the source list currently showing
 const viewerList = [document.getElementById('img1'), document.getElementById('img2')]
 let activeViewerIndex = 0 // Index of the <img> instance that is currently being used
-let currentExhibit = '' // This will double as the root of the source path
 const enableAnalytics = false
 
 constCommon.config.debug = true
@@ -421,8 +395,6 @@ constCommon.askForDefaults()
 constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
-updateSourceList(true)
-setInterval(updateSourceList, 10000)
 
 document.body.style.cursor = 'none' // Hide the cursor
 

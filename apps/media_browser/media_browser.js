@@ -271,6 +271,7 @@ function loadContentFromINI (definition) {
 
   if (!('SETTINGS' in definition)) {
     console.log('Error: The INI file must include a [SETTINGS] section!')
+    return
   }
 
   if ('attractor' in definition.SETTINGS) {
