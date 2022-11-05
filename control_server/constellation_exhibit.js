@@ -1,5 +1,3 @@
-/* global serverIP */
-
 import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 import * as constMaint from './constellation_maintenance.js'
@@ -48,7 +46,7 @@ export class ExhibitComponent {
 
     const xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP + '/projector/getUpdate', true)
+    xhr.open('POST', constConfig.serverAddress + '/projector/getUpdate', true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
@@ -945,7 +943,7 @@ export function queueCommand (id, cmd) {
 
     xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP + cmdPath, true)
+    xhr.open('POST', constConfig.serverAddress + cmdPath, true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.send(JSON.stringify(requestDict))
   }

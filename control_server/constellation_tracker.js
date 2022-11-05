@@ -1,4 +1,4 @@
-/* global serverIP */
+import constConfig from './config.js'
 
 export function getAvailableDefinitions (complete) {
   // Ask the control server to send a list of availble definition files
@@ -6,7 +6,7 @@ export function getAvailableDefinitions (complete) {
   // only parameter
 
   const xhr = new XMLHttpRequest()
-  xhr.open('GET', serverIP + '/tracker/flexible-tracker/getAvailableDefinitions', true)
+  xhr.open('GET', constConfig.serverAddress + '/tracker/flexible-tracker/getAvailableDefinitions', true)
   xhr.timeout = 3000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -29,7 +29,7 @@ export function getAvailableTrackerData (complete) {
   // only parameter
 
   const xhr = new XMLHttpRequest()
-  xhr.open('GET', serverIP + '/tracker/flexible-tracker/getAvailableData', true)
+  xhr.open('GET', constConfig.serverAddress + '/tracker/flexible-tracker/getAvailableData', true)
   xhr.timeout = 3000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -62,7 +62,7 @@ export function loadLayoutDefinition (name, complete) {
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/getLayoutDefinition', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/getLayoutDefinition', true)
   xhr.timeout = 1000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')

@@ -1,5 +1,39 @@
 import constConfig from './config.js'
 
+function makeRequest (opt) {
+  // Function to make a request to a server and return a Promise with the result
+  // 'opt' should be an object with all the necessry options
+
+  return new Promise(function (resolve, reject) {
+    const xhr = new XMLHttpRequest()
+    xhr.open(opt.method, opt.url + opt.endpoint, true)
+    xhr.timeout = opt.timeout ?? 2000 // ms
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with data`, opt.params))
+      }
+    }
+    xhr.onerror = function () {
+      reject(new Error(`Unable to complete $opt.{method} to ${opt.url + opt.endpoint} with data`, opt.params))
+    }
+    let paramText = null
+    if (opt.params != null) {
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      paramText = JSON.stringify(opt.params)
+    }
+    xhr.send(paramText)
+  })
+}
+
+export function makeServerRequest (opt) {
+  // Shortcut for making a server request and returning a Promise
+
+  opt.url = constConfig.serverAddress
+  return makeRequest(opt)
+}
+
 export function extractIPAddress (address) {
   // Extract just the IP address from a web address
 

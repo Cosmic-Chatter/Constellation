@@ -1,4 +1,4 @@
-/* global serverIP */
+import constConfig from './config.js'
 
 export function setComponentInfoModalMaintenanceStatus (id) {
   // Ask the server for the current maintenance status of the given component
@@ -8,7 +8,7 @@ export function setComponentInfoModalMaintenanceStatus (id) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/maintenance/getStatus', true)
+  xhr.open('POST', constConfig.serverAddress + '/maintenance/getStatus', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return

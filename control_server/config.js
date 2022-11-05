@@ -3,6 +3,7 @@ export default {
   currentExhibit: '',
   errorDict: {},
   exhibitComponents: [],
+  serverAddress: '',
   serverSoftwareUpdateAvailable: false,
   STATUS: {
     STATIC: { name: 'STATIC', value: 0, colorClass: 'btn-secondary' },

@@ -1,4 +1,4 @@
-/* global serverIP, showdown */
+/* global showdown */
 
 import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
@@ -349,15 +349,15 @@ function submitComponentContentChange () {
 function sendComponentContentChangeRequest (id, content) {
   // Send a request to the server to initiate a content change
 
-  const requestString = JSON.stringify({
+  const requestDict = {
     id,
     content
+  }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/exhibit/setComponentContent',
+    params: requestDict
   })
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/exhibit/setComponentContent', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send(requestString)
 }
 
 function updateComponentFromServer (component) {
@@ -489,13 +489,13 @@ function changeExhibit (warningShown) {
     const requestDict = {
       name: $('#exhibitSelect').val()
     }
-    const xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    xhr.open('POST', serverIP + '/exhibit/set', true)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.send(JSON.stringify(requestDict))
 
-    askForUpdate()
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/exhibit/set',
+      params: requestDict
+    })
+      .then(askForUpdate)
   }
 }
 
@@ -503,25 +503,21 @@ function reloadConfiguration () {
   // This function will send a message to the server asking it to reload
   // the current exhibit configuration file and update all the components
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/system/reloadConfiguration', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
+  $('#reloadConfigurationButton').html('Reloading...')
 
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
-
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/reloadConfiguration',
+    timeout: 60000
+  })
+    .then((response) => {
       if ('success' in response) {
         if (response.success === true) {
           $('#reloadConfigurationButton').html('Success!')
           setTimeout(function () { $('#reloadConfigurationButton').html('Reload Config') }, 2000)
         }
       }
-    }
-  }
-  xhr.send()
+    })
 }
 
 function sendGroupCommand (group, cmd) {
@@ -547,7 +543,7 @@ function deleteSchedule (name) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP + '/schedule/deleteSchedule', true)
+  xhr.open('POST', constConfig.serverAddress + '/schedule/deleteSchedule', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -579,7 +575,7 @@ function scheduleConvertToDateSpecific (date, dayName) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP + '/schedule/convert', true)
+  xhr.open('POST', constConfig.serverAddress + '/schedule/convert', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1058,7 +1054,7 @@ function sendScheduleUpdateFromModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP + '/schedule/update', true)
+  xhr.open('POST', constConfig.serverAddress + '/schedule/update', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1102,7 +1098,7 @@ function scheduleDeleteActionFromModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('POST', serverIP + '/schedule/deleteAction', true)
+  xhr.open('POST', constConfig.serverAddress + '/schedule/deleteAction', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
   }
@@ -1130,7 +1126,7 @@ function askForScheduleRefresh () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 3000
-  xhr.open('GET', serverIP + '/schedule/refresh', true)
+  xhr.open('GET', constConfig.serverAddress + '/schedule/refresh', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () {
     $('#refreshScheduleButton').html('Timed out!')
@@ -1258,7 +1254,7 @@ function uploadIssueMediaFile () {
     formData.append('files', file)
 
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', serverIP + '/issue/uploadMedia', true)
+    xhr.open('POST', constConfig.serverAddress + '/issue/uploadMedia', true)
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
       if (this.status === 200) {
@@ -1443,7 +1439,7 @@ function issueMediaDelete (filename) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/issue/deleteMedia', true)
+  xhr.open('POST', constConfig.serverAddress + '/issue/deleteMedia', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1501,7 +1497,7 @@ function submitIssueFromModal () {
     }
     const xhr = new XMLHttpRequest()
     xhr.timeout = 2000
-    xhr.open('POST', serverIP + endpoint, true)
+    xhr.open('POST', constConfig.serverAddress + endpoint, true)
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
@@ -1522,7 +1518,7 @@ function submitIssueFromModal () {
 function getIssueList () {
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/issue/list', true)
+  xhr.open('GET', constConfig.serverAddress + '/issue/list', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1562,7 +1558,7 @@ function deleteIssue (id) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/issue/delete', true)
+  xhr.open('POST', constConfig.serverAddress + '/issue/delete', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1604,7 +1600,7 @@ function downloadTrackerData () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/getDataAsCSV', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/getDataAsCSV', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1665,7 +1661,7 @@ function deleteTrackerData () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/deleteData', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/deleteData', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1688,7 +1684,7 @@ function launchTracker () {
 
   const name = $('#trackerTemplateSelect').val()
 
-  let url = serverIP + '/tracker.html'
+  let url = constConfig.serverAddress + '/tracker.html'
   if (name != null) {
     url += '?layout=' + name
   }
@@ -1710,7 +1706,7 @@ function createTrackerTemplate (name = '') {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/createTemplate', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/createTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1741,7 +1737,7 @@ function deleteTrackerTemplate (name = '') {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/deleteTemplate', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/deleteTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1881,7 +1877,7 @@ function submitComponentMaintenanceStatusChange (type = 'component') {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/maintenance/updateStatus', true)
+  xhr.open('POST', constConfig.serverAddress + '/maintenance/updateStatus', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1904,7 +1900,7 @@ function refreshMaintenanceRecords () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/maintenance/getAllStatuses', true)
+  xhr.open('GET', constConfig.serverAddress + '/maintenance/getAllStatuses', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -1991,7 +1987,7 @@ function askForUpdate () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/system/getUpdate', true)
+  xhr.open('GET', constConfig.serverAddress + '/system/getUpdate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.ontimeout = function () { console.log('Website update timed out') }
   xhr.onreadystatechange = function () {
@@ -2083,7 +2079,7 @@ function populateHelpTab () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/system/getHelpText', true)
+  xhr.open('GET', constConfig.serverAddress + '/system/getHelpText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2106,7 +2102,7 @@ function showEditGalleryConfigModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('GET', serverIP + '/system/getConfigurationRawText', true)
+  xhr.open('GET', constConfig.serverAddress + '/system/getConfigurationRawText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2150,7 +2146,7 @@ function submitGalleryConfigChangeFromModal () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/system/updateConfigurationRawText', true)
+  xhr.open('POST', constConfig.serverAddress + '/system/updateConfigurationRawText', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2480,7 +2476,7 @@ function editTrackerTemplateModalSubmitChanges () {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/tracker/flexible-tracker/createTemplate', true)
+  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/createTemplate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     if (this.readyState !== 4) return
@@ -2540,7 +2536,7 @@ function createExhibit (name, cloneFrom) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/exhibit/create', true)
+  xhr.open('POST', constConfig.serverAddress + '/exhibit/create', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     // if (this.readyState !== 4) return
@@ -2561,7 +2557,7 @@ function deleteExhibit (name) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', serverIP + '/exhibit/delete', true)
+  xhr.open('POST', constConfig.serverAddress + '/exhibit/delete', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
     // if (this.readyState !== 4) return
@@ -2749,6 +2745,8 @@ $('#editTrackerTemplateModalAddTimerButton').click(function () {
 $('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalDeleteWidget)
 $('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
 $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
+
+constConfig.serverAddress = location.origin
 
 askForUpdate()
 setInterval(askForUpdate, 5000)
