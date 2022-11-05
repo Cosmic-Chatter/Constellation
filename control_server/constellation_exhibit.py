@@ -137,6 +137,9 @@ class ExhibitComponent:
 
         """Queue a command to be sent to the component on the next ping"""
 
+        if self.category == "static":
+            return
+
         if (command in ["power_on", "wakeDisplay"]) and (self.macAddress is not None):
             self.wake_with_LAN()
         else:

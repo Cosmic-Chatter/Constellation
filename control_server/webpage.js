@@ -90,11 +90,11 @@ class ExhibitComponentGroup {
     let offCmdName = ''
     const thisType = this.type
     if (this.type === 'PROJECTOR') {
-      onCmdName = 'Wake all projectors'
-      offCmdName = 'Sleep all projectors'
+      onCmdName = 'power_on'
+      offCmdName = 'sleepDisplay'
     } else {
-      onCmdName = 'Wake all displays'
-      offCmdName = 'Sleep all displays'
+      onCmdName = 'wakeDisplay'
+      offCmdName = 'sleepDisplay'
     }
     let displayRefresh = 'block'
     if (['PROJECTOR', 'WAKE_ON_LAN'].includes(this.type) === true) {
@@ -529,7 +529,7 @@ function sendGroupCommand (group, cmd) {
   // for each
 
   group = constExhibit.getExhibitComponentGroup(group)
-
+  console.log(group, cmd)
   for (let i = 0; i < group.components.length; i++) {
     constExhibit.queueCommand(group.components[i].id, cmd)
   }

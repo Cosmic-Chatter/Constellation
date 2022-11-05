@@ -923,27 +923,21 @@ export function queueCommand (id, cmd) {
     xhr.send(JSON.stringify(requestDict))
   } else {
     // We send these commands to the server to pass to the component itself
-    let cmdType = ''
     let cmdPath = ''
     switch (obj.type) {
       case 'PROJECTOR':
-        cmdType = 'queueProjectorCommand'
         cmdPath = '/projector/queueCommand'
         break
       case 'WAKE_ON_LAN':
-        cmdType = 'queueWOLCommand'
         cmdPath = '/exhibit/queueWOLCommand'
         break
       default:
-        cmdType = 'queueCommand'
         cmdPath = '/exhibit/queueCommand'
     }
 
     requestDict = {
-      class: 'webpage',
       id,
-      command: cmd,
-      action: cmdType
+      command: cmd
     }
 
     xhr = new XMLHttpRequest()
