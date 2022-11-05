@@ -29,8 +29,6 @@ function makeRequest (opt) {
   // Function to make a request to a server and return a Promise with the result
   // 'opt' should be an object with all the necessry options
 
-  console.log('Request:', opt)
-
   return new Promise(function (resolve, reject) {
     const xhr = new XMLHttpRequest()
     xhr.open(opt.method, opt.url + opt.endpoint, true)
@@ -75,27 +73,27 @@ export function sendPing () {
     console.log('Aborting ping... no config.serverAddress')
     return
   }
-  const requestDict = {
-    id: config.id,
-    type: config.type,
-    helperPort: config.helperAddress.split(':')[2], // Depreciated
-    helperAddress: config.helperAddress,
-    allowed_actions: config.allowedActionsDict,
-    constellation_app_id: config.constellationAppID,
-    platform_details: config.platformDetails,
-    AnyDeskID: config.AnyDeskID,
-    currentInteraction: config.currentInteraction,
-    imageDuration: config.imageDuration,
-    autoplayAudio: config.autoplayAudio
-  }
-
-  // See if there is an error to report
-  const errorString = JSON.stringify(config.errorDict)
-  if (errorString !== '') {
-    requestDict.error = errorString
-  }
 
   const pingRequest = function () {
+    const requestDict = {
+      id: config.id,
+      type: config.type,
+      helperPort: config.helperAddress.split(':')[2], // Depreciated
+      helperAddress: config.helperAddress,
+      allowed_actions: config.allowedActionsDict,
+      constellation_app_id: config.constellationAppID,
+      platform_details: config.platformDetails,
+      AnyDeskID: config.AnyDeskID,
+      currentInteraction: config.currentInteraction,
+      imageDuration: config.imageDuration,
+      autoplay_audio: config.autoplayAudio
+    }
+    // See if there is an error to report
+    const errorString = JSON.stringify(config.errorDict)
+    if (errorString !== '') {
+      requestDict.error = errorString
+    }
+
     makeServerRequest(
       {
         method: 'POST',
@@ -266,7 +264,9 @@ function readUpdate (update) {
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
   }
-
+  if ('autoplay_audio' in update) {
+    config.autoplayAudio = update.autoplay_audio
+  }
   if (sendUpdate) {
     sendConfigUpdate(update)
   }
@@ -291,7 +291,7 @@ export function askForDefaults () {
     method: 'GET',
     endpoint: '/getDefaults'
   })
-    .then((response) => readUpdate(response), checkAgain)
+    .then(readUpdate, checkAgain)
   // const xhr = new XMLHttpRequest()
   // xhr.timeout = 2000
   // xhr.onerror = checkAgain

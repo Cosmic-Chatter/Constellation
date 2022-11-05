@@ -500,13 +500,14 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
     $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
     $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
+    $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
     if ('AnyDeskID' in obj) {
       $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
     } else {
       $('#componentInfoModalSettingsAnyDeskID').val('')
     }
     if ('autoplay_audio' in obj) {
-      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', obj.autoplay_audio)
+      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
     } else {
       $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
     }

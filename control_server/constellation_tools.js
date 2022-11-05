@@ -108,3 +108,17 @@ export function rebuildErrorList () {
     })
   })
 }
+
+export function stringToBool (str) {
+  // Parse a given string and return an appropriate bool
+
+  if (typeof str === 'boolean') {
+    return str
+  }
+
+  if (['True', 'true', 'TRUE', '1', 'yes', 'Yes', 'YES'].includes(str)) {
+    return true
+  } else {
+    return false
+  }
+}

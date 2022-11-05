@@ -1182,6 +1182,7 @@ async def handle_ping(data: dict[str, Any], request: Request, config: c_config =
         return response
 
     this_id = data['id']
+    print(data)
     c_exhibit.update_exhibit_component_status(data, request.client.host)
 
     dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()

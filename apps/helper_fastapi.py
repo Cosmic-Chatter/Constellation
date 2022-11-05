@@ -160,6 +160,10 @@ async def send_defaults(config: const_config = Depends(get_config)):
 
 @app.get("/getUpdate")
 async def send_update(config: const_config = Depends(get_config)):
+    "Get some key info for updating the component and web console."
+
+    print('/getUpdate')
+    print(config.defaults_dict)
     response_dict = {
         "allow_refresh": config.defaults_dict["allow_refresh"],
         "allow_restart": config.defaults_dict["allow_restart"],
@@ -171,6 +175,7 @@ async def send_update(config: const_config = Depends(get_config)):
         "image_duration":  config.defaults_dict["image_duration"],
         "missingContentWarnings": config.missingContentWarningList
     }
+    print(response_dict)
     return response_dict
 
 
