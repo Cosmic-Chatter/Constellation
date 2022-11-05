@@ -525,8 +525,10 @@ export function showExhibitComponentInfo (id) {
     // Hide settings for static components
     if (obj.status === constConfig.STATUS.STATIC) {
       $('#componentInfoModalSettingsTabButton').hide()
+      $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalSettingsTabButton').show()
+      $('#componentInfoModalContentTabButton').show()
     }
 
     const showFailureMessage = function () {
