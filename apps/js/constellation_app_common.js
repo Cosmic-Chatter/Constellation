@@ -25,42 +25,47 @@ config.platformDetails = {
   browser: platform.name + ' ' + platform.version
 }
 
-function makeRequest (method, address, endpoint, params) {
+function makeRequest (opt) {
   // Function to make a request to a server and return a Promise with the result
+  // 'opt' should be an object with all the necessry options
 
-  console.log('Request:', method, address, endpoint, params)
+  console.log('Request:', opt)
 
   return new Promise(function (resolve, reject) {
     const xhr = new XMLHttpRequest()
-    xhr.open(method, address + endpoint, true)
+    xhr.open(opt.method, opt.url + opt.endpoint, true)
+    xhr.timeout = opt.timeout ?? 2000 // ms
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText))
       } else {
-        reject(new Error(`Unable to complete ${method} to ${address + endpoint} with data`, params))
+        reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with data`, opt.params))
       }
     }
     xhr.onerror = function () {
-      reject(new Error(`Unable to complete ${method} to ${address + endpoint} with data`, params))
+      reject(new Error(`Unable to complete $opt.{method} to ${opt.url + opt.endpoint} with data`, opt.params))
     }
     let paramText = null
-    if (params != null) {
-      paramText = JSON.stringify(params)
+    if (opt.params != null) {
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      paramText = JSON.stringify(opt.params)
     }
     xhr.send(paramText)
   })
 }
 
-export function makeServerRequest (method, endpoint, params) {
+export function makeServerRequest (opt) {
   // Shortcut for making a server request and returning a Promise
-  console.log('Server Request:', method, endpoint, params)
-  return makeRequest(method, config.serverAddress, endpoint, params)
+
+  opt.url = config.serverAddress
+  return makeRequest(opt)
 }
 
-export function makeHelperRequest (method, endpoint, params) {
+export function makeHelperRequest (opt) {
   // Shortcut for making a server request and returning a Promise
 
-  return makeRequest(method, config.helperAddress, endpoint, params)
+  opt.url = config.helperAddress
+  return makeRequest(opt)
 }
 
 export function sendPing () {
@@ -68,6 +73,7 @@ export function sendPing () {
 
   if (config.serverAddress === '') {
     console.log('Aborting ping... no config.serverAddress')
+    return
   }
   const requestDict = {
     id: config.id,
@@ -88,67 +94,103 @@ export function sendPing () {
   if (errorString !== '') {
     requestDict.error = errorString
   }
-  // makeServerRequest('POST', '/system/ping', requestDict)
-  //   .then((responseDict) => readUpdate(responseDict))
-  const requestString = JSON.stringify(requestDict)
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', config.serverAddress + '/system/ping', true)
-  xhr.timeout = 2000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        readUpdate(JSON.parse(this.responseText))
-      }
-    }
+  const pingRequest = function () {
+    makeServerRequest(
+      {
+        method: 'POST',
+        endpoint: '/system/ping',
+        params: requestDict
+      })
+      .then(readUpdate)
   }
-  xhr.send(requestString)
+
+  // First, check the helper for updates, then send the ping
+  checkForHelperUpdates()
+    .then(pingRequest)
+    .catch(pingRequest)
+  // makeServerRequest(
+  //   {
+  //     method: 'POST',
+  //     endpoint: '/system/ping',
+  //     params: requestDict
+  //   })
+  //   .then(readUpdate)
+  // const requestString = JSON.stringify(requestDict)
+
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('POST', config.serverAddress + '/system/ping', true)
+  // xhr.timeout = 2000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+
+  // xhr.onreadystatechange = function () {
+  //   if (this.readyState !== 4) return
+
+  //   if (this.status === 200) {
+  //     if (this.responseText !== '') {
+  //       readUpdate(JSON.parse(this.responseText))
+  //     }
+  //   }
+  // }
+  // xhr.send(requestString)
 }
 
 export function wakeDisplay () {
   // Send a message to the local helper process and ask it to sleep the
   // displays
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', config.helperAddress + '/wakeDisplay', true)
-  xhr.timeout = 2000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send()
+  makeHelperRequest({
+    method: 'GET',
+    endpoint: '/wakeDisplay'
+  })
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('GET', config.helperAddress + '/wakeDisplay', true)
+  // xhr.timeout = 2000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.send()
 }
 
 function sleepDisplay () {
   // Send a message to the local helper process and ask it to sleep the
   // displays
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', config.helperAddress + '/sleepDisplay', true)
-  xhr.timeout = 2000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send()
+  makeHelperRequest({
+    method: 'GET',
+    endpoint: '/sleepDisplay'
+  })
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('GET', config.helperAddress + '/sleepDisplay', true)
+  // xhr.timeout = 2000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.send()
 }
 
 export function askForRestart () {
   // Send a message to the local helper and ask for it to restart the PC
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', config.helperAddress + '/restart', true)
-  xhr.timeout = 2000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send()
+  makeHelperRequest({
+    method: 'GET',
+    endpoint: '/restart'
+  })
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('GET', config.helperAddress + '/restart', true)
+  // xhr.timeout = 2000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.send()
 }
 
 export function askForShutdown () {
   // Send a message to the local helper and ask for it to shutdown the PC
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('GET', config.helperAddress + 'shutdown', true)
-  xhr.timeout = 2000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send()
+  makeHelperRequest({
+    method: 'GET',
+    endpoint: '/shutdown'
+  })
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('GET', config.helperAddress + '/shutdown', true)
+  // xhr.timeout = 2000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.send()
 }
 
 function readUpdate (update) {
@@ -245,7 +287,10 @@ export function askForDefaults () {
     console.log('Could not get defaults... checking again')
     setTimeout(askForDefaults, 500)
   }
-  makeHelperRequest('GET', '/getDefaults')
+  makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getDefaults'
+  })
     .then((response) => readUpdate(response), checkAgain)
   // const xhr = new XMLHttpRequest()
   // xhr.timeout = 2000
@@ -267,18 +312,25 @@ export function askForDefaults () {
 export function checkForHelperUpdates () {
   // Function to ask the helper for any new updates
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 500
-  xhr.open('GET', config.helperAddress + '/getUpdate', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
+  return makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getUpdate',
+    timeout: 500
+  })
+    .then(readUpdate)
 
-    if (this.status === 200) {
-      readUpdate(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send()
+  // const xhr = new XMLHttpRequest()
+  // xhr.timeout = 500
+  // xhr.open('GET', config.helperAddress + '/getUpdate', true)
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.onreadystatechange = function () {
+  //   if (this.readyState !== 4) return
+
+  //   if (this.status === 200) {
+  //     readUpdate(JSON.parse(this.responseText))
+  //   }
+  // }
+  // xhr.send()
 }
 
 export function sendConfigUpdate (update) {
@@ -289,11 +341,17 @@ export function sendConfigUpdate (update) {
 
   const requestDict = { action: 'updateDefaults', defaults }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 1000
-  xhr.open('POST', config.helperAddress + '/setDefaults', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send(JSON.stringify(requestDict))
+  makeHelperRequest(
+    {
+      method: 'POST',
+      endpoint: '/setDefaults',
+      params: requestDict
+    })
+  // const xhr = new XMLHttpRequest()
+  // xhr.timeout = 1000
+  // xhr.open('POST', config.helperAddress + '/setDefaults', true)
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.send(JSON.stringify(requestDict))
 }
 
 export function checkForSoftwareUpdate () {
@@ -360,14 +418,19 @@ export function sendAnalytics (data) {
     name: config.id
   }
 
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', config.serverAddress + '/tracker/submitAnalytics', true)
-  xhr.timeout = 5000
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.overrideMimeType('text/plain; charset=x-user-defined')
-  xhr.send(requestString)
+  makeServerRequest(
+    {
+      method: 'POST',
+      endpoint: '/tracker/submitAnalytics',
+      params: requestDict,
+      timeout: 5000
+    })
+  // const xhr = new XMLHttpRequest()
+  // xhr.open('POST', config.serverAddress + '/tracker/submitAnalytics', true)
+  // xhr.timeout = 5000
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.overrideMimeType('text/plain; charset=x-user-defined')
+  // xhr.send(requestString)
 }
 
 export function parseINIString (data) {

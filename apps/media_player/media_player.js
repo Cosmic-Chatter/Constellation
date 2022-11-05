@@ -81,17 +81,18 @@ function askToSynchronize (otherIDs) {
 
   console.log('Asking to synchronize with', otherIDs)
 
-  const requestString = JSON.stringify({
+  const requestDict = {
     id: constCommon.config.id,
     type: constCommon.config.type,
     synchronizeWith: otherIDs.split(',')
-  })
+  }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 1000
-  xhr.open('POST', constCommon.config.serverAddress + '/system/beginSynchronization', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send(requestString)
+  constCommon.makeServerRequest(
+    {
+      method: 'POST',
+      endpoint: '/system/beginSynchronization',
+      params: requestDict
+    })
 }
 
 function seekVideoByFraction (direction, fraction) {
@@ -122,32 +123,29 @@ function updateClipList (list) {
   // Function that takes a list of filenames and passes it to the helper
   // to hold for potentially sharing with a player_kiosk instance.
 
-  const requestString = JSON.stringify({
+  const requestDict = {
     action: 'updateClipList',
     clipList: list
-  })
+  }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constCommon.config.helperAddress, true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send(requestString)
+  constCommon.makeHelperRequest(
+    {
+      method: 'POST',
+      endpoint: '/updateClipList',
+      params: requestDict
+    })
 }
 
 function updateActiveClip (index) {
   // Function that takes a list of filenames and passes it to the helper
   // to hold for potentially sharing with a player_kiosk instance.
 
-  const requestString = JSON.stringify({
-    // action: 'updateActiveClip',
-    index
-  })
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constCommon.config.helperAddress + '/updateActiveClip', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.send(requestString)
+  constCommon.makeHelperRequest(
+    {
+      method: 'POST',
+      endpoint: '/updateActiveClip',
+      params: { index }
+    })
 }
 
 function gotoSource (index) {
@@ -263,6 +261,7 @@ constCommon.config.helperAddress = window.location.origin
 constCommon.askForDefaults()
 constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
+
 setInterval(constCommon.sendPing, 5000)
 setInterval(constCommon.checkForHelperUpdates, 1000)
 
