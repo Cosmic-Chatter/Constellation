@@ -25,6 +25,44 @@ config.platformDetails = {
   browser: platform.name + ' ' + platform.version
 }
 
+function makeRequest (method, address, endpoint, params) {
+  // Function to make a request to a server and return a Promise with the result
+
+  console.log('Request:', method, address, endpoint, params)
+
+  return new Promise(function (resolve, reject) {
+    const xhr = new XMLHttpRequest()
+    xhr.open(method, address + endpoint, true)
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText))
+      } else {
+        reject(new Error(`Unable to complete ${method} to ${address + endpoint} with data`, params))
+      }
+    }
+    xhr.onerror = function () {
+      reject(new Error(`Unable to complete ${method} to ${address + endpoint} with data`, params))
+    }
+    let paramText = null
+    if (params != null) {
+      paramText = JSON.stringify(params)
+    }
+    xhr.send(paramText)
+  })
+}
+
+export function makeServerRequest (method, endpoint, params) {
+  // Shortcut for making a server request and returning a Promise
+  console.log('Server Request:', method, endpoint, params)
+  return makeRequest(method, config.serverAddress, endpoint, params)
+}
+
+export function makeHelperRequest (method, endpoint, params) {
+  // Shortcut for making a server request and returning a Promise
+
+  return makeRequest(method, config.helperAddress, endpoint, params)
+}
+
 export function sendPing () {
   // Contact the control server and ask for any updates
 
@@ -50,6 +88,8 @@ export function sendPing () {
   if (errorString !== '') {
     requestDict.error = errorString
   }
+  // makeServerRequest('POST', '/system/ping', requestDict)
+  //   .then((responseDict) => readUpdate(responseDict))
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
@@ -205,28 +245,30 @@ export function askForDefaults () {
     console.log('Could not get defaults... checking again')
     setTimeout(askForDefaults, 500)
   }
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.onerror = checkAgain
-  xhr.ontimeout = checkAgain
-  xhr.open('GET', config.helperAddress + '/getDefaults', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
+  makeHelperRequest('GET', '/getDefaults')
+    .then((response) => readUpdate(response), checkAgain)
+  // const xhr = new XMLHttpRequest()
+  // xhr.timeout = 2000
+  // xhr.onerror = checkAgain
+  // xhr.ontimeout = checkAgain
+  // xhr.open('GET', config.helperAddress + '/getDefaults', true)
+  // xhr.setRequestHeader('Content-Type', 'application/json')
+  // xhr.onreadystatechange = function () {
+  //   if (this.readyState !== 4) return
 
-    if (this.status === 200) {
-      $('#helperConnectionWarning').hide()
-      readUpdate(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send()
+  //   if (this.status === 200) {
+  //     $('#helperConnectionWarning').hide()
+  //     readUpdate(JSON.parse(this.responseText))
+  //   }
+  // }
+  // xhr.send()
 }
 
 export function checkForHelperUpdates () {
   // Function to ask the helper for any new updates
 
   const xhr = new XMLHttpRequest()
-  xhr.timeout = 50
+  xhr.timeout = 500
   xhr.open('GET', config.helperAddress + '/getUpdate', true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.onreadystatechange = function () {
