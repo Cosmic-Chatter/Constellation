@@ -35,7 +35,11 @@ function makeRequest (opt) {
     xhr.timeout = opt.timeout ?? 2000 // ms
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText))
+        if ('rawResponse' in opt && opt.rawResponse === true) {
+          resolve(xhr.responseText)
+        } else {
+          resolve(JSON.parse(xhr.responseText))
+        }
       } else {
         reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with data`, opt.params))
       }

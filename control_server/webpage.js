@@ -5,14 +5,9 @@ import * as constTools from './constellation_tools.js'
 import * as constExhibit from './constellation_exhibit.js'
 import * as constTracker from './constellation_tracker.js'
 
-// let currentExhibit = ''
-// const exhibitComponents = []
-// const componentGroups = []
-// const errorDict = {} // Will hold errors to display
 const markdownConverter = new showdown.Converter()
 markdownConverter.setFlavor('github')
 let scheduleUpdateTime = 0
-// let serverSoftwareUpdateAvailable = false
 let issueList = []
 let assignableStaff = []
 
@@ -216,61 +211,6 @@ function onUploadContentChange () {
 }
 
 function uploadComponentContentFile () {
-  const fileInput = $('#componentContentUpload')[0]
-  if (fileInput.files[0] != null) {
-    const id = $('#componentInfoModalTitle').html().trim()
-
-    const component = constExhibit.getExhibitComponent(id)
-
-    $('#contentUploadSubmitButton').prop('disabled', true)
-    $('#contentUploadSubmitButton').html('Working...')
-
-    const file = fileInput.files[0]
-    const formData = new FormData()
-    formData.append('exhibit', getCurrentExhibitName())
-    formData.append('filename', file.name)
-    formData.append('mimetype', file.type)
-    formData.append('file', file)
-
-    const xhr = new XMLHttpRequest()
-    if (component.helperAddress != null) {
-      xhr.open('POST', component.helperAddress, true)
-    } else {
-      xhr.open('POST', `http://${component.ip}:${component.helperPort}`, true)
-    }
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
-      if (this.status === 422) {
-        uploadComponentContentFileFastAPI()
-      }
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
-
-        if ('success' in response) {
-          constExhibit.queueCommand(id, 'reloadDefaults')
-          constExhibit.showExhibitComponentInfo('')
-        }
-      }
-    }
-
-    xhr.upload.addEventListener('progress', function (evt) {
-      if (evt.lengthComputable) {
-        let percentComplete = evt.loaded / evt.total
-        percentComplete = parseInt(percentComplete * 100)
-        $('#contentUploadProgressBar').width(String(percentComplete) + '%')
-        if (percentComplete > 0) {
-          $('#contentUploadProgressBarContainer').show()
-        } else if (percentComplete === 100) {
-          $('#contentUploadProgressBarContainer').hide()
-        }
-      }
-    }, false)
-
-    xhr.send(formData)
-  }
-}
-
-function uploadComponentContentFileFastAPI () {
   // Handle uploading files to the FastAPI-based system helper
   const fileInput = $('#componentContentUpload')[0]
 
@@ -514,7 +454,7 @@ function reloadConfiguration () {
       if ('success' in response) {
         if (response.success === true) {
           $('#reloadConfigurationButton').html('Success!')
-          setTimeout(function () { $('#reloadConfigurationButton').html('Reload Config') }, 2000)
+          setTimeout(function () { $('#reloadConfigurationButton').html('Reload Settings') }, 2000)
         }
       }
     })
@@ -535,31 +475,16 @@ function deleteSchedule (name) {
   // Send a message to the control server asking to delete the schedule
   // file with the given name. The name should not include ".ini"
 
-  const requestDict = {
-    name
-  }
-
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 3000
-  xhr.open('POST', constConfig.serverAddress + '/schedule/deleteSchedule', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () {
-  }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        if (update.class === 'schedule') {
-          populateSchedule(update)
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/deleteSchedule',
+    params: { name }
+  })
+    .then((response) => {
+      if (response.class === 'schedule') {
+        populateSchedule(response)
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function scheduleConvertToDateSpecific (date, dayName) {
@@ -571,27 +496,16 @@ function scheduleConvertToDateSpecific (date, dayName) {
     from: dayName
   }
 
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 3000
-  xhr.open('POST', constConfig.serverAddress + '/schedule/convert', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () {
-  }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        if (update.class === 'schedule') {
-          populateSchedule(update)
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/convert',
+    params: requestDict
+  })
+    .then((response) => {
+      if (response.class === 'schedule') {
+        populateSchedule(response)
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function populateSchedule (schedule) {
@@ -902,24 +816,19 @@ function setScheduleActionValueSelector () {
   if (action === 'set_content') {
     const component = constExhibit.getExhibitComponent(target.slice(5))
 
-    // Send a request to the helper for the available content
-    const requestString = JSON.stringify({ action: 'getAvailableContent' })
-
-    const xhr = new XMLHttpRequest()
+    let url
     if (component.helperAddress != null) {
-      xhr.open('POST', component.helperAddress, true)
+      url = component.helperAddress
     } else {
-      xhr.open('POST', `http://${component.ip}:${component.helperPort}`, true)
+      url = `http://${component.ip}:${component.helperPort}`
     }
-    xhr.timeout = 1000 // 1 seconds
-    // xhr.ontimeout = showFailureMessage;
-    // xhr.onerror = showFailureMessage;
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
 
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
+    constTools.makeRequest({
+      method: 'GET',
+      url,
+      endpoint: '/getAvailableContent'
+    })
+      .then((response) => {
         response.all_exhibits.forEach((item) => {
           valueSelector.append(new Option(item, item))
         })
@@ -927,9 +836,7 @@ function setScheduleActionValueSelector () {
         valueSelector.val($('#scheduleEditModal').data('currentValue'))
         valueSelector.show()
         $('#scheduleValueSelectorLabel').show()
-      }
-    }
-    xhr.send(requestString)
+      })
   }
 }
 
@@ -1050,34 +957,23 @@ function sendScheduleUpdateFromModal () {
     requestDict.scheduleID = scheduleID
   }
 
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 3000
-  xhr.open('POST', constConfig.serverAddress + '/schedule/update', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () {
-  }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        if ('success' in update) {
-          if (update.success === true) {
-            if (update.class === 'schedule') {
-              $('#scheduleEditModal').modal('hide')
-              populateSchedule(update)
-            }
-          } else {
-            $('#scheduleEditErrorAlert').html(update.reason).show()
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/update',
+    params: requestDict
+  })
+    .then((update) => {
+      if ('success' in update) {
+        if (update.success === true) {
+          if (update.class === 'schedule') {
+            $('#scheduleEditModal').modal('hide')
+            populateSchedule(update)
           }
+        } else {
+          $('#scheduleEditErrorAlert').html(update.reason).show()
         }
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function scheduleDeleteActionFromModal () {
@@ -1094,28 +990,17 @@ function scheduleDeleteActionFromModal () {
     scheduleID
   }
 
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 3000
-  xhr.open('POST', constConfig.serverAddress + '/schedule/deleteAction', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () {
-  }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        if (update.class === 'schedule') {
-          $('#scheduleEditModal').modal('hide')
-          populateSchedule(update)
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/deleteAction',
+    params: requestDict
+  })
+    .then((update) => {
+      if (update.class === 'schedule') {
+        $('#scheduleEditModal').modal('hide')
+        populateSchedule(update)
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function askForScheduleRefresh () {
@@ -1124,35 +1009,27 @@ function askForScheduleRefresh () {
 
   $('#refreshScheduleButton').html('Refreshing...')
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 3000
-  xhr.open('GET', constConfig.serverAddress + '/schedule/refresh', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () {
-    $('#refreshScheduleButton').html('Timed out!')
-    const temp = function () {
-      $('#refreshScheduleButton').html('Refresh schedule')
-    }
-    setTimeout(temp, 2000)
-  }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        if (update.class === 'schedule') {
-          populateSchedule(update)
-        }
-        $('#refreshScheduleButton').html('Success!')
-        const temp = function () {
-          $('#refreshScheduleButton').html('Refresh schedule')
-        }
-        setTimeout(temp, 2000)
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/schedule/refresh'
+  })
+    .then((update) => {
+      if (update.class === 'schedule') {
+        populateSchedule(update)
       }
-    }
-  }
-  xhr.send()
+      $('#refreshScheduleButton').html('Success!')
+      const temp = function () {
+        $('#refreshScheduleButton').html('Refresh schedule')
+      }
+      setTimeout(temp, 2000)
+    })
+    .catch(() => {
+      $('#refreshScheduleButton').html('Timed out!')
+      const temp = function () {
+        $('#refreshScheduleButton').html('Refresh schedule')
+      }
+      setTimeout(temp, 2000)
+    })
 }
 
 function showIssueEditModal (issueType, target) {
@@ -1437,25 +1314,18 @@ function issueMediaDelete (filename) {
     requestDict.id = $('#issueEditModal').data('target')
   }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/issue/deleteMedia', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result) {
-          if (result.success === true) {
-            issueMediaUploadedFile(false)
-          }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/issue/deleteMedia',
+    params: requestDict
+  })
+    .then((response) => {
+      if ('success' in response) {
+        if (response.success === true) {
+          issueMediaUploadedFile(false)
         }
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function submitIssueFromModal () {
@@ -1477,10 +1347,6 @@ function submitIssueFromModal () {
     console.log('Need issue name')
     error = true
   }
-  // if (issueDict.issueDescription === "") {
-  //   console.log("Need issue description");
-  //   error = true;
-  // }
 
   if (error === false) {
     const issueType = $('#issueEditModal').data('type')
@@ -1495,48 +1361,36 @@ function submitIssueFromModal () {
     const requestDict = {
       details: issueDict
     }
-    const xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    xhr.open('POST', constConfig.serverAddress + endpoint, true)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
 
-      if (this.status === 200) {
-        if (this.responseText !== '') {
-          const result = JSON.parse(this.responseText)
-          if ('success' in result && result.success === true) {
-            getIssueList()
-          }
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint,
+      params: requestDict
+    })
+      .then((result) => {
+        if ('success' in result && result.success === true) {
+          getIssueList()
         }
-      }
-    }
-    xhr.send(JSON.stringify(requestDict))
+      })
   }
 }
 
 function getIssueList () {
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', constConfig.serverAddress + '/issue/list', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
+  // Get a list of all the current issues and rebuild the issue GUI
 
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const response = JSON.parse(this.responseText)
-        if ('success' in response) {
-          if (response.success === true) {
-            rebuildIssueList(response.issueList)
-          } else {
-            console.log('Error retrieving issueList: ', response.reason)
-          }
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/issue/list'
+  })
+    .then((response) => {
+      if ('success' in response) {
+        if (response.success === true) {
+          rebuildIssueList(response.issueList)
+        } else {
+          console.log('Error retrieving issueList: ', response.reason)
         }
       }
-    }
-  }
-  xhr.send()
+    })
 }
 
 function getIssue (id) {
@@ -1552,27 +1406,16 @@ function getIssue (id) {
 function deleteIssue (id) {
   // Ask the control server to remove the specified issue
 
-  const requestDict = {
-    id
-  }
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/issue/delete', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          getIssueList()
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/issue/delete',
+    params: { id }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        getIssueList()
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function populateTrackerDataSelect (data) {
@@ -1594,34 +1437,23 @@ function downloadTrackerData () {
 
   const name = $('#trackerDataSelect').val()
 
-  const requestDict = {
-    name
-  }
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/getDataAsCSV', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          // Convert the text to a file and initiate download
-          const fileBlob = new Blob([result.csv], {
-            type: 'text/plain'
-          })
-          const a = document.createElement('a')
-          a.href = window.URL.createObjectURL(fileBlob)
-          a.download = name + '.csv'
-          a.click()
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/getDataAsCSV',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Convert the text to a file and initiate download
+        const fileBlob = new Blob([result.csv], {
+          type: 'text/plain'
+        })
+        const a = document.createElement('a')
+        a.href = window.URL.createObjectURL(fileBlob)
+        a.download = name + '.csv'
+        a.click()
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function showDeleteTrackerDataModal () {
@@ -1655,28 +1487,17 @@ function deleteTrackerData () {
 
   const name = $('#trackerDataSelect').val()
 
-  const requestDict = {
-    name
-  }
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/deleteData', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          $('#deleteTrackerDataModal').modal('hide')
-          constTracker.getAvailableTrackerData(populateTrackerDataSelect)
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/deleteData',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#deleteTrackerDataModal').modal('hide')
+        constTracker.getAvailableTrackerData(populateTrackerDataSelect)
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function launchTracker () {
@@ -1698,30 +1519,23 @@ function createTrackerTemplate (name = '') {
   if (name === '') {
     name = $('#createTrackerTemplateName').val()
   }
-  console.log(name)
+
   const requestDict = {
     name,
     template: {}
   }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/createTemplate', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          $('#createTrackerTemplateName').val('')
-          constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/createTemplate',
+    params: requestDict
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#createTrackerTemplateName').val('')
+        constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function deleteTrackerTemplate (name = '') {
@@ -1731,28 +1545,17 @@ function deleteTrackerTemplate (name = '') {
     name = $('#trackerTemplateSelect').val()
   }
 
-  const requestDict = {
-    name
-  }
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/deleteTemplate', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
-          $('#deleteTrackerTemplateModal').modal('hide')
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/deleteTemplate',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+        $('#deleteTrackerTemplateModal').modal('hide')
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function rebuildIssueList (issues) {
@@ -1875,250 +1678,211 @@ function submitComponentMaintenanceStatusChange (type = 'component') {
     notes
   }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/maintenance/updateStatus', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          $('#componentInfoModalMaintenanceSaveButton').hide()
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/maintenance/updateStatus',
+    params: requestDict
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#componentInfoModalMaintenanceSaveButton').hide()
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function refreshMaintenanceRecords () {
   // Ask the server to send all the maintenance records and then rebuild the
   // maintanence overview from those data.
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', constConfig.serverAddress + '/maintenance/getAllStatuses', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/maintenance/getAllStatuses'
+  })
+    .then((result) => {
+      $('#MaintenanceOverviewOnFloorWorkingPane').empty()
+      $('#MaintenanceOverviewOnFloorNotWorkingPane').empty()
+      $('#MaintenanceOverviewOffFloorWorkingPane').empty()
+      $('#MaintenanceOverviewOffFloorNotWorkingPane').empty()
 
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
+      result.records.forEach((record, i) => {
+        const col = document.createElement('div')
+        col.setAttribute('class', 'col-12 col-lg-6 mt-2')
 
-        $('#MaintenanceOverviewOnFloorWorkingPane').empty()
-        $('#MaintenanceOverviewOnFloorNotWorkingPane').empty()
-        $('#MaintenanceOverviewOffFloorWorkingPane').empty()
-        $('#MaintenanceOverviewOffFloorNotWorkingPane').empty()
+        const card = document.createElement('div')
+        card.setAttribute('class', 'card h-100 bg-secondary text-white')
+        col.appendChild(card)
 
-        result.records.forEach((record, i) => {
-          const col = document.createElement('div')
-          col.setAttribute('class', 'col-12 col-lg-6 mt-2')
+        const body = document.createElement('div')
+        body.setAttribute('class', 'card-body')
+        card.appendChild(body)
 
-          const card = document.createElement('div')
-          card.setAttribute('class', 'card h-100 bg-secondary text-white')
-          col.appendChild(card)
+        const title = document.createElement('H5')
+        title.setAttribute('class', 'card-title')
+        title.innerHTML = record.id
+        body.appendChild(title)
 
-          const body = document.createElement('div')
-          body.setAttribute('class', 'card-body')
-          card.appendChild(body)
+        const progress = document.createElement('div')
+        progress.setAttribute('class', 'progress')
+        progress.style.height = '25px'
+        const working = document.createElement('div')
+        working.setAttribute('class', 'progress-bar bg-success')
+        working.setAttribute('role', 'progressbar')
+        working.style.width = String(record.working_pct) + '%'
+        working.title = 'Working: ' + String(record.working_pct) + '%'
+        working.innerHTML = 'Working'
+        const notWorking = document.createElement('div')
+        notWorking.setAttribute('class', 'progress-bar bg-danger')
+        notWorking.setAttribute('role', 'progressbar')
+        notWorking.style.width = String(record.not_working_pct) + '%'
+        notWorking.title = 'Not working: ' + String(record.not_working_pct) + '%'
+        notWorking.innerHTML = 'Not working'
+        progress.appendChild(working)
+        progress.appendChild(notWorking)
+        body.appendChild(progress)
 
-          const title = document.createElement('H5')
-          title.setAttribute('class', 'card-title')
-          title.innerHTML = record.id
-          body.appendChild(title)
+        const notes = document.createElement('p')
+        notes.setAttribute('class', 'card-text mt-2')
+        notes.innerHTML = record.notes
+        body.appendChild(notes)
 
-          const progress = document.createElement('div')
-          progress.setAttribute('class', 'progress')
-          progress.style.height = '25px'
-          const working = document.createElement('div')
-          working.setAttribute('class', 'progress-bar bg-success')
-          working.setAttribute('role', 'progressbar')
-          working.style.width = String(record.working_pct) + '%'
-          working.title = 'Working: ' + String(record.working_pct) + '%'
-          working.innerHTML = 'Working'
-          const notWorking = document.createElement('div')
-          notWorking.setAttribute('class', 'progress-bar bg-danger')
-          notWorking.setAttribute('role', 'progressbar')
-          notWorking.style.width = String(record.not_working_pct) + '%'
-          notWorking.title = 'Not working: ' + String(record.not_working_pct) + '%'
-          notWorking.innerHTML = 'Not working'
-          progress.appendChild(working)
-          progress.appendChild(notWorking)
-          body.appendChild(progress)
-
-          const notes = document.createElement('p')
-          notes.setAttribute('class', 'card-text mt-2')
-          notes.innerHTML = record.notes
-          body.appendChild(notes)
-
-          let parentPane
-          switch (record.status) {
-            case 'On floor, working':
-              parentPane = 'MaintenanceOverviewOnFloorWorkingPane'
-              break
-            case 'On floor, not working':
-              parentPane = 'MaintenanceOverviewOnFloorNotWorkingPane'
-              break
-            case 'Off floor, working':
-              parentPane = 'MaintenanceOverviewOffFloorWorkingPane'
-              break
-            case 'Off floor, not working':
-              parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
-              break
-            default:
-              console.log(record.status)
-              parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
-          }
-          $('#' + parentPane).append(col)
-        })
-      }
-    }
-  }
-  xhr.send()
+        let parentPane
+        switch (record.status) {
+          case 'On floor, working':
+            parentPane = 'MaintenanceOverviewOnFloorWorkingPane'
+            break
+          case 'On floor, not working':
+            parentPane = 'MaintenanceOverviewOnFloorNotWorkingPane'
+            break
+          case 'Off floor, working':
+            parentPane = 'MaintenanceOverviewOffFloorWorkingPane'
+            break
+          case 'Off floor, not working':
+            parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
+            break
+          default:
+            console.log(record.status)
+            parentPane = 'MaintenanceOverviewOffFloorNotWorkingPane'
+        }
+        $('#' + parentPane).append(col)
+      })
+    })
 }
 
 function askForUpdate () {
   // Send a message to the control server asking for the latest component
   // updates
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', constConfig.serverAddress + '/system/getUpdate', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.ontimeout = function () { console.log('Website update timed out') }
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const update = JSON.parse(this.responseText)
-        let numComps = 0
-        let numOnline = 0
-        let numStatic = 0
-        for (let i = 0; i < update.length; i++) {
-          const component = update[String(i)]
-          if ('class' in component) {
-            if (component.class === 'exhibitComponent') {
-              numComps += 1
-              if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC).name) {
-                numOnline += 1
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/getUpdate'
+  })
+    .then((update) => {
+      let numComps = 0
+      let numOnline = 0
+      let numStatic = 0
+      for (let i = 0; i < update.length; i++) {
+        const component = update[String(i)]
+        if ('class' in component) {
+          if (component.class === 'exhibitComponent') {
+            numComps += 1
+            if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC).name) {
+              numOnline += 1
+            }
+            if (component.status === constConfig.STATUS.STATIC.name) {
+              numStatic += 1
+            }
+            updateComponentFromServer(component)
+          } else if (component.class === 'gallery') {
+            setCurrentExhibitName(component.currentExhibit)
+            updateAvailableExhibits(component.availableExhibits)
+            if ('galleryName' in component) {
+              $('#galleryNameField').html(component.galleryName)
+              document.title = component.galleryName
+            }
+            if ('updateAvailable' in component) {
+              if (component.updateAvailable === 'true') {
+                constConfig.serverSoftwareUpdateAvailable = true
+                constTools.rebuildErrorList()
               }
-              if (component.status === constConfig.STATUS.STATIC.name) {
-                numStatic += 1
+            }
+          } else if (component.class === 'schedule') {
+            if (scheduleUpdateTime !== component.updateTime) {
+              populateSchedule(component)
+            }
+          } else if (component.class === 'issues') {
+            // Check for the time of the most recent update. If it is more
+            // recent than our existing date, rebuild the issue list
+            const currentLastDate = Math.max.apply(Math, issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
+            // let updatedDate = Math.max.apply(Math, component.issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
+            const updatedDate = new Date(component.lastUpdateDate)
+            if (!constTools.arraysEqual(assignableStaff, component.assignable_staff)) {
+              assignableStaff = component.assignable_staff
+              // Populate the filter
+              $('#issueListFilterAssignedToSelect').empty()
+              $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
+              $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
+              for (let i = 0; i < assignableStaff.length; i++) {
+                $('#issueListFilterAssignedToSelect').append(new Option(assignableStaff[i], assignableStaff[i]))
               }
-              updateComponentFromServer(component)
-            } else if (component.class === 'gallery') {
-              setCurrentExhibitName(component.currentExhibit)
-              updateAvailableExhibits(component.availableExhibits)
-              if ('galleryName' in component) {
-                $('#galleryNameField').html(component.galleryName)
-                document.title = component.galleryName
-              }
-              if ('updateAvailable' in component) {
-                if (component.updateAvailable === 'true') {
-                  constConfig.serverSoftwareUpdateAvailable = true
-                  constTools.rebuildErrorList()
-                }
-              }
-            } else if (component.class === 'schedule') {
-              if (scheduleUpdateTime !== component.updateTime) {
-                populateSchedule(component)
-              }
-            } else if (component.class === 'issues') {
-              // Check for the time of the most recent update. If it is more
-              // recent than our existing date, rebuild the issue list
-              const currentLastDate = Math.max.apply(Math, issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
-              // let updatedDate = Math.max.apply(Math, component.issueList.map(function(o) { return new Date(o.lastUpdateDate); }));
-              const updatedDate = new Date(component.lastUpdateDate)
-              if (!arraysEqual(assignableStaff, component.assignable_staff)) {
-                assignableStaff = component.assignable_staff
-                // Populate the filter
-                $('#issueListFilterAssignedToSelect').empty()
-                $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
-                $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
-                for (let i = 0; i < assignableStaff.length; i++) {
-                  $('#issueListFilterAssignedToSelect').append(new Option(assignableStaff[i], assignableStaff[i]))
-                }
-              }
-              if (updatedDate > currentLastDate) {
-                issueList = component.issueList
-                rebuildIssueList(issueList)
-              }
+            }
+            if (updatedDate > currentLastDate) {
+              issueList = component.issueList
+              rebuildIssueList(issueList)
             }
           }
         }
-        // Set the favicon to reflect the aggregate status
-        if (numOnline === numComps) {
-          $("link[rel='icon']").attr('href', 'icon/green.ico')
-        } else if (numOnline === 0) {
-          $("link[rel='icon']").attr('href', 'icon/red.ico')
-        } else {
-          $("link[rel='icon']").attr('href', 'icon/yellow.ico')
-        }
-        // If there are no static components, hide the "SHow STATIC" button
-        if (numStatic === 0) {
-          $('#componentsTabSettingsShowStatic').parent().parent().hide()
-        } else {
-          $('#componentsTabSettingsShowStatic').parent().parent().show()
-        }
-
-        constExhibit.rebuildComponentInterface()
       }
-    }
-  }
-  xhr.send()
+      // Set the favicon to reflect the aggregate status
+      if (numOnline === numComps) {
+        $("link[rel='icon']").attr('href', 'icon/green.ico')
+      } else if (numOnline === 0) {
+        $("link[rel='icon']").attr('href', 'icon/red.ico')
+      } else {
+        $("link[rel='icon']").attr('href', 'icon/yellow.ico')
+      }
+      // If there are no static components, hide the "SHow STATIC" button
+      if (numStatic === 0) {
+        $('#componentsTabSettingsShowStatic').parent().parent().hide()
+      } else {
+        $('#componentsTabSettingsShowStatic').parent().parent().show()
+      }
+
+      constExhibit.rebuildComponentInterface()
+    })
 }
 
 function populateHelpTab () {
   // Ask the server to send the latest README, convert the Markdown to
   // HTML, and add it to the Help tab.
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', constConfig.serverAddress + '/system/getHelpText', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      const result = JSON.parse(this.responseText)
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/getHelpText'
+  })
+    .then((result) => {
       if (result.success === true) {
         const formattedText = markdownConverter.makeHtml(result.text)
         $('#helpTextDiv').html(formattedText)
       } else {
         $('#helpTextDiv').html('Help text not available.')
       }
-    }
-  }
-  xhr.send()
+    })
 }
 
 function showEditGalleryConfigModal () {
   // Populate the galleryEditModal with information from galleryConfiguration.ini and show the modal.
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', constConfig.serverAddress + '/system/getConfigurationRawText', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          // Must show first so that we can calculate the heights appropriately.
-          $('#editGalleryConfigModal').modal('show')
-          populateEditGalleryConfigModal(result.configuration)
-        }
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/getConfigurationRawText'
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+      // Must show first so that we can calculate the heights appropriately.
+        $('#editGalleryConfigModal').modal('show')
+        populateEditGalleryConfigModal(result.configuration)
       }
-    }
-  }
-  xhr.send()
+    })
 }
 
 function populateEditGalleryConfigModal (configText) {
@@ -2144,26 +1908,19 @@ function submitGalleryConfigChangeFromModal () {
     configuration: $('#editGalleryConfigTextArea').val()
   }
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/system/updateConfigurationRawText', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const result = JSON.parse(this.responseText)
-        if ('success' in result && result.success === true) {
-          $('#editGalleryConfigModal').modal('hide')
-        } else {
-          $('#galleryConfigEditModalErrorMessage').html(result.reason)
-          $('#galleryConfigEditModalErrorMessage').show()
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/updateConfigurationRawText',
+    params: requestDict
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#editGalleryConfigModal').modal('hide')
+      } else {
+        $('#galleryConfigEditModalErrorMessage').html(result.reason)
+        $('#galleryConfigEditModalErrorMessage').show()
       }
-    }
-  }
-  xhr.send(JSON.stringify(requestDict))
+    })
 }
 
 function populateTrackerTemplateSelect (definitionList) {
@@ -2472,25 +2229,16 @@ function editTrackerTemplateModalSubmitChanges () {
     template
   }
 
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/tracker/flexible-tracker/createTemplate', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      if (this.responseText !== '') {
-        const response = JSON.parse(this.responseText)
-        if ('success' in response && response.success === true) {
-          $('#editTrackerTemplateModal').modal('hide')
-        }
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/createTemplate',
+    params: requestDict
+  })
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        $('#editTrackerTemplateModal').modal('hide')
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function parseQueryString () {
@@ -2532,42 +2280,22 @@ function createExhibit (name, cloneFrom) {
   if (cloneFrom != null && cloneFrom !== '') {
     requestDict.cloneFrom = cloneFrom
   }
-  const requestString = JSON.stringify(requestDict)
 
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/exhibit/create', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    // if (this.readyState !== 4) return
-
-    // if (this.status === 200) {
-    //   if (this.responseText !== '') {
-    //   }
-    // }
-  }
-  xhr.send(requestString)
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/exhibit/create',
+    params: requestDict
+  })
 }
 
 function deleteExhibit (name) {
   // Ask the control server to delete the exhibit with the given name.
 
-  const requestDict = { name }
-  const requestString = JSON.stringify(requestDict)
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constConfig.serverAddress + '/exhibit/delete', true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    // if (this.readyState !== 4) return
-
-    // if (this.status === 200) {
-    //   if (this.responseText !== '') {
-    //   }
-    // }
-  }
-  xhr.send(requestString)
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/exhibit/delete',
+    params: { name }
+  })
 }
 
 function checkDeleteSelection () {
@@ -2591,17 +2319,6 @@ function deleteExhibitFromModal () {
 
   deleteExhibit($('#exhibitDeleteSelector').val())
   $('#deleteExhibitModal').modal('hide')
-}
-
-function arraysEqual (a, b) {
-  if (a === b) return true
-  if (a == null || b == null) return false
-  if (a.length !== b.length) return false
-
-  for (let i = 0; i < a.length; ++i) {
-    if (a[i] !== b[i]) return false
-  }
-  return true
 }
 
 // Bind event listeners

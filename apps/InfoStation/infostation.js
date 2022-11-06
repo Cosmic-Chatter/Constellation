@@ -1,6 +1,7 @@
 /* global showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
+import * as constTools from './constellation_tools.js'
 
 function updateContent (definition) {
   // Parse the current content file and build the interface correspondingly.
@@ -174,14 +175,14 @@ function createImageTab (definition, update = '') {
   }
 
   // Send a GET request for the content and then build the tab
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      _createImageTabContent(tabId, xhr.responseText)
-    }
-  }
-  xhr.open('GET', constCommon.config.helperAddress + '/' + definition['content_' + currentLang], true)
-  xhr.send(null)
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/' + definition['content_' + currentLang],
+    rawResponse: true
+  })
+    .then((response) => {
+      _createImageTabContent(tabId, response)
+    })
 
   // Create button for this tab
   createButton(definition['title_' + currentLang], tabId)
@@ -296,14 +297,15 @@ function createTextTab (definition, update = '') {
   }
 
   // Send a GET request for the content and then build the tab
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      _createTextTabContent(tabId, xhr.responseText)
-    }
-  }
-  xhr.open('GET', constCommon.config.helperAddress + '/' + definition['content_' + currentLang], true)
-  xhr.send(null)
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/' + definition['content_' + currentLang],
+    rawResponse: true
+  })
+    .then((response) => {
+      _createTextTabContent(tabId, response)
+    })
 
   // Create button for this tab
   createButton(definition['title_' + currentLang], tabId)
@@ -411,14 +413,14 @@ function createVideoTab (definition, update = '') {
   }
 
   // Send a GET request for the content and then build the tab
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      _createVideoTabContent(tabId, xhr.responseText)
-    }
-  }
-  xhr.open('GET', constCommon.config.helperAddress + '/' + definition['content_' + currentLang], true)
-  xhr.send(null)
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/' + definition['content_' + currentLang],
+    rawResponse: true
+  })
+    .then((response) => {
+      _createVideoTabContent(tabId, response)
+    })
 
   // Create button for this tab
   createButton(definition['title_' + currentLang], tabId)
@@ -618,14 +620,14 @@ function updateFunc (update) {
       // Get the file from the helper and build the interface
       const definition = currentContent[0] // Only one INI file at a time
 
-      const xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          updateContent(constCommon.parseINIString(xhr.responseText))
-        }
-      }
-      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
-      xhr.send(null)
+      constCommon.makeHelperRequest({
+        method: 'GET',
+        endpoint: '/content/' + definition,
+        rawResponse: true
+      })
+        .then((response) => {
+          updateContent(constCommon.parseINIString(response))
+        })
     }
   }
 }

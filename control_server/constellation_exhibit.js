@@ -25,6 +25,20 @@ export class ExhibitComponent {
     }
   }
 
+  getURL () {
+    // Return the url for the helper of this component.
+
+    let url
+    if (this.helperAddress != null) {
+      url = this.helperAddress
+    } else if (this.ip != null && this.helperPort != null) {
+      url = `http://${obj.ip}:${obj.helperPort}`
+    } else {
+      url = null
+    }
+    return url
+  }
+
   remove () {
     // Remove the component from its ComponentGroup
     getExhibitComponentGroup(this.type).removeComponent(this.id)
@@ -40,20 +54,13 @@ export class ExhibitComponent {
   checkProjector () {
     // Function to ask the server to ping the projector
     const thisInstance = this
-    const requestDict = {
-      id: this.id
-    }
 
-    const xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    xhr.open('POST', constConfig.serverAddress + '/projector/getUpdate', true)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
-
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
-
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/projector/getUpdate',
+      params: { id: this.id }
+    })
+      .then((response) => {
         if ('success' in response) {
           if (response.success === false) {
             if ('status' in response && response.status === 'DELETE') {
@@ -88,9 +95,7 @@ export class ExhibitComponent {
             }
           }
         }
-      }
-    }
-    xhr.send(JSON.stringify(requestDict))
+      })
   }
 
   setStatus (status) {
@@ -102,29 +107,6 @@ export class ExhibitComponent {
     $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
     $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
   }
-
-  // getButtonColorClass () {
-  //   // Get the Bootstrap class based on the current status
-
-  //   switch (this.status) {
-  //     case 'ACTIVE':
-  //       return 'btn-primary'
-  //     case 'ONLINE':
-  //       return 'btn-success'
-  //     case 'WAITING':
-  //       return 'btn-warning'
-  //     case 'UNKNOWN':
-  //       return 'btn-warning'
-  //     case 'STANDBY':
-  //       return 'btn-info'
-  //     case 'SYSTEM ON':
-  //       return 'btn-info'
-  //     case 'STATIC':
-  //       return 'btn-secondary'
-  //     default:
-  //       return 'btn-danger'
-  //   }
-  // }
 
   buildHTML () {
     // Function to build the HTML representation of this component
@@ -538,14 +520,8 @@ export function showExhibitComponentInfo (id) {
     if (obj.status !== constConfig.STATUS.STATIC) {
       // This component may be accessible over the network.
 
-      const requestString = JSON.stringify({ action: 'getAvailableContent' })
-      const xhr = new XMLHttpRequest()
-
-      if (obj.helperAddress != null) {
-        xhr.open('POST', obj.helperAddress, true)
-      } else if (obj.ip != null && obj.helperPort != null) {
-        xhr.open('POST', `http://${obj.ip}:${obj.helperPort}`, true)
-      } else {
+      const url = obj.getURL()
+      if (url == null) {
         // We don't have enough information to contact the helper
         showFailureMessage()
         // Show the maintenance tab
@@ -554,20 +530,18 @@ export function showExhibitComponentInfo (id) {
         $('#componentInfoModal').modal('show')
         return
       }
-      xhr.timeout = 10000 // 10 seconds
-      xhr.ontimeout = showFailureMessage
-      xhr.onerror = showFailureMessage
-      xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.onreadystatechange = function () {
-        if (this.readyState !== 4) return
 
-        if (this.status === 200) {
-          // Good connection, so show the interface elements
+      constTools.makeRequest({
+        method: 'GET',
+        url,
+        endpoint: '/getAvailableContent',
+        timeout: 10000
+      })
+        .then((availableContent) => {
+        // Good connection, so show the interface elements
           $('#componentAvailableContentRow').show()
           $('#componentcontentUploadInterface').show()
           $('#componentInfoConnectingNotice').hide()
-
-          const availableContent = JSON.parse(this.response)
 
           // If available, configure for multiple file upload
           if ('multiple_file_upload' in availableContent) {
@@ -630,8 +604,8 @@ export function showExhibitComponentInfo (id) {
           }
 
           const populateContent = function (key, id, div) {
-            // Get filenames listed under key in availableContent and add
-            // the resulting buttons to the div given by div
+          // Get filenames listed under key in availableContent and add
+          // the resulting buttons to the div given by div
 
             const activeContent = availableContent.active_content
             const contentList = availableContent[key].sort(function (a, b) { return a.localeCompare(b) })
@@ -734,9 +708,7 @@ export function showExhibitComponentInfo (id) {
               $('#componentSaveConfirmationButton').show()
             }
           })
-        }
-      }
-      xhr.send(requestString)
+        })
     } else {
       // This static component will defintely have no content.
       showFailureMessage()
@@ -791,29 +763,19 @@ export function submitComponentSettingsChange () {
     settings.anydesk_id = AnyDeskID
   }
 
-  const requestString = JSON.stringify({ defaults: settings })
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  if (obj.helperAddress != null) {
-    xhr.open('POST', obj.helperAddress + '/setDefaults', true)
-  } else {
-    xhr.open('POST', `http://${obj.ip}:${obj.helperPort}` + '/setDefaults', true)
-  }
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
-
+  constTools.makeRequest({
+    method: 'POST',
+    url: obj.getURL(),
+    endpoint: '/setDefaults',
+    params: { defaults: settings }
+  })
+    .then((response) => {
       if ('success' in response) {
         if (response.success === true) {
           $('#componentInfoModalSettingsSaveButton').hide()
         }
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 export function getExhibitComponent (id) {
@@ -857,34 +819,25 @@ function deleteRemoteFile (id, file, warn = true) {
       fileToDelete = file
     }
     const obj = getExhibitComponent(id)
-    const requestString = JSON.stringify({
-      action: 'deleteFile',
+    const requestDict = {
       file: fileToDelete,
       fromExhibit: exhibit
-    })
-
-    const xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    if (obj.helperAddress != null) {
-      xhr.open('POST', obj.helperAddress, true)
-    } else {
-      xhr.open('POST', `http://${obj.ip}:${obj.helperPort}`, true)
     }
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.send(requestString)
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
 
+    constTools.makeRequest({
+      method: 'POST',
+      url: obj.getURL(),
+      endpoint: '/deleteFile',
+      params: requestDict
+    })
+      .then((response) => {
         if ('success' in response) {
           if (response.success === true) {
             model.modal('hide')
             showExhibitComponentInfo(id)
           }
         }
-      }
-    }
+      })
   }
 }
 
@@ -897,9 +850,6 @@ export function rebuildComponentInterface () {
     constConfig.componentGroups[i].buildHTML()
     constConfig.componentGroups[i].sortComponentList()
   }
-  // for (i = 0; i < constConfig.exhibitComponents.length; i++) {
-  //   constConfig.exhibitComponents[i].buildHTML()
-  // }
 }
 
 export function queueCommand (id, cmd) {
@@ -907,21 +857,13 @@ export function queueCommand (id, cmd) {
   // be sent to the component the next time it pings the server
 
   const obj = getExhibitComponent(id)
-  let requestDict, xhr
   if (['shutdown', 'restart'].includes(cmd)) {
     // We send these commands directly to the helper
-    requestDict = { action: cmd }
-
-    xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    if (obj.helperAddress != null) {
-      xhr.open('POST', obj.helperAddress, true)
-    } else {
-      xhr.open('POST', `http://${obj.ip}:${obj.helperPort}`, true)
-    }
-
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.send(JSON.stringify(requestDict))
+    constTools.makeRequest({
+      method: 'GET',
+      url: obj.getURL(),
+      endpoint: '/' + cmd
+    })
   } else {
     // We send these commands to the server to pass to the component itself
     let cmdPath = ''
@@ -936,15 +878,15 @@ export function queueCommand (id, cmd) {
         cmdPath = '/exhibit/queueCommand'
     }
 
-    requestDict = {
+    const requestDict = {
       id,
       command: cmd
     }
 
-    xhr = new XMLHttpRequest()
-    xhr.timeout = 2000
-    xhr.open('POST', constConfig.serverAddress + cmdPath, true)
-    xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.send(JSON.stringify(requestDict))
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: cmdPath,
+      params: requestDict
+    })
   }
 }

@@ -110,6 +110,23 @@ async def serve_html(file_name):
     return page
 
 
+@app.get("/getAvailableContent")
+async def get_available_content(config: const_config = Depends(get_config)):
+    """Return a list of all files in the content directory, plus some useful system info."""
+
+    if "content" in config.defaults_dict:
+        active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
+    else:
+        active_content = ""
+    response = {"all_exhibits": helper_files.get_all_directory_contents(),
+                "thumbnails": helper_files.get_directory_contents("thumbnails"),
+                "active_content": active_content,
+                "system_stats": helper_utilities.get_system_stats(),
+                "multiple_file_upload": True}
+
+    return response
+
+
 @app.get("/getClipList")
 async def send_clip_list(config: const_config = Depends(get_config)):
     """Get the list of currently playing content"""
@@ -162,8 +179,6 @@ async def send_defaults(config: const_config = Depends(get_config)):
 async def send_update(config: const_config = Depends(get_config)):
     "Get some key info for updating the component and web console."
 
-    print('/getUpdate')
-    print(config.defaults_dict)
     response_dict = {
         "allow_refresh": config.defaults_dict["allow_refresh"],
         "allow_restart": config.defaults_dict["allow_restart"],
@@ -175,7 +190,6 @@ async def send_update(config: const_config = Depends(get_config)):
         "image_duration":  config.defaults_dict["image_duration"],
         "missingContentWarnings": config.missingContentWarningList
     }
-    print(response_dict)
     return response_dict
 
 
@@ -214,30 +228,18 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
     else:
         action = data["action"]
 
-    if action == "deleteFile":
-        if "file" in data:
-            helper_files.delete_file(data["file"])
-            response = {"success": True}
-        else:
-            response = {"success": False,
-                        "reason": "Request missing field 'file'"}
-        return response
-    elif action == "getAvailableContent":
-        if "content" in config.defaults_dict:
-            active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
-        else:
-            active_content = ""
-        response = {"all_exhibits": helper_files.get_all_directory_contents(),
-                    "thumbnails": helper_files.get_directory_contents("thumbnails"),
-                    "active_content": active_content,
-                    "system_stats": helper_utilities.get_system_stats(),
-                    "multiple_file_upload": True}
 
-        return response
-    elif action == "restart":
-        helper_system.reboot()
-    elif action == "shutdown":
-        helper_system.shutdown()
+@app.post("/deleteFile")
+async def delete_file(data: dict[str, Any], config: const_config = Depends(get_config)):
+    """Delete the specified file from the content directory"""
+
+    if "file" in data:
+        helper_files.delete_file(data["file"])
+        response = {"success": True}
+    else:
+        response = {"success": False,
+                    "reason": "Request missing field 'file'"}
+    return response
 
 
 @app.post("/gotoClip")

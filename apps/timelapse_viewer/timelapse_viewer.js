@@ -43,27 +43,21 @@ function loadContentFromINI (definition) {
 }
 
 function updateSourceList (matchString) {
-  // Given a string containing a wildcard expression (*), retreive all the available content
+  // Given a string containing a wildcard expression (*), retrieve all the available content
   // and set the source to only the matching files.
 
-  const requestString = JSON.stringify({ action: 'getAvailableContent' })
-
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('POST', constCommon.config.helperAddress, true)
-  xhr.setRequestHeader('Content-Type', 'application/json')
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-
-    if (this.status === 200) {
-      const content = JSON.parse(this.responseText)
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  })
+    .then((content) => {
       sourceList = content.all_exhibits.filter(
         item => new RegExp('^' + matchString.replace(/\*/g, '.*') + '$').test(item)
       ).sort(function (a, b) {
         return a.localeCompare(b)
       })
       sourceListLength = sourceList.length
-      if (sourceListLength == 0) {
+      if (sourceListLength === 0) {
         continueAnimating = false
         return
       }
@@ -72,9 +66,7 @@ function updateSourceList (matchString) {
       if (continueAnimating) {
         animateTimelapse()
       }
-    }
-  }
-  xhr.send(requestString)
+    })
 }
 
 function handleTouchStart (event, touch = true) {

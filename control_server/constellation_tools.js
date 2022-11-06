@@ -1,6 +1,6 @@
 import constConfig from './config.js'
 
-function makeRequest (opt) {
+export function makeRequest (opt) {
   // Function to make a request to a server and return a Promise with the result
   // 'opt' should be an object with all the necessry options
 
@@ -155,4 +155,15 @@ export function stringToBool (str) {
   } else {
     return false
   }
+}
+
+export function arraysEqual (a, b) {
+  if (a === b) return true
+  if (a == null || b == null) return false
+  if (a.length !== b.length) return false
+
+  for (let i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }
