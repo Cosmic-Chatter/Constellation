@@ -9,9 +9,9 @@ from typing import Any
 
 # Third-party modules
 import aiofiles
-from fastapi import FastAPI, Depends, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, Depends, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
@@ -177,7 +177,7 @@ async def send_defaults(config: const_config = Depends(get_config)):
 
 @app.get("/getUpdate")
 async def send_update(config: const_config = Depends(get_config)):
-    "Get some key info for updating the component and web console."
+    """Get some key info for updating the component and web console."""
 
     response_dict = {
         "allow_refresh": config.defaults_dict["allow_refresh"],
@@ -226,7 +226,7 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
     if "action" not in data:
         raise HTTPException(status_code=400, detail="Must include field 'action'")
     else:
-        action = data["action"]
+        print("Legacy Constellation command received: ", data)
 
 
 @app.post("/deleteFile")
