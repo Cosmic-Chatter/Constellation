@@ -180,14 +180,14 @@ async def send_update(config: const_config = Depends(get_config)):
     """Get some key info for updating the component and web console."""
 
     response_dict = {
-        "allow_refresh": config.defaults_dict["allow_refresh"],
-        "allow_restart": config.defaults_dict["allow_restart"],
-        "allow_shutdown": config.defaults_dict["allow_shutdown"],
-        "allow_sleep": config.defaults_dict["allow_sleep"],
-        "anydesk_id": config.defaults_dict["anydesk_id"],
-        "autoplay_audio": config.defaults_dict["autoplay_audio"],
+        "allow_refresh": config.defaults_dict.get("allow_refresh", "true"),
+        "allow_restart": config.defaults_dict.get("allow_restart", "false"),
+        "allow_shutdown": config.defaults_dict.get("allow_shutdown", "false"),
+        "allow_sleep": config.defaults_dict.get("allow_sleep", "false"),
+        "anydesk_id": config.defaults_dict.get("anydesk_id", ""),
+        "autoplay_audio": config.defaults_dict.get("autoplay_audio", "false"),
         "commands": config.commandList,
-        "image_duration":  config.defaults_dict["image_duration"],
+        "image_duration":  config.defaults_dict.get("image_duration", "10"),
         "missingContentWarnings": config.missingContentWarningList
     }
     return response_dict
