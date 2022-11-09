@@ -290,7 +290,9 @@ function sendComponentContentChangeRequest (id, content) {
   // Send a request to the server to initiate a content change
 
   const requestDict = {
-    id,
+    component: {
+      id
+    },
     content
   }
   constTools.makeServerRequest({
@@ -427,7 +429,9 @@ function changeExhibit (warningShown) {
     $('#changeExhibitModal').modal('hide')
 
     const requestDict = {
-      name: $('#exhibitSelect').val()
+      exhibit: {
+        name: $('#exhibitSelect').val()
+      }
     }
 
     constTools.makeServerRequest({
@@ -481,7 +485,7 @@ function deleteSchedule (name) {
     params: { name }
   })
     .then((response) => {
-      if (response.class === 'schedule') {
+      if ('success' in response && response.success === true) {
         populateSchedule(response)
       }
     })
@@ -493,7 +497,7 @@ function scheduleConvertToDateSpecific (date, dayName) {
 
   const requestDict = {
     date,
-    from: dayName
+    convert_from: dayName
   }
 
   constTools.makeServerRequest({
@@ -502,7 +506,7 @@ function scheduleConvertToDateSpecific (date, dayName) {
     params: requestDict
   })
     .then((response) => {
-      if (response.class === 'schedule') {
+      if ('success' in response && response.success === true) {
         populateSchedule(response)
       }
     })
@@ -922,7 +926,6 @@ function sendScheduleUpdateFromModal () {
   const action = $('#scheduleActionSelector').val()
   const target = $('#scheduleTargetSelector').val()
   const value = $('#scheduleValueSelector').val()
-  const isAddition = $('#scheduleEditModal').data('isAddition')
   const scheduleID = $('#scheduleEditModal').data('scheduleID')
 
   if (time === '' || time == null) {
@@ -944,17 +947,11 @@ function sendScheduleUpdateFromModal () {
 
   const requestDict = {
     name: scheduleName,
-    timeToSet: time,
-    actionToSet: action,
-    targetToSet: target,
-    valueToSet: value,
-    scheduleID,
-    isAddition
-  }
-
-  if (isAddition === false) {
-    requestDict.timeToReplace = $('#scheduleEditModal').data('currentTime')
-    requestDict.scheduleID = scheduleID
+    time_to_set: time,
+    action_to_set: action,
+    target_to_set: target,
+    value_to_set: value,
+    schedule_id: scheduleID
   }
 
   constTools.makeServerRequest({
@@ -965,10 +962,8 @@ function sendScheduleUpdateFromModal () {
     .then((update) => {
       if ('success' in update) {
         if (update.success === true) {
-          if (update.class === 'schedule') {
-            $('#scheduleEditModal').modal('hide')
-            populateSchedule(update)
-          }
+          $('#scheduleEditModal').modal('hide')
+          populateSchedule(update)
         } else {
           $('#scheduleEditErrorAlert').html(update.reason).show()
         }
@@ -986,8 +981,8 @@ function scheduleDeleteActionFromModal () {
   console.log('Delete:', scheduleName, scheduleID)
 
   const requestDict = {
-    from: scheduleName,
-    scheduleID
+    schedule_name: scheduleName,
+    schedule_id: scheduleID
   }
 
   constTools.makeServerRequest({
@@ -996,7 +991,7 @@ function scheduleDeleteActionFromModal () {
     params: requestDict
   })
     .then((update) => {
-      if (update.class === 'schedule') {
+      if ('success' in update && update.success === true) {
         $('#scheduleEditModal').modal('hide')
         populateSchedule(update)
       }
@@ -2274,11 +2269,13 @@ function createExhibit (name, cloneFrom) {
   // set cloneFrom to the name of an existing exhibit to copy that exhibit
 
   const requestDict = {
-    name
+    exhibit: {
+      name
+    }
   }
 
   if (cloneFrom != null && cloneFrom !== '') {
-    requestDict.cloneFrom = cloneFrom
+    requestDict.clone_from = cloneFrom
   }
 
   constTools.makeServerRequest({
@@ -2294,7 +2291,7 @@ function deleteExhibit (name) {
   constTools.makeServerRequest({
     method: 'POST',
     endpoint: '/exhibit/delete',
-    params: { name }
+    params: { exhibit: { name } }
   })
 }
 

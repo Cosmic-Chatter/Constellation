@@ -15,7 +15,7 @@ export const config = {
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: '', // URL to the version.txt file for this app
-  softwareVersion: 1.0,
+  softwareVersion: 2.0,
   type: 'TEMP',
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }

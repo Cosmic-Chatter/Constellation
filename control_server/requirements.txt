@@ -2,6 +2,7 @@ aiofiles
 fastapi
 icmplib
 psutil
+pydantic
 pypjlink2
 pyserial
 python-dateutil

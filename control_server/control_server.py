@@ -6,9 +6,6 @@
 # Standard modules
 import configparser
 import datetime
-from fastapi import FastAPI, Depends, File, Request, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from functools import lru_cache
 import json
 import logging
@@ -20,13 +17,18 @@ import socket
 import sys
 import time
 import traceback
-from typing import Any
+from typing import Any, Union
 import urllib.request
 import uvicorn
 
 # Non-standard modules
 import aiofiles
 import dateutil.parser
+from fastapi import FastAPI, Body, Depends, File, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 # Constellation modules
 import config as c_config
@@ -37,6 +39,36 @@ import constellation_projector as c_proj
 import constellation_schedule as c_sched
 import constellation_tools as c_tools
 import constellation_tracker as c_track
+
+
+# Set up the automatic documentation
+def constellation_schema():
+    # Cached version
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="Constellation Control Server",
+        version=str(SOFTWARE_VERSION),
+        description="Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
+        routes=app.routes,
+    )
+    openapi_schema["info"] = {
+        "title": "Constellation Control Server",
+        "version": str(SOFTWARE_VERSION),
+        "description": "Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
+        "contact": {
+            "name": "Morgan Rehnberg",
+            "url": "https://cosmicchatter.org/constellation/constellation.html",
+            "email": "MRehnberg@adventuresci.org"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
 
 
 def send_webpage_update():
@@ -467,6 +499,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.openapi = constellation_schema
 
 
 @lru_cache()
@@ -475,71 +508,63 @@ def get_config():
 
 
 # Exhibit component actions
+
+class Exhibit(BaseModel):
+    name: str = Field(
+        description="The name of the exhibit"
+    )
+
+
+class ExhibitComponent(BaseModel):
+    id: str = Field(
+        description="A unique identifier for this component",
+        title="ID"
+    )
+
+
 @app.post("/exhibit/create")
-async def create_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
-    """Create a new exhibit INI file.
+async def create_exhibit(exhibit: Exhibit,
+                         clone_from: Union[str, None] = Body(default=None,
+                                                             description="The name of the exhibit to clone.")):
+    """Create a new exhibit INI file."""
 
-    If 'data' includes the 'clone' field, the specified 'clone'.ini file will be copied.
-    """
-
-    if "name" not in data or data["name"] == "":
-        response = {"success": False,
-                    "reason": "Request missing 'name' field or name is blank."}
-        return response
-    clone = None
-    if "cloneFrom" in data and data["cloneFrom"] != "":
-        clone = data["cloneFrom"]
-    c_exhibit.create_new_exhibit(data["name"], clone)
+    c_exhibit.create_new_exhibit(exhibit.name, clone_from)
     return {"success": True, "reason": ""}
 
 
 @app.post("/exhibit/delete")
-async def delete_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_exhibit(exhibit: Exhibit = Body(embed=True)):
     """Delete the specified exhibit."""
 
-    if "name" not in data or data["name"] == "":
-        response = {"success": False,
-                    "reason": "Request missing 'name' field or name is empty."}
-        return response
-    c_exhibit.delete_exhibit(data["name"])
-    response = {"success": True, "reason": ""}
-    return response
-    
+    c_exhibit.delete_exhibit(exhibit.name)
+    return {"success": True, "reason": ""}
+
 
 @app.post("/exhibit/queueCommand")
-async def queue_command(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def queue_command(component: ExhibitComponent,
+                        command: str = Body(description="The command to be sent to the specified component")):
     """Queue the specified command for the exhibit component to retrieve."""
 
-    if "command" not in data or "id" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing required field 'id' or 'command'."}
-        return response_dict
-    c_exhibit.get_exhibit_component(data["id"]).queue_command(data["command"])
+    c_exhibit.get_exhibit_component(component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
 @app.post("/exhibit/queueWOLCommand")
-async def queue_WOL_command(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def queue_WOL_command(component: ExhibitComponent,
+                            command: str = Body(description="The command to be sent to the specified component")):
     """Queue the Wake on Lan command for the exhibit component to retrieve."""
 
-    if "command" not in data or "id" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing required field 'id' or 'command'."}
-        return response_dict
-    c_exhibit.get_wake_on_LAN_component(data["id"]).queue_command(data["command"])
+    c_exhibit.get_wake_on_LAN_component(component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
 @app.post("/exhibit/set")
-async def set_exhibit(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     """Set the specified exhibit as the current one."""
 
-    if "name" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'name' field."}
-        return response
-    print("Changing exhibit to:", data["name"])
-    c_exhibit.read_exhibit_configuration(data["name"], update_default=True)
+    print("Changing exhibit to:", exhibit.name)
+    c_exhibit.read_exhibit_configuration(exhibit.name, update_default=True)
+
     # Update the components that the configuration has changed
     for component in c_config.componentList:
         component.update_configuration()
@@ -547,18 +572,12 @@ async def set_exhibit(data: dict[str, Any], config: c_config = Depends(get_confi
 
 
 @app.post("/exhibit/setComponentContent")
-async def set_component_content(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def set_component_content(component: ExhibitComponent,
+                                content: list[str] = Body(description="The content to be set")):
     """Change the active content for the given exhibit component."""
 
-    if "id" not in data or "content" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'id' or 'content' field."}
-        return response
-    content_to_set = data["content"]
-    print(f"Changing content for {data['id']}:", content_to_set)
-    if not isinstance(content_to_set, list):
-        content_to_set = [data["content"]]
-    c_exhibit.set_component_content(data['id'], content_to_set)
+    print(f"Changing content for {component.id}:", content)
+    c_exhibit.set_component_content(component.id, content)
     return {"success": True, "reason": ""}
 
 
@@ -673,9 +692,9 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str, config: 
     return response
 
 
-
 @app.post("/tracker/{tracker_type}/getLayoutDefinition")
-async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str,
+                                        config: c_config = Depends(get_config)):
     """Load the requested INI file and return it as a dictionary."""
 
     if "name" not in data:
@@ -730,7 +749,7 @@ async def submit_tracker_data(data: dict[str, Any], tracker_type: str, config: c
     success, reason = c_track.write_JSON(data["data"], file_path)
     response = {"success": success, "reason": reason}
     return response
-    
+
 
 @app.post("/tracker/{tracker_type}/submitRawText")
 async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
@@ -834,7 +853,7 @@ async def upload_issue_media(files: list[UploadFile] = File(), config: c_config 
     filename = None
     for file in files:
         ext = os.path.splitext(file.filename)[1]
-        filename = str(round(time.time()*1e6)) + ext
+        filename = str(round(time.time() * 1e6)) + ext
         file_path = c_tools.get_path(["issues", "media", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
         with c_config.issueMediaLock:
@@ -919,50 +938,39 @@ async def update_maintenance_status(data: dict[str, Any], config: c_config = Dep
 
 # Projector actions
 @app.post("/projector/getUpdate")
-async def get_projector_update(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def get_projector_update(projector: ExhibitComponent):
     """Poll the projector for an update and return it"""
 
-    if "id" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing required field 'id'.",
-                         "status": None}
-        return response_dict
-    proj = c_proj.get_projector(data["id"])
+    proj = c_proj.get_projector(projector.id)
     if proj is not None:
         response_dict = {"success": True,
                          "state": proj.state}
     else:
         response_dict = {"success": False,
-                         "reason": f"Projector {data['id']} does not exist",
+                         "reason": f"Projector {projector.id} does not exist",
                          "status": "DELETE"}
     return response_dict
 
 
 @app.post("/projector/queueCommand")
-async def queue_projector_command(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def queue_projector_command(component: ExhibitComponent,
+                                  command: str = Body(
+                                      description="The command to be sent to the specified projector.")):
     """Send a command to the specified projector."""
 
-    if "command" not in data or "id" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing required field 'id' or 'command'."}
-        return response_dict
-    c_exhibit.get_exhibit_component(data["id"]).queue_command(data["command"])
+    c_exhibit.get_exhibit_component(component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
 # Schedule actions
 @app.post("/schedule/convert")
-async def convert_schedule(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def convert_schedule(date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
+                           convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
     """Convert between date- and day-specific schedules."""
 
-    if "date" not in data or "from" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'date' or 'from' field."}
-        return response
-
     with c_config.scheduleLock:
-        shutil.copy(c_tools.get_path(["schedules", data["from"].lower() + ".json"], user_file=True),
-                    c_tools.get_path(["schedules", data["date"] + ".json"], user_file=True))
+        shutil.copy(c_tools.get_path(["schedules", convert_from.lower() + ".json"], user_file=True),
+                    c_tools.get_path(["schedules", date + ".json"], user_file=True))
 
     # Reload the schedule from disk
     c_sched.retrieve_json_schedule()
@@ -970,7 +978,6 @@ async def convert_schedule(data: dict[str, Any], config: c_config = Depends(get_
     # Send the updated schedule back
     with c_config.scheduleLock:
         response_dict = {"success": True,
-                         "class": "schedule",
                          "updateTime": c_config.scheduleUpdateTime,
                          "schedule": c_config.json_schedule_list,
                          "nextEvent": c_config.json_next_event}
@@ -978,21 +985,16 @@ async def convert_schedule(data: dict[str, Any], config: c_config = Depends(get_
 
 
 @app.post("/schedule/deleteAction")
-async def delete_schedule_action(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_schedule_action(schedule_name: str = Body(description="The schedule to delete the action from."),
+                                 schedule_id: str = Body(description="The unique identifier of the action to be deleted.")):
     """Delete the given action from the specified schedule."""
 
-    if "from" not in data or "scheduleID" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'from' or 'scheduleID' field."}
-        return response
-
-    c_sched.delete_json_schedule_event(data["from"] + ".json", data["scheduleID"])
+    c_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
     c_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
     with c_config.scheduleLock:
         response_dict = {"success": True,
-                         "class": "schedule",
                          "updateTime": c_config.scheduleUpdateTime,
                          "schedule": c_config.json_schedule_list,
                          "nextEvent": c_config.json_next_event}
@@ -1000,15 +1002,11 @@ async def delete_schedule_action(data: dict[str, Any], config: c_config = Depend
 
 
 @app.post("/schedule/deleteSchedule")
-async def delete_schedule(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_schedule(name: str = Body(description="The name of the schedule to delete.")):
     """Delete the given schedule."""
 
-    if "name" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'name' field."}
-        return response
     with c_config.scheduleLock:
-        json_schedule_path = c_tools.get_path(["schedules", data["name"] + ".json"], user_file=True)
+        json_schedule_path = c_tools.get_path(["schedules", name + ".json"], user_file=True)
         os.remove(json_schedule_path)
 
     # Reload the schedule from disk
@@ -1017,7 +1015,6 @@ async def delete_schedule(data: dict[str, Any], config: c_config = Depends(get_c
     # Send the updated schedule back
     with c_config.scheduleLock:
         response_dict = {"success": True,
-                         "class": "schedule",
                          "updateTime": c_config.scheduleUpdateTime,
                          "schedule": c_config.json_schedule_list,
                          "nextEvent": c_config.json_next_event}
@@ -1042,34 +1039,30 @@ async def refresh_schedule(config: c_config = Depends(get_config)):
 
 
 @app.post("/schedule/update")
-async def update_schedule(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def update_schedule(name: str = Body(),
+                          time_to_set: str = Body(
+                              description="The time of the action to set, expressed in any normal way."),
+                          action_to_set: str = Body(description="The action to set."),
+                          target_to_set: str = Body(description="The ID of the component that should be acted upon."),
+                          value_to_set: list = Body(default="", description="A value corresponding to the action."),
+                          schedule_id: str = Body(
+                              description="A unique identifier corresponding to the schedule entry.")):
     """Write a schedule update to disk.
 
     This command handles both adding a new scheduled action and editing an existing action
     """
 
-    if "name" not in data \
-            or "timeToSet" not in data \
-            or "actionToSet" not in data \
-            or "targetToSet" not in data \
-            or "valueToSet" not in data \
-            or "isAddition" not in data \
-            or "scheduleID" not in data:
-        response_dict = {"success": False,
-                         "reason": "Missing one or more required keys"}
-        return response_dict
-
     # Make sure we were given a valid time to parse
     try:
-        dateutil.parser.parse(data["timeToSet"])
+        dateutil.parser.parse(time_to_set)
     except dateutil.parser._parser.ParserError:
         response_dict = {"success": False,
                          "reason": "Time not valid"}
         return response_dict
 
-    c_sched.update_json_schedule(data["name"] + ".json", {
-        data["scheduleID"]: {"time": data["timeToSet"], "action": data["actionToSet"],
-                             "target": data["targetToSet"], "value": data["valueToSet"]}})
+    c_sched.update_json_schedule(name + ".json", {
+        schedule_id: {"time": time_to_set, "action": action_to_set,
+                      "target": target_to_set, "value": value_to_set}})
 
     error = False
     error_message = ""
@@ -1081,7 +1074,6 @@ async def update_schedule(data: dict[str, Any], config: c_config = Depends(get_c
 
         # Send the updated schedule back
         with c_config.scheduleLock:
-            response_dict["class"] = "schedule"
             response_dict["updateTime"] = c_config.scheduleUpdateTime
             response_dict["schedule"] = c_config.json_schedule_list
             response_dict["nextEvent"] = c_config.json_next_event

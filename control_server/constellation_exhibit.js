@@ -58,7 +58,11 @@ export class ExhibitComponent {
     constTools.makeServerRequest({
       method: 'POST',
       endpoint: '/projector/getUpdate',
-      params: { id: this.id }
+      params: {
+        projector: {
+          id: this.id
+        }
+      }
     })
       .then((response) => {
         if ('success' in response) {
@@ -879,7 +883,9 @@ export function queueCommand (id, cmd) {
     }
 
     const requestDict = {
-      id,
+      component: {
+        id
+      },
       command: cmd
     }
 
