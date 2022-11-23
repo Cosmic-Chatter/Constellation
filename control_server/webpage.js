@@ -2346,12 +2346,10 @@ $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
 $('#componentInfoModalThumbnailCheckbox').change(function () {
-  const checked = $('#componentInfoModalThumbnailCheckbox').prop('checked')
-  if (checked) {
-    $('.contentThumbnail').show()
-  } else {
-    $('.contentThumbnail').hide()
-  }
+  constExhibit.updateComponentInfoModalContentButtonState()
+})
+$('#componentInfoModalHideIncompatibleCheckbox').change(function () {
+  constExhibit.updateComponentInfoModalContentButtonState()
 })
 $('#componentInfoModalSettingsAutoplayAudio').change(function () {
   constExhibit.toggleExhibitComponentInfoSettingWarnings()

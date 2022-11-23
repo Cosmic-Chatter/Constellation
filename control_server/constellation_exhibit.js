@@ -396,7 +396,7 @@ export function showExhibitComponentInfo (id) {
     let constellationAppId = 'Unknown Component'
     if (obj.constellationAppId !== '') {
       const constellationAppIdDisplayNames = {
-        heartbeat: 'HeartBeat',
+        heartbeat: 'Heartbeat',
         infostation: 'InfoStation',
         media_browser: 'Media Browser',
         media_player: 'Media Player',
@@ -620,14 +620,19 @@ export function showExhibitComponentInfo (id) {
             let active
 
             for (let i = 0; i < contentList.length; i++) {
-              if (activeContent.includes(contentList[i])) {
-                active = 'btn-primary'
-              } else {
-                active = 'btn-secondary'
-              }
-
               const container = document.createElement('div')
               container.classList = 'col-6 mt-1'
+
+              // Check if this file type is supported by the current app
+              const fileExt = contentList[i].split('.').pop().toLowerCase()
+              const supportedTypes = getAllowableContentTypes(obj.constellationAppId)
+
+              if (!supportedTypes.includes(fileExt) ) {
+                container.classList += ' incompatible-content'
+              }
+              if (activeContent.includes(contentList[i])) {
+                container.classList += ' active-content'
+              }
 
               const btnGroup = document.createElement('div')
               btnGroup.classList = 'btn-group w-100 h-100'
@@ -637,7 +642,7 @@ export function showExhibitComponentInfo (id) {
               const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
               button.setAttribute('type', 'button')
               button.setAttribute('id', cleanFilename + 'Button')
-              button.classList = `btn componentContentButton ${active}`
+              button.classList = `btn componentContentButton`
               button.innerHTML = `<span>${contentList[i]}</span>`
 
               let thumbName
@@ -673,7 +678,15 @@ export function showExhibitComponentInfo (id) {
               dropdownButton.setAttribute('data-toggle', 'dropdown')
               dropdownButton.setAttribute('aria-haspopup', true)
               dropdownButton.setAttribute('aria-expanded', false)
-              dropdownButton.classList = `btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton ${active}`
+              dropdownButton.classList = `btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton`
+              // Color the button and dropdown button depending on the status of the content
+              if (activeContent.includes(contentList[i])) {
+                dropdownButton.classList += ' btn-primary'
+                button.classList += ' btn-primary'
+              } else {
+                dropdownButton.classList += ' btn-secondary'
+                button.classList += ' btn-secondary'
+              }
               dropdownButton.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
               btnGroup.appendChild(dropdownButton)
 
@@ -692,6 +705,7 @@ export function showExhibitComponentInfo (id) {
 
               $('#' + div).append(container)
             }
+            updateComponentInfoModalContentButtonState()
           }
 
           // Build buttons for each file in all exhibits
@@ -723,6 +737,48 @@ export function showExhibitComponentInfo (id) {
     // Make the modal visible
     $('#componentInfoModal').modal('show')
   }
+}
+
+export function updateComponentInfoModalContentButtonState() {
+  // Use the state of the filter checkboxes to show/hide the appropriate buttons
+
+  const showThumbs = $('#componentInfoModalThumbnailCheckbox').prop('checked')
+  console.log($('.contentThumbnail'))
+  if (showThumbs) {
+    $('.contentThumbnail').show()
+  } else {
+    $('.contentThumbnail').hide()
+  }
+
+  const hideIncompatible = $('#componentInfoModalHideIncompatibleCheckbox').prop('checked')
+  if (hideIncompatible) {
+    $('.incompatible-content').hide()
+    $('.active-content').show()
+  } else {
+    $('.incompatible-content').show()
+  }
+}
+
+function getAllowableContentTypes(appID) {
+  // Return a list of file extensions supported by the given appID
+
+  const supportedTypes = {
+    heartbeat: ['ini'],
+    infostation: ['ini'],
+    media_browser: ['ini'],
+    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', ],
+    media_player_kiosk: ['ini'],
+    sos_kiosk: ['ini'],
+    sos_screen_player: ['ini'],
+    timelapse_viewer: ['ini'],
+    voting_kiosk: ['ini'],
+    word_cloud: ['ini']
+  }
+  if (appID in supportedTypes) {
+    return supportedTypes[appID]
+  }
+
+  return []
 }
 
 export function toggleExhibitComponentInfoSettingWarnings () {
