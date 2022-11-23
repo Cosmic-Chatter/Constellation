@@ -83,7 +83,7 @@ function getIcon(name) {
 function buttonTouched (button, name) {
   // Respond to the touch of a button by changing color and logging the vote
 
-  constCommon.config.currentInteraction = true
+  setActive()
 
   $(button).find('.card').removeClass('card-inactive').addClass('card-active')
   setTimeout(function () {
@@ -102,6 +102,15 @@ function logVote (name, numVotes) {
   clearTimeout(touchBlocker)
   blockTouches = true
   touchBlocker = setTimeout(function () { blockTouches = false }, touchCooldown * 1000)
+}
+
+function setActive() {
+  
+  constCommon.config.currentInteraction = true
+  const reset = function() {
+    constCommon.config.currentInteraction = false
+  }
+  setTimeout(reset, 10000)
 }
 
 function checkConnection () {
