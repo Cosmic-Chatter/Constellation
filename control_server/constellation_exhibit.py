@@ -10,6 +10,7 @@ import os
 
 # Non-standard imports
 import icmplib
+import requests
 import wakeonlan
 
 # Constellation imports
@@ -142,7 +143,12 @@ class ExhibitComponent:
 
         if (command in ["power_on", "wakeDisplay"]) and (self.macAddress is not None):
             self.wake_with_LAN()
+        elif command in ['shutdown', 'restart']:
+            # Send these commands directly to the helper
+            print(f"{self.id}: command sent to helper: {command}")
+            requests.get('http://' + self.helperAddress + '/' + command)
         else:
+            # Queue all other commands for the next ping
             print(f"{self.id}: command queued: {command}")
             self.config["commands"].append(command)
             print(f"{self.id}: pending commands: {self.config['commands']}")

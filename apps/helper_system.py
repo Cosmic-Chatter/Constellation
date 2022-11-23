@@ -104,7 +104,7 @@ def smart_restart_check():
     else:
         # Connection check failed, so let's see how long it has been
         sec_since_last_contact = (datetime.datetime.now() - config.smart_restart["last_contact_datetime"]).total_seconds()
-        print(f"Smart Restart: connection check failed. Seconds since last connection: {sec_since_last_contact}")
+        print(f"Smart Restart: connection check to address {server_address} failed. Seconds since last connection: {sec_since_last_contact}")
         if sec_since_last_contact > config.smart_restart["threshold"]:
             # A reboot may be necessary
             smart_restart_act()

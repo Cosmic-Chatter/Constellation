@@ -54,6 +54,9 @@ app.mount("/media_player",
 app.mount("/timelapse_viewer",
           StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])),
           name="timelapse_viewer")
+app.mount("/voting_kiosk",
+          StaticFiles(directory=helper_files.get_path(["voting_kiosk"])),
+          name="voting_kiosk")
 app.mount("/js",
           StaticFiles(directory=helper_files.get_path(["js"])),
           name="js")
@@ -63,6 +66,9 @@ app.mount("/css",
 app.mount("/content",
           StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
           name="content")
+app.mount("/_fonts",
+          StaticFiles(directory=helper_files.get_path(["_fonts"])),
+          name="_fonts")
 app.mount("/images",
           StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
           name="images")
@@ -334,6 +340,8 @@ if __name__ == "__main__":
 
     # Activate Smart Restart
     helper_system.smart_restart_check()
+
+    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of type {const_config.defaults_dict['type']} on port {const_config.defaults_dict['helper_port']}.")
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
