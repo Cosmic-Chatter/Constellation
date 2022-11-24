@@ -233,6 +233,7 @@ def load_default_configuration():
     c_config.debug = current.getboolean("debug", False)
     if c_config.debug:
         c_tools.print_debug_details(loop=True)
+        logging.getLogger('uvicorn').setLevel(logging.DEBUG)
 
     if len(staff_list) > 0:
         c_config.assignable_staff = [x.strip() for x in staff_list.split(",")]
@@ -1264,8 +1265,13 @@ if __name__ == "__main__":
     c_exhibit.poll_wake_on_LAN_devices()
     check_for_software_update()
 
+    log_level = "warning"
+    if c_config.debug:
+        log_level = "debug"
+
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
                 host=ADDR,
+                log_level=log_level,
                 port=int(server_port),
                 reload=False, workers=1)
