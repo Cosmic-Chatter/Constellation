@@ -938,7 +938,7 @@ async def update_maintenance_status(data: dict[str, Any], config: c_config = Dep
 
 # Projector actions
 @app.post("/projector/getUpdate")
-async def get_projector_update(projector: ExhibitComponent):
+async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
     """Poll the projector for an update and return it"""
 
     proj = c_proj.get_projector(projector.id)

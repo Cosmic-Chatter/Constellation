@@ -627,7 +627,7 @@ export function showExhibitComponentInfo (id) {
               const fileExt = contentList[i].split('.').pop().toLowerCase()
               const supportedTypes = getAllowableContentTypes(obj.constellationAppId)
 
-              if (!supportedTypes.includes(fileExt) ) {
+              if (!supportedTypes.includes(fileExt)) {
                 container.classList += ' incompatible-content'
               }
               if (activeContent.includes(contentList[i])) {
@@ -642,7 +642,7 @@ export function showExhibitComponentInfo (id) {
               const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
               button.setAttribute('type', 'button')
               button.setAttribute('id', cleanFilename + 'Button')
-              button.classList = `btn componentContentButton`
+              button.classList = 'btn componentContentButton'
               button.innerHTML = `<span>${contentList[i]}</span>`
 
               let thumbName
@@ -678,7 +678,7 @@ export function showExhibitComponentInfo (id) {
               dropdownButton.setAttribute('data-toggle', 'dropdown')
               dropdownButton.setAttribute('aria-haspopup', true)
               dropdownButton.setAttribute('aria-expanded', false)
-              dropdownButton.classList = `btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton`
+              dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton'
               // Color the button and dropdown button depending on the status of the content
               if (activeContent.includes(contentList[i])) {
                 dropdownButton.classList += ' btn-primary'
@@ -739,11 +739,10 @@ export function showExhibitComponentInfo (id) {
   }
 }
 
-export function updateComponentInfoModalContentButtonState() {
+export function updateComponentInfoModalContentButtonState () {
   // Use the state of the filter checkboxes to show/hide the appropriate buttons
 
   const showThumbs = $('#componentInfoModalThumbnailCheckbox').prop('checked')
-  console.log($('.contentThumbnail'))
   if (showThumbs) {
     $('.contentThumbnail').show()
   } else {
@@ -759,14 +758,14 @@ export function updateComponentInfoModalContentButtonState() {
   }
 }
 
-function getAllowableContentTypes(appID) {
+function getAllowableContentTypes (appID) {
   // Return a list of file extensions supported by the given appID
 
   const supportedTypes = {
     heartbeat: ['ini'],
     infostation: ['ini'],
     media_browser: ['ini'],
-    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', ],
+    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
