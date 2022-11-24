@@ -906,8 +906,8 @@ export function rebuildComponentInterface () {
   document.getElementById('componentGroupsRow').innerHTML = ''
   let i
   for (i = 0; i < constConfig.componentGroups.length; i++) {
-    constConfig.componentGroups[i].buildHTML()
     constConfig.componentGroups[i].sortComponentList()
+    constConfig.componentGroups[i].buildHTML()
   }
 }
 

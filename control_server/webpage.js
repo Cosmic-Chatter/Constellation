@@ -21,48 +21,32 @@ class ExhibitComponentGroup {
   addComponent (component) {
     this.components.push(component)
     this.sortComponentList()
-
-    // When we reach 8 components, rebuild the interface so that this group
-    // expands to double width
-    if (this.components.length === 8) {
-      constExhibit.rebuildComponentInterface()
-    }
+    constExhibit.rebuildComponentInterface()
   }
 
   sortComponentList () {
     // Sort the component list by ID and then rebuild the HTML
     // representation in order
 
-    if (this.components.length > 1) {
-      // This line does the sorting
-      // this.components.sort((a, b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0))
-      this.components.sort(
-        function (a, b) {
-          if (a.status === constConfig.STATUS.STATIC && b.status !== constConfig.STATUS.STATIC) {
-            return 1
-          } else if (b.status === constConfig.STATUS.STATIC && a.status !== constConfig.STATUS.STATIC) {
-            return -1
-          }
-          if (a.status.value > b.status.value) {
-            return -1
-          } else if (b.status.value > a.status.value) {
-            return 1
-          } else if (a.id > b.id) {
-            return 1
-          } else if (b.id > a.id) {
-            return -1
-          }
-          return 0
+    this.components.sort(
+      function (a, b) {
+        if (a.status === constConfig.STATUS.STATIC && b.status !== constConfig.STATUS.STATIC) {
+          return 1
+        } else if (b.status === constConfig.STATUS.STATIC && a.status !== constConfig.STATUS.STATIC) {
+          return -1
         }
-      )
-
-      document.getElementById(this.type + 'ComponentList').innerHTML = ''
-      for (let i = 0; i < this.components.length; i++) {
-        this.components[i].buildHTML()
+        if (a.status.value > b.status.value) {
+          return -1
+        } else if (b.status.value > a.status.value) {
+          return 1
+        } else if (a.id > b.id) {
+          return 1
+        } else if (b.id > a.id) {
+          return -1
+        }
+        return 0
       }
-    } else {
-      this.components[0].buildHTML()
-    }
+    )
   }
 
   removeComponent (id) {
@@ -96,9 +80,23 @@ class ExhibitComponentGroup {
       displayRefresh = 'none'
     }
 
+    // Cycle through the components and count how many we will actually be displaying
+    const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
+    let numToDisplay = 0
+    this.components.forEach((component) => {
+      if (showStatic || component.status !== constConfig.STATUS.STATIC) {
+        numToDisplay += 1
+      }
+    })
+
+    if (numToDisplay === 0) {
+      // Nothing to do
+      return
+    }
+
     // Allow groups with lots of components to display with double width
     let classString
-    if (this.components.length > 7) {
+    if (numToDisplay > 7) {
       classString = 'col-12 col-lg-8 col-xl-6 mt-4'
     } else {
       classString = 'col-12 col-md-6 col-lg-4 col-xl-3 mt-4'
@@ -165,6 +163,10 @@ class ExhibitComponentGroup {
     col.appendChild(componentList)
 
     $('#componentGroupsRow').append(col)
+
+    this.components.forEach((component) => {
+      component.buildHTML()
+    })
   }
 }
 
