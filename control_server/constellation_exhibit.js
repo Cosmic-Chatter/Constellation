@@ -32,7 +32,7 @@ export class ExhibitComponent {
     if (this.helperAddress != null) {
       url = this.helperAddress
     } else if (this.ip != null && this.helperPort != null) {
-      url = `http://${obj.ip}:${obj.helperPort}`
+      url = `http://${this.ip}:${this.helperPort}`
     } else {
       url = null
     }
@@ -617,7 +617,6 @@ export function showExhibitComponentInfo (id) {
             if (thumbnailList == null) {
               thumbnailList = []
             }
-            let active
 
             for (let i = 0; i < contentList.length; i++) {
               const container = document.createElement('div')

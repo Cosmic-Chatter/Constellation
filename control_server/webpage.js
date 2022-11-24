@@ -398,10 +398,6 @@ function setCurrentExhibitName (name) {
   }
 }
 
-function getCurrentExhibitName () {
-  return (document.getElementById('exhibitNameField').innerHTML)
-}
-
 function updateAvailableExhibits (exhibitList) {
   for (let i = 0; i < exhibitList.length; i++) {
     // Check if exhibit already exists as an option. If not, add it

@@ -18,11 +18,11 @@ function buildLayout (definition) {
   // Iterate through the buttons and build their HTML
   let numText = 0 // Number of buttons that include text
   buttons.forEach((item) => {
-    if (item == 'SETTINGS') {
+    if (item === 'SETTINGS') {
       return
     }
     voteCounts[item] = 0
-    let buttonDef = definition[item]
+    const buttonDef = definition[item]
 
     const div = document.createElement('div')
     div.classList = buttonClasses
@@ -53,7 +53,7 @@ function buildLayout (definition) {
     text.append(title)
   })
 
-  if (numText == 0) {
+  if (numText === 0) {
     $('.card-body').remove()
   }
 
@@ -67,10 +67,10 @@ function buildLayout (definition) {
   })
 }
 
-function getIcon(name) {
+function getIcon (name) {
   // If the given name is a shortcut, return the full filepath.
   // Otherwise, assume the file is user-supplied and return the name as passed.
-  
+
   if (['1-star_black', '2-star_black', '3-star_black', '4-star_black', '5-star_black', '1-star_white', '2-star_white', '3-star_white', '4-star_white', '5-star_white'].includes(name)) {
     return 'voting_kiosk/icons/' + name + '.png'
   } else if (['thumbs-down_black', 'thumbs-down_red', 'thumbs-down_white', 'thumbs-up_black', 'thumbs-up_green', 'thumbs-up_white'].includes(name)) {
@@ -96,7 +96,7 @@ function buttonTouched (button, name) {
 function logVote (name, numVotes) {
   // Record one or more votes for the given option
 
-  if (blockTouches == false) {
+  if (blockTouches === false) {
     voteCounts[name] += numVotes
   }
   clearTimeout(touchBlocker)
@@ -104,10 +104,9 @@ function logVote (name, numVotes) {
   touchBlocker = setTimeout(function () { blockTouches = false }, touchCooldown * 1000)
 }
 
-function setActive() {
-  
+function setActive () {
   constCommon.config.currentInteraction = true
-  const reset = function() {
+  const reset = function () {
     constCommon.config.currentInteraction = false
   }
   setTimeout(reset, 10000)
@@ -119,11 +118,11 @@ function checkConnection () {
   constCommon.makeServerRequest(
     {
       method: 'GET',
-      endpoint: '/system/checkConnection',
+      endpoint: '/system/checkConnection'
     })
     .then(() => {
       $('#connectionWarning').hide()
-        badConnection = false
+      badConnection = false
     })
     .catch(() => {
       if (constCommon.config.debug) {
@@ -313,16 +312,16 @@ constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/C
 constCommon.config.constellationAppID = 'voting_kiosk'
 constCommon.config.debug = true
 
-var badConnection = true
+let badConnection = true
 
-var configurationName = 'default'
-var currentContent = []
-var voteCounts = {}
-var recordingInterval = 60 // Send votes every this many minutes
-var voteCounter = setInterval(sendData, recordingInterval * 1000)
-var blockTouches = false
-var touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
-var touchCooldown = 2 // seconds before blockTouches is reset
+let configurationName = 'default'
+let currentContent = []
+let voteCounts = {}
+let recordingInterval = 60 // Send votes every this many minutes
+let voteCounter = setInterval(sendData, recordingInterval * 1000)
+let blockTouches = false
+let touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
+let touchCooldown = 2 // seconds before blockTouches is reset
 
 constCommon.askForDefaults()
 constCommon.checkForSoftwareUpdate()
