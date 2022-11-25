@@ -41,10 +41,12 @@ function makeRequest (opt) {
           resolve(JSON.parse(xhr.responseText))
         }
       } else {
+        console.log(xhr)
         reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with data`, opt.params))
       }
     }
     xhr.onerror = function () {
+      console.log(xhr)
       reject(new Error(`Unable to complete $opt.{method} to ${opt.url + opt.endpoint} with data`, opt.params))
     }
     let paramText = null
@@ -79,7 +81,6 @@ export function sendPing () {
   }
 
   const pingRequest = function () {
-
     // Parse the IP address of the helper to see if it will be the same as the client
     const helperIPSameAsClient = config.helperAddress.includes('localhost') || config.helperAddress.includes('127.0.0.1') || config.helperAddress.includes('0.0.0.0')
 
@@ -296,26 +297,11 @@ export function askForDefaults () {
     console.log('Could not get defaults... checking again')
     setTimeout(askForDefaults, 500)
   }
-  makeHelperRequest({
+  return makeHelperRequest({
     method: 'GET',
     endpoint: '/getDefaults'
   })
     .then(readUpdate, checkAgain)
-  // const xhr = new XMLHttpRequest()
-  // xhr.timeout = 2000
-  // xhr.onerror = checkAgain
-  // xhr.ontimeout = checkAgain
-  // xhr.open('GET', config.helperAddress + '/getDefaults', true)
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.onreadystatechange = function () {
-  //   if (this.readyState !== 4) return
-
-  //   if (this.status === 200) {
-  //     $('#helperConnectionWarning').hide()
-  //     readUpdate(JSON.parse(this.responseText))
-  //   }
-  // }
-  // xhr.send()
 }
 
 export function checkForHelperUpdates () {
@@ -456,7 +442,7 @@ export function parseINIString (data) {
   let section = null
   lines.forEach(function (line) {
     if (regex.comment.test(line)) {
-      return
+
     } else if (regex.param.test(line)) {
       const match = line.match(regex.param)
       if (section) {

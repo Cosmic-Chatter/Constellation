@@ -12,11 +12,14 @@ export function makeRequest (opt) {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText))
       } else {
-        reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with data`, opt.params))
+        console.log('Submitted data: ', opt.params)
+        console.log('Response: ', JSON.parse(xhr.response))
+        reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with the above data`))
       }
     }
     xhr.onerror = function () {
-      reject(new Error(`Unable to complete $opt.{method} to ${opt.url + opt.endpoint} with data`, opt.params))
+      console.log('Submitted data: ', opt.params)
+      reject(new Error(`Unable to complete ${opt.method} to ${opt.url + opt.endpoint} with the above data`))
     }
     let paramText = null
     if (opt.params != null) {

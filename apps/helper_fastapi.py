@@ -57,6 +57,9 @@ app.mount("/timelapse_viewer",
 app.mount("/voting_kiosk",
           StaticFiles(directory=helper_files.get_path(["voting_kiosk"])),
           name="voting_kiosk")
+app.mount("/word_cloud",
+          StaticFiles(directory=helper_files.get_path(["word_cloud"])),
+          name="word_cloud")
 app.mount("/js",
           StaticFiles(directory=helper_files.get_path(["js"])),
           name="js")

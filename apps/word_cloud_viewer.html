@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="/_static/favicon.ico">
+
+    <style>
+
+      html {
+        touch-action: manipulation;
+        word-wrap: break-word;
+        overflow-y: hidden;
+        height: 100%;
+        position: relative;
+        padding: 0px;
+        margin: 0px;
+
+        /* Disable text selection */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      body {
+        overflow-x: hidden;
+        height: 100%;
+        position: relative;
+        padding: 0px;
+        margin: 0px;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+      #promptText {
+        font-size: 10vh;
+        width: 95vw;
+        text-align: center;
+        font-family: OpenSans-Bold;
+      }
+      #wordCloudContainer {
+        width: 95vw;
+        margin-left: 2.5vw;
+        margin-right: 2.5vw;
+        overflow: visible;
+      }
+      .promptText-full {
+        margin: 2.5vw;
+        height: 12vh;
+        opacity: 1;
+      }
+      .promptText-none {
+        margin: 0vh;
+        height: 0vh;
+        opacity: 0;
+      }
+      .wordCloudContainer-full {
+        height: 95vh;
+        margin-top: 0vh;
+        margin-bottom: 2.5vh;
+        margin-top: 2.5vh;
+      }
+      .wordCloudContainer-small {
+        height: 76.5vh;
+        margin-top: 0vh;
+        margin-bottom: 2.5vh;
+      }
+
+      @font-face {
+        font-family: OpenSans-Bold;
+        src: url(../_fonts/OpenSans-Bold.ttf);
+      }
+
+      @font-face {
+        font-family: OpenSans-Regular;
+        src: url(../_fonts/OpenSans-Regular.ttf);
+      }
+    </style>
+
+    <title>Word Cloud Viewer</title>
+
+  </head>
+
+  <body>
+
+    <!-- This div is used the profanity filer -->
+    <div id="profanityCheckingDiv" style="display: none;"></div>
+    <div id="promptText"></div>
+    <div id="wordCloudContainer"></div>
+
+    <script src="word_cloud/js/wordcloud2.js"></script>
+    <script src="js/jquery-3.6.1.min.js"></script>
+    <script src="word_cloud/js/jquery.profanityfilter.min.js"></script>
+    <script src="word_cloud/js/swearWords.js"></script>
+    <script src="word_cloud/js/pluralize-8.0.0.js"></script>
+    <script src="js/platform.js"></script>
+
+    <script type="module" src="word_cloud/word_cloud_viewer.js"></script>
+  </body>
+</html>

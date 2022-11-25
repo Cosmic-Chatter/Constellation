@@ -584,7 +584,7 @@ async def set_component_content(component: ExhibitComponent,
 
 # Flexible Tracker actions
 @app.post("/tracker/{tracker_type}/createTemplate")
-async def create_tracker_template(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def create_tracker_template(data: dict[str, Any], tracker_type: str):
     """Create a new tracker template, overwriting if necessary."""
 
     if "name" not in data or "template" not in data:
@@ -601,7 +601,7 @@ async def create_tracker_template(data: dict[str, Any], tracker_type: str, confi
 
 
 @app.post("/tracker/{tracker_type}/deleteData")
-async def delete_tracker_data(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def delete_tracker_data(data: dict[str, Any], tracker_type: str):
     """Delete the specified tracker data file."""
 
     if "name" not in data:
@@ -635,7 +635,7 @@ async def delete_tracker_data(data: dict[str, Any], tracker_type: str, config: c
 
 
 @app.post("/tracker/{tracker_type}/deleteTemplate")
-async def delete_tracker_template(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def delete_tracker_template(data: dict[str, Any], tracker_type: str):
     """Delete the specified tracker template."""
 
     if "name" not in data:
@@ -649,7 +649,7 @@ async def delete_tracker_template(data: dict[str, Any], tracker_type: str, confi
 
 
 @app.get("/tracker/{tracker_type}/getAvailableData")
-async def get_available_tracker_data(tracker_type: str, config: c_config = Depends(get_config)):
+async def get_available_tracker_data(tracker_type: str):
     """Send a list of all the available data files for the given tracker type."""
 
     data_path = c_tools.get_path([tracker_type, "data"], user_file=True)
@@ -663,7 +663,7 @@ async def get_available_tracker_data(tracker_type: str, config: c_config = Depen
 
 
 @app.get("/tracker/{tracker_type}/getAvailableDefinitions")
-async def get_available_tracker_definitions(tracker_type: str, config: c_config = Depends(get_config)):
+async def get_available_tracker_definitions(tracker_type: str):
     """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
 
     definition_list = []
@@ -676,7 +676,7 @@ async def get_available_tracker_definitions(tracker_type: str, config: c_config 
 
 
 @app.post("/tracker/{tracker_type}/getDataAsCSV")
-async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
     """Return the requested data file as a CSV string."""
 
     if "name" not in data:
@@ -694,8 +694,7 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str, config: 
 
 
 @app.post("/tracker/{tracker_type}/getLayoutDefinition")
-async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str,
-                                        config: c_config = Depends(get_config)):
+async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str):
     """Load the requested INI file and return it as a dictionary."""
 
     if "name" not in data:
@@ -712,7 +711,7 @@ async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str,
 
 
 @app.post("/tracker/{tracker_type}/getRawText")
-async def get_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def get_tracker_raw_text(data: dict[str, Any], tracker_type: str):
     """Load the contents of the appropriate file and return them."""
 
     if "name" not in data:
@@ -725,7 +724,7 @@ async def get_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: 
 
 
 @app.post("/tracker/submitAnalytics")
-async def submit_analytics(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def submit_analytics(data: dict[str, Any]):
     """Write the provided analytics data to file."""
 
     if "data" not in data or 'name' not in data:
@@ -739,7 +738,7 @@ async def submit_analytics(data: dict[str, Any], tracker_type: str, config: c_co
 
 
 @app.post("/tracker/{tracker_type}/submitData")
-async def submit_tracker_data(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def submit_tracker_data(data: dict[str, Any], tracker_type: str):
     """Record the submitted data to file."""
 
     if "data" not in data or "name" not in data:
@@ -753,7 +752,7 @@ async def submit_tracker_data(data: dict[str, Any], tracker_type: str, config: c
 
 
 @app.post("/tracker/{tracker_type}/submitRawText")
-async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str, config: c_config = Depends(get_config)):
+async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str):
     """Write the raw text in data['text'] to file.
 
     Set data['mode'] == 'a' to append or 'w' to overwrite the file.
@@ -775,7 +774,7 @@ async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str, confi
 
 # Issue actions
 @app.post("/issue/create")
-async def create_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def create_issue(data: dict[str, Any]):
     """Create a new issue."""
 
     if "details" in data:
@@ -791,7 +790,7 @@ async def create_issue(data: dict[str, Any], config: c_config = Depends(get_conf
 
 
 @app.post("/issue/delete")
-async def delete_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_issue(data: dict[str, Any]):
     """Delete an issue."""
 
     if "id" in data:
@@ -804,7 +803,7 @@ async def delete_issue(data: dict[str, Any], config: c_config = Depends(get_conf
 
 
 @app.post("/issue/deleteMedia")
-async def delete_issue_media(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_issue_media(data: dict[str, Any]):
     """Delete the media file linked to an issue and remove the reference."""
 
     if "filename" not in data:
@@ -820,7 +819,7 @@ async def delete_issue_media(data: dict[str, Any], config: c_config = Depends(ge
 
 
 @app.post("/issue/edit")
-async def edit_issue(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def edit_issue(data: dict[str, Any]):
     """Make changes to an existing issue."""
 
     if "details" in data and "id" in data["details"]:
@@ -837,7 +836,7 @@ async def edit_issue(data: dict[str, Any], config: c_config = Depends(get_config
 
 
 @app.get("/issue/list")
-async def get_issue_list(config: c_config = Depends(get_config)):
+async def get_issue_list():
     """Return a list of open issues."""
 
     response = {
@@ -848,7 +847,7 @@ async def get_issue_list(config: c_config = Depends(get_config)):
 
 
 @app.post("/issue/uploadMedia")
-async def upload_issue_media(files: list[UploadFile] = File(), config: c_config = Depends(get_config)):
+async def upload_issue_media(files: list[UploadFile] = File()):
     """Upload a media file and attach it to a specific issue."""
 
     filename = None
@@ -866,7 +865,7 @@ async def upload_issue_media(files: list[UploadFile] = File(), config: c_config 
 
 # Maintenance actions
 @app.post("/maintenance/deleteRecord")
-async def delete_maintenance_record(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def delete_maintenance_record(data: dict[str, Any]):
     """Delete the specified maintenance record."""
 
     if "id" not in data:
@@ -880,7 +879,7 @@ async def delete_maintenance_record(data: dict[str, Any], config: c_config = Dep
 
 
 @app.get("/maintenance/getAllStatuses")
-async def get_all_maintenance_statuses(config: c_config = Depends(get_config)):
+async def get_all_maintenance_statuses():
     """Send a list of all the maintenance statuses for known components"""
 
     record_list = []
@@ -896,7 +895,7 @@ async def get_all_maintenance_statuses(config: c_config = Depends(get_config)):
 
 
 @app.post("/maintenance/getStatus")
-async def get_maintenance_status(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def get_maintenance_status(data: dict[str, Any]):
     """Return the specified maintenance status"""
 
     if "id" not in data:
@@ -910,7 +909,7 @@ async def get_maintenance_status(data: dict[str, Any], config: c_config = Depend
 
 
 @app.post("/maintenance/updateStatus")
-async def update_maintenance_status(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def update_maintenance_status(data: dict[str, Any]):
     """Poll the projector for an update and return it"""
 
     if "id" not in data or "status" not in data or "notes" not in data:
@@ -1003,7 +1002,7 @@ async def delete_schedule_action(schedule_name: str = Body(description="The sche
 
 
 @app.post("/schedule/deleteSchedule")
-async def delete_schedule(name: str = Body(description="The name of the schedule to delete.")):
+async def delete_schedule(name: str = Body(description="The name of the schedule to delete.", embed=True)):
     """Delete the given schedule."""
 
     with c_config.scheduleLock:
@@ -1023,7 +1022,7 @@ async def delete_schedule(name: str = Body(description="The name of the schedule
 
 
 @app.get("/schedule/refresh")
-async def refresh_schedule(config: c_config = Depends(get_config)):
+async def refresh_schedule():
     """Reload the schedule from disk and return it."""
 
     # This command reloads the schedule from disk. Normal schedule changes are passed during /system/getUpdate
@@ -1087,7 +1086,7 @@ async def update_schedule(name: str = Body(),
 
 # System actions
 @app.post("/system/beginSynchronization")
-async def begin_synchronization(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def begin_synchronization(data: dict[str, Any]):
     """Initiate a synchronization attempt between the specified components."""
 
     if "synchronizeWith" not in data:
@@ -1101,14 +1100,14 @@ async def begin_synchronization(data: dict[str, Any], config: c_config = Depends
 
 
 @app.get("/system/checkConnection")
-async def check_connection(config: c_config = Depends(get_config)):
+async def check_connection():
     """Respond to request to confirm that the connection is active"""
 
     return {"success": True}
 
 
 @app.get("/system/getConfiguration")
-async def get_configuration(config: c_config = Depends(get_config)):
+async def get_configuration():
     """Return a dictionary with galleryConfiguration.ini."""
 
     config_reader = configparser.ConfigParser(delimiters="=")
@@ -1126,7 +1125,7 @@ async def get_configuration(config: c_config = Depends(get_config)):
 
 
 @app.get("/system/getConfigurationRawText")
-async def get_configuration_raw_text(config: c_config = Depends(get_config)):
+async def get_configuration_raw_text():
     """Return the raw text for galleryConfiguration.ini."""
 
     gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
@@ -1136,7 +1135,7 @@ async def get_configuration_raw_text(config: c_config = Depends(get_config)):
 
 
 @app.get("/system/getHelpText")
-async def get_help_text(config: c_config = Depends(get_config)):
+async def get_help_text():
     """Send the contents of README.md"""
     try:
         readme_path = c_tools.get_path(["README.md"])
@@ -1151,14 +1150,14 @@ async def get_help_text(config: c_config = Depends(get_config)):
 
 
 @app.get("/system/getUpdate")
-async def get_update(config: c_config = Depends(get_config)):
+async def get_update():
     """Retrieve an update of everything being managed by Control Server"""
 
     return send_webpage_update()
 
 
 @app.get("/system/reloadConfiguration")
-async def reload_configuration(config: c_config = Depends(get_config)):
+async def reload_configuration():
     """Reload galleryConfiguration.ini"""
 
     load_default_configuration()
@@ -1166,7 +1165,7 @@ async def reload_configuration(config: c_config = Depends(get_config)):
 
 
 @app.post("/system/ping")
-async def handle_ping(data: dict[str, Any], request: Request, config: c_config = Depends(get_config)):
+async def handle_ping(data: dict[str, Any], request: Request):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
     if "id" not in data or "type" not in data:
@@ -1185,7 +1184,7 @@ async def handle_ping(data: dict[str, Any], request: Request, config: c_config =
 
 
 @app.post("/system/updateConfigurationRawText")
-async def update_configuration_raw_text(data: dict[str, Any], config: c_config = Depends(get_config)):
+async def update_configuration_raw_text(data: dict[str, Any]):
     """Use the given plain text to rewrite galleryConfiguration.ini."""
 
     if "configuration" not in data:
@@ -1228,7 +1227,7 @@ async def update_configuration_raw_text(data: dict[str, Any], config: c_config =
 
 
 @app.post("/")
-async def do_post(data: dict[str, Any], request: Request, config: c_config = Depends(get_config)):
+async def do_post(data: dict[str, Any], request: Request):
     """POST requests to / are Constellation 1 legacy calls."""
 
     client_ip = request.client.host
@@ -1269,7 +1268,7 @@ if __name__ == "__main__":
     if c_config.debug:
         log_level = "debug"
 
-    # Must use only one worker, since we are relying on the config module being in global)
+    # Must use only one worker, since we are relying on the config module being in global
     uvicorn.run(app,
                 host=ADDR,
                 log_level=log_level,
