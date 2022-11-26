@@ -117,30 +117,6 @@ export function sendPing () {
   checkForHelperUpdates()
     .then(pingRequest)
     .catch(pingRequest)
-  // makeServerRequest(
-  //   {
-  //     method: 'POST',
-  //     endpoint: '/system/ping',
-  //     params: requestDict
-  //   })
-  //   .then(readUpdate)
-  // const requestString = JSON.stringify(requestDict)
-
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('POST', config.serverAddress + '/system/ping', true)
-  // xhr.timeout = 2000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-
-  // xhr.onreadystatechange = function () {
-  //   if (this.readyState !== 4) return
-
-  //   if (this.status === 200) {
-  //     if (this.responseText !== '') {
-  //       readUpdate(JSON.parse(this.responseText))
-  //     }
-  //   }
-  // }
-  // xhr.send(requestString)
 }
 
 export function wakeDisplay () {
@@ -151,11 +127,6 @@ export function wakeDisplay () {
     method: 'GET',
     endpoint: '/wakeDisplay'
   })
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('GET', config.helperAddress + '/wakeDisplay', true)
-  // xhr.timeout = 2000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.send()
 }
 
 function sleepDisplay () {
@@ -166,11 +137,6 @@ function sleepDisplay () {
     method: 'GET',
     endpoint: '/sleepDisplay'
   })
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('GET', config.helperAddress + '/sleepDisplay', true)
-  // xhr.timeout = 2000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.send()
 }
 
 export function askForRestart () {
@@ -180,11 +146,6 @@ export function askForRestart () {
     method: 'GET',
     endpoint: '/restart'
   })
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('GET', config.helperAddress + '/restart', true)
-  // xhr.timeout = 2000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.send()
 }
 
 export function askForShutdown () {
@@ -194,11 +155,6 @@ export function askForShutdown () {
     method: 'GET',
     endpoint: '/shutdown'
   })
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('GET', config.helperAddress + '/shutdown', true)
-  // xhr.timeout = 2000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.send()
 }
 
 function readUpdate (update) {
@@ -313,19 +269,6 @@ export function checkForHelperUpdates () {
     timeout: 500
   })
     .then(readUpdate)
-
-  // const xhr = new XMLHttpRequest()
-  // xhr.timeout = 500
-  // xhr.open('GET', config.helperAddress + '/getUpdate', true)
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.onreadystatechange = function () {
-  //   if (this.readyState !== 4) return
-
-  //   if (this.status === 200) {
-  //     readUpdate(JSON.parse(this.responseText))
-  //   }
-  // }
-  // xhr.send()
 }
 
 export function sendConfigUpdate (update) {
@@ -342,11 +285,6 @@ export function sendConfigUpdate (update) {
       endpoint: '/setDefaults',
       params: requestDict
     })
-  // const xhr = new XMLHttpRequest()
-  // xhr.timeout = 1000
-  // xhr.open('POST', config.helperAddress + '/setDefaults', true)
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.send(JSON.stringify(requestDict))
 }
 
 export function checkForSoftwareUpdate () {
@@ -420,12 +358,6 @@ export function sendAnalytics (data) {
       params: requestDict,
       timeout: 5000
     })
-  // const xhr = new XMLHttpRequest()
-  // xhr.open('POST', config.serverAddress + '/tracker/submitAnalytics', true)
-  // xhr.timeout = 5000
-  // xhr.setRequestHeader('Content-Type', 'application/json')
-  // xhr.overrideMimeType('text/plain; charset=x-user-defined')
-  // xhr.send(requestString)
 }
 
 export function parseINIString (data) {

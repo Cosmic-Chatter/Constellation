@@ -8,6 +8,7 @@
 
     <meta name="description" content="A GUI for configuring the System Helper">
     <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="/_static/favicon.ico">
 
     <link rel="stylesheet" href="css/bootstrap_4_6/bootstrap.min.css">
 
@@ -85,7 +86,7 @@
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                  <button type="button" class="btn btn-primary" onclick="submitAddDefaultModal();">Add setting</button>
+                  <button id='submitAddDefaultFromModal' type="button" class="btn btn-primary">Add setting</button>
                 </div>
               </div>
             </div>
@@ -93,8 +94,8 @@
   
           <div class='row'>
             <div class="col-12 mt-3">
-              <button class='btn btn-primary' onclick="updateDefaults();">Save changes</button>
-              <button class='btn btn-info ml-2' onclick="showAddDefaultModal();">Add setting</button>
+              <button id="saveDefaultButton" class='btn btn-primary'>Save changes</button>
+              <button id="addDefaultButton" class='btn btn-info ml-2'>Add setting</button>
               <span class="ml-3">Version: <span id="versionSpan"></span></span>
             </div>
           </div>
@@ -186,7 +187,7 @@
         </div>
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
           <div class="row">
-            <div class="col-12 mt-4">
+            <div id='helpTextDiv' class="col-12 mt-4">
               Help text coming soon.
             </div>
           </div>
@@ -198,301 +199,8 @@
   <!-- <script type="text/javascript" src="js/popper.min.js"></script> -->
   <script type="text/javascript" src="js/bootstrap_4_6/bootstrap.min.js"></script>
   <!-- <script type="text/javascript" src="js/showdown.min.js"></script> -->
-
-  <script>
-
-    function submitAddDefaultModal() {
-      if (!$("#settingValueInputField").val().includes("=")) {
-        addDefaultFromModal();
-        $("#addSettingModal").modal("hide");
-      } else {
-        console.log('here')
-        $("#modalEqualSignWarning").show();
-      }
-    }
-
-    function showAddDefaultModal() {
-      $("#settingKeyInputField").val("");
-      $("#settingValueInputField").val("");
-      $("#modalEqualSignWarning").hide()
-
-      // Update the select with any unused/available keys
-      $("#availableKeys").empty()
-      let blank = document.createElement("option")
-      blank.value = ""
-      blank.innerHTML = ""
-      $("#availableKeys").append(blank)
-      let currentKeys = getExistingKeys()
-      knownKeys.forEach(function(key, identifies) {
-        if (!currentKeys.includes(key.key)) {
-          let option = document.createElement("option")
-          option.value = key.key
-          option.innerHTML = key.key
-          $("#availableKeys").append(option)
-        }
-      })
-
-      $("#addSettingModal").modal("show");
-    }
-
-    function addDefaultFromModal() {
-
-      // Gather the input from the modal and create a defaultCard
-
-      let key = $("#settingKeyInputField").val().toLowerCase();
-      let value = $("#settingValueInputField").val().toLowerCase();
-      createDefaultCard(key, value);
-
-      // Clear the data so we don't double-add the default
-      $("#settingKeyInputField").val("");
-      $("#settingValueInputField").val("");
-    }
-
-    function createDefaultCard(key, value) {
-
-      // Create the HTML element corresponding to the given default and add it to
-      // the cardRowCurrent
-
-      // Look up and see if we know this key
-      let keyInfo = lookupKnownKey(key);
-
-      let resetFunction = null; // The function to reset the date to what was passed.
-
-      let col = document.createElement("div");
-      col.classList.add("defaultsCol","col-12", "col-sm-6", "col-md-4", "col-lg-3", "col-xl-2", "my-2", "py-3", "px-1");
-      col.setAttribute("data-key", key);
-
-      let title = document.createElement("div");
-      title.classList.add("bg-secondary", "w-100", 'px-1', 'py-1');
-      // Add a "required" badge, if appropriate
-      let name = document.createElement("span");
-      name.classList.add('h4', "pr-2", 'align-middle');
-      name.innerHTML = key;
-      title.append(name);
-      col.append(title);
-
-      let card = document.createElement("div");
-      card.classList.add("defaultCard", "px-2", "py-2", 'border', 'rounded-bottom', 'border-secondary', 'h-100', 'd-flex', 'flex-column');
-      col.append(card);
-
-      let description = document.createElement("div");
-      description.classList.add('mt-1');
-      description.innerHTML = keyInfo.description;
-      card.append(description);
-
-      if (["text", "number"].includes(keyInfo.type)) {
-        let input = document.createElement("input");
-        input.setAttribute("type", keyInfo.type);
-        input.setAttribute("value", value);
-        resetFunction = function() {$(input).val(value);};
-        input.classList.add("defaultsValue", "w-100", 'mt-3');
-        card.append(input)
-      } else if (keyInfo.type == "bool") {
-        let select = document.createElement("select");
-        select.classList.add("defaultsValue", "w-100", 'mt-3');
-        let optionTrue = document.createElement("option");
-        optionTrue.value = "true";
-        optionTrue.text = "True";
-        select.appendChild(optionTrue);
-        let optionFalse = document.createElement("option");
-        optionFalse.value = "false";
-        optionFalse.text = "False";
-        select.appendChild(optionFalse);
-        select.value = value.toLowerCase();
-        resetFunction = function() {$(select).val(value.toLowerCase());};
-        card.append(select);
-      }
-
-      let buttonRow = document.createElement("div");
-      buttonRow.classList.add("row", "mt-auto");
-      card.append(buttonRow);
-
-      let buttonCol1 = document.createElement('div');
-      buttonCol1.classList.add("col-6");
-      buttonRow.append(buttonCol1);
-
-      let resetButton = document.createElement("button");
-      resetButton.classList.add("btn", "btn-warning", 'w-100');
-      resetButton.innerHTML = "Reset";
-      resetButton.addEventListener("click", resetFunction);
-      buttonCol1.append(resetButton);
-
-      let buttonCol2 = document.createElement('div');
-      buttonCol2.classList.add("col-6");
-      buttonRow.append(buttonCol2);
-
-      let deleteButton = document.createElement("button");
-      deleteButton.classList.add("btn", "btn-danger", 'w-100');
-      deleteButton.innerHTML = "Delete";
-      deleteButton.addEventListener("click", function(){$(this).closest(".defaultsCol").remove();});
-      buttonCol2.append(deleteButton);
-
-      if (keyInfo.required) {
-        deleteButton.innerHTML = "Required"
-        deleteButton.disabled = true;
-      }
-
-      cardRowCurrent.append(col);
-    }
-
-    function lookupKnownKey(key) {
-
-      // Search through the known keys and return a matching one, if it exists.
-
-        keyInfo = knownKeys.filter(function(knownKey){
-          return key == knownKey.key;
-        })[0];
-        if (keyInfo == undefined) {
-          keyInfo = {key: key, type: "text", description: ""};
-        }
-        return keyInfo;
-    }
-
-    function getExistingKeys() {
-
-      // Return the keys for all the currently-created cards
-
-      let currentKeys = [];
-
-      $(".defaultsCol").each(function(i){
-        if ($(this).find(".defaultsValue").val() == "") {
-          $(this).find(".defaultsValue").val("null")
-        }
-        currentKeys.push($(this).data("key"))
-      })
-      return currentKeys
-    }
-
-    function askForDefaults() {
-
-      // Send a message to the local helper and ask for the latest configuration
-      // defaults, then use them.
-
-      // var requestString = JSON.stringify({"action": "getDefaults"});
-
-      let xhr = new XMLHttpRequest();
-      xhr.timeout = 2000;
-      xhr.open("GET", helperAddress + '/getDefaults', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function () {
-
-        if (this.readyState != 4) return;
-
-        if (this.status == 200) {
-          readDefaults(this.responseText);
-        }
-      };
-      xhr.send();
-    }
-
-    function readDefaults(response) {
-
-      // Take a list of defaults and build the interface for editing them.
-
-      let defaultsList = JSON.parse(response);
-
-      // Remove keys that don't go into defaults.ini
-      let keysToIgnore = ["availableContent",
-                          "content",
-                          "contentPath",
-                          "dictionary",
-                          "helperAddress",
-                          "helperSoftwareUpdateAvailable", ]
-      keysToIgnore.forEach((key) => {
-        delete defaultsList[key];
-      });
-
-      let cardRowCurrent = document.getElementById("cardRowCurrent");
-
-      let defaultsKeys = Object.keys(defaultsList);
-      defaultsKeys.forEach((key, i) => {
-        createDefaultCard(key, defaultsList[key]);
-      });
-    }
-
-    function updateDefaults() {
-
-      // Iterate through the defaultCards and collect the new defaults.
-
-      let newDefaults = {};
-
-      $(".defaultsCol").each(function(i){
-        if ($(this).find(".defaultsValue").val() == "") {
-          $(this).find(".defaultsValue").val("null")
-        }
-        newDefaults[$(this).data("key")] = $(this).find(".defaultsValue").val()
-      })
-      
-      // Send the new defaults back to the helper for committing.
-      var requestString = JSON.stringify({"defaults": newDefaults});
-
-      let xhr = new XMLHttpRequest();
-      xhr.timeout = 2000;
-      xhr.open("POST", helperAddress + '/rewriteDefaults', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function () {
-
-        if (this.readyState != 4) return;
-
-        if (this.status == 200) {
-        }
-      };
-      xhr.send(requestString);
-    }
-
-    function loadVersion() {
-      // Load version.txt and update the GUI with the current version
-
-      let xhr = new XMLHttpRequest();
-      xhr.timeout = 2000;
-      xhr.open("GET", helperAddress + '/_static/version.txt', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function () {
-
-        if (this.readyState != 4) return;
-
-        if (this.status == 200) {
-          $("#versionSpan").html(this.responseText)
-        }
-      };
-      xhr.send();
-    }
-
-
-    var helperAddress = window.location.origin;
-
-    // For known keys, define their options
-    let knownKeys = [
-      {key: "active_hours_end", type: "text", required: false, description: "Some actions, such as Smart Restart, will be blocked before this time (e.g., '9 pm')."},
-      {key: "active_hours_start", type: "text", required: false, description: "Some actions, such as Smart Restart, will be blocked after this time (e.g., '6 am')."},
-      {key: "allow_restart", type: "bool", required: false, description: "Allow the component to restart the PC."},
-      {key: "allow_shutdown", type: "bool", required: false, description: "Allow the component to shutdown the PC. This should only be enabled in Wake on LAN is set up."},
-      {key: "allow_sleep", type: "bool", required: false, description: "Allow the component to sleep the screen. This may not work on all devices."},
-      {key: "anydesk_id", type: "text", required: false, description: "If AnyDesk is configured for this device, you can add its ID, which enables a button in the web console."},
-      {key: "autoplay_audio", type: "bool", required: false, description: "Allow audio to play automatically. If this is set to true, you must have set up your web browser to allow automatic audio."},
-      {key: "current_exhibit", type: "text", required: true, description: "This will be managed automatically by Constellation."},
-      {key: "display_type", type: "text", required: false, description: "Set to 'screen' or 'projector'. This usually has no effect."},
-      {key: "helper_port", type: "text", required: true, description: "The port on which this helper is operating."},
-      {key: "id", type: "text", required: true, description: "A unique name that identifies this component."},
-      {key: "image_duration", type: "number", required: false, description: "The number of seconds that each image will be shown."},
-      {key: "kiosk_id", type: "text", required: false, description: "A unique name that identifies the kiosk. Must be unique from the main component."},
-      {key: "kiosk_type", type: "text", required: false, description: "A user-defined grouping for this component."},
-      {key: "server_ip_address", type: "text", required: true, description: "The IP address of the Constellation Control Server that this component should connect to."},
-      {key: "server_port", type: "number", required: true, description: "The port of the Constellation Control Server that this component should connect to."},
-      {key: "smart_restart", type: "text", required: false, description: "Smart Restart mode (off | patient | aggressive)."},
-      {key: "smart_restart_interval", type: "number", required: false, description: "Time in seconds to poll Control Server."},
-      {key: "smart_restart_threshold", type: "number", required: false, description: "Time in seconds since last connection before reboot should be triggered."},
-      {key: "sos_ip_address", type: "text", required: false, description: "The IP address of the Science ona Sphere control computer."},
-      {key: "type", type: "text", required: true, description: "A user-defined grouping for this component."},
-    ]
-
-    $("#availableKeys").change(function() {
-      $("#settingKeyInputField").val($("#availableKeys").val())
-    })
-
-    askForDefaults();
-    loadVersion();
-  </script>
+  <script type="text/javascript" src="js/platform.js"></script>
+  <script type="module" src="js/setup.js"></script>
 
   </body>
 
