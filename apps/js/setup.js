@@ -1,3 +1,5 @@
+/* global showdown */
+
 import * as constCommon from './constellation_app_common.js'
 
 function submitAddDefaultModal () {
@@ -210,6 +212,55 @@ function loadVersion () {
     })
 }
 
+function showAppHelpMOdal (app) {
+  // Ask the helper to send the relavent README.md file and display it in the modal
+
+  const endpointStems = {
+    infostation: '/InfoStation/',
+    media_browser: '/media_browser/',
+    media_player: '/media_player/',
+    timelapse_viewer: '/timelapse_viewer/',
+    voting_kiosk: '/voting_kiosk/',
+    word_cloud: '/word_cloud/'
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: endpointStems[app] + 'README.md',
+    rawResponse: true
+  })
+    .then((result) => {
+      const formattedText = markdownConverter.makeHtml(result)
+      // Add the formatted text
+      $('#helpTextDiv').html(formattedText)
+      // Then, search the children for images and fix the links with the right endpoints
+      $('#helpTextDiv').find('img').each((i, img) => {
+        // Strip off the http://localhost:8000/ porition
+        const src = img.src.split('/').slice(3).join('/')
+        // Rebuild the correct path
+        img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
+      })
+      $('#helpTextDiv').parent().parent().scrollTop(0)
+    })
+
+  $('#appHelpModal').modal('show')
+}
+
+function populateHelpTab () {
+  // Load the overall README.md and add its contents to the Help tab
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/README.md',
+    rawResponse: true
+  })
+    .then((result) => {
+      const formattedText = markdownConverter.makeHtml(result)
+      // Add the formatted text
+      $('#mainHelpTextDiv').html(formattedText)
+    })
+}
+
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 
@@ -238,14 +289,38 @@ const knownKeys = [
   { key: 'type', type: 'text', required: true, description: 'A user-defined grouping for this component.' }
 ]
 
+const markdownConverter = new showdown.Converter()
+markdownConverter.setFlavor('github')
+
+constCommon.askForDefaults()
+loadVersion()
+populateHelpTab()
+
+// Add event handlers
+// Settings page
+$('#submitAddDefaultFromModal').click(submitAddDefaultModal)
+$('#saveDefaultButton').click(updateDefaults)
+$('#addDefaultButton').click(showAddDefaultModal)
 $('#availableKeys').change(function () {
   $('#settingKeyInputField').val($('#availableKeys').val())
 })
 
-constCommon.askForDefaults()
-loadVersion()
-
-// Add event handlers
-$('#submitAddDefaultFromModal').click(submitAddDefaultModal)
-$('#saveDefaultButton').click(updateDefaults)
-$('#addDefaultButton').click(showAddDefaultModal)
+// Apps page
+$('#InfoStationHelpButton').click(function () {
+  showAppHelpMOdal('infostation')
+})
+$('#mediaBrowserHelpButton').click(function () {
+  showAppHelpMOdal('media_browser')
+})
+$('#mediaPlayerHelpButton').click(function () {
+  showAppHelpMOdal('media_player')
+})
+$('#timelapseViewerHelpButton').click(function () {
+  showAppHelpMOdal('timelapse_viewer')
+})
+$('#votingKioskHelpButton').click(function () {
+  showAppHelpMOdal('voting_kiosk')
+})
+$('#wordCloudHelpButton').click(function () {
+  showAppHelpMOdal('word_cloud')
+})

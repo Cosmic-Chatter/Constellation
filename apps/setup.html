@@ -108,6 +108,29 @@
         </div>
   
         <div class="tab-pane fade" id="nav-apps" role="tabpanel" aria-labelledby="nav-apps-tab">
+
+          <div id="appHelpModal" class="modal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered mw-100 w-75">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Help</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body"  style="max-height: 70vh; overflow-y: auto;">
+                  <div class="row">
+                    <div id='helpTextDiv' class="col-12"></div>
+                  </div>
+
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="row">
 
             <!-- Infostation -->
@@ -117,7 +140,8 @@
                 <div class="card-body">
                   <h3 class="card-title">InfoStation</h3>
                   <p class="card-text">Use a touchscreen to explore digital labels containing a combination of text, images, and videos.</p>
-                  <a href="InfoStation.html" target="_blank" class="btn btn-primary">Launch</a>
+                  <a href="InfoStation.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button id="InfoStationHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -129,7 +153,8 @@
                 <div class="card-body">
                   <h3 class="card-title">Media Browser</h3>
                   <p class="card-text">Scroll and filter a gallery of images and videos using a touchscreen.</p>
-                  <a href="media_browser.html" target="_blank" class="btn btn-primary">Launch</a>
+                  <a href="media_browser.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button id="mediaBrowserHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -141,7 +166,8 @@
                 <div class="card-body">
                   <h3 class="card-title">Media Player</h3>
                   <p class="card-text">Digital signage app that loops any combination of images and video.</p>
-                  <a href="media_player.html" target="_blank" class="btn btn-primary">Launch</a>
+                  <a href="media_player.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button id="mediaPlayerHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -153,7 +179,8 @@
                 <div class="card-body">
                   <h3 class="card-title">Timelapse Viewer</h3>
                   <p class="card-text">Use a variety of input devices to animate through a slideshow of timelapse images.</p>
-                  <a href="media_player.html" target="_blank" class="btn btn-primary">Launch</a>
+                  <a href="timelapse_viewer.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button id="timelapseViewerHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -165,7 +192,8 @@
                 <div class="card-body">
                   <h3 class="card-title">Voting Kiosk</h3>
                   <p class="card-text">Collect single-question survey responses and store them on Control Server.</p>
-                  <a href="voting_kiosk.html" target="_blank" class="btn btn-primary">Launch</a>
+                  <a href="voting_kiosk.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button id="votingKioskHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -177,8 +205,9 @@
                 <div class="card-body">
                   <h3 class="card-title">Word Cloud</h3>
                   <p class="card-text">Collect responses and create a word cloud, with profanity checking.</p>
-                  <a href="word_cloud_input.html" target="_blank" class="btn btn-primary mr-2">Launch Input</a>
-                  <a href="word_cloud_viewer.html" target="_blank" class="btn btn-primary">Launch Viewer</a>
+                  <a href="word_cloud_input.html" target="_blank" class="btn btn-primary mt-1">Launch Input</a>
+                  <a href="word_cloud_viewer.html" target="_blank" class="btn btn-primary mt-1">Launch Viewer</a>
+                  <button id="wordCloudHelpButton" class="btn btn-primary mt-1">Help</button>
                 </div>
               </div>
             </div>
@@ -187,7 +216,7 @@
         </div>
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
           <div class="row">
-            <div id='helpTextDiv' class="col-12 mt-4">
+            <div id='mainHelpTextDiv' class="col-12 mt-4">
               Help text coming soon.
             </div>
           </div>
@@ -198,7 +227,7 @@
   <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
   <!-- <script type="text/javascript" src="js/popper.min.js"></script> -->
   <script type="text/javascript" src="js/bootstrap_4_6/bootstrap.min.js"></script>
-  <!-- <script type="text/javascript" src="js/showdown.min.js"></script> -->
+  <script type="text/javascript" src="js/showdown.min.js"></script>
   <script type="text/javascript" src="js/platform.js"></script>
   <script type="module" src="js/setup.js"></script>
 

@@ -119,6 +119,15 @@ async def serve_html(file_name):
     return page
 
 
+@app.get("/README.md", response_class=HTMLResponse)
+async def serve_readme():
+    # First try a local file and then a Constellation file
+    file_path = helper_files.get_path(["README.md"])
+    with open(file_path, "r") as f:
+        file = str(f.read())
+    return file
+
+
 @app.get("/getAvailableContent")
 async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
