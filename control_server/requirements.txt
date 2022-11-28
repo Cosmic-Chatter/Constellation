@@ -7,5 +7,6 @@ pypjlink2
 pyserial
 python-dateutil
 python-multipart
+requests
 uvicorn
 wakeonlan
