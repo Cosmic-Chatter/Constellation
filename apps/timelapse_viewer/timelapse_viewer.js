@@ -355,7 +355,6 @@ function hideAttractor () {
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.softwareVersion = 2.0
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/timelapse_viewer/version.txt'
 constCommon.config.constellationAppID = 'timelapse_viewer'
 
 let touchStartX = null

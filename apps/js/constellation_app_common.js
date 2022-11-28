@@ -14,7 +14,7 @@ export const config = {
   imageDuration: 10, // seconds
   platformDetails: {},
   serverAddress: '',
-  softwareUpdateLocation: '', // URL to the version.txt file for this app
+  softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
   softwareVersion: 2.0,
   type: 'TEMP',
   updateParser: null // Function used by readUpdate() to parse app-specific updates
@@ -291,19 +291,19 @@ export function checkForSoftwareUpdate () {
   if (config.softwareUpdateLocation === '') {
     return
   }
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 2000
-  xhr.open('GET', config.softwareUpdateLocation, true)
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
 
-    if (this.status === 200) {
-      if (parseFloat(this.responseText) > config.softwareVersion) {
+  return makeRequest({
+    method: 'GET',
+    url: config.softwareUpdateLocation,
+    endpoint: '',
+    timeout: 1000,
+    rawResponse: true
+  })
+    .then((result) => {
+      if (parseFloat(result) > config.softwareVersion) {
         config.errorDict.softwareUpdateAvailable = 'true'
       }
-    }
-  }
-  xhr.send(null)
+    })
 }
 
 export function arraysEqual (arr1, arr2) {

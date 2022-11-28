@@ -801,7 +801,6 @@ function videoOverlayShow (id, card) {
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.softwareVersion = 2.0
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/InfoStation/version.txt'
 constCommon.config.constellationAppID = 'infostation'
 constCommon.config.debug = true
 

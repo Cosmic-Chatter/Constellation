@@ -241,7 +241,6 @@ function changeMedia (source, delayPlay, playOnly) {
   }
 }
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/media_player/version.txt'
 constCommon.config.constellationAppID = 'media_player'
 
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing

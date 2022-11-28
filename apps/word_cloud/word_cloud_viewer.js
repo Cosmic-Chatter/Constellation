@@ -210,7 +210,6 @@ var wc_options = {
 }
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/word_cloud/version.txt'
 constCommon.config.constellationAppID = 'word_cloud'
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin

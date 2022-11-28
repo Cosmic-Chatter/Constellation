@@ -308,7 +308,6 @@ document.addEventListener('wheel', function (e) {
 }, { passive: false })
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/voting_kiosk/version.txt'
 constCommon.config.constellationAppID = 'voting_kiosk'
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin

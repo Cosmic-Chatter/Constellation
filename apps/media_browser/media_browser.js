@@ -514,7 +514,6 @@ let customCardsPerPage = false
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.softwareVersion = 2.0
-constCommon.config.softwareUpdateLocation = 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/media_browser/version.txt'
 constCommon.config.constellationAppID = 'media_browser'
 constCommon.config.debug = true
 
