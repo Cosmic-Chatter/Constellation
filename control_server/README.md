@@ -28,7 +28,7 @@ Many **_Constellation_** `components` will lose functionality if they cannot con
 #### Environment recommendations
 * Linux is strongly recommended as the operating system, followed by macOS. Everything should work under Windows, but testing is less thorough and the OS has lower uptime.
 * A wired network connection is important to ensure a consistent connection.
-* No aspect of **_Constellation_** requires access to the public internet, although Control Server should be on a machine with accurate network time.
+* No aspect of **_Constellation_** requires access to the public internet (except checking for updates), although Control Server should be on a machine with accurate network time.
 
 ### First-time setup
 The first time you launch Control Server, the terminal will launch an interactive setup wizard to walk you through basic configuration.
@@ -38,7 +38,7 @@ Once the wizard has completed, the server will start. After this point, all conf
 ### Connecting to the web console
 To access the web console from any device on the same subnet, open a browser and enter `http://[static_ip]:[port]`. Note that **_Constellation_** does not support HTTPS.
 
-For example, if your static IP is 10.8.2.100, and your port is the default, 8082, your web address would be `http://10.8.2.100:8082`. You can bookmark this address for future access.
+For example, if your static IP is 10.8.2.100, and your port is the default 8082, your web address would be `http://10.8.2.100:8082`. You can bookmark this address for future access.
 
 ### Configuration
 
@@ -51,7 +51,7 @@ The following keywords are required:
 
 * `server_ip_address`: This is the public IP address of the Control Server PC. Note that a static IP address needs to be set at the OS or network level—this value merely records what that address is for distribution to remote clients.
 * `server_port`: The port you wish Control Server to be accessible at. This port must not already be in use. Make sure that this port is not being blocked by a firewall.
-* `current_exhibit`: The name of the current exhibit configuration file in the form of `<name>.exhibit`. Once the control server is initialized, it will automatically adjust the value of this keyword as you change exhibits using the web console.
+* `current_exhibit`: The name of the current exhibit configuration file in the form of `<name>.exhibit`. Once Control Server is initialized, it will automatically adjust the value of this keyword as you change exhibits using the web console.
 
 The following keywords are optional:
 
@@ -66,9 +66,9 @@ The PJLink protocol returns a defined set of information about the state of the 
 
 PJLink projectors are defined in the `[PJLINK_PROJECTORS]` section as such:
 
-```
+```ini
 [PJLINK_PROJECTORS]
-myprojector = 10.8.0.177
+myProjector = 10.8.0.177
 secureProjector = 10.8.1.235, thePassword
 ```
 Each line defines one projector, in which the keyword becomes the `id`. If a projector has a password for access to PJLink, specify it with a comma after the IP address.
@@ -78,7 +78,7 @@ Control Server can also manage projectors that implement a serial-over-IP interf
 
 Serial projectors are defined in the `[SERIAL_PROJECTORS]` section as such:
 
-```
+```ini
 [SERIAL_PROJECTORS]
 mySerialProjector = 10.8.0.175, barco
 myOtherProjector = 10.8.1.234, christie
@@ -86,31 +86,31 @@ myOtherProjector = 10.8.1.234, christie
 
 In addition to their IP address, you must specify the manufacturer of your device. Because some manufacturers vary their serial commands over generation, there is no guarantee that the control server supports your model, even if your manufacturer is supported. The following makes are at least partially supported:
 
-| Make      | Known compatible models  |
-| ----      | ------------------       |
-| Barco     | F35                      |
-| Christie  | DHD850-GS, Mirage HD8             |
-| Optoma    |                          |
-| Viewsonic |                          |
+| Make      | Known compatible models |
+|-----------|-------------------------|
+| Barco     | F35                     |
+| Christie  | DHD850-GS, Mirage HD8   |
+| Optoma    |                         |
+| Viewsonic |                         |
 
 #### Wake on LAN
 
 Control Server can send Wake on LAN magic packets to power on machines connected to its network. These devices are specified using MAC addresses, as such:
 
-```
+```ini
 [WAKE_ON_LAN]
 My_PC = B0:C7:30:95:93:C0
 MY_PC2 = F1-E3-D1-51-B5-A1, 10.8.0.85
 ```
-If the given machine has a static IP address, you can specify it on the same line, after a comma. The control server will ping that address at intervals to check if the machine is powered on. **To send pings on Windows, you must run the control server with administrator privileges.**
+If the given machine has a static IP address, you can specify it following a comma on the same line. Control Server will ping that address at intervals to check if the machine is powered on. **To send pings on Windows, you must run Control Server with administrator privileges.**
 
 #### Tracking non-**_Constellation_** components
 
-In order to view the real-time status of a `component`, it must be either  running a **_Constellation_** software system, or sending pings that conform to the API. However, non-**_Constellation_** `component`s can be added to the system in order to make use of the maintenance tracking system.
+In order to view the real-time status of a `component`, it must be either running a **_Constellation_** app, or sending pings that conform to the API. However, non-**_Constellation_** `components` can be added in order to make use of the maintenance tracking system.
 
 To add such a `component`, create a `[STATIC_COMPONENTS]` section in `galleryConfiguration.ini`. The keys will be the `type` and the values will be the `id`s of the components. For example,
 
-```
+```ini
 [STATIC_COMPONENTS]
 INTERACTIVE = HAND_SIZE, FOOT_SIZE
 DISPLAY = BODY_TYPES
@@ -122,7 +122,7 @@ will create three static components, HAND_SIZE and FOOT_SIZE of `type` INTERACTI
 
 You can optionally specify a description for a `component`, which is displayed in the web console on that `component`'s status page. These are specified as such:
 
-```
+```ini
 [COMPONENT_DESCRIPTIONS]
 HEADER = The projector for the header at the entrance to the gallery
 S_KIOSK = The kiosk near the exit where survey data is collected
@@ -131,7 +131,7 @@ where the `id` is given to the left of the equals sign and the description to th
 
 ## Using the web console
 
-The web console is the most convenient way of managing your settings and viewing the state of every `component`. It can be accessed through any modern web browser at the address `http://<control_server_ip>:<control_server_port>`.
+The web console is the most convenient way of managing your settings and viewing the state of every `component`. It can be accessed through any web browser at the address `http://<control_server_ip>:<control_server_port>`.
 
 ### Components tab
 
@@ -140,42 +140,42 @@ The components tab lists every managed `component` and `projector`. Each receive
 
 #### States
 
-| State   | Component | Projector | Wake on LAN |
-| -----   | --------- | --------- | ----------- |
-| ACTIVE  | Component is currently being interacted with | - | - |
-| ONLINE  | Component is responding | Projector is responding, and powered on | - |
-| OFFLINE | Component is not responding | Projector is not responding | WoL system is not responding |
-| STANDBY | - | Projector is responding, but powered off | - |
-| STATIC | Component has been added for maintenance tracking purposes. | - | - |
-| SYSTEM ON | The computer is on, but no **_Constellation_** software is responding. | - | The WoL system is responding to pings |
-| WAITING | The component was recently ONLINE. There may only be a temporary connectivity issue.  This is common if a display is sleeping. | - | - |
-| UNKONWN | - | - | No IP address was supplied for this WoL system, so we cannot ping it to check its status. |
+| State     | Component                                                                                                                      | Projector                                | Wake on LAN                                                                               |
+|-----------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------|
+| ACTIVE    | Component is currently being interacted with                                                                                   | -                                        | -                                                                                         |
+| ONLINE    | Component is responding                                                                                                        | Projector is responding, and powered on  | -                                                                                         |
+| OFFLINE   | Component is not responding                                                                                                    | Projector is not responding              | WoL system is not responding                                                              |
+| STANDBY   | -                                                                                                                              | Projector is responding, but powered off | -                                                                                         |
+| STATIC    | Component has been added for maintenance tracking purposes.                                                                    | -                                        | -                                                                                         |
+| SYSTEM ON | The computer is on, but no **_Constellation_** software is responding.                                                         | -                                        | The WoL system is responding to pings                                                     |
+| WAITING   | The component was recently ONLINE. There may only be a temporary connectivity issue.  This is common if a display is sleeping. | -                                        | -                                                                                         |
+| UNKNOWN   | -                                                                                                                              | -                                        | No IP address was supplied for this WoL system, so we cannot ping it to check its status. |
 
 ### Component status view
 
 <img src="images/component_status_page.jpg" style="width: 40%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-Clicking on a `component` opens its status view. Here, you can see a snapshot of the remote system's performance, manipulate its content (if supported), and add maintenance details.
+Clicking on a `component` opens its status view. Here, you can see a snapshot of the remote system's performance; manipulate its content and settings; and add maintenance details.
 
 #### System status
 
 The system status area, located at the top, provides a summary of the performance of the computer running the `component`. These values are only estimates—if a `component` is behaving inconsistently, use the operating system's tools to diagnose the problem.
 
-Note that CPU usage is not properly reported for `component`s running Windows.
+Note that CPU usage is not properly reported for PCs running Windows.
 
 #### Content pane
 
 ##### Content management
 
-The content management area allows you to manipulate the displayed `content` for components that support it. Note that this panel only shows `content` managed by the system helper, including all `content` uploaded through the web console.
+The content management area allows you to manipulate the displayed `content` for components that support it. Note that this panel only shows files managed by Constellation, including all `content` uploaded through the web console.
 
-`Content` highlighted in blue is in the current display queue, which loops indefinitely. To add or remove a piece of `content`, click it to toggle it. These changes are not saved until the "Save changes" button is pressed.
+`Content` highlighted in blue is currently selected. To add or remove a piece of `content`, click it to toggle it. These changes are not saved until the _Save changes_ button is pressed.
 
 `Content` can also be deleted from the system using the item's dropdown menu. Note that deleting content takes effect immediately and cannot be undone.
 
 ##### Content upload
 
-New `content` can be uploaded using the bottom part of the Content pane. Click the "Choose files" button and select one or more files that you wish to upload.
+New `content` can be uploaded using the bottom part of the Content pane. Click _Choose files_ and select one or more files that you wish to upload.
 
 **Note that uploaded filenames cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing `content`, the old file will be overwritten. The name of the file on your device will be carried over to the client.
 
@@ -192,7 +192,7 @@ In addition, you may add notes using the provided text box. Changes to the notes
 
 Changes to the maintenance status of a `component` are logged by the control server. These logs are in plain-text format in the `maintenance-logs` directory. Each line of a log is a JSON object containing the state at the time of submission.
 
-### Projector status page
+#### Projector status page
 
 Clicking on a `projector` that is `ONLINE` or `STANDBY` will bring up its status page. Here, you can see an array of information reported by the projector using the PJLink protocol.
 
@@ -221,28 +221,28 @@ Known issues can be filtered by priority and who they are assigned to.
 
 #### Maintenance overview
 
-The maintenance overview summarizes the current state of the `component`s. From the component status view on the components tab, maintenance staff can enter notes about various pieces, as well as categorize them into one of four groups:
+The maintenance overview summarizes the current state of the `components`. From the component status view on the components tab, maintenance staff can enter notes about various pieces, as well as categorize them into one of four groups:
 
 - On the floor and working
 - On the floor and not working
 - Off the floor and working
 - Off the floor and not working
 
-The various `component`s are grouped into these categories on the maintenance overview. The status bar underneath each `id` shows the fraction of time the `component` has been working or not working.
+The various `components` are grouped into these categories on the maintenance overview. The status bar underneath each `id` shows the fraction of time the `component` has been working or not working.
 
 ### Settings tab
 
 #### Changing the exhibit
 
-Use the "Set current exhibit" dropdown box to change the `exhibit` being displayed. **This change takes immediate effect and may result in an unsightly transition in public view.**
+Use the _Set current exhibit_ dropdown box to change the `exhibit` being displayed. **This change takes immediate effect and may result in an unsightly transition in public view.**
 
 #### Creating and deleting exhibits
 
-You can create and delete `exhibit`s from the settings tab. When creating an `exhibit`, you can either create an empty `exhibit` (no content for any `component`), or you can clone the existing `exhibit`.
+You can create and delete `exhibits` from the settings tab. When creating an `exhibit`, you can either create an empty `exhibit` (no content for any `component`), or you can clone the existing `exhibit`.
 
 #### Reloading galleryConfiguration.ini
 
-If you make a manual change to `galleryConfiguration.ini`, pressing the "Reload Config" button will cause the control server to reload it and parse the new configuration as if it were starting up. This means you do not have to stop and restart the server process to make an update.
+If you make a manual change to `galleryConfiguration.ini`, pressing the "Reload Config" button will cause the control server to reload it and parse the new configuration as if it were starting up. This means you do not have to stop and restart the server process to make an update. _Note that some low-level properties (such as the IP address or port) require a complete restart of Control Server to take effect_.
 
 ### Hiding tabs
 
@@ -250,23 +250,23 @@ The tabs can be hidden from view by modifying the URL. For example, to hide the 
 
 Hiding tabs can be useful when creating a status console for certain staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
 
-## Using the flexible tracker
+## Using the Flexible Tracker
 
 <img src="images/tracker_example.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-The `flexible tracker` enables the collection of a wide variety of quantitative and qualitative data using the control server. Collected data is stored as a list of JSON objects, one object per line, in a plain text document on the server.
+The Flexible Tracker enables the collection of a wide variety of quantitative and qualitative data using Control Server. Collected data can then be downloaded as a standard CSV file for opening in any spreadsheet software.
 
 ### Collection types
-The tracker can collect a variety of data types. Each type provides a widget that makes inputting the data easy and reliable.
+Flexible Tracker can collect a variety of data types. Each type provides a widget that makes inputting the data easy and reliable.
 
-| Type | Description | Required keywords | Optional keywords |
-| ---- | ----------- | ------------------- | ------------------- |
-| `counter` | Count by whole numbers, like a traditional "clicker" counter. | - | `label`: string |
-| `dropdown` | Select one or more options from a list | `options`: comma-separated list of strings. | `multiple`: true/false (default: false) `label`: string |
-| `number` | Record a single number, including decimals | - | `label`: string |
-| `slider` | Record a single number, bounded in a user-defined range. The value is selected using a slider. | - | `min`: number (default: 1) <br> `max`: number (default: 100) <br> `step`: number (default: 1) <br> `start`: Inital slider position (default: `(min + max)/2`) <br> `label`: string |
-| `text` | A textbox for inputting any text | - | `lines`: The height of the box in lines (default: 5) <br> `label`: string |
-| `timer` | Records the number of seconds. Can be started and stopped by the user. "Exclusive" timers pause all other timers when started. | - | `exclusive`: true/false (default: false) <br> `label`: string |
+| Type       | Description                                                                                                                              | Required keywords                           | Optional keywords                                                                                                                                                                  |
+|------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `counter`  | Count by whole numbers, like a traditional tally counter.                                                                                | -                                           | `label`: string                                                                                                                                                                    |
+| `dropdown` | Select one or more options from a list                                                                                                   | `options`: comma-separated list of strings. | `multiple`: true/false (default: false) `label`: string                                                                                                                            |
+| `number`   | Record a single number, including decimals                                                                                               | -                                           | `label`: string                                                                                                                                                                    |
+| `slider`   | Record a single number, bounded in a user-defined range. The value is selected using a slider.                                           | -                                           | `min`: number (default: 1) <br> `max`: number (default: 100) <br> `step`: number (default: 1) <br> `start`: Inital slider position (default: `(min + max)/2`) <br> `label`: string |
+| `text`     | A textbox for inputting any text                                                                                                         | -                                           | `lines`: The height of the box in lines (default: 5) <br> `label`: string                                                                                                          |
+| `timer`    | Records the number of seconds. Can be started and stopped by the user. "Exclusive" timers pause all other exclusive timers when started. | -                                           | `exclusive`: true/false (default: false) <br> `label`: string                                                                                                                      |
 
 ### Creating a template
 
@@ -276,7 +276,7 @@ A `template` defines the collection types available for a given session. It allo
 
 #### Using the web console
 
-To create a `template` via the web console, navigate to the settings view. In the Flexible Tracker section, select the `template` you want to edit, first creating it if necessary. Then, click the edit button to pop up the template editor. The left column contains the possible collection type widgets. Click on one to add it to the current layout, and customize its parameters using the fields in the right column.
+To create a `template` via the web console, navigate to the settings tab. In the Flexible Tracker section, select the `template` you want to edit, first creating it if necessary. Then, click _Edit_ to pop up the template editor. The left column contains the possible collection type widgets. Click on one to add it to the current layout, and customize its parameters using the fields in the right column.
 
 With the left and right arrows, you can reorder how the widgets will appear. Because Flexible Tracker is a responsive web page, the exact arrangement of the widgets will depend on your device's screen size and shape.
 
@@ -284,7 +284,7 @@ With the left and right arrows, you can reorder how the widgets will appear. Bec
 
 Each template is an INI file located within Control Server in the directory `flexible-tracker/templates/<your template>.ini`. Within the `template`, each section header is the name of the item. Under each header, add keywords (one per line) to specify the desired collection. Keywords and values should be separated by an equals sign (`=`). The keyword `type` must appear in each section and **each section must have a unique name**. For example, the following `example.ini` will produce the displayed Flexible Tracker session.
 
-```
+```ini
 [Visitor type]
 type = dropdown
 options = Adult, Child, Family, Field trip
