@@ -1778,7 +1778,7 @@ function askForUpdate () {
         if ('class' in component) {
           if (component.class === 'exhibitComponent') {
             numComps += 1
-            if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC).name) {
+            if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
               numOnline += 1
             }
             if (component.status === constConfig.STATUS.STATIC.name) {
