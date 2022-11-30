@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+
+    <title></title>
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="infostation.css">
+
+  </head>
+
+  <body>
+    <main id='mainContainer' role="main" class="container-fluid px-0">
+
+      <div id="attractorOverlay" onclick='hideAttractor();'>
+        <video id="attractorVideo" autoplay loop src=''></video>
+        <img id="attractorImage" src=""></img>
+      </div>
+
+      <div class="">
+        <div class="row">
+          <div id='masthead' class="col-12 text-center fw-bold">
+            InfoStation Title
+          </div>
+        </div>
+      </div>
+      <div class="tab-content" id="nav-tabContent"></div>
+      <div id='buttonRow' class='row'></div>
+      <footer id='toolbar' class="fixed-bottom">
+        <div class='row h-100'>
+          <div class='col-1 pe-0'>
+            <input class='w-100 h-100 bg-primary' type='image' src='icons/text_size_down.png' onclick="fontSizeDecreaseButtonPressed()"></input>
+          </div>
+          <div class='col-1 ps-0'>
+            <input class='w-100 h-100 bg-primary' type='image' src='icons/text_size_up.png' onclick="fontSizeIncreaseButtonPressed()"></input>
+          </div>
+          <div class='col-4'>
+            <button id="langToggleButton" class='btn btn-primary h-100' onclick="toggleLang('es');">Español</button>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+  </body>
+
+  <script type="text/javascript" src="js/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/showdown-1.9.1.js"></script>
+  <script type="text/javascript" src="js/platform.js"></script>
+
+  <script type="text/javascript" src="config.js"></script>
+  <script type="text/javascript" src="infostation.js"></script>
+  <!-- <script type="text/javascript" src="content.js"></script> -->
+</html>

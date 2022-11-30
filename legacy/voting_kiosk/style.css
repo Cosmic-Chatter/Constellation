@@ -1,0 +1,26 @@
+:root {
+    --background-color: #22222E;
+    --button-color: #393A5A;
+    --button-touched-color: #706F8E;
+    --success-message-color: #528e54;
+    --header-color: white;
+    --subheader-color: white;
+    --footer-color: white;
+    --subfooter-color: white;
+    --button-text-color: white;
+    --header-font: 'OpenSans-Bold';
+    --subheader-font: "OpenSans-Regular";
+    --footer-font: 'OpenSans-Bold';
+    --subfooter-font: "OpenSans-Regular";
+    --button-font: "OpenSans-Regular";
+  }
+
+@font-face {
+    font-family: OpenSans-Bold;
+    src: url(fonts/OpenSans-Bold.ttf);
+}
+
+@font-face {
+    font-family: OpenSans-Regular;
+    src: url(fonts/OpenSans-Regular.ttf);
+}
