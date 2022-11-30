@@ -354,7 +354,13 @@ def delete_exhibit(name: str):
 def get_exhibit_component(this_id: str) -> ExhibitComponent:
     """Return a component with the given id, or None if no such component exists"""
 
-    return next((x for x in config.componentList if x.id == this_id), None)
+    component = next((x for x in config.componentList if x.id == this_id), None)
+
+    if component is None:
+        # Try projector
+        component = next((x for x in config.projectorList if x.id == this_id), None)
+
+    return component
 
 
 def get_wake_on_LAN_component(this_id: str) -> WakeOnLANDevice:

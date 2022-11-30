@@ -346,7 +346,7 @@ def serial_christie_video_mute_state(connection: serial.Serial) -> str:
     return result
 
 
-def pjlink_connect(ip: str, password: str = None, timeout: float = 2):
+def pjlink_connect(ip: str, password: str = None, timeout: float = 2) -> pypjlink.projector.Projector:
     """Connect to a PJLink projector using pypjlink"""
 
     projector = pypjlink.Projector.from_address(ip, timeout=timeout)
@@ -355,7 +355,7 @@ def pjlink_connect(ip: str, password: str = None, timeout: float = 2):
     return projector
 
 
-def pjlink_send_command(connection: serial.Serial, command: str) -> str:
+def pjlink_send_command(connection: pypjlink.projector.Projector, command: str) -> str:
     """Send a command using the PJLink protocol"""
 
     result = None
