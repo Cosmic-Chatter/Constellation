@@ -1,7 +1,6 @@
 /* global showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
-import * as constTools from './constellation_tools.js'
 
 function updateContent (definition) {
   // Parse the current content file and build the interface correspondingly.

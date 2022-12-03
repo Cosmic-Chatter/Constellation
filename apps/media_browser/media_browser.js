@@ -267,7 +267,6 @@ function updateParser (update) {
 
 function loadContentFromINI (definition) {
   // Take an object parsed from an INI string and use it to load a new set of contet
-  console.log(definition)
 
   if (!('SETTINGS' in definition)) {
     console.log('Error: The INI file must include a [SETTINGS] section!')

@@ -172,6 +172,11 @@ function updateContent (name, definition) {
   // Clear the vote categories
   voteCounts = {}
 
+  if (!('SETTINGS' in definition)) {
+    console.log('Error: The INI file must include a [SETTINGS] section!')
+    return
+  }
+
   // Parse the settings and make the appropriate changes
   if ('header' in definition.SETTINGS) {
     document.getElementById('header').innerHTML = definition.SETTINGS.header

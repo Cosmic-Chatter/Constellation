@@ -72,7 +72,7 @@ def constellation_schema():
 
 
 def send_webpage_update():
-    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page."""
+    """Collect the current exhibit status, format it, and send it back to the web client to update the page."""
 
     component_dict_list = []
     for item in c_config.componentList:
@@ -98,7 +98,7 @@ def send_webpage_update():
         temp["ip_address"] = item.ip
         temp["helperPort"] = item.helperPort
         temp["helperAddress"] = item.helperAddress
-        temp["constellation_app_id"] = item.constellation_app_id
+        temp["constellation_app_id"] = item.config["app_name"]
         temp["platform_details"] = item.platform_details
         component_dict_list.append(temp)
 
@@ -372,7 +372,7 @@ def load_default_configuration():
                 this_id = this_id.strip()
                 if c_exhibit.get_exhibit_component(this_id) is None:
                     static_component = c_exhibit.add_exhibit_component(this_id, this_type, category="static")
-                    static_component.constellation_app_id = "static_component"
+                    static_component.config["app_name"] = "static_component"
         print("done")
     except KeyError:
         print("none specified")
@@ -579,6 +579,16 @@ async def set_component_content(component: ExhibitComponent,
 
     print(f"Changing content for {component.id}:", content)
     c_exhibit.set_component_content(component.id, content)
+    return {"success": True, "reason": ""}
+
+
+@app.post("/exhibit/setComponentApp")
+async def set_component_app(component: ExhibitComponent,
+                            app_name: str = Body(description="The app to be set")):
+    """Change the active app for the given exhibit component."""
+
+    print(f"Changing app for {component.id}:", app_name)
+    c_exhibit.set_component_app(component.id, app_name)
     return {"success": True, "reason": ""}
 
 

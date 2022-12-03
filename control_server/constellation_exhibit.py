@@ -32,7 +32,6 @@ class ExhibitComponent:
         self.ip: str = ""  # IP address of client
         self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
         self.helperAddress: str = ""  # full IP and port of helper
-        self.constellation_app_id: str = ""  # Internal identifier for what app this component is running
         self.platform_details: dict = {}
 
         self.macAddress: Union[str, None] = None  # Added below if we have specified a Wake on LAN device
@@ -45,7 +44,8 @@ class ExhibitComponent:
         self.config = {"commands": [],
                        "allowed_actions": [],
                        "description": config.componentDescriptions.get(id_, ""),
-                       "AnyDeskID": ""}
+                       "AnyDeskID": "",
+                       "app_name": ""}
 
         if category != "static":
             self.update_configuration()
@@ -119,7 +119,7 @@ class ExhibitComponent:
 
         """Retrieve the latest configuration data from the configParser object"""
         try:
-            file_config = dict(config.galleryConfiguration.items(self.id))
+            file_config = dict(config.exhibitConfiguration.items(self.id))
             for key in file_config:
                 if key == 'content':
                     self.config[key] = [s.strip() for s in file_config[key].split(",")]
@@ -129,9 +129,6 @@ class ExhibitComponent:
                     self.config[key] = file_config[key]
         except configparser.NoSectionError:
             pass
-            # print(f"Warning: there is no configuration available for component with id={self.id}")
-            # with config.logLock:
-            #     logging.warning(f"there is no configuration available for component with id={self.id}")
         self.config["current_exhibit"] = config.currentExhibit[0:-8]
 
     def queue_command(self, command: str):
@@ -205,9 +202,9 @@ class WakeOnLANDevice:
         self.broadcastAddress = "255.255.255.255"
         self.port = 9
         self.ip = ip_address
-        self.constellation_app_id: str = "wol_only"
         self.config = {"allowed_actions": ["power_on"],
-                       "description": config.componentDescriptions.get(id_, "")}
+                       "description": config.componentDescriptions.get(id_, ""),
+                       "app_name": "wol_only"}
 
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
@@ -407,9 +404,9 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
         return
 
     config.currentExhibit = name
-    config.galleryConfiguration = configparser.ConfigParser()
+    config.exhibitConfiguration = configparser.ConfigParser()
     exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
-    config.galleryConfiguration.read(exhibit_path)
+    config.exhibitConfiguration.read(exhibit_path)
 
     if update_default:
         config_reader = configparser.ConfigParser(delimiters="=")
@@ -429,10 +426,10 @@ def set_component_content(id_: str, content_list: list[str]):
 
     with config.galleryConfigurationLock:
         try:
-            config.galleryConfiguration.set(id_, "content", content)
+            config.exhibitConfiguration.set(id_, "content", content)
         except configparser.NoSectionError:  # This exhibit does not have content for this component
-            config.galleryConfiguration.add_section(id_)
-            config.galleryConfiguration.set(id_, "content", content)
+            config.exhibitConfiguration.add_section(id_)
+            config.exhibitConfiguration.set(id_, "content", content)
 
     # Update the component
     get_exhibit_component(id_).update_configuration()
@@ -440,7 +437,26 @@ def set_component_content(id_: str, content_list: list[str]):
     # Write new configuration to file
     with config.galleryConfigurationLock:
         with open(c_tools.get_path(["exhibits", config.currentExhibit], user_file=True), 'w', encoding="UTF-8") as f:
-            config.galleryConfiguration.write(f)
+            config.exhibitConfiguration.write(f)
+
+
+def set_component_app(id_: str, app_name: str):
+    """Write the given app name to the config file."""
+
+    with config.galleryConfigurationLock:
+        try:
+            config.exhibitConfiguration.set(id_, "app_name", app_name)
+        except configparser.NoSectionError:  # This exhibit does not have content for this component
+            config.exhibitConfiguration.add_section(id_)
+            config.exhibitConfiguration.set(id_, "app_name", app_name)
+
+    # Update the component
+    get_exhibit_component(id_).update_configuration()
+
+    # Write new configuration to file
+    with config.galleryConfigurationLock:
+        with open(c_tools.get_path(["exhibits", config.currentExhibit], user_file=True), 'w', encoding="UTF-8") as f:
+            config.exhibitConfiguration.write(f)
 
 
 def update_synchronization_list(this_id: str, other_ids: list[str]):
@@ -526,7 +542,9 @@ def update_exhibit_component_status(data, ip: str):
         if "error" in component.config:
             component.config.pop("error")
     if "constellation_app_id" in data:
-        component.constellation_app_id = data["constellation_app_id"]
+        if component.config["app_name"] == "":
+            component.config["app_name"] = data["constellation_app_id"]
+            set_component_app(this_id, data["constellation_app_id"])
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])

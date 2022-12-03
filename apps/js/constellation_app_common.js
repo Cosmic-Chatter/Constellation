@@ -72,9 +72,17 @@ export function makeHelperRequest (opt) {
   return makeRequest(opt)
 }
 
+export function parseQueryString () {
+  // Read the query string to determine what options to set
+
+  const queryString = decodeURIComponent(window.location.search)
+  const searchParams = new URLSearchParams(queryString)
+
+  return searchParams
+}
+
 export function sendPing () {
   // Contact the control server and ask for any updates
-
   if (config.serverAddress === '') {
     console.log('Aborting ping... no config.serverAddress')
     return
@@ -158,8 +166,7 @@ export function askForShutdown () {
 }
 
 function readUpdate (update) {
-  // Function to read a message from the server and take action based
-  // on the contents
+  // Function to read a message from the server and take action based on the contents
   // 'update' should be an object
 
   let sendUpdate = false
@@ -235,6 +242,13 @@ function readUpdate (update) {
   }
   if (sendUpdate) {
     sendConfigUpdate(update)
+  }
+
+  // After we have saved any updates, see if we should change the app
+  if (stringToBool(parseQueryString().get('showSettings')) === false) {
+    if ('app_name' in update && update.app_name !== config.constellationAppID) {
+      gotoApp(update.app_name)
+    }
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -439,4 +453,23 @@ function splitCsv (str) {
     }
     return accum
   }, { soFar: [], isConcatting: false }).soFar
+}
+
+export function gotoApp (app) {
+  // Change the browser location to point to the given app.
+
+  const appLocations = {
+    infostation: '/infostation.html',
+    media_browser: '/media_browser.html',
+    media_player: '/media_player.html',
+    // media_player_kiosk: 'Media Player Kiosk',
+    // sos_kiosk: 'SOS Kiosk',
+    // sos_screen_player: 'SOS Screen Player',
+    timelapse_viewer: '/timelapse_viewer.html',
+    voting_kiosk: '/voting_kiosk.html',
+    word_cloud_input: '/word_cloud_input.html',
+    word_cloud_viewer: '/word_cloud_viewer.html'
+  }
+
+  window.location = config.helperAddress + appLocations[app]
 }

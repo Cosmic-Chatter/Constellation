@@ -406,7 +406,8 @@ export function showExhibitComponentInfo (id) {
         static_component: 'Static component',
         timelapse_viewer: 'Timelapse Viewer',
         voting_kiosk: 'Voting Kiosk',
-        word_cloud: 'Word Cloud'
+        word_cloud_input: 'Word Cloud Input',
+        word_cloud_viewer: 'Word Cloud Viewer'
       }
       if (obj.constellationAppId in constellationAppIdDisplayNames) {
         constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId]
@@ -481,6 +482,7 @@ export function showExhibitComponentInfo (id) {
     }
 
     // Configure the settings page with the current settings
+    $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
     $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
     $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
     $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
@@ -516,219 +518,14 @@ export function showExhibitComponentInfo (id) {
       $('#componentInfoModalContentTabButton').show()
     }
 
-    const showFailureMessage = function () {
-      $('#componentInfoConnectionStatusFailed').show()
-      $('#componentInfoConnectionStatusInPrograss').hide()
-    }
-
     if (obj.status !== constConfig.STATUS.STATIC) {
       // This component may be accessible over the network.
-
-      const url = obj.getURL()
-      if (url == null) {
-        // We don't have enough information to contact the helper
-        showFailureMessage()
-        // Show the maintenance tab
-        $('#componentInfoModalMaintenanceTabButton').tab('show')
-        // Make the modal visible
-        $('#componentInfoModal').modal('show')
-        return
-      }
-
-      constTools.makeRequest({
-        method: 'GET',
-        url,
-        endpoint: '/getAvailableContent',
-        timeout: 10000
-      })
-        .then((availableContent) => {
-        // Good connection, so show the interface elements
-          $('#componentAvailableContentRow').show()
-          $('#componentcontentUploadInterface').show()
-          $('#componentInfoConnectingNotice').hide()
-
-          // If available, configure for multiple file upload
-          if ('multiple_file_upload' in availableContent) {
-            $('#componentContentUpload').prop('multiple', true)
-            $('#componentContentUploadfilename').html('Choose files')
-          } else {
-            $('#componentContentUpload').prop('multiple', false)
-            $('#componentContentUploadfilename').html('Choose file')
-          }
-
-          // If it is provided, show the system stats
-          if ('system_stats' in availableContent) {
-            const stats = availableContent.system_stats
-
-            // Disk
-            $('#contentUploadDiskSpaceUsedBar').attr('ariaValueNow', 100 - stats.disk_pct_free)
-            $('#contentUploadDiskSpaceUsedBar').width(String(100 - stats.disk_pct_free) + '%')
-            $('#contentUploadDiskSpaceFreeBar').attr('ariaValueNow', stats.disk_pct_free)
-            $('#contentUploadDiskSpaceFreeBar').width(String(stats.disk_pct_free) + '%')
-            $('#contentUploadDiskSpaceFree').html(`Disk: ${String(Math.round(stats.disK_free_GB))} GB`)
-            if (stats.disk_pct_free > 20) {
-              $('#contentUploadDiskSpaceUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
-            } else if (stats.disk_pct_free > 10) {
-              $('#contentUploadDiskSpaceUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
-            } else {
-              $('#contentUploadDiskSpaceUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
-            }
-
-            // CPU
-            $('#contentUploadCPUUsedBar').attr('ariaValueNow', stats.cpu_load_pct)
-            $('#contentUploadCPUUsedBar').width(String(stats.cpu_load_pct) + '%')
-            $('#contentUploadCPUFreeBar').attr('ariaValueNow', 100 - stats.cpu_load_pct)
-            $('#contentUploadCPUFreeBar').width(String(100 - stats.cpu_load_pct) + '%')
-            $('#contentUploadCPUUsed').html(`CPU: ${String(Math.round(stats.cpu_load_pct))}%`)
-            if (stats.cpu_load_pct < 80) {
-              $('#contentUploadCPUUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
-            } else if (stats.cpu_load_pct < 90) {
-              $('#contentUploadCPUUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
-            } else {
-              $('#contentUploadCPUUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
-            }
-
-            // RAM
-            $('#contentUploadRAMUsedBar').attr('ariaValueNow', stats.ram_used_pct)
-            $('#contentUploadRAMUsedBar').width(String(stats.ram_used_pct) + '%')
-            $('#contentUploadRAMFreeBar').attr('ariaValueNow', 100 - stats.ram_used_pct)
-            $('#contentUploadRAMFreeBar').width(String(100 - stats.ram_used_pct) + '%')
-            $('#contentUploadRAMUsed').html(`RAM: ${String(Math.round(stats.ram_used_pct))}%`)
-            if (stats.ram_used_pct < 80) {
-              $('#contentUploadRAMUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
-            } else if (stats.ram_used_pct < 90) {
-              $('#contentUploadRAMUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
-            } else {
-              $('#contentUploadCPUUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
-            }
-
-            $('#contentUploadSystemStatsView').show()
-          } else {
-            $('#contentUploadSystemStatsView').hide()
-          }
-
-          const populateContent = function (key, id, div) {
-          // Get filenames listed under key in availableContent and add
-          // the resulting buttons to the div given by div
-
-            const activeContent = availableContent.active_content
-            const contentList = availableContent[key].sort(function (a, b) { return a.localeCompare(b) })
-            let thumbnailList = availableContent.thumbnails
-            if (thumbnailList == null) {
-              thumbnailList = []
-            }
-
-            for (let i = 0; i < contentList.length; i++) {
-              const container = document.createElement('div')
-              container.classList = 'col-6 mt-1'
-
-              // Check if this file type is supported by the current app
-              const fileExt = contentList[i].split('.').pop().toLowerCase()
-              const supportedTypes = getAllowableContentTypes(obj.constellationAppId)
-
-              if (!supportedTypes.includes(fileExt)) {
-                container.classList += ' incompatible-content'
-              }
-              if (activeContent.includes(contentList[i])) {
-                container.classList += ' active-content'
-              }
-
-              const btnGroup = document.createElement('div')
-              btnGroup.classList = 'btn-group w-100 h-100'
-              container.appendChild(btnGroup)
-
-              const button = document.createElement('button')
-              const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
-              button.setAttribute('type', 'button')
-              button.setAttribute('id', cleanFilename + 'Button')
-              button.classList = 'btn componentContentButton'
-              button.innerHTML = `<span>${contentList[i]}</span>`
-
-              let thumbName
-              const mimetype = constTools.guessMimetype(contentList[i])
-              if (mimetype === 'image') {
-                thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.jpg'
-                if (thumbnailList.includes(thumbName)) {
-                  const thumb = document.createElement('img')
-                  thumb.classList = 'contentThumbnail mt-1'
-                  thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-                  button.appendChild(thumb)
-                }
-              } else if (mimetype === 'video') {
-                thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.mp4'
-                if (thumbnailList.includes(thumbName)) {
-                  const thumb = document.createElement('video')
-                  thumb.classList = 'contentThumbnail mt-1'
-                  thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-                  thumb.setAttribute('loop', true)
-                  thumb.setAttribute('autoplay', true)
-                  thumb.setAttribute('disablePictureInPicture', true)
-                  thumb.setAttribute('webkit-playsinline', true)
-                  thumb.setAttribute('playsinline', true)
-                  button.appendChild(thumb)
-                }
-              }
-
-              btnGroup.appendChild(button)
-
-              const dropdownButton = document.createElement('button')
-              dropdownButton.setAttribute('type', 'button')
-              dropdownButton.setAttribute('id', cleanFilename + 'ButtonDropdown')
-              dropdownButton.setAttribute('data-toggle', 'dropdown')
-              dropdownButton.setAttribute('aria-haspopup', true)
-              dropdownButton.setAttribute('aria-expanded', false)
-              dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton'
-              // Color the button and dropdown button depending on the status of the content
-              if (activeContent.includes(contentList[i])) {
-                dropdownButton.classList += ' btn-primary'
-                button.classList += ' btn-primary'
-              } else {
-                dropdownButton.classList += ' btn-secondary'
-                button.classList += ' btn-secondary'
-              }
-              dropdownButton.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
-              btnGroup.appendChild(dropdownButton)
-
-              const dropdownMenu = document.createElement('div')
-              dropdownMenu.classList = 'dropdown-menu'
-
-              const deleteFileButton = document.createElement('a')
-              deleteFileButton.classList = 'dropdown-item text-danger'
-              const file = contentList[i]
-              deleteFileButton.addEventListener('click', function () {
-                deleteRemoteFile(id, file)
-              })
-              deleteFileButton.innerHTML = 'Delete'
-              dropdownMenu.appendChild(deleteFileButton)
-              btnGroup.appendChild(dropdownMenu)
-
-              $('#' + div).append(container)
-            }
-            updateComponentInfoModalContentButtonState()
-          }
-
-          // Build buttons for each file in all exhibits
-          populateContent('all_exhibits', id, 'componentAvailableContentList')
-
-          // Attach an event handler to change the button's color when clicked
-          $('.componentContentButton').on('click', function (e) {
-            const id = $(this).attr('id')
-            // $('.componentContentButton').not($(this)).removeClass("btn-primary").addClass("btn-secondary");
-            $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
-
-            // $('.componentContentDropdownButton').not($("#"+id+"Dropdown")).removeClass("btn-primary").addClass("btn-secondary");
-            $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
-
-            if ($('.componentContentButton.btn-primary').length === 0) {
-              $('#componentSaveConfirmationButton').hide() // Can't save a state with no selected content.
-            } else {
-              $('#componentSaveConfirmationButton').show()
-            }
-          })
-        })
+      updateComponentInfoModalFromHelper(obj.id)
     } else {
       // This static component will defintely have no content.
-      showFailureMessage()
+      $('#componentInfoConnectionStatusFailed').show()
+      $('#componentInfoConnectionStatusInPrograss').hide()
+
       // Show the maintenance tab
       $('#componentInfoModalMaintenanceTabButton').tab('show')
     }
@@ -736,6 +533,219 @@ export function showExhibitComponentInfo (id) {
     // Make the modal visible
     $('#componentInfoModal').modal('show')
   }
+}
+
+function updateComponentInfoModalFromHelper (id) {
+  // Ask the given helper to send an update and use it to update the interface.
+
+  const obj = getExhibitComponent(id)
+
+  const url = obj.getURL()
+  if (url == null) {
+    // We don't have enough information to contact the helper
+    $('#componentInfoConnectionStatusFailed').show()
+    $('#componentInfoConnectionStatusInPrograss').hide()
+
+    // Show the maintenance tab
+    $('#componentInfoModalMaintenanceTabButton').tab('show')
+    // Make the modal visible
+    $('#componentInfoModal').modal('show')
+    return
+  }
+
+  constTools.makeRequest({
+    method: 'GET',
+    url,
+    endpoint: '/getAvailableContent',
+    timeout: 10000
+  })
+    .then((availableContent) => {
+      // Good connection, so show the interface elements
+      $('#componentAvailableContentRow').show()
+      $('#componentcontentUploadInterface').show()
+      $('#componentInfoConnectingNotice').hide()
+
+      // If available, configure for multiple file upload
+      if ('multiple_file_upload' in availableContent) {
+        $('#componentContentUpload').prop('multiple', true)
+        $('#componentContentUploadfilename').html('Choose files')
+      } else {
+        $('#componentContentUpload').prop('multiple', false)
+        $('#componentContentUploadfilename').html('Choose file')
+      }
+
+      // If it is provided, show the system stats
+      if ('system_stats' in availableContent) {
+        const stats = availableContent.system_stats
+
+        // Disk
+        $('#contentUploadDiskSpaceUsedBar').attr('ariaValueNow', 100 - stats.disk_pct_free)
+        $('#contentUploadDiskSpaceUsedBar').width(String(100 - stats.disk_pct_free) + '%')
+        $('#contentUploadDiskSpaceFreeBar').attr('ariaValueNow', stats.disk_pct_free)
+        $('#contentUploadDiskSpaceFreeBar').width(String(stats.disk_pct_free) + '%')
+        $('#contentUploadDiskSpaceFree').html(`Disk: ${String(Math.round(stats.disK_free_GB))} GB`)
+        if (stats.disk_pct_free > 20) {
+          $('#contentUploadDiskSpaceUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
+        } else if (stats.disk_pct_free > 10) {
+          $('#contentUploadDiskSpaceUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
+        } else {
+          $('#contentUploadDiskSpaceUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
+        }
+
+        // CPU
+        $('#contentUploadCPUUsedBar').attr('ariaValueNow', stats.cpu_load_pct)
+        $('#contentUploadCPUUsedBar').width(String(stats.cpu_load_pct) + '%')
+        $('#contentUploadCPUFreeBar').attr('ariaValueNow', 100 - stats.cpu_load_pct)
+        $('#contentUploadCPUFreeBar').width(String(100 - stats.cpu_load_pct) + '%')
+        $('#contentUploadCPUUsed').html(`CPU: ${String(Math.round(stats.cpu_load_pct))}%`)
+        if (stats.cpu_load_pct < 80) {
+          $('#contentUploadCPUUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
+        } else if (stats.cpu_load_pct < 90) {
+          $('#contentUploadCPUUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
+        } else {
+          $('#contentUploadCPUUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
+        }
+
+        // RAM
+        $('#contentUploadRAMUsedBar').attr('ariaValueNow', stats.ram_used_pct)
+        $('#contentUploadRAMUsedBar').width(String(stats.ram_used_pct) + '%')
+        $('#contentUploadRAMFreeBar').attr('ariaValueNow', 100 - stats.ram_used_pct)
+        $('#contentUploadRAMFreeBar').width(String(100 - stats.ram_used_pct) + '%')
+        $('#contentUploadRAMUsed').html(`RAM: ${String(Math.round(stats.ram_used_pct))}%`)
+        if (stats.ram_used_pct < 80) {
+          $('#contentUploadRAMUsedBar').removeClass('bg-warning bg-danger').addClass('bg-success')
+        } else if (stats.ram_used_pct < 90) {
+          $('#contentUploadRAMUsedBar').removeClass('bg-success bg-danger').addClass('bg-warning')
+        } else {
+          $('#contentUploadCPUUsedBar').removeClass('bg-success bg-warning').addClass('bg-danger')
+        }
+
+        $('#contentUploadSystemStatsView').show()
+      } else {
+        $('#contentUploadSystemStatsView').hide()
+      }
+
+      // Build buttons for each file in all exhibits
+      populateComponentContent(availableContent, 'all_exhibits', id, obj.constellationAppId, 'componentAvailableContentList')
+
+      // Attach an event handler to change the button's color when clicked
+      $('.componentContentButton').on('click', function (e) {
+        const id = $(this).attr('id')
+        // $('.componentContentButton').not($(this)).removeClass("btn-primary").addClass("btn-secondary");
+        $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
+
+        // $('.componentContentDropdownButton').not($("#"+id+"Dropdown")).removeClass("btn-primary").addClass("btn-secondary");
+        $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
+
+        if ($('.componentContentButton.btn-primary').length === 0) {
+          $('#componentSaveConfirmationButton').hide() // Can't save a state with no selected content.
+        } else {
+          $('#componentSaveConfirmationButton').show()
+        }
+      })
+    })
+}
+
+function populateComponentContent (availableContent, key, id, appName, div) {
+  // Get filenames listed under key in availableContent and add
+  // the resulting buttons to the div given by div
+
+  const activeContent = availableContent.active_content
+  const contentList = availableContent[key].sort(function (a, b) { return a.localeCompare(b) })
+  let thumbnailList = availableContent.thumbnails
+  if (thumbnailList == null) {
+    thumbnailList = []
+  }
+
+  $('#' + div).empty()
+
+  for (let i = 0; i < contentList.length; i++) {
+    const container = document.createElement('div')
+    container.classList = 'col-6 mt-1'
+
+    // Check if this file type is supported by the current app
+    const fileExt = contentList[i].split('.').pop().toLowerCase()
+    const supportedTypes = getAllowableContentTypes(appName)
+
+    if (!supportedTypes.includes(fileExt)) {
+      container.classList += ' incompatible-content'
+    }
+    if (activeContent.includes(contentList[i])) {
+      container.classList += ' active-content'
+    }
+
+    const btnGroup = document.createElement('div')
+    btnGroup.classList = 'btn-group w-100 h-100'
+    container.appendChild(btnGroup)
+
+    const button = document.createElement('button')
+    const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
+    button.setAttribute('type', 'button')
+    button.setAttribute('id', cleanFilename + 'Button')
+    button.classList = 'btn componentContentButton'
+    button.innerHTML = `<span>${contentList[i]}</span>`
+
+    let thumbName
+    const mimetype = constTools.guessMimetype(contentList[i])
+    if (mimetype === 'image') {
+      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.jpg'
+      if (thumbnailList.includes(thumbName)) {
+        const thumb = document.createElement('img')
+        thumb.classList = 'contentThumbnail mt-1'
+        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
+        button.appendChild(thumb)
+      }
+    } else if (mimetype === 'video') {
+      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.mp4'
+      if (thumbnailList.includes(thumbName)) {
+        const thumb = document.createElement('video')
+        thumb.classList = 'contentThumbnail mt-1'
+        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
+        thumb.setAttribute('loop', true)
+        thumb.setAttribute('autoplay', true)
+        thumb.setAttribute('disablePictureInPicture', true)
+        thumb.setAttribute('webkit-playsinline', true)
+        thumb.setAttribute('playsinline', true)
+        button.appendChild(thumb)
+      }
+    }
+
+    btnGroup.appendChild(button)
+
+    const dropdownButton = document.createElement('button')
+    dropdownButton.setAttribute('type', 'button')
+    dropdownButton.setAttribute('id', cleanFilename + 'ButtonDropdown')
+    dropdownButton.setAttribute('data-toggle', 'dropdown')
+    dropdownButton.setAttribute('aria-haspopup', true)
+    dropdownButton.setAttribute('aria-expanded', false)
+    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton'
+    // Color the button and dropdown button depending on the status of the content
+    if (activeContent.includes(contentList[i])) {
+      dropdownButton.classList += ' btn-primary'
+      button.classList += ' btn-primary'
+    } else {
+      dropdownButton.classList += ' btn-secondary'
+      button.classList += ' btn-secondary'
+    }
+    dropdownButton.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
+    btnGroup.appendChild(dropdownButton)
+
+    const dropdownMenu = document.createElement('div')
+    dropdownMenu.classList = 'dropdown-menu'
+
+    const deleteFileButton = document.createElement('a')
+    deleteFileButton.classList = 'dropdown-item text-danger'
+    const file = contentList[i]
+    deleteFileButton.addEventListener('click', function () {
+      deleteRemoteFile(id, file)
+    })
+    deleteFileButton.innerHTML = 'Delete'
+    dropdownMenu.appendChild(deleteFileButton)
+    btnGroup.appendChild(dropdownMenu)
+
+    $('#' + div).append(container)
+  }
+  updateComponentInfoModalContentButtonState()
 }
 
 export function updateComponentInfoModalContentButtonState () {
@@ -800,6 +810,7 @@ export function toggleExhibitComponentInfoSettingWarnings () {
 
 export function submitComponentSettingsChange () {
   // Collect the current settings and send them to the component's helper for saving.
+  // If the app is changed, send that to Control Server
 
   const obj = getExhibitComponent($('#componentInfoModalTitle').html())
 
@@ -834,6 +845,24 @@ export function submitComponentSettingsChange () {
         }
       }
     })
+
+  const app = $('#componentInfoModalSettingsAppName').val()
+  if (app !== obj.constellationAppId) {
+    $('#constellationComponentIdButton').html(app)
+    obj.constellationAppId = app
+    updateComponentInfoModalFromHelper(obj.id)
+
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/exhibit/setComponentApp',
+      params: {
+        component: {
+          id: obj.id
+        },
+        app_name: app
+      }
+    })
+  }
 }
 
 export function getExhibitComponent (id) {

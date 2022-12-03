@@ -29,9 +29,9 @@ class Projector:
         self.mac_address = mac_address  # For use with Wake on LAN
         self.connection_type = connection_type
         self.make = make
-        self.constellation_app_id: str = "projector"
         self.config: dict = {"allowed_actions": ["power_on", "power_off"],
-                             "description": config.componentDescriptions.get(id_, "")}
+                             "description": config.componentDescriptions.get(id_, ""),
+                             "app_name": "projector"}
 
         self.state = {"status": "OFFLINE"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)

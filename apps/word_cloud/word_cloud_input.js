@@ -65,6 +65,11 @@ function updateFunc (update) {
 function updateContent (name, definition) {
   // Clean up the old survey, then create the new one.
 
+  if (!('SETTINGS' in definition)) {
+    console.log('Error: The INI file must include a [SETTINGS] section!')
+    return
+  }
+
   // Parse the settings and make the appropriate changes
   if ('prompt' in definition.SETTINGS) {
     document.getElementById('promptText').innerHTML = definition.SETTINGS.prompt
@@ -131,7 +136,7 @@ const keyboard = new Keyboard({
 })
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'word_cloud'
+constCommon.config.constellationAppID = 'word_cloud_input'
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
