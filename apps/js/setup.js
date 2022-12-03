@@ -3,7 +3,7 @@
 import * as constCommon from './constellation_app_common.js'
 
 function submitAddDefaultModal () {
-  if (!$('#settingValueInputField').val().includes('=')) {
+  if (!$('.settingValueInputField.visible').val().includes('=')) {
     addDefaultFromModal()
     $('#addSettingModal').modal('hide')
   } else {
@@ -13,8 +13,11 @@ function submitAddDefaultModal () {
 
 function showAddDefaultModal () {
   $('#settingKeyInputField').val('')
-  $('#settingValueInputField').val('')
+  $('.settingValueInputField').val('').removeClass('visible').hide()
+  $('#settingValueInputTextField').addClass('visible').show()
+  $('#settingValueInputTip').show()
   $('#modalEqualSignWarning').hide()
+  $('#modalSettingDescriptionField').hide()
 
   // Update the select with any unused/available keys
   $('#availableKeys').empty()
@@ -35,16 +38,62 @@ function showAddDefaultModal () {
   $('#addSettingModal').modal('show')
 }
 
+function populateDefaultFromOptionList () {
+  // When the user selects a option from the available keys, configure the modal for that data type
+
+  const key = $('#availableKeys').val()
+  const keyInfo = lookupKnownKey(key)
+  $('#settingKeyInputField').val(key)
+  if (keyInfo.description !== '') {
+    $('#modalSettingDescriptionField').html(keyInfo.description)
+    $('#modalSettingDescriptionField').show()
+  } else {
+    $('#modalSettingDescriptionField').hide()
+  }
+
+  $('.settingValueInputField').val('').removeClass('visible').hide()
+  if (keyInfo.type === 'text') {
+    $('#settingValueInputTextField').addClass('visible').show()
+    $('#settingValueInputTip').show()
+  } else if (keyInfo.type === 'number') {
+    $('#settingValueInputNumericField').addClass('visible').show()
+    $('#settingValueInputTip').hide()
+  } else if (keyInfo.type === 'bool') {
+    $('#settingValueInputOptionField').addClass('visible').show()
+    $('#settingValueInputTip').hide()
+
+    $('#settingValueInputOptionField').empty()
+    const optionTrue = document.createElement('option')
+    optionTrue.value = 'true'
+    optionTrue.innerHTML = 'True'
+    const optionFalse = document.createElement('option')
+    optionFalse.value = 'false'
+    optionFalse.innerHTML = 'False'
+    $('#settingValueInputOptionField').append(optionTrue).append(optionFalse)
+  } else if (keyInfo.type === 'option') {
+    $('#settingValueInputOptionField').addClass('visible').show()
+    $('#settingValueInputTip').hide()
+
+    $('#settingValueInputOptionField').empty()
+    keyInfo.options.forEach((option) => {
+      const optionEl = document.createElement('option')
+      optionEl.value = option
+      optionEl.innerHTML = option
+      $('#settingValueInputOptionField').append(optionEl)
+    })
+  }
+}
+
 function addDefaultFromModal () {
   // Gather the input from the modal and create a defaultCard
 
   const key = $('#settingKeyInputField').val().toLowerCase()
-  const value = $('#settingValueInputField').val().toLowerCase()
+  const value = $('.settingValueInputField.visible').val().toLowerCase()
   createDefaultCard(key, value)
 
   // Clear the data so we don't double-add the default
   $('#settingKeyInputField').val('')
-  $('#settingValueInputField').val('')
+  $('.settingValueInputField').val('')
 }
 
 function createDefaultCard (key, value) {
@@ -98,6 +147,19 @@ function createDefaultCard (key, value) {
     select.appendChild(optionFalse)
     select.value = value.toLowerCase()
     resetFunction = function () { $(select).val(value.toLowerCase()) }
+    card.append(select)
+  } else if (keyInfo.type === 'option') {
+    const select = document.createElement('select')
+    select.classList.add('defaultsValue', 'w-100', 'mt-3')
+
+    keyInfo.options.forEach((option) => {
+      const optionEl = document.createElement('option')
+      optionEl.value = option
+      optionEl.innerHTML = option
+      select.appendChild(optionEl)
+    })
+    select.value = value
+    resetFunction = function () { $(select).val(value) }
     card.append(select)
   }
 
@@ -263,18 +325,19 @@ function populateHelpTab () {
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
+constCommon.config.constellationAppID = 'settings'
 
 // For known keys, define their options
 const knownKeys = [
   { key: 'active_hours_end', type: 'text', required: false, description: "Some actions, such as Smart Restart, will be blocked before this time (e.g., '9 pm')." },
   { key: 'active_hours_start', type: 'text', required: false, description: "Some actions, such as Smart Restart, will be blocked after this time (e.g., '6 am')." },
+  { key: 'allow_refresh', type: 'bool', required: false, description: 'Allow Control Server to refresh the webpage.' },
   { key: 'allow_restart', type: 'bool', required: false, description: 'Allow the component to restart the PC.' },
   { key: 'allow_shutdown', type: 'bool', required: false, description: 'Allow the component to shutdown the PC. This should only be enabled in Wake on LAN is set up.' },
   { key: 'allow_sleep', type: 'bool', required: false, description: 'Allow the component to sleep the screen. This may not work on all devices.' },
   { key: 'anydesk_id', type: 'text', required: false, description: 'If AnyDesk is configured for this device, you can add its ID, which enables a button in the web console.' },
   { key: 'autoplay_audio', type: 'bool', required: false, description: 'Allow audio to play automatically. If this is set to true, you must have set up your web browser to allow automatic audio.' },
   { key: 'current_exhibit', type: 'text', required: true, description: 'This will be managed automatically by Constellation.' },
-  { key: 'display_type', type: 'text', required: false, description: "Set to 'screen' or 'projector'. This usually has no effect." },
   { key: 'helper_port', type: 'text', required: true, description: 'The port on which this helper is operating.' },
   { key: 'id', type: 'text', required: true, description: 'A unique name that identifies this component.' },
   { key: 'image_duration', type: 'number', required: false, description: 'The number of seconds that each image will be shown.' },
@@ -282,7 +345,7 @@ const knownKeys = [
   { key: 'kiosk_type', type: 'text', required: false, description: 'A user-defined grouping for this component.' },
   { key: 'server_ip_address', type: 'text', required: true, description: 'The IP address of the Constellation Control Server that this component should connect to.' },
   { key: 'server_port', type: 'number', required: true, description: 'The port of the Constellation Control Server that this component should connect to.' },
-  { key: 'smart_restart', type: 'text', required: false, description: 'Smart Restart mode (off | patient | aggressive).' },
+  { key: 'smart_restart', type: 'option', options: ['off', 'patient', 'aggressive'], required: false, description: 'Smart Restart mode' },
   { key: 'smart_restart_interval', type: 'number', required: false, description: 'Time in seconds to poll Control Server.' },
   { key: 'smart_restart_threshold', type: 'number', required: false, description: 'Time in seconds since last connection before reboot should be triggered.' },
   { key: 'sos_ip_address', type: 'text', required: false, description: 'The IP address of the Science ona Sphere control computer.' },
@@ -296,13 +359,20 @@ constCommon.askForDefaults()
 loadVersion()
 populateHelpTab()
 
+// showSettings == true means this was opened from the Control Server web console
+// showSettings == false means we should check-in in order to switch to a selected app
+if (constCommon.stringToBool(constCommon.parseQueryString().get('showSettings')) === false) {
+  constCommon.sendPing()
+  setInterval(constCommon.sendPing, 5000)
+}
+
 // Add event handlers
 // Settings page
 $('#submitAddDefaultFromModal').click(submitAddDefaultModal)
 $('#saveDefaultButton').click(updateDefaults)
 $('#addDefaultButton').click(showAddDefaultModal)
 $('#availableKeys').change(function () {
-  $('#settingKeyInputField').val($('#availableKeys').val())
+  populateDefaultFromOptionList()
 })
 
 // Apps page

@@ -393,27 +393,8 @@ export function showExhibitComponentInfo (id) {
     $('#projectorInfoModal').modal('show')
   } else { // This is a normal ExhibitComponent
     $('#componentInfoModalTitle').html(id)
-    let constellationAppId = 'Unknown Component'
-    if (obj.constellationAppId !== '') {
-      const constellationAppIdDisplayNames = {
-        heartbeat: 'Heartbeat',
-        infostation: 'InfoStation',
-        media_browser: 'Media Browser',
-        media_player: 'Media Player',
-        media_player_kiosk: 'Media Player Kiosk',
-        sos_kiosk: 'SOS Kiosk',
-        sos_screen_player: 'SOS Screen Player',
-        static_component: 'Static component',
-        timelapse_viewer: 'Timelapse Viewer',
-        voting_kiosk: 'Voting Kiosk',
-        word_cloud_input: 'Word Cloud Input',
-        word_cloud_viewer: 'Word Cloud Viewer'
-      }
-      if (obj.constellationAppId in constellationAppIdDisplayNames) {
-        constellationAppId = constellationAppIdDisplayNames[obj.constellationAppId]
-      }
-    }
-    $('#constellationComponentIdButton').html(constellationAppId)
+
+    $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
     if (obj.ip !== '') {
       $('#componentInfoModalIPAddress').html(obj.ip)
       $('#componentInfoModalIPAddressGroup').show()
@@ -483,6 +464,7 @@ export function showExhibitComponentInfo (id) {
 
     // Configure the settings page with the current settings
     $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
+    $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
     $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
     $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
     $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
@@ -533,6 +515,33 @@ export function showExhibitComponentInfo (id) {
     // Make the modal visible
     $('#componentInfoModal').modal('show')
   }
+}
+
+function convertAppIDtoDisplayName (appName) {
+  // Convert app names to their display text
+
+  let displayName = 'Unknown Component'
+  if (appName !== '') {
+    const constellationAppIdDisplayNames = {
+      heartbeat: 'Heartbeat',
+      infostation: 'InfoStation',
+      media_browser: 'Media Browser',
+      media_player: 'Media Player',
+      media_player_kiosk: 'Media Player Kiosk',
+      sos_kiosk: 'SOS Kiosk',
+      sos_screen_player: 'SOS Screen Player',
+      static_component: 'Static component',
+      timelapse_viewer: 'Timelapse Viewer',
+      voting_kiosk: 'Voting Kiosk',
+      word_cloud_input: 'Word Cloud Input',
+      word_cloud_viewer: 'Word Cloud Viewer'
+    }
+    if (appName in constellationAppIdDisplayNames) {
+      displayName = constellationAppIdDisplayNames[appName]
+    }
+  }
+
+  return displayName
 }
 
 function updateComponentInfoModalFromHelper (id) {
@@ -848,7 +857,7 @@ export function submitComponentSettingsChange () {
 
   const app = $('#componentInfoModalSettingsAppName').val()
   if (app !== obj.constellationAppId) {
-    $('#constellationComponentIdButton').html(app)
+    $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(app))
     obj.constellationAppId = app
     updateComponentInfoModalFromHelper(obj.id)
 

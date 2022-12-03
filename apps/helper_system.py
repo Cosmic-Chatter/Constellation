@@ -118,16 +118,11 @@ def smart_restart_check():
 def wake_display():
     """Wake the display up or power it on"""
 
-    display_type = config.defaults_dict.get("display_type", "screen")
-
-    if display_type == "screen":
-        if sys.platform == "darwin":  # MacOS
-            os.system("caffeinate -u -t 2")
-        elif sys.platform == "linux":
-            os.system("xset dpms force on")
-        elif sys.platform == "win32":
-            # os.system("nircmd.exe monitor async_on")
-            nircmd_path = helper_files.get_path(["nircmd.exe"])
-            os.system(nircmd_path + " sendkeypress ctrl")
-    elif display_type == "projector":
-        pass
+    if sys.platform == "darwin":  # MacOS
+        os.system("caffeinate -u -t 2")
+    elif sys.platform == "linux":
+        os.system("xset dpms force on")
+    elif sys.platform == "win32":
+        # os.system("nircmd.exe monitor async_on")
+        nircmd_path = helper_files.get_path(["nircmd.exe"])
+        os.system(nircmd_path + " sendkeypress ctrl")
