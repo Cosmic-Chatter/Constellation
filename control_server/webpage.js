@@ -2535,7 +2535,6 @@ function updateProjectorConfigurationFromModal () {
     params: { configuration: listToSend }
   })
     .then((result) => {
-      console.log('here')
       $('#manageProjectorsModal').modal('hide')
     })
 }
