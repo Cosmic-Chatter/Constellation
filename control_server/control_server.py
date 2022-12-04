@@ -261,31 +261,6 @@ def load_default_configuration():
     except KeyError:
         pass
 
-    # n_proj = len(pjlink_projectors)
-    # cur_proj = 0
-    # for key in pjlink_projectors:
-    #     cur_proj += 1
-    #     print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-    #     if c_proj.get_projector(key) is None:
-    #         # Try to split on a comma. If we get two elements back, that means
-    #         # we have the form "ip, password"
-    #         split = pjlink_projectors[key].split(",")
-    #         if len(split) == 2:
-    #             # We have an IP address and a password
-    #             ip = split[0].strip()
-    #             password = split[1].strip()
-    #             if password == "":
-    #                 password = None
-    #             new_proj = c_proj.Projector(key, ip, "pjlink", password=password)
-    #         elif len(split) == 1:
-    #             # We have an IP address only
-    #             new_proj = c_proj.Projector(key, pjlink_projectors[key], "pjlink")
-    #         else:
-    #             print("Invalid PJLink projector entry:", pjlink_projectors[key])
-    #             break
-    #         c_config.projectorList.append(new_proj)
-    # print("Connecting to PJLink projectors... done                      ")
-
     # Parse list of serial projectors
     try:
         serial_projectors = config_reader["SERIAL_PROJECTORS"]
@@ -294,32 +269,6 @@ def load_default_configuration():
     except KeyError:
         pass
 
-    # n_proj = len(serial_projectors)
-    # cur_proj = 0
-    # for key in serial_projectors:
-    #     cur_proj += 1
-    #     print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-    #     if c_proj.get_projector(key) is None:
-    #         # Try to split on a comma. If we get two elements back, that means
-    #         # we have the form "ip, password"
-    #         split = serial_projectors[key].split(",")
-    #         if len(split) == 2:
-    #             # We have an IP address and a make
-    #             ip = split[0].strip()
-    #             make = split[1].strip()
-    #             if make == "":
-    #                 make = None
-    #             new_proj = c_proj.Projector(key, ip, "serial", make=make)
-    #         elif len(split) == 1:
-    #             # We have an IP address only
-    #             new_proj = c_proj.Projector(key, serial_projectors[key], "serial")
-    #         else:
-    #             print("Invalid serial projector entry:", serial_projectors[key])
-    #             break
-    #         c_config.projectorList.append(new_proj)
-    # print("Connecting to serial projectors... done                      ")
-
-    c_config.projectorList = []
     c_proj.read_projector_configuration()
 
     # Parse list of Wake on LAN devices
@@ -393,6 +342,20 @@ def load_default_configuration():
     # Update the components that the configuration has changed
     for component in c_config.componentList:
         component.update_configuration()
+
+    # Finally, remove any legacy sections that have been moved over to the new JSON config files
+    removable_sections = ["PJLINK_PROJECTORS", "SERIAL_PROJECTORS"]
+    sections_to_remove = []
+    for section in removable_sections:
+        if section in config_reader.sections():
+            sections_to_remove.append(section)
+
+    if len(sections_to_remove) > 0:
+        # First, make a backup of the current file
+        shutil.copy(c_tools.get_path(["galleryConfiguration.ini"], user_file=True),
+                    c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
+        # Then, remove the sections
+        c_tools.remove_ini_section(c_tools.get_path(["galleryConfiguration.ini"], user_file=True), sections_to_remove)
 
 
 def quit_handler(*args):

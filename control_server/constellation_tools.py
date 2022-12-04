@@ -1,12 +1,14 @@
 """"""
 
 # Standard imports
+import configparser
 from functools import partial
 import json
 import os
 import sys
 import threading
 import _thread
+from typing import Union
 
 # Non-standard imports
 import psutil
@@ -54,6 +56,33 @@ def write_json(data, path: str, append: bool = False):
     with config.galleryConfigurationLock:
         with open(path, mode, encoding='UTF-8') as f:
             json.dump(data, f)
+
+
+def remove_ini_section(ini_path: str, value: Union[str, list]):
+    """Remove the given section from the ini file."""
+
+    config_reader = configparser.ConfigParser(delimiters="=")
+    config_reader.optionxform = str  # Override default, which is case in-sensitive
+
+    if isinstance(value, str):
+        sections = [value]
+    elif isinstance(value, list):
+        sections = value
+    else:
+        raise ValueError("'value' must be of type str or list")
+
+    with config.galleryConfigurationLock:
+        config_reader.read(ini_path)
+
+        if len(config_reader.sections()) == 0:
+            # This file does not exist, or is trivial
+            return
+
+        for section in sections:
+            config_reader.remove_section(section)
+
+        with open(ini_path, "w", encoding="UTF-8") as f:
+            config_reader.write(f)
 
 
 def reboot_server(*args, **kwargs) -> None:
