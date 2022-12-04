@@ -2316,6 +2316,230 @@ function deleteExhibitFromModal () {
   $('#deleteExhibitModal').modal('hide')
 }
 
+function showManageProjectorsModal () {
+  // Show the modal for managing projectors.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/getProjectorConfiguration'
+  })
+    .then((result) => {
+      populateManageProjectorModal(result.configuration)
+    })
+
+  $('#manageProjectorsEditMakeInput').hide()
+  $('#manageProjectorsEditMakeInputLabel').hide()
+  $('#manageProjectorsModal').modal('show')
+
+  // Clear the input fields
+  $('#manageProjectorsEditIDInput').val(null)
+  $('#manageProjectorsEditTypeInput').val(null)
+  $('#manageProjectorsEditProtocolSelect').val(null)
+  $('#manageProjectorsEditIPInput').val(null)
+  $('#manageProjectorsEditPasswordInput').val(null)
+  $('#manageProjectorsEditMakeInput').val(null)
+  $('#manageProjectorsModalSaveButton').hide()
+}
+
+function populateManageProjectorModal (list) {
+  // Get a list of projector configs from Control Server and build a widget for each.
+
+  $('#manageProjectorList').empty()
+  list.forEach((entry) => {
+    createManageProjectorEntry(entry)
+  })
+}
+
+function createManageProjectorEntry (entry) {
+  // Take a dictionary and turn it into HTML elements
+
+  const protocolNames = {
+    pjlink: 'PJLink',
+    serial: 'Serial'
+  }
+
+  // Create a new ID used only to track this projector through the edit process,
+  // even if the actual ID is changed.
+  const cleanID = String(new Date().getTime() + Math.round(1000000 * Math.random()))
+
+  const containerCol = document.createElement('div')
+  containerCol.classList = 'col-12 mb-3 manageProjectorEntry'
+  containerCol.setAttribute('id', 'manageProjector_' + cleanID)
+  $(containerCol).data('config', entry)
+  $('#manageProjectorList').append(containerCol)
+
+  const containerRow = document.createElement('div')
+  containerRow.classList = 'row'
+  containerCol.appendChild(containerRow)
+
+  const topCol = document.createElement('div')
+  topCol.classList = 'col-12'
+  containerRow.appendChild(topCol)
+
+  const row1 = document.createElement('div')
+  row1.classList = 'row'
+  topCol.appendChild(row1)
+
+  const titleCol = document.createElement('div')
+  titleCol.classList = 'col-9 bg-primary'
+  titleCol.setAttribute('id', 'manageProjectorID_' + cleanID)
+  titleCol.style.fontSize = '18px'
+  titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.innerHTML = entry.id
+  row1.appendChild(titleCol)
+
+  const editCol = document.createElement('div')
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.setAttribute('id', 'manageProjectorEdit_' + cleanID)
+  editCol.style.borderTopRightRadius = '0.25rem'
+  editCol.innerHTML = 'Edit'
+  $(editCol).click(function () {
+    populateManageProjectorEdit(cleanID)
+  })
+  row1.appendChild(editCol)
+
+  const bottomCol = document.createElement('div')
+  bottomCol.classList = 'col-12'
+  containerRow.appendChild(bottomCol)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  bottomCol.appendChild(row2)
+
+  const protocolCol = document.createElement('div')
+  protocolCol.classList = 'col-3 bg-secondary py-1 px-1 text-center'
+  protocolCol.setAttribute('id', 'manageProjectorProtocol_' + cleanID)
+  protocolCol.style.borderBottomLeftRadius = '0.25rem'
+  protocolCol.innerHTML = protocolNames[entry.protocol]
+  row2.appendChild(protocolCol)
+
+  const ipCol = document.createElement('div')
+  ipCol.classList = 'col-4 bg-secondary py-1 px-1 text-center'
+  ipCol.setAttribute('id', 'manageProjectorIP_' + entry.id)
+  ipCol.innerHTML = entry.ip_address
+  row2.appendChild(ipCol)
+
+  const typeCol = document.createElement('div')
+  typeCol.classList = 'col-5 bg-secondary py-1 px-1 text-center'
+  typeCol.setAttribute('id', 'manageProjectorType_' + cleanID)
+  typeCol.style.borderBottomRightRadius = '0.25rem'
+  if ('type' in entry) {
+    typeCol.innerHTML = entry.type
+  } else {
+    typeCol.innerHTML = 'PROJECTOR'
+  }
+  row2.appendChild(typeCol)
+}
+
+function populateManageProjectorEdit (id) {
+  // Take a dictionary of details and use it to fill the edit properties fields.
+
+  const details = $('#manageProjector_' + id.replaceAll(' ', '_')).data('config')
+
+  // Tag element with the id to enable updating the config later
+  $('#manageProjectorsEditIDInput').data('id', id)
+
+  $('#manageProjectorsEditIDInput').val(details.id)
+  $('#manageProjectorsEditTypeInput').val(details.type)
+  $('#manageProjectorsProtocolSelect').val(details.protocol)
+  $('#manageProjectorsEditIPInput').val(details.ip_address)
+  $('#manageProjectorsEditPasswordInput').val(details.password)
+  $('#manageProjectorsEditMakeInput').val(details.make)
+
+  if (details.protocol === 'pjlink') {
+    $('#manageProjectorsEditPasswordInput').show()
+    $('#manageProjectorsEditPasswordInputLabel').show()
+    $('#manageProjectorsEditMakeInput').hide()
+    $('#manageProjectorsEditMakeInputLabel').hide()
+  } else {
+    $('#manageProjectorsEditPasswordInput').hide()
+    $('#manageProjectorsEditPasswordInputLabel').hide()
+    $('#manageProjectorsEditMakeInput').show()
+    $('#manageProjectorsEditMakeInputLabel').show()
+  }
+}
+
+function manageProjectorUpdateConfigFromEdit () {
+  // Called when a change occurs in an edit field.
+  // Update both the HTML and the config itself
+
+  const id = $('#manageProjectorsEditIDInput').data('id')
+  const details = $('#manageProjector_' + id).data('config')
+  $('#manageProjectorsModalSaveButton').show() // Show the save button
+  const protocolNames = {
+    pjlink: 'PJLink',
+    serial: 'Serial'
+  }
+
+  const newID = $('#manageProjectorsEditIDInput').val()
+  $('#manageProjectorID_' + id).html(newID)
+  details.id = newID
+
+  const newType = $('#manageProjectorsEditTypeInput').val()
+  if (newType != null && newType !== '') {
+    $('#manageProjectorType_' + id).html(newType)
+    details.type = newType
+  } else {
+    $('#manageProjectorType_' + id).html('PROJECTOR')
+  }
+
+  const newProtocol = $('#manageProjectorsProtocolSelect').val()
+  $('#manageProjectorProtocol_' + id).html(protocolNames[newProtocol])
+  details.protocol = newProtocol
+  if (details.protocol === 'pjlink') {
+    $('#manageProjectorsEditPasswordInput').show()
+    $('#manageProjectorsEditPasswordInputLabel').show()
+    $('#manageProjectorsEditMakeInput').hide()
+    $('#manageProjectorsEditMakeInputLabel').hide()
+  } else {
+    $('#manageProjectorsEditPasswordInput').hide()
+    $('#manageProjectorsEditPasswordInputLabel').hide()
+    $('#manageProjectorsEditMakeInput').show()
+    $('#manageProjectorsEditMakeInputLabel').show()
+  }
+
+  const newIP = $('#manageProjectorsEditIPInput').val()
+  $('#manageProjectorIP_' + id).html(newIP)
+  details.ip_address = newIP
+
+  const newMake = $('#manageProjectorsEditMakeInput').val()
+  details.make = newMake
+
+  const newPassword = $('#manageProjectorsEditPasswordInput').val()
+  details.password = newPassword
+
+  $('#manageProjector_' + id).data('config', details)
+}
+
+function manageProjectorDeleteProjectorEntry () {
+  // Called when the "Delete projector" button is clicked.
+  // Remove the HTML entry from the listing
+
+  const id = $('#manageProjectorsEditIDInput').data('id')
+  $('#manageProjectorsModalSaveButton').show() // Show the save button
+  $('#manageProjector_' + id).remove()
+}
+
+function updateProjectorConfigurationFromModal () {
+  // Collect the dictionary from each projector element and send it to Control Server to save.
+
+  const entries = $('.manageProjectorEntry')
+  const listToSend = []
+  entries.each((i, entry) => {
+    listToSend.push($(entry).data('config'))
+  })
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/updateProjectorConfiguration',
+    params: { configuration: listToSend }
+  })
+    .then((result) => {
+      console.log('here')
+      $('#manageProjectorsModal').modal('hide')
+    })
+}
+
 // Bind event listeners
 
 // Components tab
@@ -2396,6 +2620,7 @@ $('#componentInfoModalMaintenanceNote').on('input', function () {
 })
 // Settings tab
 // =========================
+// Exhibits
 $('#exhibitSelect').change(function () {
   changeExhibit(false)
 })
@@ -2416,6 +2641,20 @@ $('#submitGalleryConfigChangeFromModalButton').click(submitGalleryConfigChangeFr
 $('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
 $('#reloadConfigurationButton').click(reloadConfiguration)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+// Projectors
+$('#showManageProjectorsModalButton').click(showManageProjectorsModal)
+$('#manageProjectorAddBUtton').click(function () {
+  createManageProjectorEntry({
+    id: 'New Projector',
+    ip_address: '',
+    protocol: 'pjlink'
+  })
+  $('#manageProjectorsModalSaveButton').show() // Show the save button
+})
+$('.manageProjectorEditField').change(manageProjectorUpdateConfigFromEdit)
+$('.manageProjectorEditField').on('input', manageProjectorUpdateConfigFromEdit)
+$('#manageProjectorDeleteButton').click(manageProjectorDeleteProjectorEntry)
+$('#manageProjectorsModalSaveButton').click(updateProjectorConfigurationFromModal)
 // Tracker
 $('#createTrackerTemplateButton').click(function () {
   createTrackerTemplate()

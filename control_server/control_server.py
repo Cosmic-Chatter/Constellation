@@ -6,6 +6,7 @@
 # Standard modules
 import configparser
 import datetime
+import threading
 from functools import lru_cache
 import json
 import logging
@@ -242,8 +243,6 @@ def load_default_configuration():
 
     c_sched.retrieve_json_schedule()
 
-    c_config.projectorList = []
-
     # Load the component descriptions. Do this first, so they are available when
     # creating the various components
     try:
@@ -257,68 +256,71 @@ def load_default_configuration():
     # Parse list of PJLink projectors
     try:
         pjlink_projectors = config_reader["PJLINK_PROJECTORS"]
-        print("Connecting to PJLink projectors...", end="\r", flush=True)
+        # We have found legacy PJLink projector configuration... convert this to the new JSON format
+        c_proj.convert_config_to_json(dict(pjlink_projectors), "pjlink")
     except KeyError:
-        print("No PJLink projectors specified")
-        pjlink_projectors = []
+        pass
 
-    n_proj = len(pjlink_projectors)
-    cur_proj = 0
-    for key in pjlink_projectors:
-        cur_proj += 1
-        print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if c_proj.get_projector(key) is None:
-            # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, password"
-            split = pjlink_projectors[key].split(",")
-            if len(split) == 2:
-                # We have an IP address and a password
-                ip = split[0].strip()
-                password = split[1].strip()
-                if password == "":
-                    password = None
-                new_proj = c_proj.Projector(key, ip, "pjlink", password=password)
-            elif len(split) == 1:
-                # We have an IP address only
-                new_proj = c_proj.Projector(key, pjlink_projectors[key], "pjlink")
-            else:
-                print("Invalid PJLink projector entry:", pjlink_projectors[key])
-                break
-            c_config.projectorList.append(new_proj)
-    print("Connecting to PJLink projectors... done                      ")
+    # n_proj = len(pjlink_projectors)
+    # cur_proj = 0
+    # for key in pjlink_projectors:
+    #     cur_proj += 1
+    #     print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
+    #     if c_proj.get_projector(key) is None:
+    #         # Try to split on a comma. If we get two elements back, that means
+    #         # we have the form "ip, password"
+    #         split = pjlink_projectors[key].split(",")
+    #         if len(split) == 2:
+    #             # We have an IP address and a password
+    #             ip = split[0].strip()
+    #             password = split[1].strip()
+    #             if password == "":
+    #                 password = None
+    #             new_proj = c_proj.Projector(key, ip, "pjlink", password=password)
+    #         elif len(split) == 1:
+    #             # We have an IP address only
+    #             new_proj = c_proj.Projector(key, pjlink_projectors[key], "pjlink")
+    #         else:
+    #             print("Invalid PJLink projector entry:", pjlink_projectors[key])
+    #             break
+    #         c_config.projectorList.append(new_proj)
+    # print("Connecting to PJLink projectors... done                      ")
 
     # Parse list of serial projectors
     try:
         serial_projectors = config_reader["SERIAL_PROJECTORS"]
-        print("Connecting to serial projectors...", end="\r", flush=True)
+        # We have found legacy serial projector configuration... convert this to the new JSON format
+        c_proj.convert_config_to_json(dict(serial_projectors), "serial")
     except KeyError:
-        print("No serial projectors specified")
-        serial_projectors = []
+        pass
 
-    n_proj = len(serial_projectors)
-    cur_proj = 0
-    for key in serial_projectors:
-        cur_proj += 1
-        print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if c_proj.get_projector(key) is None:
-            # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, password"
-            split = serial_projectors[key].split(",")
-            if len(split) == 2:
-                # We have an IP address and a make
-                ip = split[0].strip()
-                make = split[1].strip()
-                if make == "":
-                    make = None
-                new_proj = c_proj.Projector(key, ip, "serial", make=make)
-            elif len(split) == 1:
-                # We have an IP address only
-                new_proj = c_proj.Projector(key, serial_projectors[key], "serial")
-            else:
-                print("Invalid serial projector entry:", serial_projectors[key])
-                break
-            c_config.projectorList.append(new_proj)
-    print("Connecting to serial projectors... done                      ")
+    # n_proj = len(serial_projectors)
+    # cur_proj = 0
+    # for key in serial_projectors:
+    #     cur_proj += 1
+    #     print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
+    #     if c_proj.get_projector(key) is None:
+    #         # Try to split on a comma. If we get two elements back, that means
+    #         # we have the form "ip, password"
+    #         split = serial_projectors[key].split(",")
+    #         if len(split) == 2:
+    #             # We have an IP address and a make
+    #             ip = split[0].strip()
+    #             make = split[1].strip()
+    #             if make == "":
+    #                 make = None
+    #             new_proj = c_proj.Projector(key, ip, "serial", make=make)
+    #         elif len(split) == 1:
+    #             # We have an IP address only
+    #             new_proj = c_proj.Projector(key, serial_projectors[key], "serial")
+    #         else:
+    #             print("Invalid serial projector entry:", serial_projectors[key])
+    #             break
+    #         c_config.projectorList.append(new_proj)
+    # print("Connecting to serial projectors... done                      ")
+
+    c_config.projectorList = []
+    c_proj.read_projector_configuration()
 
     # Parse list of Wake on LAN devices
     try:
@@ -974,8 +976,9 @@ async def queue_projector_command(component: ExhibitComponent,
 
 # Schedule actions
 @app.post("/schedule/convert")
-async def convert_schedule(date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
-                           convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
+async def convert_schedule(
+        date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
+        convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
     """Convert between date- and day-specific schedules."""
 
     with c_config.scheduleLock:
@@ -996,7 +999,8 @@ async def convert_schedule(date: str = Body(description="The date of the schedul
 
 @app.post("/schedule/deleteAction")
 async def delete_schedule_action(schedule_name: str = Body(description="The schedule to delete the action from."),
-                                 schedule_id: str = Body(description="The unique identifier of the action to be deleted.")):
+                                 schedule_id: str = Body(
+                                     description="The unique identifier of the action to be deleted.")):
     """Delete the given action from the specified schedule."""
 
     c_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
@@ -1144,6 +1148,14 @@ async def get_configuration_raw_text():
     return {"success": True, "configuration": text}
 
 
+@app.get("/system/getProjectorConfiguration")
+async def get_projector_configuration():
+    """Return projectors.json as a list."""
+
+    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    return {"configuration": c_tools.load_json(config_path)}
+
+
 @app.get("/system/getHelpText")
 async def get_help_text():
     """Send the contents of README.md"""
@@ -1234,6 +1246,19 @@ async def update_configuration_raw_text(data: dict[str, Any]):
         response_dict["success"] = False
         response_dict["reason"] = f"You must have the {e.option} setting in the [{e.section}] section"
     return response_dict
+
+
+@app.post("/system/updateProjectorConfiguration")
+async def update_projector_configuration(configuration=Body(
+        description="A list a dictionaries, each specifying a single projector.",
+        embed=True)):
+    """Write the given list to projectors.json as the new configuration."""
+
+    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    c_tools.write_json(configuration, config_path)
+    th = threading.Thread(target=c_proj.read_projector_configuration, name='c_proj.read_projector_configuration()')
+    th.start()
+    return {"success": True}
 
 
 @app.post("/")

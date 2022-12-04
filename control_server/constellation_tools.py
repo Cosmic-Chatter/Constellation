@@ -2,6 +2,7 @@
 
 # Standard imports
 from functools import partial
+import json
 import os
 import sys
 import threading
@@ -23,6 +24,36 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
         _path = os.path.join(config.EXEC_PATH, *path_list)
 
     return _path
+
+
+def load_json(path: str):
+    """Load the requested JSON file from disk and return it as a dictionary."""
+
+    if not os.path.exists(path):
+        if config.debug:
+            print(f"load_json: file does not exist: {path}")
+        return None
+
+    with config.galleryConfigurationLock:
+        with open(path, 'r', encoding='UTF-8') as f:
+            try:
+                result = json.load(f)
+            except json.decoder.JSONDecodeError:
+                result = None
+            return result
+
+
+def write_json(data, path: str, append: bool = False):
+    """Take the given object and try to write it to a JSON file."""
+
+    if append:
+        mode = 'a'
+    else:
+        mode = 'w'
+
+    with config.galleryConfigurationLock:
+        with open(path, mode, encoding='UTF-8') as f:
+            json.dump(data, f)
 
 
 def reboot_server(*args, **kwargs) -> None:
@@ -66,6 +97,7 @@ def check_file_structure():
     exhibits_dir = get_path(["exhibits"], user_file=True)
 
     misc_dirs = {"analytics": get_path(["analytics"], user_file=True),
+                 "configuration": get_path(["configuration"], user_file=True),
                  "flexible-tracker": get_path(["flexible-tracker"], user_file=True),
                  "flexible-tracker/data": get_path(["flexible-tracker", "data"], user_file=True),
                  "flexible-tracker/templates": get_path(["flexible-tracker", "templates"], user_file=True),

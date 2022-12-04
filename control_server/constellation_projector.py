@@ -142,6 +142,59 @@ def poll_projectors():
     config.polling_thread_dict["poll_projectors"].start()
 
 
+def convert_config_to_json(old_config: dict[str: str], protocol: str):
+    """Take a configparser object from reading galleryConfiguration.ini and use it to create a json config file."""
+
+    # Try to load the existing configuration
+    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    new_config = c_tools.load_json(config_path)
+    if new_config is None:
+        new_config = []
+
+    for key in old_config:
+        if key in [entry['id'] for entry in new_config]:
+            # Assume the new config is more up to date than this legacy file
+            continue
+
+        new_entry = {'id': key.strip(),
+                     'protocol': protocol}
+        split = old_config[key].split(",")
+        error = False
+        if len(split) == 1:
+            new_entry["ip_address"] = old_config[key].strip()
+        elif len(split) == 2:
+            new_entry["ip_address"] = split[0].strip()
+            if protocol == 'pjlink':
+                new_entry["password"] = split[1].strip()
+            elif protocol == 'serial':
+                new_entry["make"] = split[1].strip()
+        else:
+            error = True
+            print(f"convert_config_to_json: error parsing line {key} = {old_config[key]}")
+
+        if not error:
+            new_config.append(new_entry)
+
+    c_tools.write_json(new_config, config_path)
+
+
+def read_projector_configuration():
+    """Read the projectors.json configuration file and set up any new projectors."""
+
+    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    proj_config = c_tools.load_json(config_path)
+    config.projectorList = []
+
+    for proj in proj_config:
+        if get_projector(proj["id"]) is None:
+            if proj["protocol"] == 'pjlink':
+                new_proj = Projector(proj["id"], proj["ip_address"], "pjlink", password=proj.get("password", None))
+                config.projectorList.append(new_proj)
+            elif proj["protocol"] == "serial":
+                new_proj = Projector(proj["id"], proj["ip_address"], "serial", make=proj.get("make", None))
+                config.projectorList.append(new_proj)
+
+
 # Set up log file
 log_path = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',

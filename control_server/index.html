@@ -963,15 +963,91 @@
             </div>
           </div>
 
-          <H3 class='mt-4'>Exhibits</H3>
-          <i>Exhibits enable you to define a set of content for your gallery.</i>
+          <div class="modal" tabindex="-1" role="dialog" id="manageProjectorsModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Projectors</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 16pt;">
+                          Current projectors
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageProjectorAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageProjectorList" class="row mx-2">
+                          <div class="col-12">
+                            <div class="row">
+                              <div class="col-12">
+                                <div class="row">
+                                  <div class="col-9 bg-primary" style="font-size: 18px; border-top-left-radius: 0.25rem;">myProjector</div>
+                                  <div class="col-3 bg-info text-center handCursor py-1 h-100" style="border-top-right-radius: 0.25rem;">Edit</div>
+                                </div>
+                              </div>
+                              <div class="col-12">
+                                <div class="row">
+                                  <div class="col-3 bg-secondary py-1 px-1 text-center" style="border-bottom-left-radius: 0.25rem;">PJLink</div>
+                                  <div class="col-4 bg-secondary py-1 px-1 text-center">10.8.1.126</div>
+                                  <div class="col-5 bg-secondary py-1 px-1 text-center" style="border-bottom-right-radius: 0.25rem;">Space-Chase-F1</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageProjectorsEditIDInput">ID</label>
+                      <input id="manageProjectorsEditIDInput" type="text" class="form-control manageProjectorEditField">
+                      <label for="manageProjectorsEditTypeInput">Type</label>
+                      <input id="manageProjectorsEditTypeInput" type="text" placeholder="PROJECTOR" class="form-control manageProjectorEditField">
+                      <label for="manageProjectorsProtocolSelect">Protocol</label>
+                      <select id="manageProjectorsProtocolSelect" class="form-control manageProjectorEditField">
+                        <option value="pjlink">PJLink</option>
+                        <option value="serial">Serial</option>
+                      </select>
+                      <label for="manageProjectorsEditIPInput" class="mt-2">IP address</label>
+                      <input id="manageProjectorsEditIPInput" type="text" class="form-control manageProjectorEditField">
+                      <label id='manageProjectorsEditPasswordInputLabel' for="manageProjectorsEditPasswordInput" class="mt-2">Password</label>
+                      <input id="manageProjectorsEditPasswordInput" type="text" class="form-control manageProjectorEditField">
+                      <label id='manageProjectorsEditMakeInputLabel' for="manageProjectorsEditMakeInput" class="mt-2">Make</label>
+                      <input id="manageProjectorsEditMakeInput" type="text" class="form-control manageProjectorEditField">
+                      <button id="manageProjectorDeleteButton" class="btn btn-danger btn-block mt-3">Delete projector</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageProjectorsModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <H3 class='mt-4'>Configuration</H3>
           <div class="row mt-3">
             <div class="col-6 col-md-3 col-lg-2">
               <button id="showEditGalleryConfigModalButton" type="button" class="btn btn-primary w-100" id="editConfigButton">Edit Settings</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2">
-              <button type="button" class="btn btn-primary w-100" id="reloadConfigurationButton">Reload Settings</button>
+              <button type="button" class="btn btn-info w-100" id="reloadConfigurationButton">Reload Settings</button>
             </div>
+            <div class="col-6 col-md-3 col-lg-2">
+              <button type="button" class="btn btn-primary w-100" id="showManageProjectorsModalButton">Projectors</button>
+            </div>
+          </div>
+          <H3 class='mt-4'>Exhibits</H3>
+          <i>Exhibits enable you to define a set of content and apps for your gallery.</i>
+          <div class="row mt-3">
             <div class="col-6 col-md-4 col-lg-3">
               <div class="form-group">
                 <label for="exhibitSelect">Set current exhibit</label>
