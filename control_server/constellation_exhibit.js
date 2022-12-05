@@ -17,12 +17,6 @@ export class ExhibitComponent {
     this.AnyDeskID = ''
     this.constellationAppId = ''
     this.platformDetails = {}
-
-    if (this.type === 'PROJECTOR') {
-      this.checkProjector()
-      const thisInstance = this
-      this.pollingFunction = setInterval(function () { thisInstance.checkProjector() }, 5000)
-    }
   }
 
   getURL () {
@@ -51,57 +45,6 @@ export class ExhibitComponent {
     rebuildComponentInterface()
   }
 
-  checkProjector () {
-    // Function to ask the server to ping the projector
-    const thisInstance = this
-
-    constTools.makeServerRequest({
-      method: 'POST',
-      endpoint: '/projector/getUpdate',
-      params: {
-        projector: {
-          id: this.id
-        }
-      }
-    })
-      .then((response) => {
-        if ('success' in response) {
-          if (response.success === false) {
-            if ('status' in response && response.status === 'DELETE') {
-              thisInstance.remove()
-            } else {
-              console.log('checkProjector: Error:', response.reason)
-            }
-          } else {
-            if ('state' in response) {
-              const state = response.state
-              thisInstance.setStatus(state.status)
-              if ('model' in state) {
-                thisInstance.state.model = state.model
-              }
-              if ('power_state' in state) {
-                thisInstance.state.power_state = state.power_state
-              }
-              if ('lamp_status' in state) {
-                thisInstance.state.lamp_status = state.lamp_status
-              }
-              if ('error_status' in state) {
-                thisInstance.state.error_status = state.error_status
-                const errorList = {}
-                Object.keys(state.error_status).forEach((item, i) => {
-                  if ((state.error_status)[item] !== 'ok') {
-                    errorList[item] = (state.error_status)[item]
-                  }
-                })
-                constConfig.errorDict[thisInstance.id] = errorList
-                constTools.rebuildErrorList()
-              }
-            }
-          }
-        }
-      })
-  }
-
   setStatus (status) {
     this.status = constConfig.STATUS[status]
     $('#' + this.id + 'StatusField').html(this.status.name)
@@ -121,27 +64,8 @@ export class ExhibitComponent {
       return
     }
 
-    let onCmdName = ''
-    let offCmdName = ''
-    let offCmd = ''
     const displayName = this.id
     const thisId = this.id
-    switch (this.type) {
-      case 'PROJECTOR':
-        onCmdName = 'Wake projector'
-        offCmdName = 'Sleep projector'
-        offCmd = 'sleepDisplay'
-        break
-      case 'WAKE_ON_LAN':
-        onCmdName = 'Wake component'
-        offCmdName = 'Sleep component'
-        offCmd = 'shutdown'
-        break
-      default:
-        onCmdName = 'Wake component'
-        offCmdName = 'Shutdown component'
-        offCmd = 'shutdown'
-    }
 
     // Change the amount of the Bootstrap grid being used depending on the
     // number of components in this group. Larger groups get more horizontal
@@ -211,10 +135,10 @@ export class ExhibitComponent {
         numOptions += 1
         cmd = 'restart'
       } else if (action === 'shutdown' || action === 'power_off') {
-        option.innerHTML = offCmdName
-        cmd = offCmd
+        option.innerHTML = 'Sleep component'
+        cmd = 'shutdown'
       } else if (action === 'power_on') {
-        option.innerHTML = onCmdName
+        option.innerHTML = 'Wake component'
         cmd = 'power_on'
       } else if (action === 'sleep') {
         option.innerHTML = 'Wake display'
@@ -248,6 +172,258 @@ export class ExhibitComponent {
   }
 }
 
+export class ExhibitComponentGroup {
+  constructor (type) {
+    this.type = type
+    this.components = []
+    this.buildHTML()
+  }
+
+  addComponent (component) {
+    this.components.push(component)
+    this.sortComponentList()
+    rebuildComponentInterface()
+  }
+
+  sortComponentList () {
+    // Sort the component list by ID and then rebuild the HTML
+    // representation in order
+
+    this.components.sort(
+      function (a, b) {
+        if (a.status === constConfig.STATUS.STATIC && b.status !== constConfig.STATUS.STATIC) {
+          return 1
+        } else if (b.status === constConfig.STATUS.STATIC && a.status !== constConfig.STATUS.STATIC) {
+          return -1
+        }
+        if (a.status.value > b.status.value) {
+          return -1
+        } else if (b.status.value > a.status.value) {
+          return 1
+        } else if (a.id > b.id) {
+          return 1
+        } else if (b.id > a.id) {
+          return -1
+        }
+        return 0
+      }
+    )
+  }
+
+  removeComponent (id) {
+    // Remove a component based on its id
+
+    this.components = $.grep(this.components, function (el, idx) { return el.id === id }, true)
+
+    // If the group now has seven components, make sure we're using the small
+    // size rendering now by rebuilding the interface
+    if (this.components.length === 7) {
+      rebuildComponentInterface()
+    }
+  }
+
+  buildHTML () {
+    // Function to build the HTML representation of this group
+    // and add it to the componentGroupsRow
+
+    let onCmdName = ''
+    let offCmdName = ''
+    const thisType = this.type
+    if (this.type === 'PROJECTOR') {
+      onCmdName = 'power_on'
+      offCmdName = 'sleepDisplay'
+    } else {
+      onCmdName = 'wakeDisplay'
+      offCmdName = 'sleepDisplay'
+    }
+    let displayRefresh = 'block'
+    if (['PROJECTOR', 'WAKE_ON_LAN'].includes(this.type) === true) {
+      displayRefresh = 'none'
+    }
+
+    // Cycle through the components and count how many we will actually be displaying
+    const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
+    let numToDisplay = 0
+    this.components.forEach((component) => {
+      if (showStatic || component.status !== constConfig.STATUS.STATIC) {
+        numToDisplay += 1
+      }
+    })
+
+    if (numToDisplay === 0) {
+      // Nothing to do
+      return
+    }
+
+    // Allow groups with lots of components to display with double width
+    let classString
+    if (numToDisplay > 7) {
+      classString = 'col-12 col-lg-8 col-xl-6 mt-4'
+    } else {
+      classString = 'col-12 col-md-6 col-lg-4 col-xl-3 mt-4'
+    }
+
+    const col = document.createElement('div')
+    col.classList = classString
+
+    const btnGroup = document.createElement('div')
+    btnGroup.classList = 'btn-group btn-block'
+    col.appendChild(btnGroup)
+
+    const mainButton = document.createElement('button')
+    mainButton.classList = 'btn btn-secondary btn-block btn-lg'
+    mainButton.setAttribute('type', 'button')
+    mainButton.innerHTML = this.type
+    btnGroup.appendChild(mainButton)
+
+    const dropdownButton = document.createElement('button')
+    dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
+    dropdownButton.setAttribute('type', 'button')
+    dropdownButton.setAttribute('data-toggle', 'dropdown')
+    dropdownButton.setAttribute('aria-haspopup', 'true')
+    dropdownButton.setAttribute('aria-expanded', 'false')
+    btnGroup.appendChild(dropdownButton)
+
+    const srHint = document.createElement('span')
+    srHint.classList = 'sr-only'
+    srHint.innerHTML = 'Toggle Dropdown'
+    dropdownButton.appendChild(srHint)
+
+    const dropdownMenu = document.createElement('div')
+    dropdownMenu.classList = 'dropdown-menu'
+    btnGroup.appendChild(dropdownMenu)
+
+    const refreshOption = document.createElement('a')
+    refreshOption.classList = 'dropdown-item handCursor'
+    refreshOption.style.display = displayRefresh
+    refreshOption.innerHTML = 'Refresh all components'
+    refreshOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, 'refresh_page')
+    }, false)
+    dropdownMenu.appendChild(refreshOption)
+
+    const wakeOption = document.createElement('a')
+    wakeOption.classList = 'dropdown-item handCursor'
+    wakeOption.innerHTML = 'Wake all components'
+    wakeOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, onCmdName)
+    }, false)
+    dropdownMenu.appendChild(wakeOption)
+
+    const sleepOption = document.createElement('a')
+    sleepOption.classList = 'dropdown-item handCursor'
+    sleepOption.innerHTML = 'Sleep all components'
+    sleepOption.addEventListener('click', function () {
+      sendGroupCommand(thisType, offCmdName)
+    }, false)
+    dropdownMenu.appendChild(sleepOption)
+
+    const componentList = document.createElement('div')
+    componentList.classList = 'row'
+    componentList.setAttribute('id', thisType + 'ComponentList')
+    col.appendChild(componentList)
+
+    $('#componentGroupsRow').append(col)
+
+    this.components.forEach((component) => {
+      component.buildHTML()
+    })
+  }
+}
+
+export function updateComponentFromServer (component) {
+  // Read the dictionary of component information from the control server
+  // and use it to set up the component
+
+  const obj = getExhibitComponent(component.id)
+  if (obj != null) {
+    // Update the object with the latest info from the server
+    obj.setStatus(component.status)
+    if ('content' in component) {
+      obj.content = component.content
+    }
+    if ('ip_address' in component) {
+      obj.ip = component.ip_address
+    }
+    if ('helperPort' in component) {
+      obj.helperPort = component.helperPort
+    }
+    if ('helperAddress' in component) {
+      obj.helperAddress = component.helperAddress
+    }
+    if ('allowed_actions' in component) {
+      obj.allowed_actions = component.allowed_actions
+    }
+    if ('description' in component) {
+      obj.description = component.description
+    }
+    if ('platform_details' in component) {
+      obj.platformDetails = component.platform_details
+    }
+    if ('lastContactDateTime' in component) {
+      obj.lastContactDateTime = component.lastContactDateTime
+    }
+    if ('AnyDeskID' in component) {
+      obj.AnyDeskID = component.AnyDeskID
+    }
+    if ('autoplay_audio' in component) {
+      obj.autoplay_audio = component.autoplay_audio
+    }
+    if ('image_duration' in component) {
+      obj.image_duration = component.image_duration
+    }
+    if ('error' in component) {
+      try {
+        const newError = JSON.parse(component.error)
+        constConfig.errorDict[obj.id] = newError
+      } catch (e) {
+        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", component.error)
+        console.log(e)
+      }
+      constTools.rebuildErrorList()
+    }
+  } else {
+    // First, make sure the group matching this type exists
+    let group = getExhibitComponentGroup(component.type)
+    if (group == null) {
+      group = new ExhibitComponentGroup(component.type)
+      constConfig.componentGroups.push(group)
+    }
+
+    // Then create a new component
+    const newComponent = new ExhibitComponent(component.id, component.type)
+    newComponent.setStatus(component.status)
+    if ('allowed_actions' in component) {
+      newComponent.allowed_actions = component.allowed_actions
+    }
+    if ('constellation_app_id' in component) {
+      newComponent.constellationAppId = component.constellation_app_id
+    }
+    if ('platform_details' in component) {
+      newComponent.platformDetails = component.platform_details
+    }
+    newComponent.buildHTML()
+    constConfig.exhibitComponents.push(newComponent)
+
+    // Add the component to the right group
+    group.addComponent(newComponent)
+
+    // Finally, call this function again to populate the information
+    updateComponentFromServer(component)
+  }
+}
+
+export function sendGroupCommand (group, cmd) {
+  // Iterate through the components in the given group and queue the command
+  // for each
+
+  group = getExhibitComponentGroup(group)
+  console.log(group, cmd)
+  for (let i = 0; i < group.components.length; i++) {
+    queueCommand(group.components[i].id, cmd)
+  }
+}
+
 export function getExhibitComponentGroup (type) {
   // Function to search the exhibitComponents list for a given id
 
@@ -267,254 +443,128 @@ export function showExhibitComponentInfo (id) {
 
   const obj = getExhibitComponent(id)
 
-  if (obj.type === 'PROJECTOR') {
-    // First, reset all the cell shadings
-    $('#projectorInfoLampState').parent().removeClass()
-    $('#projectorInfoFanState').parent().removeClass()
-    $('#projectorInfoFilterState').parent().removeClass()
-    $('#projectorInfoCoverState').parent().removeClass()
-    $('#projectorInfoOtherState').parent().removeClass()
-    $('#projectorInfoTempState').parent().removeClass()
+  $('#componentInfoModalTitle').html(id)
 
-    // Set the title to the ID
-    $('#projectorInfoModalTitle').html(id)
-    $('#projectorInfoModalIPAddress').html(obj.ip)
-    if (obj.description === '') {
-      $('#projectorInfoModalDescription').hide()
-    } else {
-      $('#projectorInfoModalDescription').html(obj.description)
-      $('#projectorInfoModalDescription').show()
-    }
-
-    // Then, go through and populate all the cells with as much information
-    // as we have. Shade cells red if an error is reported.
-    if ('power_state' in obj.state && obj.state.power_state !== '') {
-      $('#projectorInfoPowerState').html(obj.state.power_state)
-    } else {
-      $('#projectorInfoPowerState').html('-')
-    }
-    if (('error_status' in obj.state) && (obj.state.error_status.constructor === Object)) {
-      if ('lamp' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoLampState').html(obj.state.error_status.lamp)
-        // Shade if error
-        if (obj.state.error_status.lamp === 'error') {
-          $('#projectorInfoLampState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoLampState').html('-')
-      }
-      if ('fan' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoFanState').html(obj.state.error_status.fan)
-        // Shade if error
-        if (obj.state.error_status.fan === 'error') {
-          $('#projectorInfoFanState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoFanState').html('-')
-      }
-      if ('filter' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoFilterState').html(obj.state.error_status.filter)
-        // Shade if error
-        if (obj.state.error_status.filter === 'error') {
-          $('#projectorInfoFilterState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoFilterState').html('-')
-      }
-      if ('cover' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoCoverState').html(obj.state.error_status.cover)
-        // Shade if error
-        if (obj.state.error_status.cover === 'error') {
-          $('#projectorInfoCoverState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoCoverState').html('-')
-      }
-      if ('other' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoOtherState').html(obj.state.error_status.other)
-        // Shade if error
-        if (obj.state.error_status.other === 'error') {
-          $('#projectorInfoOtherState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoOtherState').html('-')
-      }
-      if ('temperature' in obj.state.error_status) {
-        // Populate cell
-        $('#projectorInfoTempState').html(obj.state.error_status.temperature)
-        // Shade if error
-        if (obj.state.error_status === 'error') {
-          $('#projectorInfoTempState').parent().addClass('table-danger')
-        }
-      } else {
-        $('#projectorInfoTempState').html('-')
-      }
-    } else {
-      $('#projectorInfoLampState').html('-')
-      $('#projectorInfoFanState').html('-')
-      $('#projectorInfoFilterState').html('-')
-      $('#projectorInfoCoverState').html('-')
-      $('#projectorInfoOtherState').html('-')
-      $('#projectorInfoTempState').html('-')
-    }
-    if ('model' in obj.state) {
-      $('#projectorInfoModel').html(obj.state.model)
-    } else {
-      $('#projectorInfoModel').html('-')
-    }
-
-    let lampHTML = ''
-    if ('lamp_status' in obj.state && obj.state.lamp_status !== '') {
-      const lampList = obj.state.lamp_status
-
-      for (let i = 0; i < lampList.length; i++) {
-        const lamp = lampList[i]
-        let statusStr = ''
-        if (lamp[1] === false) {
-          statusStr = '(off)'
-        } else if (lamp[1] === true) {
-          statusStr = '(on)'
-        } else {
-          statusStr = ''
-        }
-        lampHTML += `Lamp ${i + 1} ${statusStr}: ${lamp[0]} hours<br>`
-      }
-    } else {
-      lampHTML = '-'
-    }
-    $('#projectorInfoLampHours').html(lampHTML)
-
-    // Make the modal visible
-    $('#projectorInfoModal').modal('show')
-  } else { // This is a normal ExhibitComponent
-    $('#componentInfoModalTitle').html(id)
-
-    $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
-    if (obj.ip !== '') {
-      $('#componentInfoModalIPAddress').html(obj.ip)
-      $('#componentInfoModalIPAddressGroup').show()
-    } else {
-      $('#componentInfoModalIPAddressGroup').hide()
-    }
-    if (obj.ip !== constTools.extractIPAddress(obj.helperAddress)) {
-      $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
-      $('#componentInfoModalHelperIPAddressGroup').show()
-    } else {
-      $('#componentInfoModalHelperIPAddressGroup').hide()
-    }
-    if ('operating_system' in obj.platformDetails) {
-      $('#componentInfoModalOperatingSystem').html(obj.platformDetails.operating_system.replace('OS X', 'macOS'))
-      $('#componentInfoModalOperatingSystemGroup').show()
-    } else {
-      $('#componentInfoModalOperatingSystemGroup').hide()
-    }
-    if ('browser' in obj.platformDetails) {
-      $('#componentInfoModalBrowser').html(obj.platformDetails.browser)
-      $('#componentInfoModalBrowserGroup').show()
-    } else {
-      $('#componentInfoModalBrowserGroup').hide()
-    }
-    if (obj.lastContactDateTime != null) {
-      $('#componentInfoModalLastContact').html(constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)))
-      $('#componentInfoModalLastContactGroup').show()
-    } else {
-      $('#componentInfoModalLastContactGroup').hide()
-    }
-    if (obj.description === '') {
-      $('#componentInfoModalDescription').hide()
-    } else {
-      $('#componentInfoModalDescription').html(obj.description)
-      $('#componentInfoModalDescription').show()
-    }
-    $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
-    $('#componentAvailableContentList').empty()
-    $('#contentUploadSubmitButton').prop('disabled', false)
-    $('#contentUploadSubmitButton').html('Upload')
-    $('#componentContentUploadfilename').html('Choose file')
-    $('#componentContentUpload').val(null)
-    $('#contentUploadSubmitButton').hide()
-    $('#contentUploadEqualSignWarning').hide()
-    $('#uploadOverwriteWarning').hide()
-    $('#contentUploadProgressBarContainer').hide()
-    $('#contentUploadSystemStatsView').hide()
-    $('#componentInfoConnectingNotice').show()
-    $('#componentInfoConnectionStatusFailed').hide()
-    $('#componentInfoConnectionStatusInPrograss').show()
-    $('#componentSaveConfirmationButton').hide()
-    $('#componentAvailableContentRow').hide()
-    $('#componentcontentUploadInterface').hide()
-    constMaint.setComponentInfoModalMaintenanceStatus(id)
-
-    if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
-      $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
-      $('#AnyDeskLabel').prop('href', 'anydesk:' + obj.AnyDeskID)
-      $('#AnyDeskLabel').html('AnyDesk ID: ' + obj.AnyDeskID)
-      $('#AnyDeskButton').prop('title', String(obj.AnyDeskID))
-      $('#AnyDeskButton').addClass('d-sm-none d-none d-md-inline').show()
-      $('#AnyDeskLabel').addClass('d-sm-inline d-md-none').show()
-    } else {
-      $('#AnyDeskButton').removeClass('d-sm-none d-none d-md-inline').hide()
-      $('#AnyDeskLabel').removeClass('d-sm-inline d-md-none').hide()
-    }
-
-    // Configure the settings page with the current settings
-    $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
-    $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
-    $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
-    $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
-    $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
-    $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
-    if ('AnyDeskID' in obj) {
-      $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
-    } else {
-      $('#componentInfoModalSettingsAnyDeskID').val('')
-    }
-    if ('autoplay_audio' in obj) {
-      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
-    } else {
-      $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
-    }
-    if (obj.constellationAppId === 'media_player') {
-      $('#componentInfoModalSettingsImageDuration').parent().parent().show()
-      if ('image_duration' in obj) {
-        $('#componentInfoModalSettingsImageDuration').val(obj.image_duration)
-      }
-    } else {
-      $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
-    }
-
-    // Must be after all the settings are configured
-    toggleExhibitComponentInfoSettingWarnings()
-    $('#componentInfoModalSettingsSaveButton').hide()
-    // Hide settings for static components
-    if (obj.status === constConfig.STATUS.STATIC) {
-      $('#componentInfoModalSettingsTabButton').hide()
-      $('#componentInfoModalContentTabButton').hide()
-    } else {
-      $('#componentInfoModalSettingsTabButton').show()
-      $('#componentInfoModalContentTabButton').show()
-    }
-
-    if (obj.status !== constConfig.STATUS.STATIC) {
-      // This component may be accessible over the network.
-      updateComponentInfoModalFromHelper(obj.id)
-    } else {
-      // This static component will defintely have no content.
-      $('#componentInfoConnectionStatusFailed').show()
-      $('#componentInfoConnectionStatusInPrograss').hide()
-
-      // Show the maintenance tab
-      $('#componentInfoModalMaintenanceTabButton').tab('show')
-    }
-
-    // Make the modal visible
-    $('#componentInfoModal').modal('show')
+  $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
+  if (obj.ip !== '') {
+    $('#componentInfoModalIPAddress').html(obj.ip)
+    $('#componentInfoModalIPAddressGroup').show()
+  } else {
+    $('#componentInfoModalIPAddressGroup').hide()
   }
+  if (obj.ip !== constTools.extractIPAddress(obj.helperAddress)) {
+    $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
+    $('#componentInfoModalHelperIPAddressGroup').show()
+  } else {
+    $('#componentInfoModalHelperIPAddressGroup').hide()
+  }
+  if ('operating_system' in obj.platformDetails) {
+    $('#componentInfoModalOperatingSystem').html(obj.platformDetails.operating_system.replace('OS X', 'macOS'))
+    $('#componentInfoModalOperatingSystemGroup').show()
+  } else {
+    $('#componentInfoModalOperatingSystemGroup').hide()
+  }
+  if ('browser' in obj.platformDetails) {
+    $('#componentInfoModalBrowser').html(obj.platformDetails.browser)
+    $('#componentInfoModalBrowserGroup').show()
+  } else {
+    $('#componentInfoModalBrowserGroup').hide()
+  }
+  if (obj.lastContactDateTime != null) {
+    $('#componentInfoModalLastContact').html(constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)))
+    $('#componentInfoModalLastContactGroup').show()
+  } else {
+    $('#componentInfoModalLastContactGroup').hide()
+  }
+  if (obj.description === '') {
+    $('#componentInfoModalDescription').hide()
+  } else {
+    $('#componentInfoModalDescription').html(obj.description)
+    $('#componentInfoModalDescription').show()
+  }
+  $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
+  $('#componentAvailableContentList').empty()
+  $('#contentUploadSubmitButton').prop('disabled', false)
+  $('#contentUploadSubmitButton').html('Upload')
+  $('#componentContentUploadfilename').html('Choose file')
+  $('#componentContentUpload').val(null)
+  $('#contentUploadSubmitButton').hide()
+  $('#contentUploadEqualSignWarning').hide()
+  $('#uploadOverwriteWarning').hide()
+  $('#contentUploadProgressBarContainer').hide()
+  $('#contentUploadSystemStatsView').hide()
+  $('#componentInfoConnectingNotice').show()
+  $('#componentInfoConnectionStatusFailed').hide()
+  $('#componentInfoConnectionStatusInPrograss').show()
+  $('#componentSaveConfirmationButton').hide()
+  $('#componentAvailableContentRow').hide()
+  $('#componentcontentUploadInterface').hide()
+  constMaint.setComponentInfoModalMaintenanceStatus(id)
+
+  if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
+    $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
+    $('#AnyDeskLabel').prop('href', 'anydesk:' + obj.AnyDeskID)
+    $('#AnyDeskLabel').html('AnyDesk ID: ' + obj.AnyDeskID)
+    $('#AnyDeskButton').prop('title', String(obj.AnyDeskID))
+    $('#AnyDeskButton').addClass('d-sm-none d-none d-md-inline').show()
+    $('#AnyDeskLabel').addClass('d-sm-inline d-md-none').show()
+  } else {
+    $('#AnyDeskButton').removeClass('d-sm-none d-none d-md-inline').hide()
+    $('#AnyDeskLabel').removeClass('d-sm-inline d-md-none').hide()
+  }
+
+  // Configure the settings page with the current settings
+  $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
+  $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
+  $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
+  $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
+  $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
+  $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
+  if ('AnyDeskID' in obj) {
+    $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
+  } else {
+    $('#componentInfoModalSettingsAnyDeskID').val('')
+  }
+  if ('autoplay_audio' in obj) {
+    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
+  } else {
+    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
+  }
+  if (obj.constellationAppId === 'media_player') {
+    $('#componentInfoModalSettingsImageDuration').parent().parent().show()
+    if ('image_duration' in obj) {
+      $('#componentInfoModalSettingsImageDuration').val(obj.image_duration)
+    }
+  } else {
+    $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
+  }
+
+  // Must be after all the settings are configured
+  toggleExhibitComponentInfoSettingWarnings()
+  $('#componentInfoModalSettingsSaveButton').hide()
+  // Hide settings for static components
+  if (obj.status === constConfig.STATUS.STATIC) {
+    $('#componentInfoModalSettingsTabButton').hide()
+    $('#componentInfoModalContentTabButton').hide()
+  } else {
+    $('#componentInfoModalSettingsTabButton').show()
+    $('#componentInfoModalContentTabButton').show()
+  }
+
+  if (obj.status !== constConfig.STATUS.STATIC) {
+    // This component may be accessible over the network.
+    updateComponentInfoModalFromHelper(obj.id)
+  } else {
+    // This static component will defintely have no content.
+    $('#componentInfoConnectionStatusFailed').show()
+    $('#componentInfoConnectionStatusInPrograss').hide()
+
+    // Show the maintenance tab
+    $('#componentInfoModalMaintenanceTabButton').tab('show')
+  }
+
+  // Make the modal visible
+  $('#componentInfoModal').modal('show')
 }
 
 function convertAppIDtoDisplayName (appName) {
