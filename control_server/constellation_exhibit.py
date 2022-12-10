@@ -576,6 +576,8 @@ def read_descriptions_configuration():
 
     config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
     descriptions = c_tools.load_json(config_path)
+    if descriptions is None:
+        return
     config.componentDescriptions = {}
 
     for entry in descriptions:
