@@ -895,6 +895,158 @@ function deleteExhibitFromModal () {
   $('#deleteExhibitModal').modal('hide')
 }
 
+function createManageDescriptionEntry (entry) {
+  // Take a dictionary and turn it into HTML elements
+
+  // Create a new ID used only to track this description through the edit process,
+  // even if the actual ID is changed.
+  const cleanID = String(new Date().getTime() + Math.round(1000000 * Math.random()))
+
+  const containerCol = document.createElement('div')
+  containerCol.classList = 'col-12 mb-3 manageDescriptionEntry'
+  containerCol.setAttribute('id', 'manageDescription_' + cleanID)
+  $(containerCol).data('config', entry)
+  $('#manageDescriptionsList').append(containerCol)
+
+  const containerRow = document.createElement('div')
+  containerRow.classList = 'row'
+  containerCol.appendChild(containerRow)
+
+  const topCol = document.createElement('div')
+  topCol.classList = 'col-12'
+  containerRow.appendChild(topCol)
+
+  const row1 = document.createElement('div')
+  row1.classList = 'row'
+  topCol.appendChild(row1)
+
+  const titleCol = document.createElement('div')
+  titleCol.classList = 'col-9 bg-primary'
+  titleCol.setAttribute('id', 'manageDescriptionID_' + cleanID)
+  titleCol.style.fontSize = '18px'
+  titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.innerHTML = entry.id
+  row1.appendChild(titleCol)
+
+  const editCol = document.createElement('div')
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.setAttribute('id', 'manageDescriptionEdit_' + cleanID)
+  editCol.style.borderTopRightRadius = '0.25rem'
+  editCol.innerHTML = 'Edit'
+  $(editCol).click(function () {
+    populateManageDescriptionsEdit(cleanID)
+  })
+  row1.appendChild(editCol)
+
+  const bottomCol = document.createElement('div')
+  bottomCol.classList = 'col-12'
+  containerRow.appendChild(bottomCol)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  bottomCol.appendChild(row2)
+
+  const descriptionCol = document.createElement('div')
+  descriptionCol.classList = 'col-12 bg-secondary py-1 px-1'
+  descriptionCol.setAttribute('id', 'manageDescriptionsText_' + cleanID)
+  descriptionCol.style.borderBottomLeftRadius = '0.25rem'
+  descriptionCol.style.borderBottomRightRadius = '0.25rem'
+  descriptionCol.innerHTML = entry.description
+  row2.appendChild(descriptionCol)
+}
+
+function populateManageDescriptionsEdit (id) {
+  // Take a dictionary of details and use it to fill the edit properties fields.
+
+  const details = $('#manageDescription_' + id.replaceAll(' ', '_')).data('config')
+
+  // Tag element with the id to enable updating the config later
+  $('#manageDescriptionsEditIDInput').data('id', id)
+
+  $('#manageDescriptionsEditIDInput').val(details.id)
+  $('#manageDescriptionsDescriptionEditField').val(details.description)
+}
+
+function manageDescriptionsUpdateConfigFromEdit () {
+  // Called when a change occurs in an edit field.
+  // Update both the HTML and the config itself
+
+  const id = $('#manageDescriptionsEditIDInput').data('id')
+  const details = $('#manageDescription_' + id).data('config')
+  $('#manageDescriptionsModalSaveButton').show() // Show the save button
+
+  const newID = $('#manageDescriptionsEditIDInput').val()
+
+  $('#manageDescriptionID_' + id).html(newID)
+  details.id = newID
+
+  const newDescription = $('#manageDescriptionsDescriptionEditField').val()
+  $('#manageDescriptionsText_' + id).html(newDescription)
+  details.description = newDescription
+
+  $('#manageDescription_' + id).data('config', details)
+}
+
+function manageDescriptionsDeleteDescriptionEntry () {
+  // Called when the "Delete description" button is clicked.
+  // Remove the HTML entry from the listing
+
+  const id = $('#manageDescriptionsEditIDInput').data('id')
+  $('#manageDescriptionsModalSaveButton').show() // Show the save button
+  $('#manageDescription_' + id).remove()
+
+  // Clear the input fields
+  $('#manageDescriptionsEditIDInput').val(null)
+  $('#manageDescriptionsDescriptionEditField').val(null)
+}
+
+function showManageDescriptionsModal () {
+  // Show the modal for managing projectors.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/getDescriptionsConfiguration'
+  })
+    .then((result) => {
+      populateManageDescriptionsModal(result.configuration)
+    })
+
+  // Clear the input fields
+  $('#manageDescriptionsEditIDInput').val(null)
+  $('#manageDescriptionsDescriptionEditField').val(null)
+  $('#manageDescriptionsModalSaveButton').hide()
+
+  $('#manageDescriptionsModal').modal('show')
+}
+
+function populateManageDescriptionsModal (list) {
+  // Take a list of configuration entries and populate the modal.
+
+  $('#manageDescriptionsList').empty()
+  list.forEach((entry) => {
+    createManageDescriptionEntry(entry)
+  })
+}
+
+function updateDescriptionsConfigurationFromModal () {
+  // Collect the dictionary from each description element and send it to Control Server to save.
+
+  const entries = $('.manageDescriptionEntry')
+  const listToSend = []
+  entries.each((i, entry) => {
+    listToSend.push($(entry).data('config'))
+  })
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/updateDescriptionsConfiguration',
+    params: { configuration: listToSend }
+  })
+    .then((result) => {
+      $('#manageDescriptionsModal').modal('hide')
+    })
+}
+
 // Bind event listeners
 
 // Components tab
@@ -1010,6 +1162,18 @@ $('.manageProjectorEditField').change(constProjector.manageProjectorUpdateConfig
 $('.manageProjectorEditField').on('input', constProjector.manageProjectorUpdateConfigFromEdit)
 $('#manageProjectorDeleteButton').click(constProjector.manageProjectorDeleteProjectorEntry)
 $('#manageProjectorsModalSaveButton').click(constProjector.updateProjectorConfigurationFromModal)
+// Descriptions
+$('#showComponentDescriptionEditModalButton').click(showManageDescriptionsModal)
+$('#manageDescriptionsAddBUtton').click(function () {
+  createManageDescriptionEntry({
+    id: 'New Description',
+    description: 'This is some description text that spans onto two lines.'
+  })
+  $('#manageDescriptionsModalSaveButton').show() // Show the save button
+})
+$('.manageDescriptionsEditField').on('input', manageDescriptionsUpdateConfigFromEdit).change(manageDescriptionsUpdateConfigFromEdit)
+$('#manageDescriptionsDeleteButton').click(manageDescriptionsDeleteDescriptionEntry)
+$('#manageDescriptionsModalSaveButton').click(updateDescriptionsConfigurationFromModal)
 // Tracker
 $('#createTrackerTemplateButton').click(function () {
   createTrackerTemplate()

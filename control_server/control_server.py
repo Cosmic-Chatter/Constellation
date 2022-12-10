@@ -246,12 +246,13 @@ def load_default_configuration():
     # Load the component descriptions. Do this first, so they are available when
     # creating the various components
     try:
-        print("Reading component descriptions...", end="", flush=True)
-        c_config.componentDescriptions = dict(config_reader["COMPONENT_DESCRIPTIONS"])
-        print(" done")
+        component_descriptions = dict(config_reader["COMPONENT_DESCRIPTIONS"])
+        # We have found legacy description definitions
+        c_exhibit.convert_descriptions_config_to_json(component_descriptions)
     except KeyError:
-        print("None found")
-        c_config.componentDescriptions = {}
+        pass
+
+    c_exhibit.read_descriptions_configuration()
 
     # Parse list of PJLink projectors
     try:
@@ -344,7 +345,7 @@ def load_default_configuration():
         component.update_configuration()
 
     # Finally, remove any legacy sections that have been moved over to the new JSON config files
-    removable_sections = ["PJLINK_PROJECTORS", "SERIAL_PROJECTORS"]
+    removable_sections = ["PJLINK_PROJECTORS", "SERIAL_PROJECTORS", "COMPONENT_DESCRIPTIONS"]
     sections_to_remove = []
     for section in removable_sections:
         if section in config_reader.sections():
@@ -1111,6 +1112,14 @@ async def get_configuration_raw_text():
     return {"success": True, "configuration": text}
 
 
+@app.get("/system/getDescriptionsConfiguration")
+async def get_descriptions_configuration():
+    """Return descriptions.json as a list."""
+
+    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
+    return {"configuration": c_tools.load_json(config_path)}
+
+
 @app.get("/system/getProjectorConfiguration")
 async def get_projector_configuration():
     """Return projectors.json as a list."""
@@ -1221,6 +1230,18 @@ async def update_projector_configuration(configuration=Body(
     c_tools.write_json(configuration, config_path)
     th = threading.Thread(target=c_proj.read_projector_configuration, name='c_proj.read_projector_configuration()')
     th.start()
+    return {"success": True}
+
+
+@app.post("/system/updateDescriptionsConfiguration")
+async def update_descriptions_configuration(configuration=Body(
+        description="A list a dictionaries, each specifying a single description.",
+        embed=True)):
+    """Write the given list to descriptions.json as the new configuration."""
+
+    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
+    c_tools.write_json(configuration, config_path)
+    c_exhibit.read_descriptions_configuration()
     return {"success": True}
 
 

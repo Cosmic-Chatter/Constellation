@@ -397,6 +397,14 @@ export function manageProjectorDeleteProjectorEntry () {
   const id = $('#manageProjectorsEditIDInput').data('id')
   $('#manageProjectorsModalSaveButton').show() // Show the save button
   $('#manageProjector_' + id).remove()
+
+  // Clear the input fields
+  $('#manageProjectorsEditIDInput').val(null)
+  $('#manageProjectorsEditTypeInput').val(null)
+  $('#manageProjectorsEditProtocolSelect').val(null)
+  $('#manageProjectorsEditIPInput').val(null)
+  $('#manageProjectorsEditPasswordInput').val(null)
+  $('#manageProjectorsEditMakeInput').val(null)
 }
 
 export function updateProjectorConfigurationFromModal () {
