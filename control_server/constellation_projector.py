@@ -183,6 +183,8 @@ def read_projector_configuration():
 
     config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
     proj_config = c_tools.load_json(config_path)
+    if proj_config is None:
+        return
     config.projectorList = []
 
     for proj in proj_config:

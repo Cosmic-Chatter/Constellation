@@ -963,6 +963,7 @@
             </div>
           </div>
 
+          <!-- Modal for managing projectors -->
           <div class="modal" tabindex="-1" role="dialog" id="manageProjectorsModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
@@ -1016,6 +1017,7 @@
             </div>
           </div>
 
+          <!-- Modal for managing component descriptions -->
           <div class="modal" tabindex="-1" role="dialog" id="manageDescriptionsModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
@@ -1057,6 +1059,53 @@
             </div>
           </div>
 
+          <!-- Modal for managing Wake on LAN devices -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageWakeOnLANModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Wake on LAN Devices</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 16pt;">
+                          Current devices
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageWakeOnLANAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageWakeOnLANList" class="row mx-2">
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageWakeOnLANEditIDInput">ID</label>
+                      <input id="manageWakeOnLANEditIDInput" type="text" class="form-control manageWakeOnLANEditField">
+                      <label for="manageWakeOnLANEditMACInput" class="mt-2">MAC address</label> 
+                      <span id="manageWakeOnLANEditMACInputWarning" class="badge badge-danger ml-1" data-toggle="tooltip" data-placement="top" title="MAC address must have 12 digits">!</span>
+                      <input id="manageWakeOnLANEditMACInput" type="text"  class="form-control manageWakeOnLANEditField">
+
+                      <label for="manageWakeOnLANEditIPInput" class="mt-2">IP address</label>
+                      <input id="manageWakeOnLANEditIPInput" type="text" class="form-control manageWakeOnLANEditField">
+                      <button id="manageWakeOnLANDeleteButton" class="btn btn-danger btn-block mt-3">Delete device</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageWakeOnLANModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <H3 class='mt-4'>Configuration</H3>
           <div class="row mt-1">
             <div class="col-6 col-md-3 col-lg-2 mt-2">
@@ -1070,6 +1119,9 @@
             </div>
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showComponentDescriptionEditModalButton">Descriptions</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
             </div>
           </div>
           <H3 class='mt-4'>Exhibits</H3>

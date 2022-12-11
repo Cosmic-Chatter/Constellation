@@ -571,6 +571,38 @@ def convert_descriptions_config_to_json(old_config: dict[str: str]):
     c_tools.write_json(new_config, config_path)
 
 
+def convert_wake_on_LAN_to_json(old_config: dict[str: str]):
+    """Take a configparser object from reading galleryConfiguration.ini and use it to create a json config file."""
+
+    # Try to load the existing configuration
+    config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
+    new_config = c_tools.load_json(config_path)
+    if new_config is None:
+        new_config = []
+
+    for key in old_config:
+        if key in [entry['id'] for entry in new_config]:
+            # Assume the new config is more up to date than this legacy file
+            continue
+
+        new_entry = {'id': key.strip()}
+        split = old_config[key].split(",")
+        error = False
+        if len(split) == 1:
+            new_entry["mac_address"] = old_config[key].strip()
+        elif len(split) == 2:
+            new_entry["mac_address"] = split[0].strip()
+            new_entry["ip_address"] = split[1].strip()
+        else:
+            error = True
+            print(f"constellation_exhibit.convert_wake_on_LAN_to_json: error parsing line {key} = {old_config[key]}")
+
+        if not error:
+            new_config.append(new_entry)
+
+    c_tools.write_json(new_config, config_path)
+
+
 def read_descriptions_configuration():
     """Read the descriptions.json configuration file."""
 
@@ -586,6 +618,21 @@ def read_descriptions_configuration():
         component = get_exhibit_component(entry["id"])
         if component is not None:
             component.config["description"] = entry["description"]
+
+
+def read_wake_on_LAN_configuration():
+    """Read the descriptions.json configuration file."""
+
+    config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
+    devices = c_tools.load_json(config_path)
+    if devices is None:
+        return
+    config.wakeOnLANList = []
+
+    for entry in devices:
+        if get_wake_on_LAN_component(entry["id"]) is None:
+            device = WakeOnLANDevice(entry["id"], entry["mac_address"], ip_address=entry.get("ip_address", ""))
+            config.wakeOnLANList.append(device)
 
 
 # Set up log file

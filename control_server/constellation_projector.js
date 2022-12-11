@@ -200,7 +200,7 @@ export function showManageProjectorsModal () {
 
   constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/system/getProjectorConfiguration'
+    endpoint: '/system/projectors/getConfiguration'
   })
     .then((result) => {
       populateManageProjectorModal(result.configuration)
@@ -294,7 +294,7 @@ export function createManageProjectorEntry (entry) {
 
   const ipCol = document.createElement('div')
   ipCol.classList = 'd-none d-sm-flex col-md-4 bg-secondary py-1 px-1 text-center'
-  ipCol.setAttribute('id', 'manageProjectorIP_' + entry.id)
+  ipCol.setAttribute('id', 'manageProjectorIP_' + cleanID)
   ipCol.innerHTML = entry.ip_address
   row2.appendChild(ipCol)
 
@@ -418,7 +418,7 @@ export function updateProjectorConfigurationFromModal () {
 
   constTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/system/updateProjectorConfiguration',
+    endpoint: '/system/projectors/updateConfiguration',
     params: { configuration: listToSend }
   })
     .then((result) => {

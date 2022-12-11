@@ -1005,7 +1005,7 @@ function showManageDescriptionsModal () {
 
   constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/system/getDescriptionsConfiguration'
+    endpoint: '/system/descriptions/getConfiguration'
   })
     .then((result) => {
       populateManageDescriptionsModal(result.configuration)
@@ -1039,7 +1039,7 @@ function updateDescriptionsConfigurationFromModal () {
 
   constTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/system/updateDescriptionsConfiguration',
+    endpoint: '/system/descriptions/updateConfiguration',
     params: { configuration: listToSend }
   })
     .then((result) => {
@@ -1174,6 +1174,19 @@ $('#manageDescriptionsAddBUtton').click(function () {
 $('.manageDescriptionsEditField').on('input', manageDescriptionsUpdateConfigFromEdit).change(manageDescriptionsUpdateConfigFromEdit)
 $('#manageDescriptionsDeleteButton').click(manageDescriptionsDeleteDescriptionEntry)
 $('#manageDescriptionsModalSaveButton').click(updateDescriptionsConfigurationFromModal)
+// Wake on LAN
+$('#showWakeOnLANEditModalButton').click(constExhibit.showManageWakeOnLANModal)
+$('#manageWakeOnLANAddBUtton').click(function () {
+  constExhibit.createManageWakeOnLANEntry({
+    id: 'New Device',
+    ip_address: '',
+    mac_address: ''
+  })
+  $('#manageWakeOnLANModalSaveButton').show() // Show the save button
+})
+$('.manageWakeOnLANEditField').on('input', constExhibit.manageWakeOnLANUpdateConfigFromEdit).change(constExhibit.manageWakeOnLANUpdateConfigFromEdit)
+$('#manageWakeOnLANDeleteButton').click(constExhibit.manageWakeOnLANDeleteWakeOnLANEntry)
+$('#manageWakeOnLANModalSaveButton').click(constExhibit.updateWakeOnLANConfigurationFromModal)
 // Tracker
 $('#createTrackerTemplateButton').click(function () {
   createTrackerTemplate()

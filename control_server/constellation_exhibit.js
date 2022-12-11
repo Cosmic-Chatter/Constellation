@@ -1038,3 +1038,182 @@ export function queueCommand (id, cmd) {
     })
   }
 }
+
+export function showManageWakeOnLANModal () {
+  // Show the modal for managing Wake on LAN devices.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/wake_on_LAN/getConfiguration'
+  })
+    .then((result) => {
+      populateManageWakeOnLANModal(result.configuration)
+    })
+
+  $('#manageWakeOnLANEditMACInputWarning').hide()
+
+  // Clear the input fields
+  $('#manageWakeOnLANEditIDInput').val(null)
+  $('#manageWakeOnLANEditMACInput').val(null)
+  $('#manageWakeOnLANEditIPInput').val(null)
+  $('#manageWakeOnLANModalSaveButton').hide()
+
+  $('#manageWakeOnLANModal').modal('show')
+}
+
+function populateManageWakeOnLANModal (list) {
+  // Get a list of Wake on LAN configs from Control Server and build a widget for each.
+
+  $('#manageWakeOnLANList').empty()
+  list.forEach((entry) => {
+    createManageWakeOnLANEntry(entry)
+  })
+}
+
+export function createManageWakeOnLANEntry (entry) {
+  // Take a dictionary and turn it into HTML elements
+
+  // Create a new ID used only to track this device through the edit process,
+  // even if the actual ID is changed.
+  const cleanID = String(new Date().getTime() + Math.round(1000000 * Math.random()))
+
+  const containerCol = document.createElement('div')
+  containerCol.classList = 'col-12 mb-3 manageWakeOnLANEntry'
+  containerCol.setAttribute('id', 'manageWakeOnLAN_' + cleanID)
+  $(containerCol).data('config', entry)
+  $('#manageWakeOnLANList').append(containerCol)
+
+  const containerRow = document.createElement('div')
+  containerRow.classList = 'row'
+  containerCol.appendChild(containerRow)
+
+  const topCol = document.createElement('div')
+  topCol.classList = 'col-12'
+  containerRow.appendChild(topCol)
+
+  const row1 = document.createElement('div')
+  row1.classList = 'row'
+  topCol.appendChild(row1)
+
+  const titleCol = document.createElement('div')
+  titleCol.classList = 'col-9 bg-primary'
+  titleCol.setAttribute('id', 'manageWakeOnLANID_' + cleanID)
+  titleCol.style.fontSize = '18px'
+  titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.innerHTML = entry.id
+  row1.appendChild(titleCol)
+
+  const editCol = document.createElement('div')
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.setAttribute('id', 'manageWakeOnLANEdit_' + cleanID)
+  editCol.style.borderTopRightRadius = '0.25rem'
+  editCol.innerHTML = 'Edit'
+  $(editCol).click(function () {
+    populateManageWakeOnLANEdit(cleanID)
+  })
+  row1.appendChild(editCol)
+
+  const bottomCol = document.createElement('div')
+  bottomCol.classList = 'col-12'
+  containerRow.appendChild(bottomCol)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  bottomCol.appendChild(row2)
+
+  const protocolCol = document.createElement('div')
+  protocolCol.classList = 'col-6 bg-secondary py-1 px-1 text-center'
+  protocolCol.setAttribute('id', 'manageWakeOnLANMAC_' + cleanID)
+  protocolCol.style.borderBottomLeftRadius = '0.25rem'
+  protocolCol.innerHTML = entry.mac_address.replaceAll('-', ':')
+  row2.appendChild(protocolCol)
+
+  const ipCol = document.createElement('div')
+  ipCol.classList = 'col-md-6 bg-secondary py-1 px-1 text-center'
+  ipCol.setAttribute('id', 'manageWakeOnLANIP_' + cleanID)
+  ipCol.style.borderBottomRightRadius = '0.25rem'
+  ipCol.innerHTML = entry.ip_address || ''
+  row2.appendChild(ipCol)
+}
+
+function populateManageWakeOnLANEdit (id) {
+  // Take a dictionary of details and use it to fill the edit properties fields.
+
+  const details = $('#manageWakeOnLAN_' + id.replaceAll(' ', '_')).data('config')
+
+  // Tag element with the id to enable updating the config later
+  $('#manageWakeOnLANEditIDInput').data('id', id)
+
+  $('#manageWakeOnLANEditIDInput').val(details.id)
+  $('#manageWakeOnLANEditIPInput').val(details.ip_address)
+  $('#manageWakeOnLANEditMACInput').val(details.mac_address.replaceAll('-', ':'))
+}
+export function manageWakeOnLANUpdateConfigFromEdit () {
+  // Called when a change occurs in an edit field.
+  // Update both the HTML and the config itself
+
+  const id = $('#manageWakeOnLANEditIDInput').data('id')
+  const details = $('#manageWakeOnLAN_' + id).data('config')
+  $('#manageWakeOnLANModalSaveButton').show() // Show the save button
+
+  const newID = $('#manageWakeOnLANEditIDInput').val()
+  $('#manageWakeOnLANID_' + id).html(newID)
+  details.id = newID
+
+  const newIP = $('#manageWakeOnLANEditIPInput').val()
+  $('#manageWakeOnLANIP_' + id).html(newIP)
+  details.ip_address = newIP
+
+  const inputMAC = $('#manageWakeOnLANEditMACInput').val()
+  // Check that we have the right number of characters (12)
+  if (inputMAC.replaceAll(':', '').replaceAll('-', '').length !== 12) {
+    // Wrong length; show a warning
+    $('#manageWakeOnLANEditMACInputWarning').show()
+    $('[data-toggle="tooltip"]').tooltip()
+  } else {
+    $('#manageWakeOnLANEditMACInputWarning').hide()
+  }
+  const newMAC = inputMAC.replaceAll('-', ':')
+  $('#manageWakeOnLANMAC_' + id).html(newMAC)
+  details.mac_address = newMAC
+
+  $('#manageWakeOnLAN_' + id).data('config', details)
+}
+
+export function manageWakeOnLANDeleteWakeOnLANEntry () {
+  // Called when the "Delete device" button is clicked.
+  // Remove the HTML entry from the listing
+
+  const id = $('#manageWakeOnLANEditIDInput').data('id')
+  if (id == null) {
+    return
+  }
+  $('#manageWakeOnLANModalSaveButton').show() // Show the save button
+  $('#manageWakeOnLAN_' + id).remove()
+
+  $('#manageWakeOnLANEditMACInputWarning').hide()
+
+  // Clear the input fields
+  $('#manageWakeOnLANEditIDInput').val(null)
+  $('#manageWakeOnLANEditMACInput').val(null)
+  $('#manageWakeOnLANEditIPInput').val(null)
+}
+
+export function updateWakeOnLANConfigurationFromModal () {
+  // Collect the dictionary from each WakeOnLAN element and send it to Control Server to save.
+
+  const entries = $('.manageWakeOnLANEntry')
+  const listToSend = []
+  entries.each((i, entry) => {
+    listToSend.push($(entry).data('config'))
+  })
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/wake_on_LAN/updateConfiguration',
+    params: { configuration: listToSend }
+  })
+    .then((result) => {
+      $('#manageWakeOnLANModal').modal('hide')
+    })
+}

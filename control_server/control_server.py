@@ -275,30 +275,12 @@ def load_default_configuration():
     # Parse list of Wake on LAN devices
     try:
         wol = config_reader["WAKE_ON_LAN"]
-        print("Collecting Wake on LAN devices...", end="", flush=True)
-
-        for key in wol:
-            if c_exhibit.get_exhibit_component(key) is None:
-                # If 'get_exhibit_component' is not None, this key corresponds
-                # to a WoL device with a matching exhibit component ID and
-                # we have already loaded that component from the pickle file
-                value_split = wol[key].split(",")
-                if len(value_split) == 2:
-                    # We have been given a MAC address and IP address
-                    device = c_exhibit.WakeOnLANDevice(key,
-                                                       value_split[0].strip(),
-                                                       ip_address=value_split[1].strip())
-                elif len(value_split) == 1:
-                    # We have been given only a MAC address
-                    device = c_exhibit.WakeOnLANDevice(key, value_split[0].strip())
-                else:
-                    print(f"Wake on LAN device specified with unknown format: {wol[key]}")
-                    continue
-                c_config.wakeOnLANList.append(device)
-        print(" done")
+        # We have a legacy Wake on LAN device definition
+        c_exhibit.convert_wake_on_LAN_to_json(dict(wol))
     except KeyError:
-        print("No wake on LAN devices specified")
-        c_config.wakeOnLANList = []
+        pass
+
+    c_exhibit.read_wake_on_LAN_configuration()
 
     # Build any existing issues
     try:
@@ -345,7 +327,7 @@ def load_default_configuration():
         component.update_configuration()
 
     # Finally, remove any legacy sections that have been moved over to the new JSON config files
-    removable_sections = ["PJLINK_PROJECTORS", "SERIAL_PROJECTORS", "COMPONENT_DESCRIPTIONS"]
+    removable_sections = ["COMPONENT_DESCRIPTIONS", "PJLINK_PROJECTORS", "SERIAL_PROJECTORS", "WAKE_ON_LAN"]
     sections_to_remove = []
     for section in removable_sections:
         if section in config_reader.sections():
@@ -1112,19 +1094,11 @@ async def get_configuration_raw_text():
     return {"success": True, "configuration": text}
 
 
-@app.get("/system/getDescriptionsConfiguration")
-async def get_descriptions_configuration():
-    """Return descriptions.json as a list."""
+@app.get("/system/{target}/getConfiguration")
+async def get_json_configuration(target: str):
+    """Return the requested JSON configuration."""
 
-    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
-    return {"configuration": c_tools.load_json(config_path)}
-
-
-@app.get("/system/getProjectorConfiguration")
-async def get_projector_configuration():
-    """Return projectors.json as a list."""
-
-    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
     return {"configuration": c_tools.load_json(config_path)}
 
 
@@ -1220,28 +1194,23 @@ async def update_configuration_raw_text(data: dict[str, Any]):
     return response_dict
 
 
-@app.post("/system/updateProjectorConfiguration")
-async def update_projector_configuration(configuration=Body(
+@app.post("/system/{target}/updateConfiguration")
+async def update_configuration(target: str, configuration=Body(
         description="A list a dictionaries, each specifying a single projector.",
         embed=True)):
-    """Write the given list to projectors.json as the new configuration."""
+    """Write the given object to the matching JSON file as the configuration."""
 
-    config_path = c_tools.get_path(["configuration", "projectors.json"], user_file=True)
+    config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
     c_tools.write_json(configuration, config_path)
-    th = threading.Thread(target=c_proj.read_projector_configuration, name='c_proj.read_projector_configuration()')
-    th.start()
-    return {"success": True}
 
+    if target == "projectors":
+        th = threading.Thread(target=c_proj.read_projector_configuration, name='c_proj.read_projector_configuration()')
+        th.start()
+    elif target == "descriptions":
+        c_exhibit.read_descriptions_configuration()
+    elif target == "wake_on_LAN":
+        c_exhibit.read_wake_on_LAN_configuration()
 
-@app.post("/system/updateDescriptionsConfiguration")
-async def update_descriptions_configuration(configuration=Body(
-        description="A list a dictionaries, each specifying a single description.",
-        embed=True)):
-    """Write the given list to descriptions.json as the new configuration."""
-
-    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
-    c_tools.write_json(configuration, config_path)
-    c_exhibit.read_descriptions_configuration()
     return {"success": True}
 
 
