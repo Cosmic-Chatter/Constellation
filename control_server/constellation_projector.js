@@ -264,11 +264,12 @@ export function createManageProjectorEntry (entry) {
   titleCol.setAttribute('id', 'manageProjectorID_' + cleanID)
   titleCol.style.fontSize = '18px'
   titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.style.overflowWrap = 'break-word'
   titleCol.innerHTML = entry.id
   row1.appendChild(titleCol)
 
   const editCol = document.createElement('div')
-  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1'
   editCol.setAttribute('id', 'manageProjectorEdit_' + cleanID)
   editCol.style.borderTopRightRadius = '0.25rem'
   editCol.innerHTML = 'Edit'
@@ -286,20 +287,20 @@ export function createManageProjectorEntry (entry) {
   bottomCol.appendChild(row2)
 
   const protocolCol = document.createElement('div')
-  protocolCol.classList = 'col-5 col-md-3 bg-secondary py-1 px-1 text-center'
+  protocolCol.classList = 'col-5 col-sm-3 bg-secondary py-1 px-1 text-center'
   protocolCol.setAttribute('id', 'manageProjectorProtocol_' + cleanID)
   protocolCol.style.borderBottomLeftRadius = '0.25rem'
   protocolCol.innerHTML = protocolNames[entry.protocol]
   row2.appendChild(protocolCol)
 
   const ipCol = document.createElement('div')
-  ipCol.classList = 'd-none d-sm-flex col-md-4 bg-secondary py-1 px-1 text-center'
+  ipCol.classList = 'd-none d-sm-block col-sm-4 bg-secondary py-1 px-1 text-center'
   ipCol.setAttribute('id', 'manageProjectorIP_' + cleanID)
   ipCol.innerHTML = entry.ip_address
   row2.appendChild(ipCol)
 
   const typeCol = document.createElement('div')
-  typeCol.classList = 'col-7 col-md-5 bg-secondary py-1 px-1 text-center'
+  typeCol.classList = 'col-7 col-sm-5 bg-secondary py-1 px-1 text-center'
   typeCol.setAttribute('id', 'manageProjectorType_' + cleanID)
   typeCol.style.borderBottomRightRadius = '0.25rem'
   if ('type' in entry) {

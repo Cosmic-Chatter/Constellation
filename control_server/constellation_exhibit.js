@@ -1100,11 +1100,12 @@ export function createManageWakeOnLANEntry (entry) {
   titleCol.setAttribute('id', 'manageWakeOnLANID_' + cleanID)
   titleCol.style.fontSize = '18px'
   titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.style.overflowWrap = 'break-word'
   titleCol.innerHTML = entry.id
   row1.appendChild(titleCol)
 
   const editCol = document.createElement('div')
-  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1'
   editCol.setAttribute('id', 'manageWakeOnLANEdit_' + cleanID)
   editCol.style.borderTopRightRadius = '0.25rem'
   editCol.innerHTML = 'Edit'
@@ -1215,5 +1216,162 @@ export function updateWakeOnLANConfigurationFromModal () {
   })
     .then((result) => {
       $('#manageWakeOnLANModal').modal('hide')
+    })
+}
+
+export function showManageStaticComponentsModal () {
+  // Show the modal for managing Wake on LAN devices.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/static/getConfiguration'
+  })
+    .then((result) => {
+      populateManageStaticComponentsModal(result.configuration)
+    })
+
+  // Clear the input fields
+  $('#manageStaticComponentsEditIDInput').val(null)
+  $('#manageStaticComponentsEditTypeInput').val(null)
+  $('#manageStaticComponentsModalSaveButton').hide()
+
+  $('#manageStaticComponentsModal').modal('show')
+}
+
+function populateManageStaticComponentsModal (list) {
+  // Get a list of static components configs from Control Server and build a widget for each.
+
+  $('#manageStaticComponentsList').empty()
+  list.forEach((entry) => {
+    createManageStaticComponentsEntry(entry)
+  })
+}
+
+export function createManageStaticComponentsEntry (entry) {
+  // Take a dictionary and turn it into HTML elements
+
+  // Create a new ID used only to track this component through the edit process,
+  // even if the actual ID is changed.
+  const cleanID = String(new Date().getTime() + Math.round(1000000 * Math.random()))
+
+  const containerCol = document.createElement('div')
+  containerCol.classList = 'col-12 mb-3 manageStaticComponentsEntry'
+  containerCol.setAttribute('id', 'manageStaticComponents_' + cleanID)
+  $(containerCol).data('config', entry)
+  $('#manageStaticComponentsList').append(containerCol)
+
+  const containerRow = document.createElement('div')
+  containerRow.classList = 'row'
+  containerCol.appendChild(containerRow)
+
+  const topCol = document.createElement('div')
+  topCol.classList = 'col-12'
+  containerRow.appendChild(topCol)
+
+  const row1 = document.createElement('div')
+  row1.classList = 'row'
+  topCol.appendChild(row1)
+
+  const titleCol = document.createElement('div')
+  titleCol.classList = 'col-9 bg-primary'
+  titleCol.setAttribute('id', 'manageStaticComponentsID_' + cleanID)
+  titleCol.style.fontSize = '18px'
+  titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.style.overflowWrap = 'break-word'
+  titleCol.innerHTML = entry.id
+  row1.appendChild(titleCol)
+
+  const editCol = document.createElement('div')
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1'
+  editCol.setAttribute('id', 'manageStaticComponentsEdit_' + cleanID)
+  editCol.style.borderTopRightRadius = '0.25rem'
+  editCol.innerHTML = 'Edit'
+  $(editCol).click(function () {
+    populateManageStaticComponentsEdit(cleanID)
+  })
+  row1.appendChild(editCol)
+
+  const bottomCol = document.createElement('div')
+  bottomCol.classList = 'col-12'
+  containerRow.appendChild(bottomCol)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  bottomCol.appendChild(row2)
+
+  const typeCol = document.createElement('div')
+  typeCol.classList = 'col-12 bg-secondary py-1 px-1 text-center'
+  typeCol.setAttribute('id', 'manageStaticComponentsType_' + cleanID)
+  typeCol.style.borderBottomLeftRadius = '0.25rem'
+  typeCol.style.borderBottomRightRadius = '0.25rem'
+  typeCol.innerHTML = entry.type
+  row2.appendChild(typeCol)
+}
+
+function populateManageStaticComponentsEdit (id) {
+  // Take a dictionary of details and use it to fill the edit properties fields.
+
+  const details = $('#manageStaticComponents_' + id.replaceAll(' ', '_')).data('config')
+
+  // Tag element with the id to enable updating the config later
+  $('#manageStaticComponentsEditIDInput').data('id', id)
+
+  $('#manageStaticComponentsEditIDInput').val(details.id)
+  $('#manageStaticComponentsEditTypeInput').val(details.type)
+}
+
+export function manageStaticComponentsUpdateConfigFromEdit () {
+  // Called when a change occurs in an edit field.
+  // Update both the HTML and the config itself
+
+  const id = $('#manageStaticComponentsEditIDInput').data('id')
+  const details = $('#manageStaticComponents_' + id).data('config')
+  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
+
+  const newID = $('#manageStaticComponentsEditIDInput').val()
+  $('#manageStaticComponentsID_' + id).html(newID)
+  details.id = newID
+
+  const newType = $('#manageStaticComponentsEditTypeInput').val()
+  if (newType != null && newType !== '') {
+    $('#manageStaticComponentsType_' + id).html(newType)
+    details.type = newType
+  } else {
+    $('#manageStaticComponentsType_' + id).html('STATIC')
+    details.type = 'STATIC'
+  }
+
+  $('#manageStaticComponents_' + id).data('config', details)
+}
+
+export function manageStaticComponentsDeleteComponentEntry () {
+  // Called when the "Delete component" button is clicked.
+  // Remove the HTML entry from the listing
+
+  const id = $('#manageStaticComponentsEditIDInput').data('id')
+  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
+  $('#manageStaticComponents_' + id).remove()
+
+  // Clear the input fields
+  $('#manageStaticComponentsEditIDInput').val(null)
+  $('#manageStaticComponentsEditTypeInput').val(null)
+}
+
+export function updateStaticComponentsConfigurationFromModal () {
+  // Collect the dictionary from each component element and send it to Control Server to save.
+
+  const entries = $('.manageStaticComponentsEntry')
+  const listToSend = []
+  entries.each((i, entry) => {
+    listToSend.push($(entry).data('config'))
+  })
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/static/updateConfiguration',
+    params: { configuration: listToSend }
+  })
+    .then((result) => {
+      $('#manageStaticComponentsModal').modal('hide')
     })
 }

@@ -380,7 +380,6 @@ def poll_wake_on_LAN_devices():
 
 
 def read_exhibit_configuration(name: str, update_default: bool = False):
-
     # We want the format of name to be "XXXX.exhibit", but it might be
     # "exhibits/XXXX.exhibit"
     error = False
@@ -525,7 +524,7 @@ def update_exhibit_component_status(data, ip: str):
     if "imageDuration" in data:
         component.config["image_duration"] = data["imageDuration"]
     if "currentInteraction" in data:
-        if data["currentInteraction"] == True or\
+        if data["currentInteraction"] == True or \
                 (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
             component.update_last_interaction_datetime()
     if "allowed_actions" in data:
@@ -567,6 +566,27 @@ def convert_descriptions_config_to_json(old_config: dict[str: str]):
         new_entry = {"id": key,
                      "description": old_config[key]}
         new_config.append(new_entry)
+
+    c_tools.write_json(new_config, config_path)
+
+
+def convert_static_config_to_json(old_config: dict[str: str]):
+    """Take a dictionary from the legacy INI method of specifying static components and convert it to JSON."""
+
+    # Try to load the existing configuration
+    config_path = c_tools.get_path(["configuration", "static.json"], user_file=True)
+    new_config = c_tools.load_json(config_path)
+    if new_config is None:
+        new_config = []
+
+    for key in old_config:
+
+        # Components are specified in the form 'TYPE = ID1, ID2, ID3'
+        split = old_config[key].split(',')
+        for entry in split:
+            new_entry = {"id": entry.strip(),
+                         "type": key.strip()}
+            new_config.append(new_entry)
 
     c_tools.write_json(new_config, config_path)
 
@@ -618,6 +638,23 @@ def read_descriptions_configuration():
         component = get_exhibit_component(entry["id"])
         if component is not None:
             component.config["description"] = entry["description"]
+
+
+def read_static_components_configuration():
+    """Read the static.json configuration file."""
+
+    config_path = c_tools.get_path(["configuration", "static.json"], user_file=True)
+    components = c_tools.load_json(config_path)
+    if components is None:
+        return
+
+    # Remove all static components before adding the most up-to-date list
+    config.componentList = [x for x in config.componentList if x.category != "static"]
+
+    for entry in components:
+        if get_exhibit_component(entry["id"]) is None:
+            component = add_exhibit_component(entry["id"], entry["type"], category="static")
+            component.config["app_name"] = "static_component"
 
 
 def read_wake_on_LAN_configuration():

@@ -925,11 +925,12 @@ function createManageDescriptionEntry (entry) {
   titleCol.setAttribute('id', 'manageDescriptionID_' + cleanID)
   titleCol.style.fontSize = '18px'
   titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.style.overflowWrap = 'break-word'
   titleCol.innerHTML = entry.id
   row1.appendChild(titleCol)
 
   const editCol = document.createElement('div')
-  editCol.classList = 'col-3 bg-info text-center handCursor py-1 h-100'
+  editCol.classList = 'col-3 bg-info text-center handCursor py-1'
   editCol.setAttribute('id', 'manageDescriptionEdit_' + cleanID)
   editCol.style.borderTopRightRadius = '0.25rem'
   editCol.innerHTML = 'Edit'
@@ -1187,6 +1188,18 @@ $('#manageWakeOnLANAddBUtton').click(function () {
 $('.manageWakeOnLANEditField').on('input', constExhibit.manageWakeOnLANUpdateConfigFromEdit).change(constExhibit.manageWakeOnLANUpdateConfigFromEdit)
 $('#manageWakeOnLANDeleteButton').click(constExhibit.manageWakeOnLANDeleteWakeOnLANEntry)
 $('#manageWakeOnLANModalSaveButton').click(constExhibit.updateWakeOnLANConfigurationFromModal)
+// Static components
+$('#showStaticComponentsEditModalButton').click(constExhibit.showManageStaticComponentsModal)
+$('#manageStaticComponentsAddBUtton').click(function () {
+  constExhibit.createManageStaticComponentsEntry({
+    id: 'New component',
+    type: 'STATIC'
+  })
+  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
+})
+$('.manageStaticComponentsEditField').on('input', constExhibit.manageStaticComponentsUpdateConfigFromEdit).change(constExhibit.manageStaticComponentsUpdateConfigFromEdit)
+$('#manageStaticComponentsDeleteButton').click(constExhibit.manageStaticComponentsDeleteComponentEntry)
+$('#manageStaticComponentsModalSaveButton').click(constExhibit.updateStaticComponentsConfigurationFromModal)
 // Tracker
 $('#createTrackerTemplateButton').click(function () {
   createTrackerTemplate()

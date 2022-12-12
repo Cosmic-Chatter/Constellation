@@ -299,17 +299,21 @@ def load_default_configuration():
     # Parse list of static components
     try:
         static_components = config_reader["STATIC_COMPONENTS"]
-        print("Adding static components... ", end="\r", flush=True)
-        for this_type in static_components:
-            split = static_components[this_type].split(",")
-            for this_id in split:
-                this_id = this_id.strip()
-                if c_exhibit.get_exhibit_component(this_id) is None:
-                    static_component = c_exhibit.add_exhibit_component(this_id, this_type, category="static")
-                    static_component.config["app_name"] = "static_component"
-        print("done")
+        # We have legacy static components definitions
+        c_exhibit.convert_static_config_to_json(dict(static_components))
+        # print("Adding static components... ", end="\r", flush=True)
+        # for this_type in static_components:
+        #     split = static_components[this_type].split(",")
+        #     for this_id in split:
+        #         this_id = this_id.strip()
+        #         if c_exhibit.get_exhibit_component(this_id) is None:
+        #             static_component = c_exhibit.add_exhibit_component(this_id, this_type, category="static")
+        #             static_component.config["app_name"] = "static_component"
+        # print("done")
     except KeyError:
-        print("none specified")
+        pass
+
+    c_exhibit.read_static_components_configuration()
 
     # Parse the reboot_time if necessary
     if "reboot_time" in current:
@@ -327,7 +331,11 @@ def load_default_configuration():
         component.update_configuration()
 
     # Finally, remove any legacy sections that have been moved over to the new JSON config files
-    removable_sections = ["COMPONENT_DESCRIPTIONS", "PJLINK_PROJECTORS", "SERIAL_PROJECTORS", "WAKE_ON_LAN"]
+    removable_sections = ["COMPONENT_DESCRIPTIONS",
+                          "PJLINK_PROJECTORS",
+                          "SERIAL_PROJECTORS",
+                          "STATIC_COMPONENTS",
+                          "WAKE_ON_LAN"]
     sections_to_remove = []
     for section in removable_sections:
         if section in config_reader.sections():
@@ -1204,12 +1212,15 @@ async def update_configuration(target: str, configuration=Body(
     c_tools.write_json(configuration, config_path)
 
     if target == "projectors":
+        # Use a separate thread for this one, as connecting to projectors is blocking
         th = threading.Thread(target=c_proj.read_projector_configuration, name='c_proj.read_projector_configuration()')
         th.start()
     elif target == "descriptions":
         c_exhibit.read_descriptions_configuration()
     elif target == "wake_on_LAN":
         c_exhibit.read_wake_on_LAN_configuration()
+    elif target == "static":
+        c_exhibit.read_static_components_configuration()
 
     return {"success": True}
 
