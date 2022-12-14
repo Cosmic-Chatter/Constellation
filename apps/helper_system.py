@@ -89,14 +89,19 @@ def smart_restart_act():
 def smart_restart_check():
     """Restart the PC if we have lost connection to Control Server. This is often because the Wi-Fi has dropped."""
 
-    # First, ping the server
+    # Start the next cycle immediately, so that a subsequent error can't disable Smart Restart
+    timer = threading.Timer(config.smart_restart["interval"], smart_restart_check)
+    timer.daemon = True
+    timer.start()
+
+    # Then, ping the server
     headers = {'Content-type': 'application/json'}
 
     server_address = f'http://{config.defaults_dict["server_ip_address"]}:{config.defaults_dict["server_port"]}'
     error = False
     try:
         _ = requests.get(server_address + '/system/checkConnection', headers=headers, timeout=5)
-    except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+    except (ConnectionError, requests.exceptions.RequestException):
         error = True
 
     if not error:
@@ -108,11 +113,6 @@ def smart_restart_check():
         if sec_since_last_contact > config.smart_restart["threshold"]:
             # A reboot may be necessary
             smart_restart_act()
-
-    # Start the next cycle
-    timer = threading.Timer(config.smart_restart["interval"], smart_restart_check)
-    timer.daemon = True
-    timer.start()
 
 
 def wake_display():
