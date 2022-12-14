@@ -13,6 +13,7 @@ from fastapi import FastAPI, Depends, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import logging
 import uvicorn
 
 # Constellation modules
@@ -20,6 +21,13 @@ import config as const_config
 import helper_files
 import helper_system
 import helper_utilities
+
+# Set up log file
+log_path: str = helper_files.get_path(["apps.log"], user_file=True)
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.DEBUG)
 
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))

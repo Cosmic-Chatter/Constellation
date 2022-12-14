@@ -1,5 +1,6 @@
 # Standard imports
 import datetime
+import logging
 import os
 import sys
 import threading
@@ -12,6 +13,13 @@ import requests
 import config
 import helper_files
 import helper_utilities
+
+# Set up log file
+log_path: str = helper_files.get_path(["apps.log"], user_file=True)
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.DEBUG)
 
 
 def reboot():
@@ -70,9 +78,11 @@ def smart_restart_act():
 
     if config.smart_restart["mode"] == "off":
         print("Smart Restart off")
+        logging.info("Smart Restart (mode: %s): Restart denied (Smart Restart is off)", config.smart_restart["mode"])
         return
     elif config.smart_restart["mode"] == "aggressive":
         # In aggressive mode, we reboot right away
+        logging.info("Smart Restart (mode: %s): restarting now.", config.smart_restart["mode"])
         reboot()
     elif config.smart_restart["mode"] == "patient":
         # In patient mode, we only restart when not in active hours
@@ -81,8 +91,13 @@ def smart_restart_act():
         active_end = dateutil.parser.parse(config.smart_restart["active_hours_end"])
 
         if now < active_start or now > active_end:
+            logging.info("Smart Restart (mode: %s): restarting now.", config.smart_restart["mode"])
             reboot()
         else:
+            logging.info("Smart Restart (mode: %s): Restart denied (in active hours). Active hours: %s - %s",
+                         config.smart_restart["mode"],
+                         active_start,
+                         active_end)
             print("Patient reboot denied by active hours")
 
 
@@ -109,9 +124,11 @@ def smart_restart_check():
     else:
         # Connection check failed, so let's see how long it has been
         sec_since_last_contact = (datetime.datetime.now() - config.smart_restart["last_contact_datetime"]).total_seconds()
+        logging.warning("Connection check failed. Seconds since last connection: %s", sec_since_last_contact)
         print(f"Smart Restart: connection check to address {server_address} failed. Seconds since last connection: {sec_since_last_contact}")
         if sec_since_last_contact > config.smart_restart["threshold"]:
             # A reboot may be necessary
+            logging.warning("Smart Restart: Threshold exceeded, recommending reboot.")
             smart_restart_act()
 
 
