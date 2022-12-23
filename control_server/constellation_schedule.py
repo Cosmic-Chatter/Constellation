@@ -179,7 +179,7 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
             target = target[5:]
         print(f"Changing content for {target} to {value}")
         logging.info("Changing content for %s to %s", target, value)
-        c_exhibit.set_component_content(target, value)
+        c_exhibit.update_exhibit_configuration(target, {"content": value})
     elif action == 'set_exhibit' and target is not None:
         print("Changing exhibit to:", target)
         logging.info("Changing exhibit to %s", target)

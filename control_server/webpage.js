@@ -363,7 +363,7 @@ function askForUpdate () {
               constProjector.updateProjectorFromServer(component)
             }
           } else if (component.class === 'gallery') {
-            setCurrentExhibitName(component.currentExhibit)
+            setCurrentExhibitName(component.current_exhibit)
             updateAvailableExhibits(component.availableExhibits)
             if ('galleryName' in component) {
               $('#galleryNameField').html(component.galleryName)
@@ -895,6 +895,89 @@ function deleteExhibitFromModal () {
   $('#deleteExhibitModal').modal('hide')
 }
 
+function showManageSettingsModal () {
+  // Configure and show the showManageSettingsModal
+
+  populateManageSettingsModal()
+
+  $('#manageSettingsModalSaveButton').hide()
+  $('#manageSettingsModalMissingIPWarning').hide()
+  $('#manageSettingsModalRestartRequiredWarning').hide()
+  $('#manageSettingsModal').modal('show')
+}
+
+function populateManageSettingsModal () {
+  // Get the latest system settings from Control Server and build out the interface for changing them.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/system/getConfiguration'
+  })
+    .then((result) => {
+      const config = result.configuration
+      // Tag the modal with this config for later use
+      $('#manageSettingsModal').data('config', config)
+
+      $('#manageSettingsModalIPInput').val(config.ip_address)
+      $('#manageSettingsModalPortInput').val(config.port)
+      $('#manageSettingsModalGalleryNameInput').val(config.gallery_name)
+
+      const staffString = config.assignable_staff.join(', ')
+      $('#manageSettingsModalAssignableStaffInput').val(staffString)
+      $('#manageSettingsModalDebugSelect').val(String(config.debug))
+    })
+}
+
+function updateManageSettingsModal () {
+  // Called when a chance to one of the settings is made
+  const config = $('#manageSettingsModal').data('config')
+
+  // Check for any changed data
+  if ($('#manageSettingsModalIPInput').val().trim() !== config.ip_address || parseInt($('#manageSettingsModalPortInput').val()) !== config.port) {
+    $('#manageSettingsModalSaveButton').show()
+    $('#manageSettingsModalRestartRequiredWarning').show()
+  } else {
+    $('#manageSettingsModalRestartRequiredWarning').hide()
+  }
+  const staffString = config.assignable_staff.join(', ')
+  if ($('#manageSettingsModalGalleryNameInput').val().trim() !== config.gallery_name || constTools.stringToBool($('#manageSettingsModalDebugSelect').val()) !== config.debug || $('#manageSettingsModalAssignableStaffInput').val().trim() !== staffString) {
+    $('#manageSettingsModalSaveButton').show()
+  }
+
+  // Check for a missing IP address
+  if ($('#manageSettingsModalIPInput').val() === '' || $('#manageSettingsModalIPInput').val() == null) {
+    $('#manageSettingsModalMissingIPWarning').show()
+    $('#manageSettingsModalSaveButton').hide()
+  } else {
+    $('#manageSettingsModalMissingIPWarning').hide()
+  }
+}
+
+function updateSystemConfigurationFromModal () {
+  // Use the manageSettingsModal to update the system configuration
+
+  const update = {
+    ip_address: $('#manageSettingsModalIPInput').val().trim(),
+    port: parseInt($('#manageSettingsModalPortInput').val()),
+    gallery_name: $('#manageSettingsModalGalleryNameInput').val().trim(),
+    assignable_staff: $('#manageSettingsModalAssignableStaffInput').val().split(',').map(item => item.trim()),
+    debug: constTools.stringToBool($('#manageSettingsModalDebugSelect').val())
+  }
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/system/system/updateConfiguration',
+    params: {
+      configuration: update
+    }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#manageSettingsModal').modal('hide')
+      }
+    })
+}
+
 function createManageDescriptionEntry (entry) {
   // Take a dictionary and turn it into HTML elements
 
@@ -1149,6 +1232,10 @@ $('#submitGalleryConfigChangeFromModalButton').click(submitGalleryConfigChangeFr
 $('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
 $('#reloadConfigurationButton').click(reloadConfiguration)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+// Server settings
+$('#showManageSettingsModalButton').click(showManageSettingsModal)
+$('.manageSettingsInputField').on('input', updateManageSettingsModal).change(updateManageSettingsModal)
+$('#manageSettingsModalSaveButton').click(updateSystemConfigurationFromModal)
 // Projectors
 $('#showManageProjectorsModalButton').click(constProjector.showManageProjectorsModal)
 $('#manageProjectorAddBUtton').click(function () {

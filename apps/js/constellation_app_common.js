@@ -246,7 +246,9 @@ function readUpdate (update) {
 
   // After we have saved any updates, see if we should change the app
   if (stringToBool(parseQueryString().get('showSettings')) === false) {
-    if ('app_name' in update && update.app_name !== config.constellationAppID) {
+    if ('app_name' in update &&
+        update.app_name !== config.constellationAppID &&
+        update.app_name !== '') {
       gotoApp(update.app_name)
     }
   }

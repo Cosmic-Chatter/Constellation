@@ -88,7 +88,7 @@
       <div class="row mt-2 mb-2">
         <div class="col-auto">
           <H4><div id="galleryNameField"></div></H4>
-          <H1><div id="exhibitNameField"></div></H1>
+          <H2><div id="exhibitNameField"></div></H2>
         </div>
       </div>
 
@@ -211,7 +211,8 @@
                           </div>
                           <div class="form-group form-check">
                             <input type="checkbox" class="form-check-input" id="componentInfoModalThumbnailCheckbox" checked>
-                            <label class="form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
+                            <label class="d-none d-sm-block form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
+                            <label class="d-block d-sm-none form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbs</label>
                           </div>
                         </div>
                         <div class="col-12 w-100">
@@ -290,6 +291,7 @@
                             <option value="voting_kiosk">Voting Kiosk</option>
                             <option value="word_cloud_input">Word Cloud Input</option>
                             <option value="word_cloud_viewer">Word Cloud Viewer</option>
+                            <option value="">Other</option>
                           </select>
                         </div>
                         <div class="col-6 mt-1">
@@ -972,32 +974,71 @@
                 </div>
                 <div class="modal-body">
                   <div class="row">
-                    <div class="col-4 mt-2">
-                      <div class="rounded border px-2 py-2 h-100">
-                        <H4>IP address</H4>
-                        <label class="font-italic">The IP address of the machine Control Server is running on.</label>
-                        <input type="text" class="form-control" value="255.255.255.255"></input>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>IP address</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">The IP address of the machine Control Server is running on.</label>
+                          <input id="manageSettingsModalIPInput" type="text" class="form-control manageSettingsInputField" value="255.255.255.255"></input>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-4 mt-2">
-                      <div class="rounded border px-2 py-2 h-100">
-                        <H4>Port</H4>
-                        <label class="font-italic">The port Control Server should listen on.</label>
-                        <input type="text" class="form-control" value="8082" placeholder="8082"></input>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Port</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">The port Control Server should listen on.</label>
+                          <input id="manageSettingsModalPortInput" type="text" class="form-control manageSettingsInputField" placeholder="8082"></input>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-4 mt-2">
-                      <div class="rounded border px-2 py-2 h-100">
-                        <H4>Gallery name</H4>
-                        <input type="text" class="form-control" placeholder="Constellation"></input>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Gallery name</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">A name describing the space managed by Control Server.</label>
+                          <input id="manageSettingsModalGalleryNameInput" type="text" class="form-control manageSettingsInputField" placeholder="Constellation"></input>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-4 mt-2">
-                      <div class="rounded border px-2 py-2 h-100">
-                        <H4>Assignable staff</H4>
-                        <label class="font-italic">A comma-separated list of names to whom Issues can be assigned.</label>
-                        <input type="text" class="form-control" placeholder=""></input>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Assignable staff</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">A comma-separated list of names to whom issues can be assigned.</label>
+                        <input id="manageSettingsModalAssignableStaffInput" type="text" class="form-control manageSettingsInputField" placeholder=""></input>
+                        </div>
                       </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Enable debug mode</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">Print additional debug information to the terminal.</label>
+                          <select id="manageSettingsModalDebugSelect" class="form-control manageSettingsInputField" placeholder="">
+                            <option value=true>True</option>
+                            <option value=false>False</option>
+                          </select> 
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-12 mt-2">
+                      <div id="manageSettingsModalMissingIPWarning" class="text-danger">You must specify an IP address.</div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div id="manageSettingsModalRestartRequiredWarning" class="text-warning">This change requires a manual restart of Control Server to take affect.</div>
                     </div>
                   </div>
                 </div>
@@ -1196,12 +1237,6 @@
 
           <H3 class='mt-4'>Configuration</H3>
           <div class="row mt-1">
-            <div class="col-6 col-md-3 col-lg-2 mt-2">
-              <button id="showEditGalleryConfigModalButton" type="button" class="btn btn-primary w-100" id="editConfigButton">Edit Settings</button>
-            </div>
-            <!-- <div class="col-6 col-md-3 col-lg-2 mt-2">
-              <button type="button" class="btn btn-info w-100" id="reloadConfigurationButton">Reload Settings</button>
-            </div> -->
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showManageSettingsModalButton">Server Settings</button>
             </div>

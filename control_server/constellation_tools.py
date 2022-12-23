@@ -4,11 +4,12 @@
 import configparser
 from functools import partial
 import json
+import logging
 import os
 import sys
 import threading
 import _thread
-from typing import Union
+from typing import Any, Union
 
 # Non-standard imports
 import psutil
@@ -26,6 +27,12 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
         _path = os.path.join(config.EXEC_PATH, *path_list)
 
     return _path
+
+
+def clear_terminal():
+    """Clear the terminal"""
+
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def load_json(path: str):
@@ -58,31 +65,61 @@ def write_json(data, path: str, append: bool = False):
             json.dump(data, f)
 
 
-def remove_ini_section(ini_path: str, value: Union[str, list]):
-    """Remove the given section from the ini file."""
+# def remove_ini_section(ini_path: str, value: Union[str, list]):
+#     """Remove the given section from the ini file."""
+#
+#     config_reader = configparser.ConfigParser(delimiters="=")
+#     config_reader.optionxform = str  # Override default, which is case in-sensitive
+#
+#     if isinstance(value, str):
+#         sections = [value]
+#     elif isinstance(value, list):
+#         sections = value
+#     else:
+#         raise ValueError("'value' must be of type str or list")
+#
+#     with config.galleryConfigurationLock:
+#         config_reader.read(ini_path)
+#
+#         if len(config_reader.sections()) == 0:
+#             # This file does not exist, or is trivial
+#             return
+#
+#         for section in sections:
+#             config_reader.remove_section(section)
+#
+#         with open(ini_path, "w", encoding="UTF-8") as f:
+#             config_reader.write(f)
 
-    config_reader = configparser.ConfigParser(delimiters="=")
-    config_reader.optionxform = str  # Override default, which is case in-sensitive
 
-    if isinstance(value, str):
-        sections = [value]
-    elif isinstance(value, list):
-        sections = value
+def load_system_configuration(from_dict: Union[dict[str, Any], None] = None):
+    """Read system.json and set up c_config."""
+
+    if from_dict is None:
+        config_path = get_path(["configuration", "system.json"], user_file=True)
+        system = load_json(config_path)
     else:
-        raise ValueError("'value' must be of type str or list")
+        system = from_dict
 
-    with config.galleryConfigurationLock:
-        config_reader.read(ini_path)
+    config.assignable_staff = system.get("assignable_staff", "")
+    config.current_exhibit = system.get("current_exhibit", "default.exhibit")
+    config.port = system.get("port", 8082)
+    config.ip_address = system.get("ip_address", "localhost")
+    config.gallery_name = system.get("gallery_name", "")
+    config.debug = system.get("debug", False)
 
-        if len(config_reader.sections()) == 0:
-            # This file does not exist, or is trivial
-            return
+    if config.debug:
+        logging.getLogger('uvicorn').setLevel(logging.DEBUG)
 
-        for section in sections:
-            config_reader.remove_section(section)
 
-        with open(ini_path, "w", encoding="UTF-8") as f:
-            config_reader.write(f)
+def update_system_configuration(update: dict[str, Any]):
+    """Take a dictionary of updates and use it to update system.json"""
+
+    system_path = get_path(["configuration", "system.json"], user_file=True)
+    new_config = load_json(system_path) | update  # Use new merge operator
+    write_json(new_config, system_path)
+
+    load_system_configuration(from_dict=new_config)
 
 
 def reboot_server(*args, **kwargs) -> None:
@@ -92,8 +129,18 @@ def reboot_server(*args, **kwargs) -> None:
     _thread.interrupt_main()
 
 
-def print_debug_details(loop: bool = False) -> None:
+def start_debug_loop() -> None:
+    """Begin printing debug information"""
+
+    threading.Timer(10, print_debug_details).start()
+
+
+def print_debug_details() -> None:
     """Print useful debug info to the console"""
+
+    if config.debug is False:
+        threading.Timer(10, print_debug_details).start()
+        return
 
     print("================= Debug details =================")
     print(f"Active threads: {threading.active_count()}")
@@ -101,8 +148,7 @@ def print_debug_details(loop: bool = False) -> None:
     print(f"Memory used: {psutil.Process().memory_info().rss/1024/1024} Mb")
     print("=================================================", flush=True)
 
-    if loop:
-        threading.Timer(10, partial(print_debug_details, loop=True)).start()
+    threading.Timer(10, print_debug_details).start()
 
 
 def delete_file(file_path) -> dict:

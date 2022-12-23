@@ -5,7 +5,7 @@ import logging
 import shutil
 import threading
 import time
-from typing import Union
+from typing import Any, Union
 import os
 
 # Non-standard imports
@@ -117,19 +117,21 @@ class ExhibitComponent:
 
     def update_configuration(self):
 
-        """Retrieve the latest configuration data from the configParser object"""
+        """Update the component's configuration based on current exhibit configuration."""
+
+        if config.exhibit_configuration is None or self.category == 'static':
+            return
+
         try:
-            file_config = dict(config.exhibitConfiguration.items(self.id))
-            for key in file_config:
-                if key == 'content':
-                    self.config[key] = [s.strip() for s in file_config[key].split(",")]
-                elif key == "description":
-                    pass  # This is specified elsewhere
-                else:
-                    self.config[key] = file_config[key]
-        except configparser.NoSectionError:
-            pass
-        self.config["current_exhibit"] = config.currentExhibit[0:-8]
+            component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
+            self.config["content"] = component_config["content"]
+            if "app_name" in component_config:
+                self.config["app_name"] = component_config["app_name"]
+        except IndexError:
+            # This component is not specified in the current exhibit configuration
+            self.config["content"] = []
+
+        self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]
 
     def queue_command(self, command: str):
 
@@ -270,15 +272,15 @@ def add_exhibit_component(this_id: str, this_type: str, category: str = "dynamic
 
 
 def check_available_exhibits():
-    """Get a list of available "*.exhibit" configuration files"""
+    """Get a list of available exhibit configuration files"""
 
     config.exhibit_list = []
     exhibits_path = c_tools.get_path(["exhibits"], user_file=True)
 
     with config.exhibitsLock:
         for file in os.listdir(exhibits_path):
-            if file.lower().endswith(".exhibit"):
-                config.exhibit_list.append(file)
+            if file.lower().endswith(".json"):
+                config.exhibit_list.append(os.path.splitext(file)[0])
 
 
 def command_all_exhibit_components(cmd: str):
@@ -298,15 +300,15 @@ def command_all_exhibit_components(cmd: str):
         device.queue_command(cmd)
 
 
-def create_new_exhibit(name: str, clone: str):
+def create_new_exhibit(name: str, clone: Union[str, None]):
     """Create a new exhibit file
 
     Set clone=None to create a new file, or set it equal to the name of an
     existing exhibit to clone that exhibit."""
 
     # Make sure we have the proper extension
-    if not name.lower().endswith(".exhibit"):
-        name += ".exhibit"
+    if not name.lower().endswith(".json"):
+        name += ".json"
 
     new_file = c_tools.get_path(["exhibits", name], user_file=True)
 
@@ -314,18 +316,14 @@ def create_new_exhibit(name: str, clone: str):
         # Copy an existing file
 
         # Make sure we have the proper extension on the file we're copying from
-        if not clone.lower().endswith(".exhibit"):
-            clone += ".exhibit"
+        if not clone.lower().endswith(".json"):
+            clone += ".json"
         existing_file = c_tools.get_path(["exhibits", clone], user_file=True)
         shutil.copyfile(existing_file, new_file)
 
     else:
         # Make a new file
-        with config.exhibitsLock:
-            if not os.path.isfile(new_file):
-                # If this file does not exist, touch it so that it does.
-                with open(new_file, "w", encoding='UTF-8'):
-                    pass
+        c_tools.write_json([], new_file)
 
     check_available_exhibits()
 
@@ -334,8 +332,8 @@ def delete_exhibit(name: str):
     """Delete the specified exhibit file"""
 
     # Make sure we have the proper extension
-    if not name.lower().endswith(".exhibit"):
-        name += ".exhibit"
+    if not name.lower().endswith(".json"):
+        name += ".json"
 
     file_to_delete = c_tools.get_path(["exhibits", name], user_file=True)
 
@@ -379,9 +377,33 @@ def poll_wake_on_LAN_devices():
     config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 
-def read_exhibit_configuration(name: str, update_default: bool = False):
-    # We want the format of name to be "XXXX.exhibit", but it might be
-    # "exhibits/XXXX.exhibit"
+def convert_exhibits_ini_to_json(name: str):
+    """Take a legacy INI exhibits file and convert it to JSON"""
+
+    config_parser = configparser.ConfigParser()
+    config_parser.read(name)
+
+    new_config = []
+    for key in config_parser.sections():
+        section = config_parser[key]
+        new_entry = {"id": key.strip()}
+        content = section.get("content", "")
+        new_entry["content"] = [x.strip() for x in content.split(",")]
+        if "app_name" in section:
+            new_entry["app_name"] = section.get("app_name")
+
+        new_config.append(new_entry)
+
+    # Rename the legacy file to save it
+    shutil.move(name, name + '.old')
+
+    # Write the new file
+    c_tools.write_json(new_config, os.path.splitext(name)[0] + '.json')
+
+
+def read_exhibit_configuration(name: str):
+    # We want the format of name to be "XXXX.json", but it might be
+    # "exhibits/XXXX.json"
     error = False
     split_path = os.path.split(name)
     if len(split_path) == 2:
@@ -402,60 +424,37 @@ def read_exhibit_configuration(name: str, update_default: bool = False):
             logging.error('Bad exhibit definition filename: %s', name)
         return
 
-    config.currentExhibit = name
-    config.exhibitConfiguration = configparser.ConfigParser()
-    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
-    config.exhibitConfiguration.read(exhibit_path)
+    exhibit_path = c_tools.get_path(["exhibits", name + ".json"], user_file=True)
+    if os.path.splitext(name)[1].lower() == '.ini':
+        # We have a legacy exhibit file, so convert first
+        convert_exhibits_ini_to_json(exhibit_path)
 
-    if update_default:
-        config_reader = configparser.ConfigParser(delimiters="=")
-        config_reader.optionxform = str  # Override default, which is case in-sensitive
-        config_path = c_tools.get_path(['galleryConfiguration.ini'], user_file=True)
-        with config.galleryConfigurationLock:
-            config_reader.read(config_path)
-            config_reader.set("CURRENT", "current_exhibit", name)
-            with open(config_path, "w", encoding="UTF-8") as f:
-                config_reader.write(f)
+    config.current_exhibit = os.path.splitext(name)[0]
+    config.exhibit_configuration = c_tools.load_json(exhibit_path)
 
 
-def set_component_content(id_: str, content_list: list[str]):
-    """Loop the content list and build a string to write to the config file"""
+def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_name: str = ""):
+    """Update an exhibit configuration with the given data for a given id."""
 
-    content = ", ".join(content_list)
+    if exhibit_name == "" or exhibit_name is None:
+        exhibit_name = config.current_exhibit
 
-    with config.galleryConfigurationLock:
-        try:
-            config.exhibitConfiguration.set(id_, "content", content)
-        except configparser.NoSectionError:  # This exhibit does not have content for this component
-            config.exhibitConfiguration.add_section(id_)
-            config.exhibitConfiguration.set(id_, "content", content)
+    exhibit_path = c_tools.get_path(["exhibits", exhibit_name + ".json"], user_file=True)
+    exhibit_config = c_tools.load_json(exhibit_path)
 
-    # Update the component
-    get_exhibit_component(id_).update_configuration()
+    match_found = False
+    for index, component in enumerate(exhibit_config):
+        if component["id"] == this_id:
+            exhibit_config[index] |= update  # Use new dict merge operator
+            match_found = True
+    if not match_found:
+        exhibit_config.append({"id": this_id} | update)
+    config.exhibit_configuration = exhibit_config
 
-    # Write new configuration to file
-    with config.galleryConfigurationLock:
-        with open(c_tools.get_path(["exhibits", config.currentExhibit], user_file=True), 'w', encoding="UTF-8") as f:
-            config.exhibitConfiguration.write(f)
-
-
-def set_component_app(id_: str, app_name: str):
-    """Write the given app name to the config file."""
-
-    with config.galleryConfigurationLock:
-        try:
-            config.exhibitConfiguration.set(id_, "app_name", app_name)
-        except configparser.NoSectionError:  # This exhibit does not have content for this component
-            config.exhibitConfiguration.add_section(id_)
-            config.exhibitConfiguration.set(id_, "app_name", app_name)
-
-    # Update the component
-    get_exhibit_component(id_).update_configuration()
-
-    # Write new configuration to file
-    with config.galleryConfigurationLock:
-        with open(c_tools.get_path(["exhibits", config.currentExhibit], user_file=True), 'w', encoding="UTF-8") as f:
-            config.exhibitConfiguration.write(f)
+    c_tools.write_json(exhibit_config, exhibit_path)
+    this_component = get_exhibit_component(this_id)
+    if this_component is not None:
+        this_component.update_configuration()
 
 
 def update_synchronization_list(this_id: str, other_ids: list[str]):
@@ -543,14 +542,14 @@ def update_exhibit_component_status(data, ip: str):
     if "constellation_app_id" in data:
         if component.config["app_name"] == "":
             component.config["app_name"] = data["constellation_app_id"]
-            set_component_app(this_id, data["constellation_app_id"])
+            update_exhibit_configuration(this_id, {"app_name": data["constellation_app_id"]})
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])
 
 
 def convert_descriptions_config_to_json(old_config: dict[str: str]):
-    """Take a dictionary from the legacy INI method of specifying component descriptions and convert it to JSON."""
+    """Take a dictionary from the legacy INI format of specifying component descriptions and convert it to JSON."""
 
     # Try to load the existing configuration
     config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
@@ -592,7 +591,7 @@ def convert_static_config_to_json(old_config: dict[str: str]):
 
 
 def convert_wake_on_LAN_to_json(old_config: dict[str: str]):
-    """Take a configparser object from reading galleryConfiguration.ini and use it to create a json config file."""
+    """Take a configparser object from reading galleryConfiguration.ini and use it to create a JSON config file."""
 
     # Try to load the existing configuration
     config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
