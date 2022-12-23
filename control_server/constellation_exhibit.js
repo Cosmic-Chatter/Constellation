@@ -18,6 +18,7 @@ export class ExhibitComponent {
     this.AnyDeskID = ''
     this.constellationAppId = ''
     this.platformDetails = {}
+    this.latency = null
   }
 
   getURL () {
@@ -362,6 +363,9 @@ export function updateComponentFromServer (component) {
     if ('platform_details' in component) {
       obj.platformDetails = component.platform_details
     }
+    if ('latency' in component) {
+      obj.latency = component.latency
+    }
     if ('lastContactDateTime' in component) {
       obj.lastContactDateTime = component.lastContactDateTime
     }
@@ -454,7 +458,7 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalIPAddressGroup').hide()
   }
-  if (obj.ip !== constTools.extractIPAddress(obj.helperAddress)) {
+  if (obj.ip !== constTools.extractIPAddress(obj.helperAddress) && constTools.extractIPAddress(obj.helperAddress) != null) {
     $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
     $('#componentInfoModalHelperIPAddressGroup').show()
   } else {
@@ -471,6 +475,12 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalBrowserGroup').show()
   } else {
     $('#componentInfoModalBrowserGroup').hide()
+  }
+  if (obj.latency != null) {
+    $('#componentInfoModalLatency').html(String(obj.latency) + ' ms')
+    $('#componentInfoModalLatencyGroup').show()
+  } else {
+    $('#componentInfoModalLatencyGroup').hide()
   }
   if (obj.lastContactDateTime != null) {
     $('#componentInfoModalLastContact').html(constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)))
@@ -585,6 +595,7 @@ function convertAppIDtoDisplayName (appName) {
       static_component: 'Static component',
       timelapse_viewer: 'Timelapse Viewer',
       voting_kiosk: 'Voting Kiosk',
+      wol_only: 'Wake on LAN',
       word_cloud_input: 'Word Cloud Input',
       word_cloud_viewer: 'Word Cloud Viewer'
     }

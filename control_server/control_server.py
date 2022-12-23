@@ -96,35 +96,39 @@ def send_webpage_update():
         temp["class"] = "exhibitComponent"
         temp["status"] = item.current_status()
         temp["lastContactDateTime"] = item.last_contact_datetime
-        temp["ip_address"] = item.ip
+        temp["ip_address"] = item.ip_address
         temp["helperPort"] = item.helperPort
         temp["helperAddress"] = item.helperAddress
         temp["constellation_app_id"] = item.config["app_name"]
         temp["platform_details"] = item.platform_details
+        temp["latency"] = item.latency
+        print(item.id, item.latency)
         component_dict_list.append(temp)
 
     for item in c_config.projectorList:
         temp = {"id": item.id,
                 "group": item.group,
-                "ip_address": item.ip}
+                "ip_address": item.ip_address}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         temp["class"] = "projector"
         temp["status"] = item.state["status"]
+        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     for item in c_config.wakeOnLANList:
         temp = {"id": item.id,
                 "group": 'WAKE_ON_LAN',
-                "ip_address": item.ip}
+                "ip_address": item.ip_address}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         temp["class"] = "exhibitComponent"
         temp["status"] = item.state["status"]
+        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     # Also include an object with the status of the overall gallery

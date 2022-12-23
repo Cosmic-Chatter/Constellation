@@ -18,7 +18,74 @@ import config
 import constellation_tools as c_tools
 
 
-class ExhibitComponent:
+class BaseComponent:
+    """A basic Constellation component."""
+
+    def __init__(self, id_: str, group: str,
+                 ip_address: Union[str, None] = None,
+                 mac_address: Union[str, None] = None):
+
+        self.id: str = id_
+        self.group: str = group
+
+        self.ip_address = ip_address
+        self.mac_address = mac_address
+        self.WOL_broadcast_address: str = "255.255.255.255"
+        self.WOL_port: int = 9
+
+        self.latency: Union[None, float] = None  # Latency between Control Server and the device in ms
+        self.latency_timer: Union[threading.Timer, None] = None
+
+        self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
+
+        self.config = {"commands": [],
+                       "allowed_actions": [],
+                       "description": config.componentDescriptions.get(id_, ""),
+                       "app_name": ""}
+
+    def clean_up(self):
+        """Stop any timers so the class instance can be safely removed."""
+
+        if self.latency_timer is not None:
+            self.latency_timer.cancel()
+
+    def seconds_since_last_contact(self) -> float:
+
+        """The number of seconds since the last successful contact with the component."""
+
+        diff = datetime.datetime.now() - self.last_contact_datetime
+        return diff.total_seconds()
+
+    def update_last_contact_datetime(self):
+
+        self.last_contact_datetime = datetime.datetime.now()
+
+    def poll_latency(self):
+        """If we have an IP address, ping the host to measure its latency."""
+
+        if self.ip_address is not None:
+            try:
+                ping = icmplib.ping(self.ip_address, privileged=False, count=1, timeout=1)
+                if ping.is_alive:
+                    self.latency = ping.avg_rtt
+                else:
+                    self.latency = None
+            except icmplib.exceptions.SocketPermissionError:
+                if "wakeOnLANPrivilege" not in config.serverWarningDict:
+                    config.serverWarningDict["wakeOnLANPrivilege"] = True
+                self.latency = None
+            except icmplib.exceptions.NameLookupError:
+                self.latency = None
+            except Exception as e:
+                print(f"poll_latency: {self.id}: an unknown exception occurred", e)
+                self.latency = None
+
+        self.latency_timer = threading.Timer(10, self.poll_latency)
+        self.latency_timer.name = f"{self.id} latency timer"
+        self.latency_timer.start()
+
+
+class ExhibitComponent(BaseComponent):
     """Holds basic data about a component in the exhibit"""
 
     def __init__(self, id_: str, group: str, category: str = 'dynamic'):
@@ -26,29 +93,18 @@ class ExhibitComponent:
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from galleryConfiguration.ini
 
-        self.id: str = id_
-        self.group: str = group
-        self.category: str = category
-        self.ip: str = ""  # IP address of client
+        super().__init__(id_, group)
+
+        self.category = category
         self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
-        self.macAddress: Union[str, None] = None  # Added below if we have specified a Wake on LAN device
-        self.broadcastAddress: str = "255.255.255.255"
-        self.WOLPort: int = 9
-
-        self.last_contact_datetime: datetime.datetime = datetime.datetime.now()
         self.lastInteractionDateTime: datetime.datetime = datetime.datetime(2020, 1, 1)
-
-        self.config = {"commands": [],
-                       "allowed_actions": [],
-                       "description": config.componentDescriptions.get(id_, ""),
-                       "AnyDeskID": "",
-                       "app_name": ""}
 
         if category != "static":
             self.update_configuration()
+            self.poll_latency()
         else:
             self.last_contact_datetime = None
 
@@ -56,46 +112,27 @@ class ExhibitComponent:
         # If yes, subsume it into this component
         wol = get_wake_on_LAN_component(self.id)
         if wol is not None:
-            self.macAddress = wol.macAddress
+            self.mac_address = wol.mac_address
             if "power_on" not in self.config["allowed_actions"]:
                 self.config["allowed_actions"].append("power_on")
             if "shutdown" not in self.config["allowed_actions"]:
                 self.config["allowed_actions"].append("power_off")
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
-    def seconds_since_last_contact(self) -> float:
-
-        """Return the number of seconds since a ping was received"""
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
-
     def seconds_since_last_interaction(self) -> float:
-
-        """Return the number of seconds since an interaction was recorded"""
+        """The number of seconds since an interaction was recorded."""
 
         diff = datetime.datetime.now() - self.lastInteractionDateTime
         return diff.total_seconds()
 
-    def update_last_contact_datetime(self):
-
-        # We've received a new ping from this component, so update its
-        # last_contact_datetime
-
-        self.last_contact_datetime = datetime.datetime.now()
-
     def update_last_interaction_datetime(self):
-
-        # We've received a new interaction ping, so update its
-        # lastInteractionDateTime
 
         self.lastInteractionDateTime = datetime.datetime.now()
 
     def current_status(self) -> str:
-
         """Return the current status of the component
 
-        Options: [OFFLINE, SYSTEM ON, ONLINE, ACTIVE, WAITING]
+        Options: [OFFLINE, SYSTEM ON, ONLINE, ACTIVE, WAITING, STATIC]
         """
 
         if self.category == "static":
@@ -109,14 +146,15 @@ class ExhibitComponent:
         elif self.seconds_since_last_contact() < 60:
             status = "WAITING"
         else:
-            # If we haven't heard from the component, we might still be able
-            # to ping the PC and see if it is alive
-            status = self.update_PC_status()
+            # If we have a measurable latency, the device must be on and connected to the network
+            if self.latency is not None:
+                status = "SYSTEM ON"
+            else:
+                status = "OFFLINE"
 
         return status
 
     def update_configuration(self):
-
         """Update the component's configuration based on current exhibit configuration."""
 
         if config.exhibit_configuration is None or self.category == 'static':
@@ -134,13 +172,12 @@ class ExhibitComponent:
         self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]
 
     def queue_command(self, command: str):
-
         """Queue a command to be sent to the component on the next ping"""
 
         if self.category == "static":
             return
 
-        if (command in ["power_on", "wakeDisplay"]) and (self.macAddress is not None):
+        if (command in ["power_on", "wakeDisplay"]) and (self.mac_address is not None):
             self.wake_with_LAN()
         elif command in ['shutdown', 'restart']:
             # Send these commands directly to the helper
@@ -153,68 +190,38 @@ class ExhibitComponent:
             print(f"{self.id}: pending commands: {self.config['commands']}")
 
     def wake_with_LAN(self):
+        """Send a magic packet waking the device."""
 
-        # Function to send a magic packet waking the device
-
-        if self.macAddress is not None:
-
+        if self.mac_address is not None:
             print(f"Sending wake on LAN packet to {self.id}")
             with config.logLock:
                 logging.info(f"Sending wake on LAN packet to {self.id}")
             try:
-                wakeonlan.send_magic_packet(self.macAddress,
-                                            ip_address=self.broadcastAddress,
-                                            port=self.WOLPort)
+                wakeonlan.send_magic_packet(self.mac_address,
+                                            ip_address=self.WOL_broadcast_address,
+                                            port=self.WOL_port)
             except ValueError as e:
                 print(f"Wake on LAN error for component {self.id}: {str(e)}")
                 with config.logLock:
                     logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
 
-    def update_PC_status(self):
-        """If we have an IP address, ping the host to see if it is awake"""
 
-        status = "UNKNOWN"
-        if self.ip is not None:
-            try:
-                ping = icmplib.ping(self.ip, privileged=False, count=1, timeout=0.05)
-                if ping.is_alive:
-                    status = "SYSTEM ON"
-                elif self.seconds_since_last_contact() > 60:
-                    status = "OFFLINE"
-                else:
-                    status = "WAITING"
-            except icmplib.exceptions.SocketPermissionError:
-                if "wakeOnLANPrivilege" not in config.serverWarningDict:
-                    print(
-                        "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
-                    with config.logLock:
-                        logging.info(f"Need administrator privilege to check Wake on LAN status")
-                    config.serverWarningDict["wakeOnLANPrivilege"] = True
-        return status
-
-
-class WakeOnLANDevice:
+class WakeOnLANDevice(BaseComponent):
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
-    def __init__(self, id_: str, mac_address: str, ip_address: str = None):
+    def __init__(self, id_: str,  group: str, mac_address: str, ip_address: str = None):
 
-        self.id = id_
-        self.group = "WAKE_ON_LAN"
-        self.macAddress = mac_address
-        self.broadcastAddress = "255.255.255.255"
-        self.port = 9
-        self.ip = ip_address
-        self.config = {"allowed_actions": ["power_on"],
-                       "description": config.componentDescriptions.get(id_, ""),
-                       "app_name": "wol_only"}
+        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
+
+        self.WOL_broadcast_address = "255.255.255.255"
+        self.WOL_port = 9
+
+        self.config["allowed_actions"] = ["power_on"]
+        self.config["app_name"] = "wol_only"
 
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
-
-    def seconds_since_last_contact(self) -> float:
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
+        self.poll_latency()
 
     def queue_command(self, cmd: str):
 
@@ -231,9 +238,9 @@ class WakeOnLANDevice:
         with config.logLock:
             logging.info(f"Sending wake on LAN packet to {self.id}")
         try:
-            wakeonlan.send_magic_packet(self.macAddress,
-                                        ip_address=self.broadcastAddress,
-                                        port=self.port)
+            wakeonlan.send_magic_packet(self.mac_address,
+                                        ip_address=self.WOL_broadcast_address,
+                                        port=self.WOL_port)
         except ValueError as e:
             print(f"Wake on LAN error for component {self.id}: {str(e)}")
             with config.logLock:
@@ -243,9 +250,9 @@ class WakeOnLANDevice:
 
         """If we have an IP address, ping the host to see if it is awake"""
 
-        if self.ip is not None:
+        if self.ip_address is not None:
             try:
-                ping = icmplib.ping(self.ip, privileged=False, count=1)
+                ping = icmplib.ping(self.ip_address, privileged=False, count=1)
                 if ping.is_alive:
                     self.state["status"] = "SYSTEM ON"
                     self.last_contact_datetime = datetime.datetime.now()
@@ -506,7 +513,7 @@ def update_exhibit_component_status(data, ip: str):
     if component is None:  # This is a new id, so make the component
         component = add_exhibit_component(this_id, group)
 
-    component.ip = ip
+    component.ip_address = ip
     if "helperPort" in data:
         component.helperPort = data["helperPort"]
     component.helperAddress = f"http://{ip}:{component.helperPort}"
@@ -663,11 +670,16 @@ def read_wake_on_LAN_configuration():
     devices = c_tools.load_json(config_path)
     if devices is None:
         return
+    for device in config.wakeOnLANList:
+        device.clean_up()
     config.wakeOnLANList = []
 
     for entry in devices:
         if get_wake_on_LAN_component(entry["id"]) is None:
-            device = WakeOnLANDevice(entry["id"], entry["mac_address"], ip_address=entry.get("ip_address", ""))
+            device = WakeOnLANDevice(entry["id"],
+                                     entry.get("group", "WAKE_ON_LAN"),
+                                     entry["mac_address"],
+                                     ip_address=entry.get("ip_address", ""))
             config.wakeOnLANList.append(device)
 
 

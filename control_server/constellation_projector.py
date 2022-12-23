@@ -7,44 +7,32 @@ import time
 
 # Constellation imports
 import config
+import constellation_exhibit as c_exhibit
 import constellation_tools as c_tools
 import projector_control
 
 
-class Projector:
-    """Holds basic data about a projector"""
+class Projector(c_exhibit.BaseComponent):
+    """Holds basic data about a projector."""
 
-    def __init__(self,
-                 id_: str,
-                 group: str,
-                 ip: str,
-                 connection_type: str,
-                 mac_address: str = None,
-                 make: str = None,
+    def __init__(self, id_: str, group: str, ip_address: str, connection_type: str, mac_address: str = None, make: str = None,
                  password: str = None):
 
-        self.id = id_
-        self.group = group
-        self.ip = ip  # IP address of the projector
+        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
+
         self.password = password  # Password to access PJLink
-        self.mac_address = mac_address  # For use with Wake on LAN
         self.connection_type = connection_type
         self.make = make
-        self.config: dict = {"allowed_actions": ["power_on", "power_off"],
-                             "description": config.componentDescriptions.get(id_, ""),
-                             "app_name": "projector"}
 
-        self.state = {"status": "OFFLINE"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
 
+        self.config["allowed_actions"] = ["power_on", "power_off"]
+        self.config["app_name"] = "projector"
+
+        self.state = {"status": "OFFLINE"}
+
         self.update(full=True)
-
-    def seconds_since_last_contact(self) -> float:
-
-        """Calculate the number of seconds since the component last checked in."""
-
-        diff = datetime.datetime.now() - self.last_contact_datetime
-        return diff.total_seconds()
+        self.poll_latency()
 
     def update(self, full: bool = False):
 
@@ -53,14 +41,14 @@ class Projector:
         error = False
         try:
             if self.connection_type == 'pjlink':
-                connection = projector_control.pjlink_connect(self.ip, password=self.password)
+                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
                 if full:
                     self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
                 self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
                 self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
                 self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
             elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip, make=self.make)
+                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
                 if full:
                     self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
                 self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
@@ -70,7 +58,7 @@ class Projector:
                 self.state["error_status"] = projector_control.serial_send_command(connection, "error_status",
                                                                                    make=self.make)
 
-            self.last_contact_datetime = datetime.datetime.now()
+            self.update_last_contact_datetime()
         except Exception as e:
             # print(e)
             error = True
@@ -108,13 +96,13 @@ class Projector:
 
         try:
             if self.connection_type == "pjlink":
-                connection = projector_control.pjlink_connect(self.ip, password=self.password)
+                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
                 if cmd in cmd_dict:
                     projector_control.pjlink_send_command(connection, cmd_dict[cmd])
                 else:
                     projector_control.pjlink_send_command(connection, cmd)
             elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip, make=self.make)
+                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
                 if cmd in cmd_dict:
                     projector_control.serial_send_command(connection, cmd_dict[cmd], make=self.make)
                 else:
@@ -186,6 +174,8 @@ def read_projector_configuration():
     proj_config = c_tools.load_json(config_path)
     if proj_config is None:
         return
+    for proj in config.projectorList:
+        proj.clean_up()
     config.projectorList = []
 
     for proj in proj_config:

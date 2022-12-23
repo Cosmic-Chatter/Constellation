@@ -12,6 +12,7 @@ export class Projector {
     this.status = constConfig.STATUS.OFFLINE
     this.lastContactDateTime = null
     this.allowed_actions = []
+    this.latency = null
 
     this.checkProjector()
     const thisInstance = this
@@ -447,6 +448,9 @@ export function updateProjectorFromServer (projector) {
     }
     if ('lastContactDateTime' in projector) {
       obj.lastContactDateTime = projector.lastContactDateTime
+    }
+    if ('latency' in projector) {
+      obj.latency = projector.latency
     }
     if ('error' in projector) {
       try {
