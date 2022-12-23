@@ -9,14 +9,14 @@ export const config = {
   currentExhibit: 'default',
   currentInteraction: false,
   errorDict: {},
+  group: 'Default',
   helperAddress: 'http://localhost:8000',
-  id: 'TEMP',
+  id: 'TEMP ' + String(new Date().getTime()),
   imageDuration: 10, // seconds
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
   softwareVersion: 2.0,
-  type: 'TEMP',
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
@@ -94,7 +94,7 @@ export function sendPing () {
 
     const requestDict = {
       id: config.id,
-      type: config.type,
+      group: config.group,
       helperPort: config.helperAddress.split(':')[2], // Depreciated
       helperAddress: config.helperAddress,
       helperIPSameAsClient,
@@ -197,8 +197,8 @@ function readUpdate (update) {
   if ('id' in update) {
     config.id = update.id
   }
-  if ('type' in update) {
-    config.type = update.type
+  if ('group' in update) {
+    config.group = update.group
   }
   if (('server_ip_address' in update) && ('server_port' in update)) {
     config.serverAddress = 'http://' + update.server_ip_address + ':' + update.server_port

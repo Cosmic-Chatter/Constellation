@@ -21,13 +21,13 @@ import constellation_tools as c_tools
 class ExhibitComponent:
     """Holds basic data about a component in the exhibit"""
 
-    def __init__(self, id_: str, this_type: str, category: str = 'dynamic'):
+    def __init__(self, id_: str, group: str, category: str = 'dynamic'):
 
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from galleryConfiguration.ini
 
         self.id: str = id_
-        self.type: str = this_type
+        self.group: str = group
         self.category: str = category
         self.ip: str = ""  # IP address of client
         self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
@@ -199,7 +199,7 @@ class WakeOnLANDevice:
     def __init__(self, id_: str, mac_address: str, ip_address: str = None):
 
         self.id = id_
-        self.type = "WAKE_ON_LAN"
+        self.group = "WAKE_ON_LAN"
         self.macAddress = mac_address
         self.broadcastAddress = "255.255.255.255"
         self.port = 9
@@ -262,10 +262,10 @@ class WakeOnLANDevice:
             self.state["status"] = "UNKNOWN"
 
 
-def add_exhibit_component(this_id: str, this_type: str, category: str = "dynamic") -> ExhibitComponent:
+def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -> ExhibitComponent:
     """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
-    component = ExhibitComponent(this_id, this_type, category)
+    component = ExhibitComponent(this_id, group, category)
     config.componentList.append(component)
 
     return component
@@ -497,14 +497,14 @@ def update_exhibit_component_status(data, ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
     this_id = data["id"]
-    this_type = data["type"]
+    group = data["group"]
 
     if ip == "::1":
         ip = "localhost"
 
     component = get_exhibit_component(this_id)
     if component is None:  # This is a new id, so make the component
-        component = add_exhibit_component(this_id, this_type)
+        component = add_exhibit_component(this_id, group)
 
     component.ip = ip
     if "helperPort" in data:
@@ -580,11 +580,11 @@ def convert_static_config_to_json(old_config: dict[str: str]):
 
     for key in old_config:
 
-        # Components are specified in the form 'TYPE = ID1, ID2, ID3'
+        # Components are specified in the form 'GROUP = ID1, ID2, ID3'
         split = old_config[key].split(',')
         for entry in split:
             new_entry = {"id": entry.strip(),
-                         "type": key.strip()}
+                         "group": key.strip()}
             new_config.append(new_entry)
 
     c_tools.write_json(new_config, config_path)
@@ -652,7 +652,7 @@ def read_static_components_configuration():
 
     for entry in components:
         if get_exhibit_component(entry["id"]) is None:
-            component = add_exhibit_component(entry["id"], entry["type"], category="static")
+            component = add_exhibit_component(entry["id"], entry["group"], category="static")
             component.config["app_name"] = "static_component"
 
 

@@ -3,9 +3,10 @@ import * as constTools from './constellation_tools.js'
 import * as constExhibit from './constellation_exhibit.js'
 
 export class Projector {
-  constructor (id, type) {
+  constructor (id, group) {
+    this.type = 'projector'
     this.id = id
-    this.type = type
+    this.group = group
     this.ip = ''
     this.state = {}
     this.status = constConfig.STATUS.OFFLINE
@@ -94,7 +95,7 @@ export class Projector {
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
     let classString
-    if (constExhibit.getExhibitComponentGroup(this.type).components.length > 7) {
+    if (constExhibit.getExhibitComponentGroup(this.group).components.length > 7) {
       classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
       classString = 'col-12 col-sm-4 col-md-6 mt-1'
@@ -191,7 +192,7 @@ export class Projector {
       dropdownMenu.appendChild(option)
     }
 
-    $('#' + this.type + 'ComponentList').append(col)
+    $('#' + this.group + 'ComponentList').append(col)
   }
 }
 
@@ -212,7 +213,7 @@ export function showManageProjectorsModal () {
 
   // Clear the input fields
   $('#manageProjectorsEditIDInput').val(null)
-  $('#manageProjectorsEditTypeInput').val(null)
+  $('#manageProjectorsEditGroupInput').val(null)
   $('#manageProjectorsEditProtocolSelect').val(null)
   $('#manageProjectorsEditIPInput').val(null)
   $('#manageProjectorsEditPasswordInput').val(null)
@@ -299,16 +300,16 @@ export function createManageProjectorEntry (entry) {
   ipCol.innerHTML = entry.ip_address
   row2.appendChild(ipCol)
 
-  const typeCol = document.createElement('div')
-  typeCol.classList = 'col-7 col-sm-5 bg-secondary py-1 px-1 text-center'
-  typeCol.setAttribute('id', 'manageProjectorType_' + cleanID)
-  typeCol.style.borderBottomRightRadius = '0.25rem'
-  if ('type' in entry) {
-    typeCol.innerHTML = entry.type
+  const groupCol = document.createElement('div')
+  groupCol.classList = 'col-7 col-sm-5 bg-secondary py-1 px-1 text-center'
+  groupCol.setAttribute('id', 'manageProjectorGroup_' + cleanID)
+  groupCol.style.borderBottomRightRadius = '0.25rem'
+  if ('group' in entry) {
+    groupCol.innerHTML = entry.group
   } else {
-    typeCol.innerHTML = 'PROJECTOR'
+    groupCol.innerHTML = 'PROJECTOR'
   }
-  row2.appendChild(typeCol)
+  row2.appendChild(groupCol)
 }
 
 function populateManageProjectorEdit (id) {
@@ -320,7 +321,7 @@ function populateManageProjectorEdit (id) {
   $('#manageProjectorsEditIDInput').data('id', id)
 
   $('#manageProjectorsEditIDInput').val(details.id)
-  $('#manageProjectorsEditTypeInput').val(details.type)
+  $('#manageProjectorsEditGroupInput').val(details.group)
   $('#manageProjectorsProtocolSelect').val(details.protocol)
   $('#manageProjectorsEditIPInput').val(details.ip_address)
   $('#manageProjectorsEditPasswordInput').val(details.password)
@@ -355,12 +356,12 @@ export function manageProjectorUpdateConfigFromEdit () {
   $('#manageProjectorID_' + id).html(newID)
   details.id = newID
 
-  const newType = $('#manageProjectorsEditTypeInput').val()
-  if (newType != null && newType !== '') {
-    $('#manageProjectorType_' + id).html(newType)
-    details.type = newType
+  const newGroup = $('#manageProjectorsEditGroupInput').val()
+  if (newGroup != null && newGroup !== '') {
+    $('#manageProjectorGroup_' + id).html(newGroup)
+    details.group = newGroup
   } else {
-    $('#manageProjectorType_' + id).html('PROJECTOR')
+    $('#manageProjectorGroup_' + id).html('PROJECTOR')
   }
 
   const newProtocol = $('#manageProjectorsProtocolSelect').val()
@@ -401,7 +402,7 @@ export function manageProjectorDeleteProjectorEntry () {
 
   // Clear the input fields
   $('#manageProjectorsEditIDInput').val(null)
-  $('#manageProjectorsEditTypeInput').val(null)
+  $('#manageProjectorsEditGroupInput').val(null)
   $('#manageProjectorsEditProtocolSelect').val(null)
   $('#manageProjectorsEditIPInput').val(null)
   $('#manageProjectorsEditPasswordInput').val(null)
@@ -458,15 +459,15 @@ export function updateProjectorFromServer (projector) {
       constTools.rebuildErrorList()
     }
   } else {
-    // First, make sure the group matching this type exists
-    let group = constExhibit.getExhibitComponentGroup(projector.type)
+    // First, make sure the group matching this group id exists
+    let group = constExhibit.getExhibitComponentGroup(projector.group)
     if (group == null) {
-      group = new constExhibit.ExhibitComponentGroup(projector.type)
+      group = new constExhibit.ExhibitComponentGroup(projector.group)
       constConfig.componentGroups.push(group)
     }
 
     // Then create a new component
-    const newProjector = new Projector(projector.id, projector.type)
+    const newProjector = new Projector(projector.id, projector.group)
     newProjector.setStatus(projector.status)
     if ('allowed_actions' in projector) {
       newProjector.allowed_actions = projector.allowed_actions

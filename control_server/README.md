@@ -9,12 +9,12 @@ Control Server coordinates communication between **_Constellation_** components 
 
 ## Terminology
 
-* `gallery`: A physical space in which `exhibit`s take place.
-* `exhibit`: The particular configuration of a `gallery`, including the inclusion or exclusion of specific `component`s and the `content` displayed by each `component`.
+* `gallery`: A physical space in which exhibits take place.
+* `exhibit`: The particular configuration of a `gallery`, including the inclusion or exclusion of specific components and the content displayed by each component.
 * `component`: A single display element within a `gallery`. This could be a projector, a screen, an iPad, or a hands-on mechanical interactive.
 * `content`: The information being used by a `component`, such as text, images, video, and local configurations. Content specifies the file(s) on the component machine that should be used.
-* `id`: A unique identifier for a given `component`. No two `component`s can have the same `id`.
-* `type`: A user-defined grouping of `component`s. For example, if you have multiple screens each displaying similar information, you might assign them all the `type` of "INFO_SCREEN". `type`s allow you to send the same command to multiple devices. Every component must have a `type`.
+* `id`: A unique identifier for a given `component`. No two components can have the same `id`.
+* `group`: A user-defined grouping of components. For example, if you have multiple screens each displaying similar information, you might assign them all the group of "INFO_SCREEN". Groups allow you to send the same command to multiple devices. Every component must have a group.
 
 ## Setting up Control Server
 

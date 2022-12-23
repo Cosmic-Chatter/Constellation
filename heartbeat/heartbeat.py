@@ -59,8 +59,8 @@ def read_update(update: dict):
 
     if "id" in update:
         config.this_id = update["id"]
-    if "type" in update:
-        config.this_type = update["type"]
+    if "group" in update:
+        config.this_group = update["group"]
     if "server_ip_address" in update and "server_port" in update:
         config.server_address = "http://" + update["server_ip_address"] + ":" + update["server_port"]
     if "helperAddress" in update:
@@ -113,7 +113,7 @@ def send_ping():
 
     request_dict = {"class": "exhibitComponent",
                     "id": config.this_id,
-                    "type": config.this_type,
+                    "group": config.this_group,
                     "helperAddress": config.helper_address,
                     "allowed_actions": config.allowed_actions,
                     "constellation_app_id": "heartbeat",

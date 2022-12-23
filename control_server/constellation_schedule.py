@@ -191,17 +191,17 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
     elif target is not None:
         if target == "__all":
             c_exhibit.command_all_exhibit_components(action)
-        elif target.startswith("__type"):
-            this_type = target[7:]
-            if this_type == "PROJECTOR":
+        elif target.startswith("__group"):
+            group = target[7:]
+            if group == "PROJECTOR":
                 for projector in config.projectorList:
                     projector.queue_command(action)
-            elif this_type == "WAKE_ON_LAN":
+            elif group == "WAKE_ON_LAN":
                 for device in config.wakeOnLANList:
                     device.queue_command(action)
             else:
                 for component in config.componentList:
-                    if component.type == this_type:
+                    if component.group == group:
                         component.queue_command(action)
         elif target.startswith("__id"):
             c_exhibit.get_exhibit_component(target[5:]).queue_command(action)

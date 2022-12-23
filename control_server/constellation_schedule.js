@@ -279,7 +279,7 @@ function scheduleTargetToDescription (target) {
 
   if (target === '__all') {
     return 'all components'
-  } else if (target.startsWith('__type_')) {
+  } else if (target.startsWith('__group_')) {
     return 'all ' + target.slice(7)
   } else if (target.startsWith('__id_')) {
     return target.slice(5)
@@ -305,15 +305,15 @@ export function setScheduleActionTargetSelector () {
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
   } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action)) {
-    // Fill the target selector with the list of types and ids, plus an option for all.
+    // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
     if (['power_on', 'power_off', 'refresh_page', 'restart'].includes(action)) {
       targetSelector.append(new Option('All', '__all'))
-      const sep = new Option('Types', null)
+      const sep = new Option('Groups', null)
       sep.setAttribute('disabled', true)
       targetSelector.append(sep)
       constConfig.componentGroups.forEach((item) => {
-        targetSelector.append(new Option(item.type, '__type_' + item.type))
+        targetSelector.append(new Option(item.group, '__group_' + item.group))
       })
     }
     const sep = new Option('IDs', null)

@@ -78,7 +78,7 @@ def send_webpage_update():
     component_dict_list = []
     for item in c_config.componentList:
         temp = {"id": item.id,
-                "type": item.type}
+                "group": item.group}
         if "content" in item.config:
             temp["content"] = item.config["content"]
         if "error" in item.config:
@@ -105,7 +105,7 @@ def send_webpage_update():
 
     for item in c_config.projectorList:
         temp = {"id": item.id,
-                "type": 'PROJECTOR',
+                "group": item.group,
                 "ip_address": item.ip}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
@@ -117,7 +117,7 @@ def send_webpage_update():
 
     for item in c_config.wakeOnLANList:
         temp = {"id": item.id,
-                "type": 'WAKE_ON_LAN',
+                "group": 'WAKE_ON_LAN',
                 "ip_address": item.ip}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
@@ -578,7 +578,7 @@ async def delete_tracker_template(data: dict[str, Any], tracker_type: str):
 
 @app.get("/tracker/{tracker_type}/getAvailableData")
 async def get_available_tracker_data(tracker_type: str):
-    """Send a list of all the available data files for the given tracker type."""
+    """Send a list of all the available data files for the given tracker group."""
 
     data_path = c_tools.get_path([tracker_type, "data"], user_file=True)
     data_list = []
@@ -592,7 +592,7 @@ async def get_available_tracker_data(tracker_type: str):
 
 @app.get("/tracker/{tracker_type}/getAvailableDefinitions")
 async def get_available_tracker_definitions(tracker_type: str):
-    """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
+    """Send a list of all the available definitions for the given tracker group (usually flexible-tracker)."""
 
     definition_list = []
     template_path = c_tools.get_path([tracker_type, "templates"], user_file=True)
@@ -1070,9 +1070,9 @@ async def get_update():
 async def handle_ping(data: dict[str, Any], request: Request):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
-    if "id" not in data or "type" not in data:
+    if "id" not in data or "group" not in data:
         response = {"success": False,
-                    "reason": "Request missing 'id' or 'type' field."}
+                    "reason": "Request missing 'id' or 'group' field."}
         return response
 
     this_id = data['id']

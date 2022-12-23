@@ -153,10 +153,10 @@ def handle_missing_defaults_file():
         this_id = "TEMP"
     settings_dict["id"] = this_id
 
-    this_type = input("Enter a type for this app (no spaces, default: TEMP): ").strip().replace(' ', '-')
-    if this_type == "":
-        this_type = "TEMP"
-    settings_dict["type"] = this_type
+    this_group = input("Enter a group for this app (no spaces, default: Default): ").strip().replace(' ', '-')
+    if this_group == "":
+        this_group = "Default"
+    settings_dict["group"] = this_group
 
     ip_address = input(f"Enter the static Constellation Control Server IP address. If you do not know what this is, ask your system administrator. (default: localhost): ").strip()
     if ip_address == "":

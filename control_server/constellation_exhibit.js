@@ -3,9 +3,10 @@ import * as constTools from './constellation_tools.js'
 import * as constMaint from './constellation_maintenance.js'
 
 export class ExhibitComponent {
-  constructor (id, type) {
+  constructor (id, group) {
+    this.type = 'component'
     this.id = id
-    this.type = type
+    this.group = group
     this.content = null
     this.ip = '' // Default; will be replaced when component pings in
     this.helperPort = 8000 // Default; will be replaced when component pings in
@@ -35,7 +36,7 @@ export class ExhibitComponent {
 
   remove () {
     // Remove the component from its ComponentGroup
-    getExhibitComponentGroup(this.type).removeComponent(this.id)
+    getExhibitComponentGroup(this.group).removeComponent(this.id)
     // Remove the component from the exhibitComponents list
     const thisInstance = this
     constConfig.exhibitComponents = $.grep(constConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
@@ -71,7 +72,7 @@ export class ExhibitComponent {
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
     let classString
-    if (getExhibitComponentGroup(this.type).components.length > 7) {
+    if (getExhibitComponentGroup(this.group).components.length > 7) {
       classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
       classString = 'col-12 col-sm-4 col-md-6 mt-1'
@@ -168,13 +169,14 @@ export class ExhibitComponent {
       dropdownMenu.appendChild(option)
     }
 
-    $('#' + this.type + 'ComponentList').append(col)
+    $('#' + this.group + 'ComponentList').append(col)
   }
 }
 
 export class ExhibitComponentGroup {
-  constructor (type) {
-    this.type = type
+  constructor (group) {
+    this.type = 'component_group'
+    this.group = group
     this.components = []
     this.buildHTML()
   }
@@ -228,8 +230,8 @@ export class ExhibitComponentGroup {
 
     let onCmdName = ''
     let offCmdName = ''
-    const thisType = this.type
-    if (this.type === 'PROJECTOR') {
+    const thisGroup = this.group
+    if (this.type === 'projector') {
       onCmdName = 'power_on'
       offCmdName = 'sleepDisplay'
     } else {
@@ -237,7 +239,7 @@ export class ExhibitComponentGroup {
       offCmdName = 'sleepDisplay'
     }
     let displayRefresh = 'block'
-    if (['PROJECTOR', 'WAKE_ON_LAN'].includes(this.type) === true) {
+    if (thisGroup === 'WAKE_ON_LAN') {
       displayRefresh = 'none'
     }
 
@@ -273,7 +275,7 @@ export class ExhibitComponentGroup {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn btn-secondary btn-block btn-lg'
     mainButton.setAttribute('type', 'button')
-    mainButton.innerHTML = this.type
+    mainButton.innerHTML = this.group
     btnGroup.appendChild(mainButton)
 
     const dropdownButton = document.createElement('button')
@@ -298,7 +300,7 @@ export class ExhibitComponentGroup {
     refreshOption.style.display = displayRefresh
     refreshOption.innerHTML = 'Refresh all components'
     refreshOption.addEventListener('click', function () {
-      sendGroupCommand(thisType, 'refresh_page')
+      sendGroupCommand(thisGroup, 'refresh_page')
     }, false)
     dropdownMenu.appendChild(refreshOption)
 
@@ -306,7 +308,7 @@ export class ExhibitComponentGroup {
     wakeOption.classList = 'dropdown-item handCursor'
     wakeOption.innerHTML = 'Wake all components'
     wakeOption.addEventListener('click', function () {
-      sendGroupCommand(thisType, onCmdName)
+      sendGroupCommand(thisGroup, onCmdName)
     }, false)
     dropdownMenu.appendChild(wakeOption)
 
@@ -314,13 +316,13 @@ export class ExhibitComponentGroup {
     sleepOption.classList = 'dropdown-item handCursor'
     sleepOption.innerHTML = 'Sleep all components'
     sleepOption.addEventListener('click', function () {
-      sendGroupCommand(thisType, offCmdName)
+      sendGroupCommand(thisGroup, offCmdName)
     }, false)
     dropdownMenu.appendChild(sleepOption)
 
     const componentList = document.createElement('div')
     componentList.classList = 'row'
-    componentList.setAttribute('id', thisType + 'ComponentList')
+    componentList.setAttribute('id', thisGroup + 'ComponentList')
     col.appendChild(componentList)
 
     $('#componentGroupsRow').append(col)
@@ -383,15 +385,15 @@ export function updateComponentFromServer (component) {
       constTools.rebuildErrorList()
     }
   } else {
-    // First, make sure the group matching this type exists
-    let group = getExhibitComponentGroup(component.type)
+    // First, make sure the group matching this group exists
+    let group = getExhibitComponentGroup(component.group)
     if (group == null) {
-      group = new ExhibitComponentGroup(component.type)
+      group = new ExhibitComponentGroup(component.group)
       constConfig.componentGroups.push(group)
     }
 
     // Then create a new component
-    const newComponent = new ExhibitComponent(component.id, component.type)
+    const newComponent = new ExhibitComponent(component.id, component.group)
     newComponent.setStatus(component.status)
     if ('allowed_actions' in component) {
       newComponent.allowed_actions = component.allowed_actions
@@ -424,11 +426,11 @@ export function sendGroupCommand (group, cmd) {
   }
 }
 
-export function getExhibitComponentGroup (type) {
-  // Function to search the exhibitComponents list for a given id
+export function getExhibitComponentGroup (group) {
+  // Function to search the componentGroups list for a given group id
 
   const result = constConfig.componentGroups.find(obj => {
-    return obj.type === type
+    return obj.group === group
   })
   return result
 }
@@ -1013,15 +1015,12 @@ export function queueCommand (id, cmd) {
   } else {
     // We send these commands to the server to pass to the component itself
     let cmdPath = ''
-    switch (obj.type) {
-      case 'PROJECTOR':
-        cmdPath = '/projector/queueCommand'
-        break
-      case 'WAKE_ON_LAN':
-        cmdPath = '/exhibit/queueWOLCommand'
-        break
-      default:
-        cmdPath = '/exhibit/queueCommand'
+    if (obj.type === 'projector') {
+      cmdPath = '/projector/queueCommand'
+    } else if (obj.group === 'WAKE_ON_LAN') {
+      cmdPath = '/exhibit/queueWOLCommand'
+    } else {
+      cmdPath = '/exhibit/queueCommand'
     }
 
     const requestDict = {
@@ -1232,7 +1231,7 @@ export function showManageStaticComponentsModal () {
 
   // Clear the input fields
   $('#manageStaticComponentsEditIDInput').val(null)
-  $('#manageStaticComponentsEditTypeInput').val(null)
+  $('#manageStaticComponentsEditGroupInput').val(null)
   $('#manageStaticComponentsModalSaveButton').hide()
 
   $('#manageStaticComponentsModal').modal('show')
@@ -1299,13 +1298,13 @@ export function createManageStaticComponentsEntry (entry) {
   row2.classList = 'row'
   bottomCol.appendChild(row2)
 
-  const typeCol = document.createElement('div')
-  typeCol.classList = 'col-12 bg-secondary py-1 px-1 text-center'
-  typeCol.setAttribute('id', 'manageStaticComponentsType_' + cleanID)
-  typeCol.style.borderBottomLeftRadius = '0.25rem'
-  typeCol.style.borderBottomRightRadius = '0.25rem'
-  typeCol.innerHTML = entry.type
-  row2.appendChild(typeCol)
+  const groupCol = document.createElement('div')
+  groupCol.classList = 'col-12 bg-secondary py-1 px-1 text-center'
+  groupCol.setAttribute('id', 'manageStaticComponentsGroup_' + cleanID)
+  groupCol.style.borderBottomLeftRadius = '0.25rem'
+  groupCol.style.borderBottomRightRadius = '0.25rem'
+  groupCol.innerHTML = entry.group
+  row2.appendChild(groupCol)
 }
 
 function populateManageStaticComponentsEdit (id) {
@@ -1317,7 +1316,7 @@ function populateManageStaticComponentsEdit (id) {
   $('#manageStaticComponentsEditIDInput').data('id', id)
 
   $('#manageStaticComponentsEditIDInput').val(details.id)
-  $('#manageStaticComponentsEditTypeInput').val(details.type)
+  $('#manageStaticComponentsEditGroupInput').val(details.group)
 }
 
 export function manageStaticComponentsUpdateConfigFromEdit () {
@@ -1332,13 +1331,13 @@ export function manageStaticComponentsUpdateConfigFromEdit () {
   $('#manageStaticComponentsID_' + id).html(newID)
   details.id = newID
 
-  const newType = $('#manageStaticComponentsEditTypeInput').val()
-  if (newType != null && newType !== '') {
-    $('#manageStaticComponentsType_' + id).html(newType)
-    details.type = newType
+  const newGroup = $('#manageStaticComponentsEditGroupInput').val()
+  if (newGroup != null && newGroup !== '') {
+    $('#manageStaticComponentsGroup_' + id).html(newGroup)
+    details.group = newGroup
   } else {
-    $('#manageStaticComponentsType_' + id).html('STATIC')
-    details.type = 'STATIC'
+    $('#manageStaticComponentsGroup_' + id).html('STATIC')
+    details.group = 'STATIC'
   }
 
   $('#manageStaticComponents_' + id).data('config', details)
@@ -1354,7 +1353,7 @@ export function manageStaticComponentsDeleteComponentEntry () {
 
   // Clear the input fields
   $('#manageStaticComponentsEditIDInput').val(null)
-  $('#manageStaticComponentsEditTypeInput').val(null)
+  $('#manageStaticComponentsEditGroupInput').val(null)
 }
 
 export function updateStaticComponentsConfigurationFromModal () {

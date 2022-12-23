@@ -16,6 +16,7 @@ class Projector:
 
     def __init__(self,
                  id_: str,
+                 group: str,
                  ip: str,
                  connection_type: str,
                  mac_address: str = None,
@@ -23,7 +24,7 @@ class Projector:
                  password: str = None):
 
         self.id = id_
-        self.type: str = "PROJECTOR"
+        self.group = group
         self.ip = ip  # IP address of the projector
         self.password = password  # Password to access PJLink
         self.mac_address = mac_address  # For use with Wake on LAN
@@ -190,10 +191,16 @@ def read_projector_configuration():
     for proj in proj_config:
         if get_projector(proj["id"]) is None:
             if proj["protocol"] == 'pjlink':
-                new_proj = Projector(proj["id"], proj["ip_address"], "pjlink", password=proj.get("password", None))
+                new_proj = Projector(proj["id"],
+                                     proj.get("group", "Projectors"),
+                                     proj["ip_address"], "pjlink",
+                                     password=proj.get("password", None))
                 config.projectorList.append(new_proj)
             elif proj["protocol"] == "serial":
-                new_proj = Projector(proj["id"], proj["ip_address"], "serial", make=proj.get("make", None))
+                new_proj = Projector(proj["id"],
+                                     proj.get("group", "Projectors"),
+                                     proj["ip_address"], "serial",
+                                     make=proj.get("make", None))
                 config.projectorList.append(new_proj)
 
 

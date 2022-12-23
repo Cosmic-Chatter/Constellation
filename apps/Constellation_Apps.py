@@ -361,7 +361,7 @@ if __name__ == "__main__":
     # Activate Smart Restart
     helper_system.smart_restart_check()
 
-    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of type {const_config.defaults_dict['type']} on port {const_config.defaults_dict['helper_port']}.")
+    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
