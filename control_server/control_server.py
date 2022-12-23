@@ -102,7 +102,6 @@ def send_webpage_update():
         temp["constellation_app_id"] = item.config["app_name"]
         temp["platform_details"] = item.platform_details
         temp["latency"] = item.latency
-        print(item.id, item.latency)
         component_dict_list.append(temp)
 
     for item in c_config.projectorList:
