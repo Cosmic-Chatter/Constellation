@@ -198,27 +198,6 @@ function changeExhibit (warningShown) {
   }
 }
 
-function reloadConfiguration () {
-  // This function will send a message to the server asking it to reload
-  // the current exhibit configuration file and update all the components
-
-  $('#reloadConfigurationButton').html('Reloading...')
-
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/reloadConfiguration',
-    timeout: 60000
-  })
-    .then((response) => {
-      if ('success' in response) {
-        if (response.success === true) {
-          $('#reloadConfigurationButton').html('Success!')
-          setTimeout(function () { $('#reloadConfigurationButton').html('Reload Settings') }, 2000)
-        }
-      }
-    })
-}
-
 function populateTrackerDataSelect (data) {
   // Take a list of data filenames and populate the TrackerDataSelect
 
@@ -437,60 +416,6 @@ function populateHelpTab () {
         $('#helpTextDiv').html(formattedText)
       } else {
         $('#helpTextDiv').html('Help text not available.')
-      }
-    })
-}
-
-function showEditGalleryConfigModal () {
-  // Populate the galleryEditModal with information from galleryConfiguration.ini and show the modal.
-
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/getConfigurationRawText'
-  })
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-      // Must show first so that we can calculate the heights appropriately.
-        $('#editGalleryConfigModal').modal('show')
-        populateEditGalleryConfigModal(result.configuration)
-      }
-    })
-}
-
-function populateEditGalleryConfigModal (configText) {
-  // Take the provided text and set up the edit modal
-
-  $('#editGalleryConfigTextArea').val(configText)
-  $('#galleryConfigEditModalErrorMessage').hide()
-
-  // Calculate what the height of the text area should be an update it.
-  const colHeight = $('#editGalleryConfigTextArea').parent().parent().height()
-  const headerHeight = $('#editGalleryConfigTextArea').parent().siblings('h3').height()
-  const lineHeight = parseFloat($('#editGalleryConfigTextArea').css('lineHeight'))
-  const rows = Math.floor((colHeight - headerHeight) / lineHeight - 1)
-  $('#editGalleryConfigTextArea').attr('rows', rows)
-}
-
-function submitGalleryConfigChangeFromModal () {
-  // Take the updated contents of the text input and send it to Control Server.
-  // Control Server will perform a number of checks, which this function needs to
-  // handle and return to the user.
-
-  const requestDict = {
-    configuration: $('#editGalleryConfigTextArea').val()
-  }
-
-  constTools.makeServerRequest({
-    method: 'POST',
-    endpoint: '/system/updateConfigurationRawText',
-    params: requestDict
-  })
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        $('#editGalleryConfigModal').modal('hide')
-      } else {
-        $('#galleryConfigEditModalErrorMessage').html(result.reason)
-        $('#galleryConfigEditModalErrorMessage').show()
       }
     })
 }
@@ -1228,9 +1153,6 @@ $('#exhibitChangeConfirmationButton').click(function () {
   changeExhibit(true)
 })
 $('#deleteExhibitButton').click(deleteExhibitFromModal)
-$('#submitGalleryConfigChangeFromModalButton').click(submitGalleryConfigChangeFromModal)
-$('#showEditGalleryConfigModalButton').click(showEditGalleryConfigModal)
-$('#reloadConfigurationButton').click(reloadConfiguration)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
 // Server settings
 $('#showManageSettingsModalButton').click(showManageSettingsModal)

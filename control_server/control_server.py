@@ -1036,34 +1036,6 @@ async def check_connection():
     return {"success": True}
 
 
-# @app.get("/system/getConfiguration")
-# async def get_configuration():
-#     """Return a dictionary with galleryConfiguration.ini."""
-#
-#     config_reader = configparser.ConfigParser(delimiters="=")
-#     config_reader.optionxform = str  # Override default, which is case in-sensitive
-#     gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-#     with c_config.galleryConfigurationLock:
-#         config_reader.read(gal_path)
-#
-#     config_dict = {}
-#     for section in config_reader.sections():
-#         config_dict[section] = {}
-#         for key, val in config_reader.items(section):
-#             config_dict[section][key] = val
-#     return {"success": True, "configuration": config_dict}
-
-
-# @app.get("/system/getConfigurationRawText")
-# async def get_configuration_raw_text():
-#     """Return the raw text for galleryConfiguration.ini."""
-#
-#     gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-#     with open(gal_path, 'r', encoding='UTF-8') as f:
-#         text = f.read()
-#     return {"success": True, "configuration": text}
-
-
 @app.get("/system/{target}/getConfiguration")
 async def get_json_configuration(target: str):
     """Return the requested JSON configuration."""
@@ -1092,14 +1064,6 @@ async def get_update():
     """Retrieve an update of everything being managed by Control Server"""
 
     return send_webpage_update()
-
-
-@app.get("/system/reloadConfiguration")
-async def reload_configuration():
-    """Reload galleryConfiguration.ini"""
-
-    load_default_configuration()
-    return {"success": True}
 
 
 @app.post("/system/ping")
