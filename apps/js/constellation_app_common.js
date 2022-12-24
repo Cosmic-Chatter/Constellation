@@ -95,7 +95,6 @@ export function sendPing () {
     const requestDict = {
       id: config.id,
       group: config.group,
-      helperPort: config.helperAddress.split(':')[2], // Depreciated
       helperAddress: config.helperAddress,
       helperIPSameAsClient,
       allowed_actions: config.allowedActionsDict,

@@ -198,7 +198,6 @@ export class ExhibitComponent extends BaseComponent {
 
     this.type = 'component'
     this.content = null
-    this.helperPort = 8000 // Default; will be replaced when component pings in
     this.helperAddress = null // Full address to the helper
     this.state = {}
     this.AnyDeskID = ''
@@ -209,15 +208,7 @@ export class ExhibitComponent extends BaseComponent {
   getHelperURL () {
     // Return the url for the helper of this component.
 
-    let url
-    if (this.helperAddress != null) {
-      url = this.helperAddress
-    } else if (this.ip_address != null && this.helperPort != null) {
-      url = `http://${this.ip_address}:${this.helperPort}`
-    } else {
-      url = null
-    }
-    return url
+    return this.helperAddress
   }
 
   updateFromServer (update) {
@@ -239,9 +230,6 @@ export class ExhibitComponent extends BaseComponent {
     }
     if ('helperAddress' in update) {
       this.helperAddress = update.helperAddress
-    }
-    if ('helperPort' in update) {
-      this.helperPort = update.helperPort
     }
     if ('image_duration' in update) {
       this.image_duration = update.image_duration

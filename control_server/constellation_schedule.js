@@ -346,16 +346,9 @@ export function setScheduleActionValueSelector () {
   if (action === 'set_content') {
     const component = constExhibit.getExhibitComponent(target.slice(5))
 
-    let url
-    if (component.helperAddress != null) {
-      url = component.helperAddress
-    } else {
-      url = `http://${component.ip}:${component.helperPort}`
-    }
-
     constTools.makeRequest({
       method: 'GET',
-      url,
+      url: component.helperAddress,
       endpoint: '/getAvailableContent'
     })
       .then((response) => {

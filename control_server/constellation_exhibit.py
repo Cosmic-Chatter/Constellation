@@ -97,7 +97,6 @@ class ExhibitComponent(BaseComponent):
         super().__init__(id_, group)
 
         self.category = category
-        self.helperPort: int = 8000  # port of the localhost helper for this component DEPRECIATED
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
@@ -516,9 +515,8 @@ def update_exhibit_component_status(data, ip: str):
         component = add_exhibit_component(this_id, group)
 
     component.ip_address = ip
-    if "helperPort" in data:
-        component.helperPort = data["helperPort"]
-    component.helperAddress = f"http://{ip}:{component.helperPort}"
+    if "helperAddress" in data:
+        component.helperAddress = data["helperAddress"]
 
     if "helperIPSameAsClient" in data and data["helperIPSameAsClient"] is False:
         if "helperAddress" in data:

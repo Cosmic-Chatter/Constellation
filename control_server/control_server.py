@@ -97,7 +97,6 @@ def send_webpage_update():
         temp["status"] = item.current_status()
         temp["lastContactDateTime"] = item.last_contact_datetime
         temp["ip_address"] = item.ip_address
-        temp["helperPort"] = item.helperPort
         temp["helperAddress"] = item.helperAddress
         temp["constellation_app_id"] = item.config["app_name"]
         temp["platform_details"] = item.platform_details

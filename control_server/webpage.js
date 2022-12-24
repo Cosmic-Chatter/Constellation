@@ -71,11 +71,8 @@ function uploadComponentContentFile () {
     }
 
     const xhr = new XMLHttpRequest()
-    if (component.helperAddress != null) {
-      xhr.open('POST', component.helperAddress + '/uploadContent', true)
-    } else {
-      xhr.open('POST', `http://${component.ip_address}:${component.helperPort}` + '/uploadContent', true)
-    }
+    xhr.open('POST', component.getHelperAddress() + '/uploadContent', true)
+
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
       if (this.status === 200) {
