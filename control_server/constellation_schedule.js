@@ -151,7 +151,7 @@ export function populateSchedule (schedule) {
       const value = item.value
 
       // Create the plain-language description of the action
-      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_content'].includes(action)) {
+      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content'].includes(action)) {
         description = populateScheduleDescriptionHelper([item], false)
       } else if (action === 'set_exhibit') {
         description = `Set exhibit: ${target}`
@@ -265,6 +265,8 @@ function scheduleActionToDescription (action) {
       return 'Refresh'
     case 'restart':
       return 'Restart'
+    case 'set_app':
+      return 'Set app for'
     case 'set_content':
       return 'Set content for'
     case 'set_exhibit':
@@ -304,7 +306,7 @@ export function setScheduleActionTargetSelector () {
     })
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
-  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action)) {
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
     if (['power_on', 'power_off', 'refresh_page', 'restart'].includes(action)) {
@@ -320,7 +322,7 @@ export function setScheduleActionTargetSelector () {
     sep.setAttribute('disabled', true)
     targetSelector.append(sep)
     constConfig.exhibitComponents.forEach((item) => {
-      if (item.constellationAppId !== 'static_component') {
+      if (item.type === 'exhibit_component' && item.constellationAppId !== 'static_component') {
         targetSelector.append(new Option(item.id, '__id_' + item.id))
       }
     })
@@ -355,12 +357,27 @@ export function setScheduleActionValueSelector () {
         response.all_exhibits.forEach((item) => {
           valueSelector.append(new Option(item, item))
         })
-        // In the case of editing an action, preselect any existing values
-        valueSelector.val($('#scheduleEditModal').data('currentValue'))
-        valueSelector.show()
-        $('#scheduleValueSelectorLabel').show()
       })
+  } else if (action === 'set_app') {
+    const appDict = {
+      infostation: 'InfoStation',
+      media_browser: 'Media Browser',
+      media_player: 'Media Player',
+      timelapse_viewer: 'Timelapse Viewer',
+      voting_kiosk: 'Voting Kiosk',
+      word_cloud_input: 'Word Cloud Input',
+      word_cloud_viewer: 'Word Cloud Viewer'
+    }
+
+    Object.keys(appDict).forEach((key) => {
+      valueSelector.append(new Option(appDict[key], key))
+    })
   }
+
+  // In the case of editing an action, preselect any existing values
+  valueSelector.val($('#scheduleEditModal').data('currentValue'))
+  valueSelector.show()
+  $('#scheduleValueSelectorLabel').show()
 }
 
 export function scheduleConfigureEditModal (scheduleName,

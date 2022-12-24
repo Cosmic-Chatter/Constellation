@@ -869,19 +869,20 @@ async def update_maintenance_status(data: dict[str, Any]):
 
 
 # Projector actions
-@app.post("/projector/getUpdate")
-async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
-    """Poll the projector for an update and return it"""
 
-    proj = c_proj.get_projector(projector.id)
-    if proj is not None:
-        response_dict = {"success": True,
-                         "state": proj.state}
-    else:
-        response_dict = {"success": False,
-                         "reason": f"Projector {projector.id} does not exist",
-                         "status": "DELETE"}
-    return response_dict
+# @app.post("/projector/getUpdate")
+# async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
+#     """Poll the projector for an update and return it"""
+#
+#     proj = c_proj.get_projector(projector.id)
+#     if proj is not None:
+#         response_dict = {"success": True,
+#                          "state": proj.state}
+#     else:
+#         response_dict = {"success": False,
+#                          "reason": f"Projector {projector.id} does not exist",
+#                          "status": "DELETE"}
+#     return response_dict
 
 
 @app.post("/projector/queueCommand")

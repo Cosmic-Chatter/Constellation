@@ -362,6 +362,10 @@ def get_exhibit_component(this_id: str) -> ExhibitComponent:
         # Try projector
         component = next((x for x in config.projectorList if x.id == this_id), None)
 
+    if component is None:
+        # Try wake on LAN
+        component = get_wake_on_LAN_component(this_id)
+
     return component
 
 

@@ -260,64 +260,8 @@ class Projector extends BaseComponent {
 
     this.type = 'projector'
     this.constellationAppId = 'projector'
-    this.protocol = null // PJLink or Serial
+    this.protocol = null // 'pjlink' or 'serial'
     this.state = {}
-
-    this.checkProjector()
-    const thisInstance = this
-    this.pollingFunction = setInterval(function () { thisInstance.checkProjector() }, 5000)
-  }
-
-  checkProjector () {
-    // Function to ask the server to ping the projector
-
-    const thisInstance = this
-
-    constTools.makeServerRequest({
-      method: 'POST',
-      endpoint: '/projector/getUpdate',
-      params: {
-        projector: {
-          id: this.id
-        }
-      }
-    })
-      .then((response) => {
-        if ('success' in response) {
-          if (response.success === false) {
-            if ('status' in response && response.status === 'DELETE') {
-              thisInstance.remove()
-            } else {
-              console.log('checkProjector: Error:', response.reason)
-            }
-          } else {
-            if ('state' in response) {
-              const state = response.state
-              thisInstance.setStatus(state.status)
-              if ('model' in state) {
-                thisInstance.state.model = state.model
-              }
-              if ('power_state' in state) {
-                thisInstance.state.power_state = state.power_state
-              }
-              if ('lamp_status' in state) {
-                thisInstance.state.lamp_status = state.lamp_status
-              }
-              if ('error_status' in state) {
-                thisInstance.state.error_status = state.error_status
-                const errorList = {}
-                Object.keys(state.error_status).forEach((item, i) => {
-                  if ((state.error_status)[item] !== 'ok') {
-                    errorList[item] = (state.error_status)[item]
-                  }
-                })
-                constConfig.errorDict[thisInstance.id] = errorList
-                constTools.rebuildErrorList()
-              }
-            }
-          }
-        }
-      })
   }
 
   updateFromServer (update) {
