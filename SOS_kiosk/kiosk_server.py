@@ -389,6 +389,7 @@ def send_ping_at_interval():
 
     sendPing()
     PING_THREAD = threading.Timer(5, send_ping_at_interval)
+    PING_THREAD.daemon = True
     PING_THREAD.start()
 
 def SOS_open_playlist(content):
