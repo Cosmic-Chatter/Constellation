@@ -126,7 +126,7 @@ def send_webpage_update():
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        temp["class"] = "exhibitComponent"
+        temp["class"] = "wolComponent"
         temp["status"] = item.state["status"]
         temp["latency"] = item.latency
         component_dict_list.append(temp)

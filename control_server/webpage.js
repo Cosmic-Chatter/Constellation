@@ -110,7 +110,6 @@ function submitComponentContentChange () {
 
   const id = $('#componentInfoModalTitle').html().trim()
   const selectedButtons = $('.componentContentButton.btn-primary').find('span')
-  // const component = constExhibit.getExhibitComponent(id)
   const contentList = []
   for (let i = 0; i < selectedButtons.length; i++) {
     const content = selectedButtons[i].innerHTML.trim()
@@ -325,7 +324,7 @@ function askForUpdate () {
       for (let i = 0; i < update.length; i++) {
         const component = update[String(i)]
         if ('class' in component) {
-          if ((component.class === 'exhibitComponent') || (component.class === 'projector')) {
+          if (['exhibitComponent', 'wolComponent', 'projector'].includes(component.class)) {
             numComps += 1
             if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
               numOnline += 1
@@ -333,11 +332,7 @@ function askForUpdate () {
             if (component.status === constConfig.STATUS.STATIC.name) {
               numStatic += 1
             }
-            if (component.class === 'exhibitComponent') {
-              constExhibit.updateComponentFromServer(component)
-            } else {
-              constProjector.updateProjectorFromServer(component)
-            }
+            constExhibit.updateComponentFromServer(component)
           } else if (component.class === 'gallery') {
             setCurrentExhibitName(component.current_exhibit)
             updateAvailableExhibits(component.availableExhibits)

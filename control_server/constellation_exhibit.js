@@ -2,12 +2,13 @@ import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 import * as constMaint from './constellation_maintenance.js'
 
-export class BaseComponent {
+class BaseComponent {
   // A basic Constellation component.
 
   constructor (id, group) {
     this.id = id
     this.group = group
+    this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
     this.allowed_actions = []
@@ -190,15 +191,15 @@ export class BaseComponent {
   }
 }
 
-export class ExhibitComponent extends BaseComponent {
+class ExhibitComponent extends BaseComponent {
   // A component representing an device running a Constellation App or using the API
 
   constructor (id, group) {
     super(id, group)
 
-    this.type = 'component'
+    this.type = 'exhibit_component'
     this.content = null
-    this.helperAddress = null // Full address to the helper
+    this.helperAddress = null
     this.state = {}
     this.AnyDeskID = ''
     this.constellationAppId = ''
@@ -240,7 +241,120 @@ export class ExhibitComponent extends BaseComponent {
   }
 }
 
-export class ExhibitComponentGroup {
+export class WakeOnLANComponent extends BaseComponent {
+  // A component representings a Wake on LAN device
+
+  constructor (id, group) {
+    super(id, group)
+
+    this.type = 'wol_component'
+    this.constellationAppId = 'wol_only'
+  }
+}
+
+class Projector extends BaseComponent {
+  // A component representing a projector
+
+  constructor (id, group) {
+    super(id, group)
+
+    this.type = 'projector'
+    this.constellationAppId = 'projector'
+    this.protocol = null // PJLink or Serial
+    this.state = {}
+
+    this.checkProjector()
+    const thisInstance = this
+    this.pollingFunction = setInterval(function () { thisInstance.checkProjector() }, 5000)
+  }
+
+  checkProjector () {
+    // Function to ask the server to ping the projector
+
+    const thisInstance = this
+
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/projector/getUpdate',
+      params: {
+        projector: {
+          id: this.id
+        }
+      }
+    })
+      .then((response) => {
+        if ('success' in response) {
+          if (response.success === false) {
+            if ('status' in response && response.status === 'DELETE') {
+              thisInstance.remove()
+            } else {
+              console.log('checkProjector: Error:', response.reason)
+            }
+          } else {
+            if ('state' in response) {
+              const state = response.state
+              thisInstance.setStatus(state.status)
+              if ('model' in state) {
+                thisInstance.state.model = state.model
+              }
+              if ('power_state' in state) {
+                thisInstance.state.power_state = state.power_state
+              }
+              if ('lamp_status' in state) {
+                thisInstance.state.lamp_status = state.lamp_status
+              }
+              if ('error_status' in state) {
+                thisInstance.state.error_status = state.error_status
+                const errorList = {}
+                Object.keys(state.error_status).forEach((item, i) => {
+                  if ((state.error_status)[item] !== 'ok') {
+                    errorList[item] = (state.error_status)[item]
+                  }
+                })
+                constConfig.errorDict[thisInstance.id] = errorList
+                constTools.rebuildErrorList()
+              }
+            }
+          }
+        }
+      })
+  }
+
+  updateFromServer (update) {
+    // Extend parent method for proejctor-specific items
+
+    super.updateFromServer(update)
+
+    if ('state' in update) {
+      const state = update.state
+      if ('model' in state) {
+        this.state.model = state.model
+      }
+      if ('power_state' in state) {
+        this.state.power_state = state.power_state
+      }
+      if ('lamp_status' in state) {
+        this.state.lamp_status = state.lamp_status
+      }
+      if ('error_status' in state) {
+        this.state.error_status = state.error_status
+        const errorList = {}
+        Object.keys(state.error_status).forEach((item, i) => {
+          if ((state.error_status)[item] !== 'ok') {
+            errorList[item] = (state.error_status)[item]
+          }
+        })
+        constConfig.errorDict[this.id] = errorList
+        constTools.rebuildErrorList()
+      }
+    }
+    if ('protocol' in update) {
+      this.protocol = update.protocol
+    }
+  }
+}
+
+class ExhibitComponentGroup {
   constructor (group) {
     this.type = 'component_group'
     this.group = group
@@ -400,6 +514,40 @@ export class ExhibitComponentGroup {
   }
 }
 
+export function createComponentFromUpdate (update) {
+  // Use an update dictionary to create a new component
+
+  // Make sure this component doesn't already exist
+  const obj = getExhibitComponent(update.id)
+  if (obj != null) return
+
+  // First, make sure the group matching this group exists
+  let group = getExhibitComponentGroup(update.group)
+  if (group == null) {
+    group = new ExhibitComponentGroup(update.group)
+    constConfig.componentGroups.push(group)
+  }
+
+  // Then create a new component
+  let newComponent
+  if (update.class === 'exhibitComponent') {
+    newComponent = new ExhibitComponent(update.id, update.group)
+  } else if (update.class === 'wolComponent') {
+    newComponent = new WakeOnLANComponent(update.id, update.group)
+  } else if (update.class === 'projector') {
+    newComponent = new Projector(update.id, update.group)
+  }
+
+  newComponent.buildHTML()
+  constConfig.exhibitComponents.push(newComponent)
+
+  // Add the component to the right group
+  group.addComponent(newComponent)
+
+  // Finally, update the new component
+  newComponent.updateFromServer(update)
+}
+
 export function updateComponentFromServer (update) {
   // Read the dictionary of component information from the control server
   // and use it to set up the component
@@ -409,23 +557,7 @@ export function updateComponentFromServer (update) {
     // Update the object with the latest info from the server
     obj.updateFromServer(update)
   } else {
-    // First, make sure the group matching this group exists
-    let group = getExhibitComponentGroup(update.group)
-    if (group == null) {
-      group = new ExhibitComponentGroup(update.group)
-      constConfig.componentGroups.push(group)
-    }
-
-    // Then create a new component
-    const newComponent = new ExhibitComponent(update.id, update.group)
-    newComponent.buildHTML()
-    constConfig.exhibitComponents.push(newComponent)
-
-    // Add the component to the right group
-    group.addComponent(newComponent)
-
-    // Finally, call this function again to populate the information
-    updateComponentFromServer(update)
+    createComponentFromUpdate(update)
   }
 }
 
@@ -587,26 +719,25 @@ export function showExhibitComponentInfo (id) {
   // Must be after all the settings are configured
   toggleExhibitComponentInfoSettingWarnings()
   $('#componentInfoModalSettingsSaveButton').hide()
-  // Hide settings for static components and proejctors
-  if (obj.status === constConfig.STATUS.STATIC || obj.type === 'projector') {
-    $('#componentInfoModalSettingsTabButton').hide()
-    $('#componentInfoModalContentTabButton').hide()
-  } else {
+
+  // Show the approriate panes depending on the type
+  if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalContentTabButton').show()
-  }
 
-  if (obj.status !== constConfig.STATUS.STATIC && obj.type !== 'projector') {
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
     $('#componentInfoModalContentTabButton').tab('show')
   } else {
+    $('#componentInfoModalSettingsTabButton').hide()
+    $('#componentInfoModalContentTabButton').hide()
+
     // This static component will defintely have no content.
     $('#componentInfoConnectionStatusFailed').show()
     $('#componentInfoConnectionStatusInPrograss').hide()
 
     // Show a useful tab
-    if (obj.status === constConfig.STATUS.STATIC) {
+    if (obj.status === constConfig.STATUS.STATIC || obj.type === 'wol_component') {
       $('#componentInfoModalMaintenanceTabButton').tab('show')
     } else if (obj.type === 'projector') {
       $('#componentInfoModaProejctorTabButton').tab('show')
