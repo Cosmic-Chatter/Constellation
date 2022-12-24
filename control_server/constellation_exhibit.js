@@ -131,7 +131,7 @@ class BaseComponent {
       dropdownMenu.appendChild(option)
     }
 
-    $('#' + this.group + 'ComponentList').append(col)
+    $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
   }
 
   remove () {
@@ -356,7 +356,7 @@ class ExhibitComponentGroup {
     let onCmdName = ''
     let offCmdName = ''
     const thisGroup = this.group
-    if (this.type === 'projector') {
+    if (this.group === 'projector') {
       onCmdName = 'power_on'
       offCmdName = 'sleepDisplay'
     } else {
@@ -447,7 +447,7 @@ class ExhibitComponentGroup {
 
     const componentList = document.createElement('div')
     componentList.classList = 'row'
-    componentList.setAttribute('id', thisGroup + 'ComponentList')
+    componentList.setAttribute('id', thisGroup.replaceAll(' ', '_') + 'ComponentList')
     col.appendChild(componentList)
 
     $('#componentGroupsRow').append(col)
