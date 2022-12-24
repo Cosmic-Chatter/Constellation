@@ -387,7 +387,7 @@ function askForUpdate () {
         $('#componentsTabSettingsShowStatic').parent().parent().show()
       }
 
-      constExhibit.rebuildComponentInterface()
+      // constExhibit.rebuildComponentInterface()
     })
 }
 
