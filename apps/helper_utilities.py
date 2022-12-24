@@ -99,7 +99,9 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         else:
             handle_missing_defaults_file()
             read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)
-            threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}")).start()
+            timer = threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}"))
+            timer.daemon = True
+            timer.start()
             return
 
     default = config.defaults_object["CURRENT"]

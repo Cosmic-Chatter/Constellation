@@ -2,59 +2,19 @@ import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 import * as constMaint from './constellation_maintenance.js'
 
-export class ExhibitComponent {
+export class BaseComponent {
+  // A basic Constellation component.
+
   constructor (id, group) {
-    this.type = 'component'
     this.id = id
     this.group = group
-    this.content = null
-    this.ip = '' // Default; will be replaced when component pings in
-    this.helperPort = 8000 // Default; will be replaced when component pings in
-    this.helperAddress = null // Full address to the helper
-    this.state = {}
+
     this.status = constConfig.STATUS.OFFLINE
-    this.lastContactDateTime = null
     this.allowed_actions = []
-    this.AnyDeskID = ''
-    this.constellationAppId = ''
-    this.platformDetails = {}
+
+    this.ip_address = null
     this.latency = null
-  }
-
-  getURL () {
-    // Return the url for the helper of this component.
-
-    let url
-    if (this.helperAddress != null) {
-      url = this.helperAddress
-    } else if (this.ip != null && this.helperPort != null) {
-      url = `http://${this.ip}:${this.helperPort}`
-    } else {
-      url = null
-    }
-    return url
-  }
-
-  remove () {
-    // Remove the component from its ComponentGroup
-    getExhibitComponentGroup(this.group).removeComponent(this.id)
-    // Remove the component from the exhibitComponents list
-    const thisInstance = this
-    constConfig.exhibitComponents = $.grep(constConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
-    // Cancel the pollingFunction
-    clearInterval(this.pollingFunction)
-    // Rebuild the interface
-    rebuildComponentInterface()
-  }
-
-  setStatus (status) {
-    this.status = constConfig.STATUS[status]
-    $('#' + this.id + 'StatusField').html(this.status.name)
-
-    const btnClass = this.status.colorClass
-    // Strip all existing classes, then add the new one
-    $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-    $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    this.lastContactDateTime = null
   }
 
   buildHTML () {
@@ -171,6 +131,124 @@ export class ExhibitComponent {
     }
 
     $('#' + this.group + 'ComponentList').append(col)
+  }
+
+  remove () {
+    // Remove the component from its ComponentGroup
+    getExhibitComponentGroup(this.group).removeComponent(this.id)
+    // Remove the component from the exhibitComponents list
+    const thisInstance = this
+    constConfig.exhibitComponents = $.grep(constConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
+    // Cancel the pollingFunction
+    clearInterval(this.pollingFunction)
+    // Rebuild the interface
+    rebuildComponentInterface()
+  }
+
+  setStatus (status) {
+    // Set the component's status and change the GUI to reflect the change.
+
+    this.status = constConfig.STATUS[status]
+    $('#' + this.id + 'StatusField').html(this.status.name)
+
+    const btnClass = this.status.colorClass
+    // Strip all existing classes, then add the new one
+    $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+  }
+
+  updateFromServer (update) {
+    // Use a dictionary of values from Control Server to update this component.
+
+    this.setStatus(update.status)
+
+    if ('ip_address' in update) {
+      this.ip_address = update.ip_address
+    }
+    if ('allowed_actions' in update) {
+      this.allowed_actions = update.allowed_actions
+    }
+    if ('description' in update) {
+      this.description = update.description
+    }
+    if ('latency' in update) {
+      this.latency = update.latency
+    }
+    if ('lastContactDateTime' in update) {
+      this.lastContactDateTime = update.lastContactDateTime
+    }
+    if ('error' in update) {
+      try {
+        const newError = JSON.parse(update.error)
+        constConfig.errorDict[this.id] = newError
+      } catch (e) {
+        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", update.error)
+        console.log(e)
+      }
+      constTools.rebuildErrorList()
+    }
+  }
+}
+
+export class ExhibitComponent extends BaseComponent {
+  // A component representing an device running a Constellation App or using the API
+
+  constructor (id, group) {
+    super(id, group)
+
+    this.type = 'component'
+    this.content = null
+    this.helperPort = 8000 // Default; will be replaced when component pings in
+    this.helperAddress = null // Full address to the helper
+    this.state = {}
+    this.AnyDeskID = ''
+    this.constellationAppId = ''
+    this.platformDetails = {}
+  }
+
+  getHelperURL () {
+    // Return the url for the helper of this component.
+
+    let url
+    if (this.helperAddress != null) {
+      url = this.helperAddress
+    } else if (this.ip_address != null && this.helperPort != null) {
+      url = `http://${this.ip_address}:${this.helperPort}`
+    } else {
+      url = null
+    }
+    return url
+  }
+
+  updateFromServer (update) {
+    // Extend parent update to include exhibit component-specific items
+
+    super.updateFromServer(update)
+
+    if ('AnyDeskID' in update) {
+      this.AnyDeskID = update.AnyDeskID
+    }
+    if ('autoplay_audio' in update) {
+      this.autoplay_audio = update.autoplay_audio
+    }
+    if ('constellation_app_id' in update) {
+      this.constellationAppId = update.constellation_app_id
+    }
+    if ('content' in update) {
+      this.content = update.content
+    }
+    if ('helperAddress' in update) {
+      this.helperAddress = update.helperAddress
+    }
+    if ('helperPort' in update) {
+      this.helperPort = update.helperPort
+    }
+    if ('image_duration' in update) {
+      this.image_duration = update.image_duration
+    }
+    if ('platform_details' in update) {
+      this.platformDetails = update.platform_details
+    }
   }
 }
 
@@ -334,80 +412,24 @@ export class ExhibitComponentGroup {
   }
 }
 
-export function updateComponentFromServer (component) {
+export function updateComponentFromServer (update) {
   // Read the dictionary of component information from the control server
   // and use it to set up the component
 
-  const obj = getExhibitComponent(component.id)
+  const obj = getExhibitComponent(update.id)
   if (obj != null) {
     // Update the object with the latest info from the server
-    obj.setStatus(component.status)
-    if ('content' in component) {
-      obj.content = component.content
-    }
-    if ('ip_address' in component) {
-      obj.ip = component.ip_address
-    }
-    if ('helperPort' in component) {
-      obj.helperPort = component.helperPort
-    }
-    if ('helperAddress' in component) {
-      obj.helperAddress = component.helperAddress
-    }
-    if ('allowed_actions' in component) {
-      obj.allowed_actions = component.allowed_actions
-    }
-    if ('description' in component) {
-      obj.description = component.description
-    }
-    if ('platform_details' in component) {
-      obj.platformDetails = component.platform_details
-    }
-    if ('latency' in component) {
-      obj.latency = component.latency
-    }
-    if ('lastContactDateTime' in component) {
-      obj.lastContactDateTime = component.lastContactDateTime
-    }
-    if ('AnyDeskID' in component) {
-      obj.AnyDeskID = component.AnyDeskID
-    }
-    if ('autoplay_audio' in component) {
-      obj.autoplay_audio = component.autoplay_audio
-    }
-    if ('image_duration' in component) {
-      obj.image_duration = component.image_duration
-    }
-    if ('error' in component) {
-      try {
-        const newError = JSON.parse(component.error)
-        constConfig.errorDict[obj.id] = newError
-      } catch (e) {
-        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", component.error)
-        console.log(e)
-      }
-      constTools.rebuildErrorList()
-    }
+    obj.updateFromServer(update)
   } else {
     // First, make sure the group matching this group exists
-    let group = getExhibitComponentGroup(component.group)
+    let group = getExhibitComponentGroup(update.group)
     if (group == null) {
-      group = new ExhibitComponentGroup(component.group)
+      group = new ExhibitComponentGroup(update.group)
       constConfig.componentGroups.push(group)
     }
 
     // Then create a new component
-    const newComponent = new ExhibitComponent(component.id, component.group)
-    newComponent.setStatus(component.status)
-    if ('allowed_actions' in component) {
-      newComponent.allowed_actions = component.allowed_actions
-    }
-    if ('constellation_app_id' in component) {
-      newComponent.constellationAppId = component.constellation_app_id
-    }
-    if ('platform_details' in component) {
-      newComponent.platformDetails = component.platform_details
-    }
+    const newComponent = new ExhibitComponent(update.id, update.group)
     newComponent.buildHTML()
     constConfig.exhibitComponents.push(newComponent)
 
@@ -415,7 +437,7 @@ export function updateComponentFromServer (component) {
     group.addComponent(newComponent)
 
     // Finally, call this function again to populate the information
-    updateComponentFromServer(component)
+    updateComponentFromServer(update)
   }
 }
 
@@ -452,29 +474,44 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModalTitle').html(id)
 
   $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
-  if (obj.ip !== '') {
-    $('#componentInfoModalIPAddress').html(obj.ip)
+  if (obj.ip_address != null) {
+    $('#componentInfoModalIPAddress').html(obj.ip_address)
     $('#componentInfoModalIPAddressGroup').show()
   } else {
     $('#componentInfoModalIPAddressGroup').hide()
   }
-  if (obj.ip !== constTools.extractIPAddress(obj.helperAddress) && constTools.extractIPAddress(obj.helperAddress) != null) {
+  if (obj.ip_address !== constTools.extractIPAddress(obj.helperAddress) && constTools.extractIPAddress(obj.helperAddress) != null) {
     $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
     $('#componentInfoModalHelperIPAddressGroup').show()
   } else {
     $('#componentInfoModalHelperIPAddressGroup').hide()
   }
-  if ('operating_system' in obj.platformDetails) {
-    $('#componentInfoModalOperatingSystem').html(obj.platformDetails.operating_system.replace('OS X', 'macOS'))
-    $('#componentInfoModalOperatingSystemGroup').show()
+  if ('platformDetails' in obj) {
+    if ('operating_system' in obj.platformDetails) {
+      $('#componentInfoModalOperatingSystem').html(obj.platformDetails.operating_system.replace('OS X', 'macOS'))
+      $('#componentInfoModalOperatingSystemGroup').show()
+    } else {
+      $('#componentInfoModalOperatingSystemGroup').hide()
+    }
+    if ('browser' in obj.platformDetails) {
+      $('#componentInfoModalBrowser').html(obj.platformDetails.browser)
+      $('#componentInfoModalBrowserGroup').show()
+    } else {
+      $('#componentInfoModalBrowserGroup').hide()
+    }
   } else {
     $('#componentInfoModalOperatingSystemGroup').hide()
-  }
-  if ('browser' in obj.platformDetails) {
-    $('#componentInfoModalBrowser').html(obj.platformDetails.browser)
-    $('#componentInfoModalBrowserGroup').show()
-  } else {
     $('#componentInfoModalBrowserGroup').hide()
+  }
+  if ('protocol' in obj && obj.protocol != null) {
+    const protocolNames = {
+      pjlink: 'PJLink',
+      serial: 'Serial'
+    }
+    $('#componentInfoModalProtocol').html(protocolNames[obj.protocol])
+    $('#componentInfoModalProtocolGroup').show()
+  } else {
+    $('#componentInfoModalProtocolGroup').hide()
   }
   if (obj.latency != null) {
     $('#componentInfoModalLatency').html(String(obj.latency) + ' ms')
@@ -551,11 +588,19 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
   }
 
+  // If this is a projector, populate the status pane
+  if (obj.type === 'projector') {
+    populateProjectorInfo(obj.id)
+    $('#componentInfoModaProejctorTabButton').show()
+  } else {
+    $('#componentInfoModaProejctorTabButton').hide()
+  }
+
   // Must be after all the settings are configured
   toggleExhibitComponentInfoSettingWarnings()
   $('#componentInfoModalSettingsSaveButton').hide()
-  // Hide settings for static components
-  if (obj.status === constConfig.STATUS.STATIC) {
+  // Hide settings for static components and proejctors
+  if (obj.status === constConfig.STATUS.STATIC || obj.type === 'projector') {
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalContentTabButton').hide()
   } else {
@@ -563,20 +608,143 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalContentTabButton').show()
   }
 
-  if (obj.status !== constConfig.STATUS.STATIC) {
+  if (obj.status !== constConfig.STATUS.STATIC && obj.type !== 'projector') {
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
+    $('#componentInfoModalContentTabButton').tab('show')
   } else {
     // This static component will defintely have no content.
     $('#componentInfoConnectionStatusFailed').show()
     $('#componentInfoConnectionStatusInPrograss').hide()
 
-    // Show the maintenance tab
-    $('#componentInfoModalMaintenanceTabButton').tab('show')
+    // Show a useful tab
+    if (obj.status === constConfig.STATUS.STATIC) {
+      $('#componentInfoModalMaintenanceTabButton').tab('show')
+    } else if (obj.type === 'projector') {
+      $('#componentInfoModaProejctorTabButton').tab('show')
+    }
   }
 
   // Make the modal visible
   $('#componentInfoModal').modal('show')
+}
+
+function populateProjectorInfo (id) {
+  // Set up the projector status pane of the componentInfoModal with the info
+  // from the selected projector
+
+  const obj = getExhibitComponent(id)
+
+  // First, reset all the cell shadings
+  $('#projectorInfoLampState').parent().removeClass()
+  $('#projectorInfoFanState').parent().removeClass()
+  $('#projectorInfoFilterState').parent().removeClass()
+  $('#projectorInfoCoverState').parent().removeClass()
+  $('#projectorInfoOtherState').parent().removeClass()
+  $('#projectorInfoTempState').parent().removeClass()
+
+  // Then, go through and populate all the cells with as much information
+  // as we have. Shade cells red if an error is reported.
+  if ('power_state' in obj.state && obj.state.power_state !== '') {
+    $('#projectorInfoPowerState').html(obj.state.power_state)
+  } else {
+    $('#projectorInfoPowerState').html('-')
+  }
+  if (('error_status' in obj.state) && (obj.state.error_status.constructor === Object)) {
+    if ('lamp' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoLampState').html(obj.state.error_status.lamp)
+      // Shade if error
+      if (obj.state.error_status.lamp === 'error') {
+        $('#projectorInfoLampState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoLampState').html('-')
+    }
+    if ('fan' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoFanState').html(obj.state.error_status.fan)
+      // Shade if error
+      if (obj.state.error_status.fan === 'error') {
+        $('#projectorInfoFanState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoFanState').html('-')
+    }
+    if ('filter' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoFilterState').html(obj.state.error_status.filter)
+      // Shade if error
+      if (obj.state.error_status.filter === 'error') {
+        $('#projectorInfoFilterState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoFilterState').html('-')
+    }
+    if ('cover' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoCoverState').html(obj.state.error_status.cover)
+      // Shade if error
+      if (obj.state.error_status.cover === 'error') {
+        $('#projectorInfoCoverState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoCoverState').html('-')
+    }
+    if ('other' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoOtherState').html(obj.state.error_status.other)
+      // Shade if error
+      if (obj.state.error_status.other === 'error') {
+        $('#projectorInfoOtherState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoOtherState').html('-')
+    }
+    if ('temperature' in obj.state.error_status) {
+      // Populate cell
+      $('#projectorInfoTempState').html(obj.state.error_status.temperature)
+      // Shade if error
+      if (obj.state.error_status === 'error') {
+        $('#projectorInfoTempState').parent().addClass('table-danger')
+      }
+    } else {
+      $('#projectorInfoTempState').html('-')
+    }
+  } else {
+    $('#projectorInfoLampState').html('-')
+    $('#projectorInfoFanState').html('-')
+    $('#projectorInfoFilterState').html('-')
+    $('#projectorInfoCoverState').html('-')
+    $('#projectorInfoOtherState').html('-')
+    $('#projectorInfoTempState').html('-')
+  }
+  if ('model' in obj.state) {
+    $('#projectorInfoModel').html(obj.state.model)
+  } else {
+    $('#projectorInfoModel').html('-')
+  }
+
+  let lampHTML = ''
+  if ('lamp_status' in obj.state && obj.state.lamp_status !== '') {
+    const lampList = obj.state.lamp_status
+
+    for (let i = 0; i < lampList.length; i++) {
+      const lamp = lampList[i]
+      let statusStr = ''
+      if (lamp[1] === false) {
+        statusStr = '(off)'
+      } else if (lamp[1] === true) {
+        statusStr = '(on)'
+      } else {
+        statusStr = ''
+      }
+      lampHTML += `Lamp ${i + 1} ${statusStr}: ${lamp[0]} hours<br>`
+    }
+  } else {
+    lampHTML = '-'
+  }
+  $('#projectorInfoLampHours').html(lampHTML)
 }
 
 function convertAppIDtoDisplayName (appName) {
@@ -590,6 +758,7 @@ function convertAppIDtoDisplayName (appName) {
       media_browser: 'Media Browser',
       media_player: 'Media Player',
       media_player_kiosk: 'Media Player Kiosk',
+      projector: 'Projector',
       sos_kiosk: 'SOS Kiosk',
       sos_screen_player: 'SOS Screen Player',
       static_component: 'Static component',
@@ -612,7 +781,7 @@ function updateComponentInfoModalFromHelper (id) {
 
   const obj = getExhibitComponent(id)
 
-  const url = obj.getURL()
+  const url = obj.getHelperURL()
   if (url == null) {
     // We don't have enough information to contact the helper
     $('#componentInfoConnectionStatusFailed').show()
@@ -906,7 +1075,7 @@ export function submitComponentSettingsChange () {
 
   constTools.makeRequest({
     method: 'POST',
-    url: obj.getURL(),
+    url: obj.getHelperURL(),
     endpoint: '/setDefaults',
     params: { defaults: settings }
   })
@@ -985,7 +1154,7 @@ function deleteRemoteFile (id, file, warn = true) {
 
     constTools.makeRequest({
       method: 'POST',
-      url: obj.getURL(),
+      url: obj.getHelperURL(),
       endpoint: '/deleteFile',
       params: requestDict
     })
@@ -1020,7 +1189,7 @@ export function queueCommand (id, cmd) {
     // We send these commands directly to the helper
     constTools.makeRequest({
       method: 'GET',
-      url: obj.getURL(),
+      url: obj.getHelperURL(),
       endpoint: '/' + cmd
     })
   } else {

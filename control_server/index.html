@@ -78,6 +78,18 @@
       #issueMediaUploadFilename {
         overflow-wrap: break-word!important;
       }
+      #projectorStatusDetailTable {
+        background-color: #414242;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-right: 0px;
+        border-collapse: collapse;
+        border: 2px solid #8e184f;
+      }
     </style>
   </head>
 
@@ -124,6 +136,10 @@
                             <span class="dropdown-header pl-3 pb-0">IP address</span>
                             <span id="componentInfoModalIPAddress" class="dropdown-item-text pl-3"></span>
                           </div>
+                          <div id="componentInfoModalProtocolGroup">
+                            <span class="dropdown-header pl-3 pb-0">Protocol</span>
+                            <span id="componentInfoModalProtocol" class="dropdown-item-text pl-3"></span>
+                          </div>
                           <div id="componentInfoModalHelperIPAddressGroup">
                             <span class="dropdown-header pl-3 pb-0">Helper IP address</span>
                             <span id="componentInfoModalHelperIPAddress" class="dropdown-item-text pl-3"></span>
@@ -155,7 +171,7 @@
                 </div>
                 <div class="modal-body">
 
-                  <div class='row align-items-end' id="contentUploadSystemStatsView">
+                  <div class='row align-items-end mb-3' id="contentUploadSystemStatsView">
                     <div class='col-4'>
                       <strong id="contentUploadDiskSpaceFree"></strong>
                       <div class="progress" style="height: 20px;">
@@ -182,9 +198,13 @@
                     <hr>
                   </div>
 
-                  <ul class="nav nav-tabs mt-3" id="componentInfoModalTabList" role="tablist">
+                  <!-- Tab buttons -->
+                  <ul class="nav nav-tabs" id="componentInfoModalTabList" role="tablist">
                     <li class="nav-item">
                       <a class="nav-link active px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="true">Content</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
                     </li>
                     <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalMaintenanceTabButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
@@ -195,6 +215,7 @@
                   </ul>
 
                   <div class="tab-content" id="componentInfoModalTabContainer">
+                    <!-- Content pane -->
                     <div class="tab-pane fade show active" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
                       <div class="row mt-3" id="componentInfoConnectingNotice">
                         <div class='col-8 offset-2'>
@@ -225,7 +246,6 @@
                         <div class='col-12'>
                           <button type="button" class="btn btn-primary mt-2" id="componentSaveConfirmationButton">Save changes</button>
                         </div>
-
                       </div>
 
                       <div id="componentcontentUploadInterface" class="form-group mt-3 mb-0">
@@ -251,6 +271,57 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Projector status pane -->
+                    <div class="tab-pane fade" id="componentInfoModaProejctorTab" role="tabpanel" aria-labelledby="componentInfoModaProejctorTabButton">
+                      <div class="row mt-3">
+                        <div class="col-12">
+                          <table id="projectorStatusDetailTable" class="table table-striped">
+                            <tbody>
+                              <tr>
+                                <th scope="row">Power state</th>
+                                <td><div id="projectorInfoPowerState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Lamp hours</th>
+                                <td><div id="projectorInfoLampHours"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Lamp state</th>
+                                <td><div id="projectorInfoLampState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Fan state</th>
+                                <td><div id="projectorInfoFanState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Temperature state</th>
+                                <td><div id="projectorInfoTempState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Filter state</th>
+                                <td><div id="projectorInfoFilterState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Cover state</th>
+                                <td><div id="projectorInfoCoverState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Other</th>
+                                <td><div id="projectorInfoOtherState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Model</th>
+                                <td><div id="projectorInfoModel"></div></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <!-- Maintenance pane -->
                     <div class="tab-pane fade" id="componentInfoModalMaintenanceTab" role="tabpanel" aria-labelledby="componentInfoModalMaintenanceTabButton">
                       <div class="row mt-3">
                         <div class='col-12 col-md-6'>
@@ -394,70 +465,6 @@
             </div>
           </div>
 
-          <div class="modal" tabindex="-1" role="dialog" id="projectorInfoModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header w-100">
-                  <div class='row modal-title align-items-middle w-100'>
-                    <div class='col-8'>
-                      <h4 id="projectorInfoModalTitle"></h4>
-                    </div>
-                    <div class='col-4'>
-                      <div id="projectorInfoModalIPAddress" align="right"></div>
-                    </div>
-                    <div class="col-12">
-                      <div id="projectorInfoModalDescription"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-body">
-                  <table class="table table-striped">
-                    <tbody>
-                      <tr>
-                        <th scope="row">Power state</th>
-                        <td><div id="projectorInfoPowerState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Lamp hours</th>
-                        <td><div id="projectorInfoLampHours"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Lamp state</th>
-                        <td><div id="projectorInfoLampState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Fan state</th>
-                        <td><div id="projectorInfoFanState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Temperature state</th>
-                        <td><div id="projectorInfoTempState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Filter state</th>
-                        <td><div id="projectorInfoFilterState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Cover state</th>
-                        <td><div id="projectorInfoCoverState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Other</th>
-                        <td><div id="projectorInfoOtherState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Model</th>
-                        <td><div id="projectorInfoModel"></div></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="row mt-3 ml-2" id="componentsTabSettingsRow">
             <div class="col">
               <div class="form-check">
@@ -865,107 +872,6 @@
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="modal" tabindex="-1" role="dialog" id="editGalleryConfigModal" >
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 1000px); width: min(95%, 1000px);">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title h2">Edit Gallery Configuration</h5>
-                </div>
-                <div class="modal-body" style="height: calc(70vh);">
-                  <div class='row h-100'>
-                    <div class='col-6 border-left' style="overflow-y: auto; height: 90%;">
-                      <H3>Help</H3>
-                      <p>
-                        The text area on the right displays the current settings for this Control Server. The settings are formatted as an INI file. Each word in [brackets] defines a section of the settings. This help text will describe the possible sections and settings.
-                      </p>
-                      <p>
-                        A few notes about editing INI files:
-                        <ul>
-                          <li>The bracketed section headers and keys must be capitalized as shown.</li>
-                          <li>The general format is: <code>key = value</code>, where <code>key</code> is the name of a setting and <code>value</code> is what it should be set to.</li>
-                          <li>You may not use the equals sign (=) except to separate keys and values.</li>
-                        </ul>
-                      </p>
-                  
-                      <H5><b>[CURRENT]</b></H5>
-                      This section contains some basic configuration information. 
-                      <table>
-                        <tr>
-                          <th>Key</th>
-                          <th>Value</th>
-                          <th>Required?</th>
-                        </tr>
-                        <tr>
-                          <td>current_exhibit</td>
-                          <td>This should be managed by Constellation, not set directly.</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>server_ip_address</td>
-                          <td>The static IP address of this Control Server. E.g., 10.8.1.21</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>server_port</td>
-                          <td>The port of this Control Server. E.g., 8082</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>assignable_staff</td>
-                          <td>A comma-separated list of people, departments, etc. who can be assigned issues. E.g., Exhibits, Facilities, Housekeeping</td>
-                          <td>No</td>
-                        </tr>
-                        <tr>
-                          <td>gallery_name</td>
-                          <td>A user-defined name for where this Control Server is operating. E.g., Adventure Science Center</td>
-                          <td>No</td>
-                        </tr>
-                        <tr>
-                          <td>reboot_time</td>
-                          <td>The time of day that Control Server (the app) should reboot. If you use this, make sure you have set a watchdog process to restart the server. E.g., 1 AM</td>
-                          <td>No</td>
-                        </tr>
-                      </table>
-
-                      <br>
-                      <H5><b>[PJLINK_PROJECTORS]</b></H5>
-                      This section configures projectors using the PJLink protocol. This is the preferred method for managing projectors. 
-                      <br><br>
-                      <p>
-                        <b>Basic format</b>
-                        <br>
-                        <code>ID = Static IP address</code>  
-                      </p>
-                      <p>
-                        <b>Projectors with passwords</b>
-                        <br>
-                        <code>ID = Static IP address, password</code>  
-                      </p>
-                      <p>
-                        <b>Example</b>
-                        <br>
-                        <code>Atrium Marquee = 10.8.1.41, securePass</code>  
-                      </p>
-                    </div>
-                    <div class='col-6 border-right' style="height: 90%;">
-                      <H3>Configuration</H3>
-                      <div class="form-group">
-                        <textarea class="form-control h-100" id="editGalleryConfigTextArea" rows="20" spellcheck="false" ></textarea>
-                      </div>
-                    </div>
-                    <div class="col-12 mt-3" style="height: 10%;">
-                      <div id="galleryConfigEditModalErrorMessage" class="alert alert-danger mt-2"></div>
-                    </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button id="submitGalleryConfigChangeFromModalButton" type="button" class="btn btn-primary">Save</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              </div>
-            </div>
             </div>
           </div>
 

@@ -2,17 +2,16 @@ import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 import * as constExhibit from './constellation_exhibit.js'
 
-export class Projector {
+export class Projector extends constExhibit.BaseComponent {
+  // A component representing a projector
+
   constructor (id, group) {
+    super(id, group)
+
     this.type = 'projector'
-    this.id = id
-    this.group = group
-    this.ip = ''
+    this.constellationAppId = 'projector'
+    this.protocol = null // PJLink or Serial
     this.state = {}
-    this.status = constConfig.STATUS.OFFLINE
-    this.lastContactDateTime = null
-    this.allowed_actions = []
-    this.latency = null
 
     this.checkProjector()
     const thisInstance = this
@@ -21,6 +20,7 @@ export class Projector {
 
   checkProjector () {
     // Function to ask the server to ping the projector
+
     const thisInstance = this
 
     constTools.makeServerRequest({
@@ -70,130 +70,37 @@ export class Projector {
       })
   }
 
-  setStatus (status) {
-    this.status = constConfig.STATUS[status]
-    $('#' + this.id + 'StatusField').html(this.status.name)
+  updateFromServer (update) {
+    // Extend parent method for proejctor-specific items
 
-    const btnClass = this.status.colorClass
-    // Strip all existing classes, then add the new one
-    $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-    $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-  }
+    super.updateFromServer(update)
 
-  buildHTML () {
-    // Function to build the HTML representation of this component
-    // and add it to the row of the parent group
-
-    // If the element is static and the 'Show STATIC' checkbox is ticked, bail out
-    if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
-      return
-    }
-
-    const displayName = this.id
-    const thisId = this.id
-
-    // Change the amount of the Bootstrap grid being used depending on the
-    // number of components in this group. Larger groups get more horizontal
-    // space, so each component needs a smaller amount of grid.
-    let classString
-    if (constExhibit.getExhibitComponentGroup(this.group).components.length > 7) {
-      classString = 'col-12 col-sm-4 col-md-3 mt-1'
-    } else {
-      classString = 'col-12 col-sm-4 col-md-6 mt-1'
-    }
-
-    const col = document.createElement('div')
-    col.classList = classString
-
-    const btnGroup = document.createElement('div')
-    btnGroup.classList = 'btn-group btn-block h-100 w-100'
-    col.appendChild(btnGroup)
-
-    const mainButton = document.createElement('button')
-    mainButton.classList = 'btn btn-block componentStatusButton ' + this.status.colorClass
-    mainButton.setAttribute('type', 'button')
-    mainButton.setAttribute('id', this.id + 'MainButton')
-    mainButton.addEventListener('click', function () {
-      showProjectorInfo(thisId)
-    }, false)
-    btnGroup.appendChild(mainButton)
-
-    const displayNameEl = document.createElement('H5')
-    displayNameEl.innerHTML = displayName
-    mainButton.appendChild(displayNameEl)
-
-    const statusFieldEl = document.createElement('div')
-    statusFieldEl.setAttribute('id', this.id + 'StatusField')
-    statusFieldEl.innerHTML = this.status.name
-    mainButton.appendChild(statusFieldEl)
-
-    const dropdownButton = document.createElement('button')
-    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.status.colorClass
-    dropdownButton.setAttribute('id', this.id + 'DropdownButton')
-    dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('data-toggle', 'dropdown')
-    dropdownButton.setAttribute('aria-haspopup', 'true')
-    dropdownButton.setAttribute('aria-expanded', 'false')
-    btnGroup.appendChild(dropdownButton)
-
-    const dropdownLabel = document.createElement('span')
-    dropdownLabel.classList = 'sr-only'
-    dropdownLabel.innerHTML = 'Toggle Dropdown'
-    dropdownButton.appendChild(dropdownLabel)
-
-    const dropdownMenu = document.createElement('div')
-    dropdownMenu.classList = 'dropdown-menu'
-    btnGroup.appendChild(dropdownMenu)
-
-    let numOptions = 0
-    this.allowed_actions.forEach((action) => {
-      const option = document.createElement('a')
-      option.classList = 'dropdown-item handCursor'
-
-      let cmd
-      numOptions += 1
-      if (action === 'refresh') {
-        option.innerHTML = 'Refresh Component'
-        cmd = 'refresh_page'
-      } else if (action === 'restart') {
-        option.innerHTML = 'Restart component'
-        numOptions += 1
-        cmd = 'restart'
-      } else if (action === 'shutdown' || action === 'power_off') {
-        option.innerHTML = 'Sleep projector'
-        cmd = 'sleepDisplay'
-      } else if (action === 'power_on') {
-        option.innerHTML = 'Wake projector'
-        cmd = 'power_on'
-      } else if (action === 'sleep') {
-        option.innerHTML = 'Wake display'
-        cmd = 'wakeDisplay'
-
-        const option2 = document.createElement('a')
-        option2.classList = 'dropdown-item handCursor'
-        option2.innerHTML = 'Sleep display'
-        option2.addEventListener('click', function () {
-          constExhibit.queueCommand(thisId, 'sleepDisplay')
-        }, false)
-        dropdownMenu.appendChild(option2)
-      } else {
-        numOptions -= 1
+    if ('state' in update) {
+      const state = update.state
+      if ('model' in state) {
+        this.state.model = state.model
       }
-
-      option.addEventListener('click', function () {
-        constExhibit.queueCommand(thisId, cmd)
-      }, false)
-      dropdownMenu.appendChild(option)
-    })
-
-    if (numOptions === 0) {
-      const option = document.createElement('a')
-      option.classList = 'dropdown-item handCursor'
-      option.innerHTML = 'No available actions'
-      dropdownMenu.appendChild(option)
+      if ('power_state' in state) {
+        this.state.power_state = state.power_state
+      }
+      if ('lamp_status' in state) {
+        this.state.lamp_status = state.lamp_status
+      }
+      if ('error_status' in state) {
+        this.state.error_status = state.error_status
+        const errorList = {}
+        Object.keys(state.error_status).forEach((item, i) => {
+          if ((state.error_status)[item] !== 'ok') {
+            errorList[item] = (state.error_status)[item]
+          }
+        })
+        constConfig.errorDict[this.id] = errorList
+        constTools.rebuildErrorList()
+      }
     }
-
-    $('#' + this.group + 'ComponentList').append(col)
+    if ('protocol' in update) {
+      this.protocol = update.protocol
+    }
   }
 }
 
@@ -429,52 +336,26 @@ export function updateProjectorConfigurationFromModal () {
     })
 }
 
-export function updateProjectorFromServer (projector) {
+export function updateProjectorFromServer (update) {
   // Read the dictionary of projector information from the control server
   // and use it to set up the projector
-
-  const obj = constExhibit.getExhibitComponent(projector.id)
+  const obj = constExhibit.getExhibitComponent(update.id)
   if (obj != null) {
     // Update the object with the latest info from the server
-    obj.setStatus(projector.status)
-    if ('ip_address' in projector) {
-      obj.ip = projector.ip_address
-    }
-    if ('allowed_actions' in projector) {
-      obj.allowed_actions = projector.allowed_actions
-    }
-    if ('description' in projector) {
-      obj.description = projector.description
-    }
-    if ('lastContactDateTime' in projector) {
-      obj.lastContactDateTime = projector.lastContactDateTime
-    }
-    if ('latency' in projector) {
-      obj.latency = projector.latency
-    }
-    if ('error' in projector) {
-      try {
-        const newError = JSON.parse(projector.error)
-        constConfig.errorDict[obj.id] = newError
-      } catch (e) {
-        console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", projector.error)
-        console.log(e)
-      }
-      constTools.rebuildErrorList()
-    }
+    obj.updateFromServer(update)
   } else {
     // First, make sure the group matching this group id exists
-    let group = constExhibit.getExhibitComponentGroup(projector.group)
+    let group = constExhibit.getExhibitComponentGroup(update.group)
     if (group == null) {
-      group = new constExhibit.ExhibitComponentGroup(projector.group)
+      group = new constExhibit.ExhibitComponentGroup(update.group)
       constConfig.componentGroups.push(group)
     }
 
     // Then create a new component
-    const newProjector = new Projector(projector.id, projector.group)
-    newProjector.setStatus(projector.status)
-    if ('allowed_actions' in projector) {
-      newProjector.allowed_actions = projector.allowed_actions
+    const newProjector = new Projector(update.id, update.group)
+    newProjector.setStatus(update.status)
+    if ('allowed_actions' in update) {
+      newProjector.allowed_actions = update.allowed_actions
     }
     newProjector.buildHTML()
     constConfig.exhibitComponents.push(newProjector)
@@ -483,137 +364,6 @@ export function updateProjectorFromServer (projector) {
     group.addComponent(newProjector)
 
     // Finally, call this function again to populate the information
-    updateProjectorFromServer(projector)
+    updateProjectorFromServer(update)
   }
-}
-
-export function showProjectorInfo (id) {
-  // Set up the projectorInfoModal with the info from the selected
-  // projector and shows it on the screen.
-
-  const obj = constExhibit.getExhibitComponent(id)
-
-  // First, reset all the cell shadings
-  $('#projectorInfoLampState').parent().removeClass()
-  $('#projectorInfoFanState').parent().removeClass()
-  $('#projectorInfoFilterState').parent().removeClass()
-  $('#projectorInfoCoverState').parent().removeClass()
-  $('#projectorInfoOtherState').parent().removeClass()
-  $('#projectorInfoTempState').parent().removeClass()
-
-  // Set the title to the ID
-  $('#projectorInfoModalTitle').html(id)
-  $('#projectorInfoModalIPAddress').html(obj.ip)
-  if (obj.description === '') {
-    $('#projectorInfoModalDescription').hide()
-  } else {
-    $('#projectorInfoModalDescription').html(obj.description)
-    $('#projectorInfoModalDescription').show()
-  }
-
-  // Then, go through and populate all the cells with as much information
-  // as we have. Shade cells red if an error is reported.
-  if ('power_state' in obj.state && obj.state.power_state !== '') {
-    $('#projectorInfoPowerState').html(obj.state.power_state)
-  } else {
-    $('#projectorInfoPowerState').html('-')
-  }
-  if (('error_status' in obj.state) && (obj.state.error_status.constructor === Object)) {
-    if ('lamp' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoLampState').html(obj.state.error_status.lamp)
-      // Shade if error
-      if (obj.state.error_status.lamp === 'error') {
-        $('#projectorInfoLampState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoLampState').html('-')
-    }
-    if ('fan' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoFanState').html(obj.state.error_status.fan)
-      // Shade if error
-      if (obj.state.error_status.fan === 'error') {
-        $('#projectorInfoFanState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoFanState').html('-')
-    }
-    if ('filter' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoFilterState').html(obj.state.error_status.filter)
-      // Shade if error
-      if (obj.state.error_status.filter === 'error') {
-        $('#projectorInfoFilterState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoFilterState').html('-')
-    }
-    if ('cover' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoCoverState').html(obj.state.error_status.cover)
-      // Shade if error
-      if (obj.state.error_status.cover === 'error') {
-        $('#projectorInfoCoverState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoCoverState').html('-')
-    }
-    if ('other' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoOtherState').html(obj.state.error_status.other)
-      // Shade if error
-      if (obj.state.error_status.other === 'error') {
-        $('#projectorInfoOtherState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoOtherState').html('-')
-    }
-    if ('temperature' in obj.state.error_status) {
-      // Populate cell
-      $('#projectorInfoTempState').html(obj.state.error_status.temperature)
-      // Shade if error
-      if (obj.state.error_status === 'error') {
-        $('#projectorInfoTempState').parent().addClass('table-danger')
-      }
-    } else {
-      $('#projectorInfoTempState').html('-')
-    }
-  } else {
-    $('#projectorInfoLampState').html('-')
-    $('#projectorInfoFanState').html('-')
-    $('#projectorInfoFilterState').html('-')
-    $('#projectorInfoCoverState').html('-')
-    $('#projectorInfoOtherState').html('-')
-    $('#projectorInfoTempState').html('-')
-  }
-  if ('model' in obj.state) {
-    $('#projectorInfoModel').html(obj.state.model)
-  } else {
-    $('#projectorInfoModel').html('-')
-  }
-
-  let lampHTML = ''
-  if ('lamp_status' in obj.state && obj.state.lamp_status !== '') {
-    const lampList = obj.state.lamp_status
-
-    for (let i = 0; i < lampList.length; i++) {
-      const lamp = lampList[i]
-      let statusStr = ''
-      if (lamp[1] === false) {
-        statusStr = '(off)'
-      } else if (lamp[1] === true) {
-        statusStr = '(on)'
-      } else {
-        statusStr = ''
-      }
-      lampHTML += `Lamp ${i + 1} ${statusStr}: ${lamp[0]} hours<br>`
-    }
-  } else {
-    lampHTML = '-'
-  }
-  $('#projectorInfoLampHours').html(lampHTML)
-
-  // Make the modal visible
-  $('#projectorInfoModal').modal('show')
 }

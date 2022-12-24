@@ -82,6 +82,7 @@ class BaseComponent:
 
         self.latency_timer = threading.Timer(10, self.poll_latency)
         self.latency_timer.name = f"{self.id} latency timer"
+        self.latency_timer.daemon = True
         self.latency_timer.start()
 
 
@@ -381,6 +382,7 @@ def poll_wake_on_LAN_devices():
         new_thread.start()
 
     config.polling_thread_dict["poll_wake_on_LAN_devices"] = threading.Timer(30, poll_wake_on_LAN_devices)
+    config.polling_thread_dict["poll_wake_on_LAN_devices"].daemon = True
     config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 

@@ -144,6 +144,7 @@ def queue_json_schedule(schedule: dict) -> None:
 
             # print("scheduling timer: ", event)
             timer = threading.Timer(seconds_from_now, execute_scheduled_action, args=(event["action"], event["target"], event["value"]))
+            timer.daemon = True
             timer.start()
             new_timers.append(timer)
 
@@ -152,6 +153,7 @@ def queue_json_schedule(schedule: dict) -> None:
         seconds_until_reboot = (config.serverRebootTime - datetime.datetime.now()).total_seconds()
         if seconds_until_reboot >= 0:
             timer = threading.Timer(seconds_until_reboot, c_tools.reboot_server)
+            timer.daemon = True
             timer.start()
             new_timers.append(timer)
 
@@ -159,6 +161,7 @@ def queue_json_schedule(schedule: dict) -> None:
     midnight = datetime.datetime.combine(datetime.datetime.now() + datetime.timedelta(days=1), datetime.time.min)
     seconds_until_midnight = (midnight - datetime.datetime.now()).total_seconds()
     timer = threading.Timer(seconds_until_midnight, retrieve_json_schedule)
+    timer.daemon = True
     timer.start()
     new_timers.append(timer)
 

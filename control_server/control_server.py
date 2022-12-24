@@ -113,6 +113,8 @@ def send_webpage_update():
         if "description" in item.config:
             temp["description"] = item.config["description"]
         temp["class"] = "projector"
+        temp["state"] = item.state
+        temp["protocol"] = item.connection_type
         temp["status"] = item.state["status"]
         temp["latency"] = item.latency
         component_dict_list.append(temp)

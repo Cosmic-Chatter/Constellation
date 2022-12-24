@@ -74,7 +74,7 @@ function uploadComponentContentFile () {
     if (component.helperAddress != null) {
       xhr.open('POST', component.helperAddress + '/uploadContent', true)
     } else {
-      xhr.open('POST', `http://${component.ip}:${component.helperPort}` + '/uploadContent', true)
+      xhr.open('POST', `http://${component.ip_address}:${component.helperPort}` + '/uploadContent', true)
     }
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
@@ -1202,7 +1202,7 @@ $('#showStaticComponentsEditModalButton').click(constExhibit.showManageStaticCom
 $('#manageStaticComponentsAddBUtton').click(function () {
   constExhibit.createManageStaticComponentsEntry({
     id: 'New component',
-    type: 'STATIC'
+    group: 'STATIC'
   })
   $('#manageStaticComponentsModalSaveButton').show() // Show the save button
 })

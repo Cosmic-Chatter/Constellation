@@ -127,7 +127,8 @@ def poll_projectors():
         new_thread.daemon = True  # So it dies if we exit
         new_thread.start()
 
-    config.polling_thread_dict["poll_projectors"] = threading.Timer(30, poll_projectors)
+    config.polling_thread_dict["poll_projectors"] = threading.Timer(10, poll_projectors)
+    config.polling_thread_dict["poll_projectors"].daemon = True
     config.polling_thread_dict["poll_projectors"].start()
 
 

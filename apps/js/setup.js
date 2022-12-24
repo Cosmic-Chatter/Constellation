@@ -338,6 +338,7 @@ const knownKeys = [
   { key: 'anydesk_id', type: 'text', required: false, description: 'If AnyDesk is configured for this device, you can add its ID, which enables a button in the web console.' },
   { key: 'autoplay_audio', type: 'bool', required: false, description: 'Allow audio to play automatically. If this is set to true, you must have set up your web browser to allow automatic audio.' },
   { key: 'current_exhibit', type: 'text', required: true, description: 'This will be managed automatically by Constellation.' },
+  { key: 'group', type: 'text', required: true, description: 'A user-defined grouping for this component.' },
   { key: 'helper_port', type: 'text', required: true, description: 'The port on which this helper is operating.' },
   { key: 'id', type: 'text', required: true, description: 'A unique name that identifies this component.' },
   { key: 'image_duration', type: 'number', required: false, description: 'The number of seconds that each image will be shown.' },
@@ -348,8 +349,7 @@ const knownKeys = [
   { key: 'smart_restart', type: 'option', options: ['off', 'patient', 'aggressive'], required: false, description: 'Smart Restart mode' },
   { key: 'smart_restart_interval', type: 'number', required: false, description: 'Time in seconds to poll Control Server.' },
   { key: 'smart_restart_threshold', type: 'number', required: false, description: 'Time in seconds since last connection before reboot should be triggered.' },
-  { key: 'sos_ip_address', type: 'text', required: false, description: 'The IP address of the Science ona Sphere control computer.' },
-  { key: 'type', type: 'text', required: true, description: 'A user-defined grouping for this component.' }
+  { key: 'sos_ip_address', type: 'text', required: false, description: 'The IP address of the Science ona Sphere control computer.' }
 ]
 
 const markdownConverter = new showdown.Converter()

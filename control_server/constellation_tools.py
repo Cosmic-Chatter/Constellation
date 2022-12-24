@@ -105,14 +105,18 @@ def reboot_server(*args, **kwargs) -> None:
 def start_debug_loop() -> None:
     """Begin printing debug information"""
 
-    threading.Timer(10, print_debug_details).start()
+    timer = threading.Timer(10, print_debug_details)
+    timer.daemon = True
+    timer.start()
 
 
 def print_debug_details() -> None:
     """Print useful debug info to the console"""
 
     if config.debug is False:
-        threading.Timer(10, print_debug_details).start()
+        timer = threading.Timer(10, print_debug_details)
+        timer.daemon = True
+        timer.start()
         return
 
     print("================= Debug details =================")
@@ -121,7 +125,9 @@ def print_debug_details() -> None:
     print(f"Memory used: {psutil.Process().memory_info().rss/1024/1024} Mb")
     print("=================================================", flush=True)
 
-    threading.Timer(10, print_debug_details).start()
+    timer = threading.Timer(10, print_debug_details)
+    timer.daemon = True
+    timer.start()
 
 
 def delete_file(file_path) -> dict:
