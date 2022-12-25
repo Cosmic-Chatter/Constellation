@@ -29,6 +29,7 @@ class BaseComponent {
 
     const displayName = this.id
     const thisId = this.id
+    const cleanId = this.id.replaceAll(' ', '_')
 
     // Change the amount of the Bootstrap grid being used depending on the
     // number of components in this group. Larger groups get more horizontal
@@ -50,7 +51,7 @@ class BaseComponent {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn btn-block componentStatusButton ' + this.status.colorClass
     mainButton.setAttribute('type', 'button')
-    mainButton.setAttribute('id', this.id + 'MainButton')
+    mainButton.setAttribute('id', cleanId + 'MainButton')
     mainButton.addEventListener('click', function () {
       showExhibitComponentInfo(thisId)
     }, false)
@@ -61,13 +62,13 @@ class BaseComponent {
     mainButton.appendChild(displayNameEl)
 
     const statusFieldEl = document.createElement('div')
-    statusFieldEl.setAttribute('id', this.id + 'StatusField')
+    statusFieldEl.setAttribute('id', cleanId + 'StatusField')
     statusFieldEl.innerHTML = this.status.name
     mainButton.appendChild(statusFieldEl)
 
     const dropdownButton = document.createElement('button')
     dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.status.colorClass
-    dropdownButton.setAttribute('id', this.id + 'DropdownButton')
+    dropdownButton.setAttribute('id', cleanId + 'DropdownButton')
     dropdownButton.setAttribute('type', 'button')
     dropdownButton.setAttribute('data-toggle', 'dropdown')
     dropdownButton.setAttribute('aria-haspopup', 'true')
@@ -81,7 +82,22 @@ class BaseComponent {
 
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
+    dropdownMenu.setAttribute('id', cleanId + 'DropdownMenu')
+    this.populateActionMenu(dropdownMenu)
     btnGroup.appendChild(dropdownMenu)
+
+    $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
+  }
+
+  populateActionMenu (dropdownMenu = null) {
+    // Build out the dropdown menu options based on the this.allowed_actions.
+
+    if (dropdownMenu == null) {
+      const cleanID = this.id.replaceAll(' ', '_')
+      dropdownMenu = document.getElementById(cleanID + 'DropdownMenu')
+    }
+    $(dropdownMenu).empty()
+    const thisId = this.id
 
     let numOptions = 0
     this.allowed_actions.forEach((action) => {
@@ -130,8 +146,6 @@ class BaseComponent {
       option.innerHTML = 'No available actions'
       dropdownMenu.appendChild(option)
     }
-
-    $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
   }
 
   remove () {
@@ -146,16 +160,25 @@ class BaseComponent {
     rebuildComponentInterface()
   }
 
+  setAllowedActions (actions) {
+    // Set the compnent's allowed actions and then rebuild the action list
+
+    this.allowed_actions = actions
+    this.populateActionMenu()
+  }
+
   setStatus (status) {
     // Set the component's status and change the GUI to reflect the change.
 
+    const cleanId = this.id.replaceAll(' ', '_')
+
     this.status = constConfig.STATUS[status]
-    $('#' + this.id + 'StatusField').html(this.status.name)
+    $('#' + cleanId + 'StatusField').html(this.status.name)
 
     const btnClass = this.status.colorClass
     // Strip all existing classes, then add the new one
-    $('#' + this.id + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-    $('#' + this.id + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    $('#' + cleanId + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    $('#' + cleanId + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
   }
 
   updateFromServer (update) {
@@ -167,7 +190,9 @@ class BaseComponent {
       this.ip_address = update.ip_address
     }
     if ('allowed_actions' in update) {
-      this.allowed_actions = update.allowed_actions
+      if (constTools.arraysEqual(this.allowed_actions, update.allowed_actions) === false) {
+        this.setAllowedActions(update.allowed_actions)
+      }
     }
     if ('description' in update) {
       this.description = update.description
