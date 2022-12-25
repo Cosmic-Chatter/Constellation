@@ -16,6 +16,7 @@ import wakeonlan
 # Constellation imports
 import config
 import constellation_tools as c_tools
+import projector_control
 
 
 class BaseComponent:
@@ -49,8 +50,21 @@ class BaseComponent:
         if self.latency_timer is not None:
             self.latency_timer.cancel()
 
-    def seconds_since_last_contact(self) -> float:
+    def remove(self):
+        """Remove the component from Control Server tracking.
 
+        If another ping is received, the component will be re-added.
+        """
+
+        self.clean_up()
+        if isinstance(self, ExhibitComponent):
+            config.componentList = [x for x in config.componentList if x.id != self.id]
+        elif isinstance(self, Projector):
+            config.projectorList = [x for x in config.projectorList if x.id != self.id]
+        elif isinstance(self, WakeOnLANDevice):
+            config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != self.id]
+
+    def seconds_since_last_contact(self) -> float:
         """The number of seconds since the last successful contact with the component."""
 
         diff = datetime.datetime.now() - self.last_contact_datetime
@@ -267,6 +281,106 @@ class WakeOnLANDevice(BaseComponent):
                     config.serverWarningDict["wakeOnLANPrivilege"] = True
         else:
             self.state["status"] = "UNKNOWN"
+
+
+class Projector(BaseComponent):
+    """Holds basic data about a projector."""
+
+    def __init__(self, id_: str, group: str, ip_address: str, connection_type: str, mac_address: str = None, make: str = None,
+                 password: str = None):
+
+        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
+
+        self.password = password  # Password to access PJLink
+        self.connection_type = connection_type
+        self.make = make
+
+        self.last_contact_datetime = datetime.datetime(2020, 1, 1)
+
+        self.config["allowed_actions"] = ["power_on", "power_off"]
+        self.config["app_name"] = "projector"
+
+        self.state = {"status": "OFFLINE"}
+
+        self.update(full=True)
+        self.poll_latency()
+
+    def update(self, full: bool = False):
+
+        """Contact the projector to get the latest state"""
+
+        error = False
+        try:
+            if self.connection_type == 'pjlink':
+                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
+                if full:
+                    self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
+                self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
+                self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
+                self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
+            elif self.connection_type == "serial":
+                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
+                if full:
+                    self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
+                self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
+                                                                                  make=self.make)
+                self.state["lamp_status"] = projector_control.serial_send_command(connection, "lamp_status",
+                                                                                  make=self.make)
+                self.state["error_status"] = projector_control.serial_send_command(connection, "error_status",
+                                                                                   make=self.make)
+
+            self.update_last_contact_datetime()
+        except Exception as e:
+            # print(e)
+            error = True
+
+        if error and (self.seconds_since_last_contact() > 60):
+            self.state = {"status": "OFFLINE"}
+        else:
+            if self.state["power_state"] == "on":
+                self.state["status"] = "ONLINE"
+            else:
+                self.state["status"] = "STANDBY"
+
+    def queue_command(self, cmd: str):
+
+        """Function to spawn a thread that sends a command to the projector.
+
+        Named "queue_command" to match what is used for exhibitComponents
+        """
+
+        print(f"Queuing command {cmd} for {self.id}")
+        thread_ = threading.Thread(target=self.send_command, args=[cmd], name=f"CommandProjector_{self.id}_{str(time.time())}")
+        thread_.daemon = True
+        thread_.start()
+
+    def send_command(self, cmd: str):
+
+        """Connect to a PJLink projector and send a command"""
+
+        # Translate commands for projector_control
+        cmd_dict = {
+            "shutdown": "power_off",
+            "sleepDisplay": "power_off",
+            "wakeDisplay": "power_on"
+        }
+
+        try:
+            if self.connection_type == "pjlink":
+                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
+                if cmd in cmd_dict:
+                    projector_control.pjlink_send_command(connection, cmd_dict[cmd])
+                else:
+                    projector_control.pjlink_send_command(connection, cmd)
+            elif self.connection_type == "serial":
+                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
+                if cmd in cmd_dict:
+                    projector_control.serial_send_command(connection, cmd_dict[cmd], make=self.make)
+                else:
+                    projector_control.serial_send_command(connection, cmd, make=self.make)
+
+        except Exception as e:
+            print(e)
 
 
 def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -> ExhibitComponent:
@@ -693,3 +807,5 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.DEBUG)
+
+

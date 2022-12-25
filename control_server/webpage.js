@@ -1068,6 +1068,7 @@ $('#componentsTabSettingsShowStatic').change(function () {
 // Component info modal
 $('#componentSaveConfirmationButton').click(submitComponentContentChange)
 $('#contentUploadSubmitButton').click(uploadComponentContentFile)
+$('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)
 $('#componentInfoModalMaintenanceSaveButton').click(function () {
   constMaintenance.submitComponentMaintenanceStatusChange('component')
 })

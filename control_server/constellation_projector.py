@@ -1,118 +1,15 @@
 # Standard imports
-import datetime
 import logging
-import os
 import threading
 import time
 
 # Constellation imports
 import config
-import constellation_exhibit as c_exhibit
 import constellation_tools as c_tools
-import projector_control
+import constellation_exhibit as c_exhibit
 
 
-class Projector(c_exhibit.BaseComponent):
-    """Holds basic data about a projector."""
-
-    def __init__(self, id_: str, group: str, ip_address: str, connection_type: str, mac_address: str = None, make: str = None,
-                 password: str = None):
-
-        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
-
-        self.password = password  # Password to access PJLink
-        self.connection_type = connection_type
-        self.make = make
-
-        self.last_contact_datetime = datetime.datetime(2020, 1, 1)
-
-        self.config["allowed_actions"] = ["power_on", "power_off"]
-        self.config["app_name"] = "projector"
-
-        self.state = {"status": "OFFLINE"}
-
-        self.update(full=True)
-        self.poll_latency()
-
-    def update(self, full: bool = False):
-
-        """Contact the projector to get the latest state"""
-
-        error = False
-        try:
-            if self.connection_type == 'pjlink':
-                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
-                if full:
-                    self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
-                self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
-                self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
-                self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
-                if full:
-                    self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
-                self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
-                                                                                  make=self.make)
-                self.state["lamp_status"] = projector_control.serial_send_command(connection, "lamp_status",
-                                                                                  make=self.make)
-                self.state["error_status"] = projector_control.serial_send_command(connection, "error_status",
-                                                                                   make=self.make)
-
-            self.update_last_contact_datetime()
-        except Exception as e:
-            # print(e)
-            error = True
-
-        if error and (self.seconds_since_last_contact() > 60):
-            self.state = {"status": "OFFLINE"}
-        else:
-            if self.state["power_state"] == "on":
-                self.state["status"] = "ONLINE"
-            else:
-                self.state["status"] = "STANDBY"
-
-    def queue_command(self, cmd: str):
-
-        """Function to spawn a thread that sends a command to the projector.
-
-        Named "queue_command" to match what is used for exhibitComponents
-        """
-
-        print(f"Queuing command {cmd} for {self.id}")
-        thread_ = threading.Thread(target=self.send_command, args=[cmd], name=f"CommandProjector_{self.id}_{str(time.time())}")
-        thread_.daemon = True
-        thread_.start()
-
-    def send_command(self, cmd: str):
-
-        """Connect to a PJLink projector and send a command"""
-
-        # Translate commands for projector_control
-        cmd_dict = {
-            "shutdown": "power_off",
-            "sleepDisplay": "power_off",
-            "wakeDisplay": "power_on"
-        }
-
-        try:
-            if self.connection_type == "pjlink":
-                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
-                if cmd in cmd_dict:
-                    projector_control.pjlink_send_command(connection, cmd_dict[cmd])
-                else:
-                    projector_control.pjlink_send_command(connection, cmd)
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
-                if cmd in cmd_dict:
-                    projector_control.serial_send_command(connection, cmd_dict[cmd], make=self.make)
-                else:
-                    projector_control.serial_send_command(connection, cmd, make=self.make)
-
-        except Exception as e:
-            print(e)
-
-
-def get_projector(this_id: str) -> Projector:
+def get_projector(this_id: str) -> c_exhibit.Projector:
     """Return a projector with the given id, or None if no such projector exists"""
 
     return next((x for x in config.projectorList if x.id == this_id), None)
@@ -182,13 +79,13 @@ def read_projector_configuration():
     for proj in proj_config:
         if get_projector(proj["id"]) is None:
             if proj["protocol"] == 'pjlink':
-                new_proj = Projector(proj["id"],
+                new_proj = c_exhibit.Projector(proj["id"],
                                      proj.get("group", "Projectors"),
                                      proj["ip_address"], "pjlink",
                                      password=proj.get("password", None))
                 config.projectorList.append(new_proj)
             elif proj["protocol"] == "serial":
-                new_proj = Projector(proj["id"],
+                new_proj = c_exhibit.Projector(proj["id"],
                                      proj.get("group", "Projectors"),
                                      proj["ip_address"], "serial",
                                      make=proj.get("make", None))

@@ -562,6 +562,7 @@ export function showExhibitComponentInfo (id) {
 
   $('#componentInfoModalTitle').html(id)
 
+  // Set up the upper-right dropdown menu with helpful details
   $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
   if (obj.ip_address != null) {
     $('#componentInfoModalIPAddress').html(obj.ip_address)
@@ -569,7 +570,10 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalIPAddressGroup').hide()
   }
-  if (obj.ip_address !== constTools.extractIPAddress(obj.helperAddress) && constTools.extractIPAddress(obj.helperAddress) != null) {
+  if (obj.ip_address != null &&
+      constTools.extractIPAddress(obj.helperAddress) != null &&
+      obj.ip_address !== constTools.extractIPAddress(obj.helperAddress)
+  ) {
     $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
     $('#componentInfoModalHelperIPAddressGroup').show()
   } else {
@@ -614,11 +618,21 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalLastContactGroup').hide()
   }
-  if (obj.description === '') {
-    $('#componentInfoModalDescription').hide()
+  if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
+    // This is an active component, so add a remove button
+    $('#componentInfoModalRemoveButtonGroup').show()
   } else {
-    $('#componentInfoModalDescription').html(obj.description)
-    $('#componentInfoModalDescription').show()
+    $('#componentInfoModalRemoveButtonGroup').hide()
+  }
+
+  // Add any available description
+  {
+    if (obj.description === '') {
+      $('#componentInfoModalDescription').hide()
+    } else {
+      $('#componentInfoModalDescription').html(obj.description)
+      $('#componentInfoModalDescription').show()
+    }
   }
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
   $('#componentAvailableContentList').empty()
@@ -862,6 +876,29 @@ function convertAppIDtoDisplayName (appName) {
   }
 
   return displayName
+}
+
+export function removeExhibitComponentFromModal () {
+  // Called when the Remove button is clicked in the componentInfoModal.
+  // Send a message to the server to remove the component.
+
+  const id = $('#componentInfoModalTitle').html()
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/exhibit/removeComponent',
+    params: {
+      component: {
+        id
+      }
+    }
+  })
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        getExhibitComponent(id).remove()
+        $('#componentInfoModal').modal('hide')
+      }
+    })
 }
 
 function updateComponentInfoModalFromHelper (id) {

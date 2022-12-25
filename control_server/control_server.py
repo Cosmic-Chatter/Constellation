@@ -479,6 +479,16 @@ async def queue_WOL_command(component: ExhibitComponent,
     return {"success": True, "reason": ""}
 
 
+@app.post("/exhibit/removeComponent")
+async def queue_command(component: ExhibitComponent = Body(embed=True)):
+    """Queue the specified command for the exhibit component to retrieve."""
+
+    to_remove = c_exhibit.get_exhibit_component(component.id)
+    print("Removing component:", component.id)
+    to_remove.remove()
+    return {"success": True, "reason": ""}
+
+
 @app.post("/exhibit/set")
 async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     """Set the specified exhibit as the current one."""
