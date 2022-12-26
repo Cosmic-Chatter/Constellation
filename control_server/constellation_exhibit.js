@@ -1026,7 +1026,7 @@ function populateComponentContent (availableContent, key, id, appName, div) {
 
   for (let i = 0; i < contentList.length; i++) {
     const container = document.createElement('div')
-    container.classList = 'col-6 mt-1'
+    container.classList = 'col-6 col-md-4 mt-1'
 
     // Check if this file type is supported by the current app
     const file = contentList[i]

@@ -53,6 +53,10 @@
         overflow-wrap: break-word;
         width: 75%;
       }
+      .constellation-dialog {
+        max-width: min(95%, 750px); 
+        width: min(95%, 750px);
+      }
       .container {
         max-width: 1600px;
       }
@@ -119,7 +123,7 @@
         <div class="tab-pane fade show active" id="nav-components" role="tabpanel" aria-labelledby="nav-components-tab">
 
           <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header w-100 pr-0">
                   <div class='row modal-title align-items-middle w-100'>
@@ -171,7 +175,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body ">
 
                   <div class='row align-items-end mb-3' id="contentUploadSystemStatsView">
                     <div class='col-4'>
@@ -880,7 +884,7 @@
 
           <!-- Modal for managing system settings -->
           <div class="modal" tabindex="-1" role="dialog" id="manageSettingsModal">
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 750px); width: min(95%, 750px);">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title">System Settings</h5>
@@ -965,7 +969,7 @@
 
           <!-- Modal for managing projectors -->
           <div class="modal" tabindex="-1" role="dialog" id="manageProjectorsModal">
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 750px); width: min(95%, 750px);">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title">Manage Projectors</h5>
@@ -1019,7 +1023,7 @@
 
           <!-- Modal for managing component descriptions -->
           <div class="modal" tabindex="-1" role="dialog" id="manageDescriptionsModal">
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 750px); width: min(95%, 750px);">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title">Manage Descriptions</h5>
@@ -1061,7 +1065,7 @@
 
           <!-- Modal for managing Wake on LAN devices -->
           <div class="modal" tabindex="-1" role="dialog" id="manageWakeOnLANModal">
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 750px); width: min(95%, 750px);">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title">Manage Wake on LAN Devices</h5>
@@ -1108,7 +1112,7 @@
 
           <!-- Modal for managing static components -->
           <div class="modal" tabindex="-1" role="dialog" id="manageStaticComponentsModal">
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 750px); width: min(95%, 750px);">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title">Manage Static Components</h5>
