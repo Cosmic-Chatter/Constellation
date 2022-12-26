@@ -626,14 +626,13 @@ export function showExhibitComponentInfo (id) {
   }
 
   // Add any available description
-  {
-    if (obj.description === '') {
-      $('#componentInfoModalDescription').hide()
-    } else {
-      $('#componentInfoModalDescription').html(obj.description)
-      $('#componentInfoModalDescription').show()
-    }
+  if (obj.description === '') {
+    $('#componentInfoModalDescription').hide()
+  } else {
+    $('#componentInfoModalDescription').html(obj.description)
+    $('#componentInfoModalDescription').show()
   }
+  // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
   $('#componentAvailableContentList').empty()
   $('#contentUploadSubmitButton').prop('disabled', false)
@@ -1030,6 +1029,7 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     container.classList = 'col-6 mt-1'
 
     // Check if this file type is supported by the current app
+    const file = contentList[i]
     const fileExt = contentList[i].split('.').pop().toLowerCase()
     const supportedTypes = getAllowableContentTypes(appName)
 
@@ -1049,7 +1049,56 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     button.setAttribute('type', 'button')
     button.setAttribute('id', cleanFilename + 'Button')
     button.classList = 'btn componentContentButton'
-    button.innerHTML = `<span>${contentList[i]}</span>`
+
+    const fileName = document.createElement('span')
+    fileName.setAttribute('id', cleanFilename + 'NameField')
+    fileName.innerHTML = contentList[i]
+    button.appendChild(fileName)
+
+    const fileNameEditGroup = document.createElement('div')
+    fileNameEditGroup.setAttribute('id', cleanFilename + 'NameEditGroup')
+    fileNameEditGroup.classList = 'row'
+    button.appendChild(fileNameEditGroup)
+    $(fileNameEditGroup).hide() // Will be shown when editing the filename
+
+    const fileNameEditCol = document.createElement('div')
+    fileNameEditCol.classList = 'col-9 mr-0 pr-0'
+    fileNameEditGroup.appendChild(fileNameEditCol)
+
+    const fileNameEditCloseCol = document.createElement('div')
+    fileNameEditCloseCol.classList = 'col-3 ml-0 pl-0'
+    fileNameEditGroup.appendChild(fileNameEditCloseCol)
+
+    const fileNameEditCloseButton = document.createElement('button')
+    fileNameEditCloseButton.classList = 'btn btn-none px-0'
+    fileNameEditCloseButton.innerHTML = '&#x2715'
+    fileNameEditCloseButton.addEventListener('click', function (event) {
+      cancelFileRename(cleanFilename)
+      event.stopPropagation()
+    })
+    fileNameEditCloseCol.appendChild(fileNameEditCloseButton)
+
+    const fileNameEditField = document.createElement('input')
+    fileNameEditField.setAttribute('id', cleanFilename + 'NameEditField')
+    $(fileNameEditField).data('filename', file)
+    fileNameEditField.classList = 'form-control'
+    fileNameEditField.addEventListener('keyup', function (e) {
+      if (e.key === 'Enter') {
+        submitFileRename(cleanFilename)
+      }
+    })
+    fileNameEditCol.appendChild(fileNameEditField)
+
+    const fileNameEditErrorMessageCol = document.createElement('div')
+    fileNameEditErrorMessageCol.classList = 'col-12'
+    fileNameEditGroup.appendChild(fileNameEditErrorMessageCol)
+
+    const fileNameEditErrorMessage = document.createElement('span')
+    fileNameEditErrorMessage.setAttribute('id', cleanFilename + 'NameEditErrorMessage')
+    fileNameEditErrorMessage.classList = 'text-danger mt-1'
+    fileNameEditErrorMessage.innerHTML = 'A file with this name already exists!'
+    $(fileNameEditErrorMessage).hide()
+    fileNameEditErrorMessageCol.appendChild(fileNameEditErrorMessage)
 
     let thumbName
     const mimetype = constTools.guessMimetype(contentList[i])
@@ -1099,9 +1148,16 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
 
+    const renameFileButton = document.createElement('a')
+    renameFileButton.classList = 'dropdown-item'
+    renameFileButton.addEventListener('click', function () {
+      showFileRenameField(id, cleanFilename)
+    })
+    renameFileButton.innerHTML = 'Rename'
+    dropdownMenu.appendChild(renameFileButton)
+
     const deleteFileButton = document.createElement('a')
     deleteFileButton.classList = 'dropdown-item text-danger'
-    const file = contentList[i]
     deleteFileButton.addEventListener('click', function () {
       deleteRemoteFile(id, file)
     })
@@ -1112,6 +1168,77 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     $('#' + div).append(container)
   }
   updateComponentInfoModalContentButtonState()
+}
+
+function showFileRenameField (id, cleanID) {
+  // Begin the process of editing a filename in the componentInfoModal
+
+  const filename = $('#' + cleanID + 'NameEditField').data('filename')
+  const fileNameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename
+  $('#' + cleanID + 'NameEditGroup').show()
+  $('#' + cleanID + 'NameEditErrorMessage').hide()
+
+  // Pass the filename to the edit field, and save it for later use
+  $('#' + cleanID + 'NameEditField')
+    .val(filename)
+    .data('id', id)
+  const el = $('#' + cleanID + 'NameEditField')[0]
+  el.setSelectionRange(0, fileNameWithoutExt.length)
+  el.focus()
+  $('#' + cleanID + 'NameField').hide()
+}
+
+function cancelFileRename (cleanID) {
+  // Called when the X button is clicked to close the file edit dialog without saving
+
+  $('#' + cleanID + 'NameField').show()
+  $('#' + cleanID + 'NameEditGroup').hide()
+}
+
+function submitFileRename (cleanID) {
+  // Called when the user submits the input field to send to the helper.
+
+  const input = $('#' + cleanID + 'NameEditField')
+  const currentName = input.data('filename')
+  const newName = input.val().trim()
+  const id = input.data('id')
+  const obj = getExhibitComponent(id)
+
+  // If the new name is actually the current name, just put things back how they were
+  if (currentName.trim() === newName.trim()) {
+    $('#' + cleanID + 'NameField').html(newName).show()
+    $('#' + cleanID + 'NameEditGroup').hide()
+    $('#' + cleanID + 'NameEditErrorMessage').hide()
+    return
+  }
+
+  // If the new name contains an equals sign, reject it
+  if (newName.includes('=')) {
+    $('#' + cleanID + 'NameEditErrorMessage').html('Filename cannot contain an equals sign.').show()
+    return
+  }
+
+  constTools.makeRequest({
+    method: 'POST',
+    url: obj.getHelperURL(),
+    endpoint: '/renameFile',
+    params: {
+      current_name: currentName,
+      new_name: newName
+    }
+  })
+    .then((result) => {
+      if (result.success === true) {
+        $('#' + cleanID + 'NameField').html(newName).show()
+        $('#' + cleanID + 'NameEditGroup').hide()
+        $('#' + cleanID + 'NameEditErrorMessage').hide()
+        input.data('filename', newName)
+      } else {
+        if (result.error === 'file_exists') {
+          $('#' + cleanID + 'NameEditErrorMessage').html('A file with this name already exists!').show()
+        }
+      }
+    })
 }
 
 export function updateComponentInfoModalContentButtonState () {

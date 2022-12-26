@@ -71,7 +71,7 @@ function uploadComponentContentFile () {
     }
 
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', component.getHelperAddress() + '/uploadContent', true)
+    xhr.open('POST', component.getHelperURL() + '/uploadContent', true)
 
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return

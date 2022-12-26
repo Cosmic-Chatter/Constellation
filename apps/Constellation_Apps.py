@@ -1,4 +1,5 @@
 # Standard modules
+import shutil
 from functools import lru_cache
 import mimetypes
 import os
@@ -9,7 +10,7 @@ from typing import Any
 
 # Third-party modules
 import aiofiles
-from fastapi import FastAPI, Depends, File, HTTPException, UploadFile
+from fastapi import FastAPI, Body, Depends, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -266,6 +267,14 @@ async def delete_file(data: dict[str, Any], config: const_config = Depends(get_c
         response = {"success": False,
                     "reason": "Request missing field 'file'"}
     return response
+
+
+@app.post("/renameFile")
+async def rename_file(current_name: str = Body(description="The file to be renamed."),
+                      new_name: str = Body(description="The new name of the file.")):
+    """Rename a file in the content directory."""
+
+    return helper_files.rename_file(current_name, new_name)
 
 
 @app.post("/gotoClip")
