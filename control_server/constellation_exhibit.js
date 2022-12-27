@@ -735,7 +735,7 @@ function populateProjectorInfo (id) {
   // from the selected projector
 
   const obj = getExhibitComponent(id)
-
+  
   // First, reset all the cell shadings
   $('#projectorInfoLampState').parent().removeClass()
   $('#projectorInfoFanState').parent().removeClass()
@@ -821,31 +821,21 @@ function populateProjectorInfo (id) {
     $('#projectorInfoTempState').html('-')
   }
   if ('model' in obj.state) {
-    $('#projectorInfoModel').html(obj.state.model)
+    $('#componentInfoModalModel').html(obj.state.model)
+    $('#componentInfoModalModelGroup').show()
+    
   } else {
-    $('#projectorInfoModel').html('-')
+    $('#componentInfoModalModelGroup').hide()
   }
 
-  let lampHTML = ''
   if ('lamp_status' in obj.state && obj.state.lamp_status !== '') {
     const lampList = obj.state.lamp_status
-
+    
+    $("#componentInfoModalProjectorLampList").empty()
     for (let i = 0; i < lampList.length; i++) {
-      const lamp = lampList[i]
-      let statusStr = ''
-      if (lamp[1] === false) {
-        statusStr = '(off)'
-      } else if (lamp[1] === true) {
-        statusStr = '(on)'
-      } else {
-        statusStr = ''
-      }
-      lampHTML += `Lamp ${i + 1} ${statusStr}: ${lamp[0]} hours<br>`
+      createProjectorLampStatusEntry(lampList[i], i)
     }
-  } else {
-    lampHTML = '-'
   }
-  $('#projectorInfoLampHours').html(lampHTML)
 }
 
 function convertAppIDtoDisplayName (appName) {
@@ -875,6 +865,62 @@ function convertAppIDtoDisplayName (appName) {
   }
 
   return displayName
+}
+
+function createProjectorLampStatusEntry (entry, number) {
+  // Take a dictionary and turn it into HTML elements
+
+  const containerCol = document.createElement('div')
+  containerCol.classList = 'col-3 mb-3'
+  $(containerCol).data('config', entry)
+  $('#componentInfoModalProjectorLampList').append(containerCol)
+
+  const containerRow = document.createElement('div')
+  containerRow.classList = 'row px-1'
+  containerCol.appendChild(containerRow)
+
+  const topCol = document.createElement('div')
+  topCol.classList = 'col-12'
+  containerRow.appendChild(topCol)
+
+  const row1 = document.createElement('div')
+  row1.classList = 'row'
+  topCol.appendChild(row1)
+
+  const titleCol = document.createElement('div')
+  titleCol.classList = 'col-8 bg-primary'
+  titleCol.style.fontSize = '18px'
+  titleCol.style.borderTopLeftRadius = '0.25rem'
+  titleCol.innerHTML = "Lamp " + String(number + 1)
+  row1.appendChild(titleCol)
+
+  const stateCol = document.createElement('div')
+  stateCol.classList = 'col-4 text-center py-1'
+  stateCol.style.borderTopRightRadius = '0.25rem'
+  if (entry[1] === true) {
+    // Lamp is on
+    stateCol.innerHTML = 'On'
+    stateCol.classList += " bg-success"
+  } else {
+    stateCol.innerHTML = 'Off'
+    stateCol.classList += " bg-info"
+  }
+  row1.appendChild(stateCol)
+
+  const bottomCol = document.createElement('div')
+  bottomCol.classList = 'col-12'
+  containerRow.appendChild(bottomCol)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  bottomCol.appendChild(row2)
+
+  const hoursCol = document.createElement('div')
+  hoursCol.classList = 'col-12 bg-secondary py-1 text-center'
+  hoursCol.style.borderBottomLeftRadius = '0.25rem'
+  hoursCol.style.borderBottomRightRadius = '0.25rem'
+  hoursCol.innerHTML = String(entry[0]) + " hours"
+  row2.appendChild(hoursCol)
 }
 
 export function removeExhibitComponentFromModal () {
@@ -1437,7 +1483,7 @@ export function queueCommand (id, cmd) {
   // be sent to the component the next time it pings the server
 
   const obj = getExhibitComponent(id)
-  if (['shutdown', 'restart'].includes(cmd)) {
+  if (['shutdown', 'restart'].includes(cmd) && obj.type === "exhibit_component") {
     // We send these commands directly to the helper
     constTools.makeRequest({
       method: 'GET',
