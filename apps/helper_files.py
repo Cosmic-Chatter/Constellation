@@ -134,17 +134,6 @@ def create_thumbnail(filename: str, mimetype: str):
         print("create_thumbnail: error loading FFmpeg: ", e)
 
 
-def load_dictionary():
-    """Look for a file called dictionary.ini and load it if it exists"""
-
-    dict_path = get_path(["dictionary.ini"], user_file=True)
-
-    if os.path.isfile(dict_path):
-        config.dictionary_object = configparser.ConfigParser(delimiters="=")
-        config.dictionary_object.optionxform = str  # Override the default, which is case-insensitive
-        config.dictionary_object.read(dict_path)
-
-
 def get_thumbnail_name(filename: str) -> str:
     """Return the filename converted to the appropriate Constellation thumbnail format"""
 
@@ -203,10 +192,7 @@ def get_all_directory_contents(directory: str = "content") -> list:
 
 
 def get_directory_contents(directory: str, absolute: bool = False) -> list:
-    """Return the contents of an exhibit directory
-
-    if absolute == False, the path is appended to the default content directory
-    """
+    """Return the contents of a directory."""
 
     if absolute:
         contents = os.listdir(directory)
@@ -232,6 +218,7 @@ def check_directory_structure():
                 os.mkdir(content_path)
             except PermissionError:
                 print("Error: unable to create directory. Do you have write permission?")
+
 
 # Set up log file
 log_path: str = get_path(["apps.log"], user_file=True)

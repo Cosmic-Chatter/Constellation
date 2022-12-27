@@ -108,7 +108,7 @@ function deleteIssue (id) {
   constTools.makeServerRequest({
     method: 'POST',
     endpoint: '/issue/delete',
-    params: { id }
+    params: { id_to_delete: id }
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
@@ -286,7 +286,7 @@ export function uploadIssueMediaFile () {
   }
 }
 
-function issueMediaView (filename) {
+export function issueMediaView (filename) {
   // Open the media file given by filename in a new browser tab
 
   // First, determine if we have a picture or a video
@@ -415,16 +415,14 @@ function issueMediaUploadedFile (fileExists, filename = null) {
   }
 }
 
-function issueMediaDelete (filename) {
+export function issueMediaDelete (filename) {
   // Send a message to the control server, asking for the file to be deleted.
 
-  const requestDict = {
-    filename: $('#issueMediaViewFromModal').data('filename')
-  }
+  const requestDict = { filename }
   // If this is an existing issue, we need to say what the issue id is
   const issueType = $('#issueEditModal').data('type')
   if (issueType === 'edit') {
-    requestDict.id = $('#issueEditModal').data('target')
+    requestDict.owner = $('#issueEditModal').data('target')
   }
 
   constTools.makeServerRequest({
@@ -471,14 +469,11 @@ export function submitIssueFromModal () {
       endpoint = '/issue/edit'
     }
     $('#issueEditModal').modal('hide')
-    const requestDict = {
-      details: issueDict
-    }
 
     constTools.makeServerRequest({
       method: 'POST',
       endpoint,
-      params: requestDict
+      params: { details: issueDict }
     })
       .then((result) => {
         if ('success' in result && result.success === true) {

@@ -44,6 +44,9 @@ class BaseComponent:
                        "description": config.componentDescriptions.get(id_, ""),
                        "app_name": ""}
 
+    def __repr__(self):
+        return repr(f"[BaseComponent ID: {self.id} Group: {self.group}]")
+
     def clean_up(self):
         """Stop any timers so the class instance can be safely removed."""
 
@@ -133,6 +136,9 @@ class ExhibitComponent(BaseComponent):
                 self.config["allowed_actions"].append("power_off")
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
+    def __repr__(self):
+        return repr(f"[ExhibitComponent ID: {self.id} Group: {self.group}]")
+
     def seconds_since_last_interaction(self) -> float:
         """The number of seconds since an interaction was recorded."""
 
@@ -176,7 +182,9 @@ class ExhibitComponent(BaseComponent):
 
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
-            self.config["content"] = component_config["content"]
+
+            if "content" in component_config:
+                self.config["content"] = component_config["content"]
             if "app_name" in component_config:
                 self.config["app_name"] = component_config["app_name"]
         except IndexError:
@@ -236,6 +244,9 @@ class WakeOnLANDevice(BaseComponent):
         self.state = {"status": "UNKNOWN"}
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
         self.poll_latency()
+
+    def __repr__(self):
+        return repr(f"[WakeOnLANDevice ID: {self.id} Group: {self.group}]")
 
     def queue_command(self, cmd: str):
 
@@ -304,6 +315,9 @@ class Projector(BaseComponent):
 
         self.update(full=True)
         self.poll_latency()
+
+    def __repr__(self):
+        return repr(f"[Projector ID: {self.id} Group: {self.group}]")
 
     def update(self, full: bool = False):
 
@@ -648,7 +662,7 @@ def update_exhibit_component_status(data, ip: str):
     if "imageDuration" in data:
         component.config["image_duration"] = data["imageDuration"]
     if "currentInteraction" in data:
-        if data["currentInteraction"] == True or \
+        if data["currentInteraction"] is True or \
                 (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
             component.update_last_interaction_datetime()
     if "allowed_actions" in data:

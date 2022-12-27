@@ -304,18 +304,7 @@ def load_default_configuration():
         component.update_configuration()
 
     # Build any existing issues
-    try:
-        issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
-        with open(issue_file, "r", encoding="UTF-8") as file_object:
-            issues = json.load(file_object)
-        print("Reading stored issues...", end="", flush=True)
-
-        for issue in issues:
-            new_issue = c_issues.Issue(issue)
-            c_config.issueList.append(new_issue)
-        print(" done")
-    except FileNotFoundError:
-        print("No stored issues to read")
+    c_issues.read_issue_list()
 
 
 def quit_handler(*args):
@@ -716,63 +705,44 @@ async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str):
 
 # Issue actions
 @app.post("/issue/create")
-async def create_issue(data: dict[str, Any]):
+async def create_issue(details: dict[str, Any] = Body(embed=True)):
     """Create a new issue."""
 
-    if "details" in data:
-        with c_config.issueLock:
-            new_issue = c_issues.Issue(data["details"])
-            c_config.issueList.append(new_issue)
-            c_issues.save_issueList()
-        response_dict = {"success": True}
-    else:
-        response_dict = {"success": False,
-                         "reason": "Must include field 'details'"}
-    return response_dict
+    c_issues.create_issue(details)
+    c_issues.save_issue_list()
+    return {"success": True}
 
 
 @app.post("/issue/delete")
-async def delete_issue(data: dict[str, Any]):
+async def delete_issue(id_to_delete: str = Body(description="The ID of the issue to delete.", embed=True)):
     """Delete an issue."""
 
-    if "id" in data:
-        c_issues.remove_issue(data["id"])
-        c_issues.save_issueList()
-        response_dict = {"success": True, "reason": ""}
-    else:
-        response_dict = {"success": False, "reason": "Must include field 'id'"}
-    return response_dict
+    c_issues.remove_issue(id_to_delete)
+    c_issues.save_issue_list()
+    return {"success": True, "reason": ""}
 
 
 @app.post("/issue/deleteMedia")
-async def delete_issue_media(data: dict[str, Any]):
+async def delete_issue_media(filename: str = Body(description="The filename to be deleted."),
+                             owner: Union[str, None] = Body(default=None, description="The ID of the Issue this media file belonged to.")):
     """Delete the media file linked to an issue and remove the reference."""
 
-    if "filename" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'filename' field."}
-        return response
-    this_id = None
-    if "id" in data:
-        this_id = data["id"]
-    c_issues.delete_issue_media_file(data["filename"], owner=this_id)
-    response = {"success": True}
-    return response
+    c_issues.delete_issue_media_file(filename, owner=owner)
+    return {"success": True}
 
 
 @app.post("/issue/edit")
-async def edit_issue(data: dict[str, Any]):
+async def edit_issue(details: dict[str, Any] = Body(description="The details to be changed.", embed=True)):
     """Make changes to an existing issue."""
 
-    if "details" in data and "id" in data["details"]:
-        c_issues.edit_issue(data["details"])
-        c_issues.save_issueList()
+    if "id" in details:
+        c_issues.edit_issue(details)
+        c_issues.save_issue_list()
         response_dict = {"success": True}
     else:
         response_dict = {
             "success": False,
-            "reason": "Must include field 'details' with proper"
-                      "ty 'id'"
+            "reason": "'details' must include property 'id'"
         }
     return response_dict
 

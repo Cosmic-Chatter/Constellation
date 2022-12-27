@@ -29,7 +29,7 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
     return _path
 
 
-def clear_terminal():
+def clear_terminal() -> None:
     """Clear the terminal"""
 
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -52,7 +52,7 @@ def load_json(path: str):
             return result
 
 
-def write_json(data, path: str, append: bool = False):
+def write_json(data, path: str, append: bool = False) -> None:
     """Take the given object and try to write it to a JSON file."""
 
     if append:
@@ -65,7 +65,7 @@ def write_json(data, path: str, append: bool = False):
             json.dump(data, f)
 
 
-def load_system_configuration(from_dict: Union[dict[str, Any], None] = None):
+def load_system_configuration(from_dict: Union[dict[str, Any], None] = None) -> None:
     """Read system.json and set up c_config."""
 
     if from_dict is None:
@@ -85,7 +85,7 @@ def load_system_configuration(from_dict: Union[dict[str, Any], None] = None):
         logging.getLogger('uvicorn').setLevel(logging.DEBUG)
 
 
-def update_system_configuration(update: dict[str, Any]):
+def update_system_configuration(update: dict[str, Any]) -> None:
     """Take a dictionary of updates and use it to update system.json"""
 
     system_path = get_path(["configuration", "system.json"], user_file=True)
@@ -144,7 +144,7 @@ def delete_file(file_path) -> dict:
     return response
 
 
-def check_file_structure():
+def check_file_structure() -> None:
     """Check to make sure we have the appropriate file structure set up"""
 
     schedules_dir = get_path(["schedules"], user_file=True)

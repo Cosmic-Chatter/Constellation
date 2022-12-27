@@ -209,7 +209,7 @@ def str_to_bool(val: str) -> bool:
             val_to_return = True
         else:
             val_to_return = False
-            print("strToBool: Warning: ambiguous string, returning False", val)
+            print("strToBool: Warning: ambiguous string, returning False:", val)
     return val_to_return
 
 
@@ -236,7 +236,6 @@ def update_defaults(data: dict, cull: bool = False, force: bool = False):
     If cull == True, remove any entries not included in 'data'
     """
 
-    update_made = force
     if "content" in data:
         if isinstance(data["content"], list):
             content = ""
@@ -246,9 +245,7 @@ def update_defaults(data: dict, cull: bool = False, force: bool = False):
                     content += ', '
                 content += file
             data["content"] = content
-        else:
-            # Unsupported data type, so don't make a change
-            content = config.defaults_dict["content"]
+
     if cull:
         new_dict = data
     else:

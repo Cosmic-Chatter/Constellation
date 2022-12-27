@@ -79,9 +79,9 @@ def get_raw_text(name: str, kind: str = 'flexible-tracker') -> tuple[str, bool, 
 
 
 def get_unique_keys(dict_list: list) -> list:
-    """Return a set of unique keys from a list of dicts"""
+    """Return a set of unique keys from a list of dicts, sorted for consistency."""
 
-    return list(set().union(*(d.keys() for d in dict_list)))
+    return sorted(list(set().union(*(d.keys() for d in dict_list))))
 
 
 def get_unique_values(dict_list: list, key: str) -> list:

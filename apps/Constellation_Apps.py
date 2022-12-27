@@ -361,9 +361,6 @@ if __name__ == "__main__":
     # Check for missing content thumbnails and create them
     helper_files.create_missing_thumbnails()
 
-    # If it exists, load the dictionary that maps one value into another
-    helper_files.load_dictionary()
-
     # Check the GitHub server for an available software update
     helper_utilities.check_for_software_update()
 
