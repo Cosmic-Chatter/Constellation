@@ -19,7 +19,7 @@ ip_address: str = "localhost"
 software_version: float = 2.0
 
 # Threading resources
-polling_thread_dict: dict[str, threading.Thread] = {}
+polling_thread_dict: dict[str, threading.Timer] = {}
 logLock: threading.Lock = threading.Lock()
 galleryConfigurationLock: threading.Lock = threading.Lock()
 trackingDataWriteLock: threading.Lock = threading.Lock()

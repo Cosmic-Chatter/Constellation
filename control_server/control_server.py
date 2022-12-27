@@ -25,7 +25,7 @@ import uvicorn
 # Non-standard modules
 import aiofiles
 import dateutil.parser
-from fastapi import FastAPI, Body, Depends, File, Request, UploadFile
+from fastapi import FastAPI, Body, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -158,7 +158,7 @@ def send_webpage_update():
     return component_dict_list
 
 
-def command_line_setup():
+def command_line_setup() -> None:
     """Prompt the user for several pieces of information on first-time setup"""
 
     settings_dict = {}
@@ -208,7 +208,7 @@ def command_line_setup():
     c_tools.write_json(settings_dict, config_path)
 
 
-def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser):
+def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> None:
     """Take a legacy galleryConfiguration.ini file and convert it to the appropriate JSON files."""
 
     current = ini["CURRENT"]
@@ -260,7 +260,7 @@ def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser):
                 c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
 
 
-def load_default_configuration():
+def load_default_configuration() -> None:
     """Initialize the server in a default state."""
 
     # First, check for a legacy configuration file
@@ -272,7 +272,7 @@ def load_default_configuration():
         with c_config.galleryConfigurationLock:
             config_reader.read(gal_path)
         try:
-            current = config_reader["CURRENT"]
+            _ = config_reader["CURRENT"]
             # We gave a legacy configuration file; convert it to JSON
             convert_galleryConfigurationINI_to_json(config_reader)
         except KeyError:
@@ -307,7 +307,7 @@ def load_default_configuration():
     c_issues.read_issue_list()
 
 
-def quit_handler(*args):
+def quit_handler(*args) -> None:
     """Handle cleanly shutting down the server."""
 
     try:
@@ -329,6 +329,13 @@ def quit_handler(*args):
     for key in c_config.polling_thread_dict:
         c_config.polling_thread_dict[key].cancel()
 
+    for component in c_config.componentList:
+        component.clean_up()
+    for component in c_config.projectorList:
+        component.clean_up()
+    for component in c_config.wakeOnLANList:
+        component.clean_up()
+
     with c_config.logLock:
         logging.info("Server shutdown")
 
@@ -338,7 +345,7 @@ def quit_handler(*args):
                 sys.exit(exit_code)
 
 
-def error_handler(*exc_info):
+def error_handler(*exc_info) -> None:
     """Catch errors and log them to file"""
 
     text = "".join(traceback.format_exception(*exc_info)).replace('"', "'").replace("\n", "<newline>")
@@ -347,7 +354,7 @@ def error_handler(*exc_info):
     print(f"Error: see control_server.log for more details ({datetime.datetime.now()})")
 
 
-def check_for_software_update():
+def check_for_software_update() -> None:
     """Download the version.txt file from GitHub and check if there is an update"""
 
     print("Checking for update... ", end="")
