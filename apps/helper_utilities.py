@@ -96,6 +96,14 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
 
         if os.path.isfile(defaults_path):
             config.defaults_object.read(defaults_path)
+
+            if "type" in config.defaults_object["CURRENT"]:
+                # Replace 'type' key with 'group' key
+                config.defaults_object.set("CURRENT", "group", config.defaults_object["CURRENT"].get('type'))
+                settings_dict = dict(config.defaults_object["CURRENT"])
+                # Remove 'type'
+                settings_dict.pop("type")
+                update_defaults(settings_dict, force=True)
         else:
             handle_missing_defaults_file()
             read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)

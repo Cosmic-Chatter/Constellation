@@ -88,7 +88,7 @@ function addDefaultFromModal () {
   // Gather the input from the modal and create a defaultCard
 
   const key = $('#settingKeyInputField').val().toLowerCase()
-  const value = $('.settingValueInputField.visible').val().toLowerCase()
+  const value = $('.settingValueInputField.visible').val()
   createDefaultCard(key, value)
 
   // Clear the data so we don't double-add the default
@@ -344,6 +344,7 @@ const knownKeys = [
   { key: 'image_duration', type: 'number', required: false, description: 'The number of seconds that each image will be shown.' },
   { key: 'kiosk_id', type: 'text', required: false, description: 'A unique name that identifies the kiosk. Must be unique from the main component.' },
   { key: 'kiosk_type', type: 'text', required: false, description: 'A user-defined grouping for this component.' },
+  { key: 'other_app_path', type: 'text', required: false, description: 'Set to the path to a non-standard Constellation app that you want to open from the web console. Should have the form /static/XXX.html .' },
   { key: 'server_ip_address', type: 'text', required: true, description: 'The IP address of the Constellation Control Server that this component should connect to.' },
   { key: 'server_port', type: 'number', required: true, description: 'The port of the Constellation Control Server that this component should connect to.' },
   { key: 'smart_restart', type: 'option', options: ['off', 'patient', 'aggressive'], required: false, description: 'Smart Restart mode' },

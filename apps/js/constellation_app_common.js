@@ -13,6 +13,7 @@ export const config = {
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
   imageDuration: 10, // seconds
+  otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
@@ -239,6 +240,9 @@ function readUpdate (update) {
   if ('autoplay_audio' in update) {
     config.autoplayAudio = update.autoplay_audio
   }
+  if ('other_app_path' in update) {
+    config.otherAppPath = update.other_app_path
+  }
   if (sendUpdate) {
     sendConfigUpdate(update)
   }
@@ -248,7 +252,13 @@ function readUpdate (update) {
     if ('app_name' in update &&
         update.app_name !== config.constellationAppID &&
         update.app_name !== '') {
-      gotoApp(update.app_name)
+          if (update.app_name === 'other') {
+            if (config.otherAppPath !== '') {
+              gotoApp('other', config.otherAppPath)
+            }
+          } else {
+            gotoApp(update.app_name)
+          }
     }
   }
 
@@ -456,7 +466,7 @@ function splitCsv (str) {
   }, { soFar: [], isConcatting: false }).soFar
 }
 
-export function gotoApp (app) {
+export function gotoApp (app, other='') {
   // Change the browser location to point to the given app.
 
   const appLocations = {
@@ -471,6 +481,10 @@ export function gotoApp (app) {
     word_cloud_input: '/word_cloud_input.html',
     word_cloud_viewer: '/word_cloud_viewer.html'
   }
-
-  window.location = config.helperAddress + appLocations[app]
+  console.log(config, app, other)
+  if (other !== '') {
+    window.location = config.helperAddress + other
+  } else {
+    window.location = config.helperAddress + appLocations[app]
+  }
 }
