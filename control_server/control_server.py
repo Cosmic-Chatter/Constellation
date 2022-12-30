@@ -255,6 +255,13 @@ def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> N
     except KeyError:
         pass
 
+    try:
+        static = ini["STATIC_COMPONENTS"]
+        # We have a legacy static components definition
+        c_exhibit.convert_static_config_to_json(dict(static))
+    except KeyError:
+        pass
+
     # Rename galleryConfiguration.ini
     shutil.move(c_tools.get_path(["galleryConfiguration.ini"], user_file=True),
                 c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
