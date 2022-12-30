@@ -313,13 +313,13 @@ class Projector(BaseComponent):
 
         self.state = {"status": "OFFLINE"}
 
-        self.update(full=True)
+        self.update()
         self.poll_latency()
 
     def __repr__(self):
         return repr(f"[Projector ID: {self.id} Group: {self.group}]")
 
-    def update(self, full: bool = False):
+    def update(self):
 
         """Contact the projector to get the latest state"""
 
@@ -327,15 +327,13 @@ class Projector(BaseComponent):
         try:
             if self.connection_type == 'pjlink':
                 connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
-                if full:
-                    self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
+                self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
                 self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
                 self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
                 self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
             elif self.connection_type == "serial":
                 connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
-                if full:
-                    self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
+                self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
                 self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
                                                                                   make=self.make)
                 self.state["lamp_status"] = projector_control.serial_send_command(connection, "lamp_status",
