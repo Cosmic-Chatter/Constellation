@@ -1002,7 +1002,7 @@ function manageDescriptionsDeleteDescriptionEntry () {
 }
 
 function showManageDescriptionsModal () {
-  // Show the modal for managing projectors.
+  // Show the modal for managing component descriptions.
 
   constTools.makeServerRequest({
     method: 'GET',

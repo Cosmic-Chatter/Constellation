@@ -112,7 +112,7 @@ export function createManageProjectorEntry (entry) {
   if ('group' in entry) {
     groupCol.innerHTML = entry.group
   } else {
-    groupCol.innerHTML = 'PROJECTOR'
+    groupCol.innerHTML = 'Projectors'
   }
   row2.appendChild(groupCol)
 }
@@ -166,7 +166,7 @@ export function manageProjectorUpdateConfigFromEdit () {
     $('#manageProjectorGroup_' + id).html(newGroup)
     details.group = newGroup
   } else {
-    $('#manageProjectorGroup_' + id).html('PROJECTOR')
+    $('#manageProjectorGroup_' + id).html('Projectors')
   }
 
   const newProtocol = $('#manageProjectorsProtocolSelect').val()
