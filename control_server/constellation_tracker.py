@@ -18,9 +18,12 @@ def create_CSV(file_path: Union[str, os.PathLike], filename: str = "") -> str:
     """Load a tracker text file and convert it to a CSV"""
 
     dict_list = []
-    with open(file_path, 'r', encoding="UTF-8") as f:
-        for line in f.readlines():
-            dict_list.append(json.loads(line))
+    try:
+        with open(file_path, 'r', encoding="UTF-8") as f:
+            for line in f.readlines():
+                dict_list.append(json.loads(line))
+    except FileNotFoundError:
+        return ""
     return JSON_list_to_CSV(dict_list, filename=filename)
 
 

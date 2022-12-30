@@ -625,10 +625,10 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
     if not name.lower().endswith(".txt"):
         name += ".txt"
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    if not os.path.exists(data_path):
+        return {"success": False, "reason": f"File {data['name']}.json does not exist!", "csv": ""}
     result = c_track.create_CSV(data_path)
-    response = {"success": True,
-                "csv": result}
-    return response
+    return {"success": True, "csv": result}
 
 
 @app.post("/tracker/{tracker_type}/getLayoutDefinition")
