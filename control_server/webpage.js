@@ -1170,7 +1170,7 @@ $('#showComponentDescriptionEditModalButton').click(showManageDescriptionsModal)
 $('#manageDescriptionsAddBUtton').click(function () {
   createManageDescriptionEntry({
     id: 'New Description',
-    description: 'This is some description text that spans onto two lines.'
+    description: ''
   })
   $('#manageDescriptionsModalSaveButton').show() // Show the save button
 })

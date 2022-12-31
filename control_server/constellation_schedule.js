@@ -290,6 +290,44 @@ function scheduleTargetToDescription (target) {
   }
 }
 
+function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
+  // Helper function for setScheduleActionTargetSelector that populates the target selector with the right options.
+
+  const targetSelector = $('#scheduleTargetSelector')
+
+  if (optionsToAdd.includes("All")) {
+    targetSelector.append(new Option('All', '__all'))
+  }
+  if (optionsToAdd.includes("Groups")) {
+    const sep = new Option('Groups', null)
+    sep.setAttribute('disabled', true)
+    targetSelector.append(sep)
+    constConfig.componentGroups.forEach((item) => {
+      targetSelector.append(new Option(item.group, '__group_' + item.group))
+    })
+  }
+  if (optionsToAdd.includes("ExhibitComponents") || optionsToAdd.includes("Projectors")) {
+    const sep = new Option('IDs', null)
+    sep.setAttribute('disabled', true)
+    targetSelector.append(sep)
+
+    if (optionsToAdd.includes("ExhibitComponents")) {
+      constConfig.exhibitComponents.forEach((item) => {
+        if (item.type === 'exhibit_component' && item.constellationAppId !== 'static_component') {
+          targetSelector.append(new Option(item.id, '__id_' + item.id))
+        }
+      })
+    }
+    if (optionsToAdd.includes("Projectors")) {
+      constConfig.exhibitComponents.forEach((item) => {
+        if (item.type === 'projector') {
+          targetSelector.append(new Option(item.id, '__id_' + item.id))
+        }
+      })
+    }
+  }
+}
+
 export function setScheduleActionTargetSelector () {
   // Helper function to show/hide the select element for picking the target
   // of an action when appropriate
@@ -309,30 +347,30 @@ export function setScheduleActionTargetSelector () {
   } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
-    if (['power_on', 'power_off', 'refresh_page', 'restart'].includes(action)) {
-      targetSelector.append(new Option('All', '__all'))
-      const sep = new Option('Groups', null)
-      sep.setAttribute('disabled', true)
-      targetSelector.append(sep)
-      constConfig.componentGroups.forEach((item) => {
-        targetSelector.append(new Option(item.group, '__group_' + item.group))
-      })
+
+
+    if (['power_on', 'power_off'].includes(action)) {
+      setScheduleActionTargetSelectorPopulateOptions(["All", "Groups", "ExhibitComponents", "Projectors"])
+    } else if (['refresh_page', 'restart'].includes(action)) {
+      setScheduleActionTargetSelectorPopulateOptions(["All", "Groups", "ExhibitComponents"])
+    } else if (['set_app', 'set_content'].includes(action)) {
+      setScheduleActionTargetSelectorPopulateOptions(["ExhibitComponents"])
     }
-    const sep = new Option('IDs', null)
-    sep.setAttribute('disabled', true)
-    targetSelector.append(sep)
-    constConfig.exhibitComponents.forEach((item) => {
-      if (item.type === 'exhibit_component' && item.constellationAppId !== 'static_component') {
-        targetSelector.append(new Option(item.id, '__id_' + item.id))
-      }
-    })
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
-    setScheduleActionValueSelector()
+    // For certain ations, we want to then populare the value selector
+    if (['set_app', 'set_content'].includes(action)) {
+      setScheduleActionValueSelector()
+    } else {
+      $('#scheduleValueSelector').hide()
+      $('#scheduleValueSelectorLabel').hide()
+    }
   } else {
     targetSelector.hide()
     $('#scheduleTargetSelectorLabel').hide()
     targetSelector.val(null)
+    $('#scheduleValueSelector').hide()
+    $('#scheduleValueSelectorLabel').hide()
   }
 }
 
