@@ -1,5 +1,3 @@
-/* global serverIP */
-
 import * as constTracker from './constellation_tracker.js'
 
 class TimingObject {
@@ -592,6 +590,7 @@ let sliderList = []
 let textList = []
 let timerList = []
 
+let serverIP = window.location.origin
 constTracker.getAvailableDefinitions(populateLayoutDropdown)
 setTimeout(parseQueryString, 300)
 setInterval(checkConnection, 500)
