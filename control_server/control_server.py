@@ -158,10 +158,8 @@ def send_webpage_update():
     return component_dict_list
 
 
-def command_line_setup() -> None:
-    """Prompt the user for several pieces of information on first-time setup"""
-
-    settings_dict = {}
+def command_line_setup_print_gui() -> None:
+    """Helper to print the header content for the setup tool"""
 
     c_tools.clear_terminal()
     print("##########################################################")
@@ -172,17 +170,27 @@ def command_line_setup() -> None:
     print("a few questions. If you don't know the answer, or wish to")
     print("accept the default, just press the enter key.")
     print("")
+
+
+def command_line_setup() -> None:
+    """Prompt the user for several pieces of information on first-time setup"""
+
+    settings_dict = {}
+
+    command_line_setup_print_gui()
     c_config.gallery_name = input("Enter a name for the gallery (default: Constellation): ").strip()
     if c_config.gallery_name == "":
         c_config.gallery_name = "Constellation"
     settings_dict["gallery_name"] = c_config.gallery_name
 
+    command_line_setup_print_gui()
     default_ip = socket.gethostbyname(socket.gethostname())
     ip_address = input(f"Enter this computer's static IP address (default: {default_ip}): ").strip()
     if ip_address == "":
         ip_address = default_ip
     settings_dict["ip_address"] = ip_address
 
+    command_line_setup_print_gui()
     default_port = 8082
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -200,12 +208,16 @@ def command_line_setup() -> None:
 
     settings_dict["current_exhibit"] = "default"
     # Create this exhibit file if it doesn't exist
-    if not os.path.exists(c_tools.get_path(["exhibits", "default.json"], user_file=True)):
+    if not os.path.exists(c_tools.get_path(["exhibits", "Default.json"], user_file=True)):
         c_exhibit.create_new_exhibit("default", None)
 
     # Write new system config to file
     config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
     c_tools.write_json(settings_dict, config_path)
+
+    command_line_setup_print_gui()
+    print("Setup is complete! Control Server will now start.")
+    print("")
 
 
 def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> None:
@@ -410,9 +422,11 @@ try:
     state_path = c_tools.get_path(["current_state.dat"], user_file=True)
     with open(state_path, "rb") as previous_state:
         c_config.componentList = pickle.load(previous_state)
-        print("Previous server state loaded")
+        if c_config.debug:
+            print("Previous server state loaded")
 except (FileNotFoundError, EOFError):
-    print("Could not load previous server state")
+    if c_config.debug:
+        print("Could not load previous server state")
 
 app = FastAPI()
 
@@ -1160,6 +1174,9 @@ if __name__ == "__main__":
     log_level = "warning"
     if c_config.debug:
         log_level = "debug"
+
+    print(f"Launching Control Server for {c_config.gallery_name}.")
+    print(f"To access the server, visit http://{c_config.ip_address}:{c_config.port}")
 
     # Must use only one worker, since we are relying on the config module being in global
     uvicorn.run(app,
