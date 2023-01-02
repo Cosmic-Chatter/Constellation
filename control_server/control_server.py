@@ -1137,6 +1137,14 @@ except RuntimeError:
     os.mkdir(c_tools.get_path(["static"], user_file=True))
     app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
               name="static")
+try:
+    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+              name="issues")
+except RuntimeError:
+    # Directory does not exist, so create it
+    os.mkdir(c_tools.get_path(["issues"], user_file=True))
+    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+              name="issues")
 app.mount("/",
           StaticFiles(directory=c_tools.get_path([""]), html=True),
           name="root")
