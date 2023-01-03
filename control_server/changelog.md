@@ -1,7 +1,7 @@
-# Constellation 3.0
+# **Constellation 3.0**
 __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspect of Control Server is now managed via the web console. Want to update the settings for one of your apps? You can do that from anywhere. Need to tweak how a projector is handled? That's easy, too!
 
-## New features
+## <ins>New features</ins>
 - Easily configure all your Control Server settings from the web console.
     - Projcetors, wake-on-LAN devices, static components, and component descriptions can all be edited with an intuitive user interface.
 - A more powerful component status page.
@@ -12,7 +12,7 @@ __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspec
     - See changelogs and get direct download links for each of your components.
 
 
-## Updated features
+## <ins>Updated features</ins>
 - `Types` are now called `groups` and are more powerful than ever.
     - Group names can now contain spaces.
     - Proejctors can now be included in any group.
