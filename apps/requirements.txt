@@ -1,6 +1,7 @@
 aiofiles
 fastapi
 psutil
+PyDMXControl
 pyffmpeg
 pyserial
 python-dateutil
