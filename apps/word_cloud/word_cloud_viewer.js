@@ -227,7 +227,6 @@ constCommon.askForDefaults()
   .then(() => {
     setTimeout(getTextUpdateFromServer, 1000)
   })
-constCommon.checkForSoftwareUpdate()
 setInterval(constCommon.sendPing, 5000)
 
 let textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)

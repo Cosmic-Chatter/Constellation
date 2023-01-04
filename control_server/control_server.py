@@ -136,6 +136,8 @@ def send_webpage_update():
             "current_exhibit": c_config.current_exhibit,
             "availableExhibits": c_config.exhibit_list,
             "galleryName": c_config.gallery_name,
+            "softwareVersion": str(c_config.software_version),
+            "softwareVersionAvailable": c_config.software_update_available_version,
             "updateAvailable": str(c_config.software_update_available).lower()}
     component_dict_list.append(temp)
 
@@ -325,6 +327,11 @@ def load_default_configuration() -> None:
     # Build any existing issues
     c_issues.read_issue_list()
 
+    # Save the current software version in .last_ver
+    last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
+    with open(last_ver_path, 'w', encoding='UTF-8') as f:
+        f.write(str(c_config.software_version))
+
 
 def quit_handler(*args) -> None:
     """Handle cleanly shutting down the server."""
@@ -382,6 +389,7 @@ def check_for_software_update() -> None:
                 "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/version.txt"):
             if float(line.decode('utf-8')) > c_config.software_version:
                 c_config.software_update_available = True
+                c_config.software_update_available_version = line.decode('utf-8').strip()
                 break
     except urllib.error.HTTPError:
         print("cannot connect to update server")
@@ -418,8 +426,27 @@ with c_config.logLock:
     logging.info("Server started")
 
 # Try to reload the previous state from the pickle file current_state.dat
+# First, check if we are loading from an updated version. If so, delete current_state.dat to avoid incompatibility.
+last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
+state_path = c_tools.get_path(["current_state.dat"], user_file=True)
+if not os.path.exists(last_ver_path):
+    # No version file means we are updating from 2.0 -> 3.0
+    try:
+        os.remove(state_path)
+    except (FileNotFoundError, EOFError):
+        pass
+else:
+    with open(last_ver_path, 'r', encoding='UTF-8') as f:
+        try:
+            if float(f.read()) < c_config.software_version:
+                try:
+                    logging.info("Update detected... deleting current_state.dat")
+                    os.remove(state_path)
+                except (FileNotFoundError, EOFError):
+                    pass
+        except ValueError:
+            pass
 try:
-    state_path = c_tools.get_path(["current_state.dat"], user_file=True)
     with open(state_path, "rb") as previous_state:
         c_config.componentList = pickle.load(previous_state)
         if c_config.debug:
@@ -1069,6 +1096,17 @@ async def get_help_text():
         with c_config.logLock:
             logging.error("Unable to read README.md")
         response = {"success": False, "reason": "Unable to read README.md"}
+    return response
+
+
+@app.get('/system/getSoftwareVersion')
+async def get_version():
+    """Send the current software version."""
+
+    response = {
+        "success": True,
+        "version": str(c_config.software_version)
+    }
     return response
 
 

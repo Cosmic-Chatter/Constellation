@@ -354,7 +354,6 @@ function hideAttractor () {
 }
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareVersion = 2.0
 constCommon.config.constellationAppID = 'timelapse_viewer'
 
 let touchStartX = null
@@ -383,7 +382,6 @@ constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 

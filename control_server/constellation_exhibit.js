@@ -211,7 +211,7 @@ class BaseComponent {
         console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", update.error)
         console.log(e)
       }
-      constTools.rebuildErrorList()
+      constTools.rebuildNotificationList()
     }
   }
 }
@@ -314,7 +314,7 @@ class Projector extends BaseComponent {
           }
         })
         constConfig.errorDict[this.id] = errorList
-        constTools.rebuildErrorList()
+        constTools.rebuildNotificationList()
       }
     }
     if ('protocol' in update) {
@@ -735,7 +735,7 @@ function populateProjectorInfo (id) {
   // from the selected projector
 
   const obj = getExhibitComponent(id)
-  
+
   // First, reset all the cell shadings
   $('#projectorInfoLampState').parent().removeClass()
   $('#projectorInfoFanState').parent().removeClass()
@@ -823,15 +823,14 @@ function populateProjectorInfo (id) {
   if ('model' in obj.state) {
     $('#componentInfoModalModel').html(obj.state.model)
     $('#componentInfoModalModelGroup').show()
-    
   } else {
     $('#componentInfoModalModelGroup').hide()
   }
 
   if ('lamp_status' in obj.state && obj.state.lamp_status !== '') {
     const lampList = obj.state.lamp_status
-    
-    $("#componentInfoModalProjectorLampList").empty()
+
+    $('#componentInfoModalProjectorLampList').empty()
     for (let i = 0; i < lampList.length; i++) {
       createProjectorLampStatusEntry(lampList[i], i)
     }
@@ -891,7 +890,7 @@ function createProjectorLampStatusEntry (entry, number) {
   titleCol.classList = 'col-8 bg-primary'
   titleCol.style.fontSize = '18px'
   titleCol.style.borderTopLeftRadius = '0.25rem'
-  titleCol.innerHTML = "Lamp " + String(number + 1)
+  titleCol.innerHTML = 'Lamp ' + String(number + 1)
   row1.appendChild(titleCol)
 
   const stateCol = document.createElement('div')
@@ -900,10 +899,10 @@ function createProjectorLampStatusEntry (entry, number) {
   if (entry[1] === true) {
     // Lamp is on
     stateCol.innerHTML = 'On'
-    stateCol.classList += " bg-success"
+    stateCol.classList += ' bg-success'
   } else {
     stateCol.innerHTML = 'Off'
-    stateCol.classList += " bg-info"
+    stateCol.classList += ' bg-info'
   }
   row1.appendChild(stateCol)
 
@@ -919,7 +918,7 @@ function createProjectorLampStatusEntry (entry, number) {
   hoursCol.classList = 'col-12 bg-secondary py-1 text-center'
   hoursCol.style.borderBottomLeftRadius = '0.25rem'
   hoursCol.style.borderBottomRightRadius = '0.25rem'
-  hoursCol.innerHTML = String(entry[0]) + " hours"
+  hoursCol.innerHTML = String(entry[0]) + ' hours'
   row2.appendChild(hoursCol)
 }
 
@@ -1483,7 +1482,7 @@ export function queueCommand (id, cmd) {
   // be sent to the component the next time it pings the server
 
   const obj = getExhibitComponent(id)
-  if (['shutdown', 'restart'].includes(cmd) && obj.type === "exhibit_component") {
+  if (['shutdown', 'restart'].includes(cmd) && obj.type === 'exhibit_component') {
     // We send these commands directly to the helper
     constTools.makeRequest({
       method: 'GET',

@@ -25,8 +25,13 @@ def check_for_software_update():
         for line in urllib.request.urlopen(
                 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
                 timeout=1):
-            if float(line.decode('utf-8')) > config.HELPER_SOFTWARE_VERSION:
-                config.helper_software_update_available = True
+            available_version = float(line.decode('utf-8'))
+            if available_version > config.HELPER_SOFTWARE_VERSION:
+                config.software_update = {
+                    "update_available": True,
+                    "current_version": str(config.HELPER_SOFTWARE_VERSION),
+                    "available_version": str(available_version)
+                }
                 break
     except urllib.error.HTTPError:
         print("cannot connect to update server")
@@ -34,7 +39,7 @@ def check_for_software_update():
     except urllib.error.URLError:
         print("network connection unavailable")
         return
-    if config.helper_software_update_available:
+    if config.software_update["update_available"]:
         print("update available!")
     else:
         print("up to date.")

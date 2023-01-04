@@ -799,7 +799,6 @@ function videoOverlayShow (id, card) {
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareVersion = 2.0
 constCommon.config.constellationAppID = 'infostation'
 constCommon.config.debug = true
 
@@ -824,7 +823,6 @@ $('#attractorOverlay').click(hideAttractor)
 $('#langToggleButton').click(toggleLang)
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 

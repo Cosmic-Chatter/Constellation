@@ -329,7 +329,6 @@ let touchBlocker = null // Will hold id for the setTimeout() that resets blockTo
 let touchCooldown = 2 // seconds before blockTouches is reset
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 
 setInterval(constCommon.sendPing, 5000)

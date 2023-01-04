@@ -12,11 +12,13 @@ APP_PATH: str = ""
 EXEC_PATH: str = ""
 
 debug: bool = False  # True means print various debug info
-software_update_available: bool = False
 gallery_name: str = "Constellation"
 port: int = 8000
 ip_address: str = "localhost"
-software_version: float = 2.0
+
+software_version: float = 3.0
+software_update_available: bool = False
+software_update_available_version: str = ""
 
 # Threading resources
 polling_thread_dict: dict[str, threading.Timer] = {}

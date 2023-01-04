@@ -17,7 +17,7 @@ export const config = {
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 2.0,
+  softwareVersion: 3.0,
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
@@ -231,8 +231,8 @@ function readUpdate (update) {
   if ('allow_shutdown' in update) {
     config.allowedActionsDict.shutdown = update.allow_shutdown
   }
-  if ('helperSoftwareUpdateAvailable' in update) {
-    if (update.helperSoftwareUpdateAvailable === 'true') { config.errorDict.helperSoftwareUpdateAvailable = 'true' }
+  if ('software_update' in update) {
+    if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
@@ -252,13 +252,13 @@ function readUpdate (update) {
     if ('app_name' in update &&
         update.app_name !== config.constellationAppID &&
         update.app_name !== '') {
-          if (update.app_name === 'other') {
-            if (config.otherAppPath !== '') {
-              gotoApp('other', config.otherAppPath)
-            }
-          } else {
-            gotoApp(update.app_name)
-          }
+      if (update.app_name === 'other') {
+        if (config.otherAppPath !== '') {
+          gotoApp('other', config.otherAppPath)
+        }
+      } else {
+        gotoApp(update.app_name)
+      }
     }
   }
 
@@ -309,25 +309,6 @@ export function sendConfigUpdate (update) {
       method: 'POST',
       endpoint: '/setDefaults',
       params: requestDict
-    })
-}
-
-export function checkForSoftwareUpdate () {
-  if (config.softwareUpdateLocation === '') {
-    return
-  }
-
-  return makeRequest({
-    method: 'GET',
-    url: config.softwareUpdateLocation,
-    endpoint: '',
-    timeout: 1000,
-    rawResponse: true
-  })
-    .then((result) => {
-      if (parseFloat(result) > config.softwareVersion) {
-        config.errorDict.softwareUpdateAvailable = 'true'
-      }
     })
 }
 
@@ -399,7 +380,7 @@ export function parseINIString (data) {
   let section = null
   lines.forEach(function (line) {
     if (regex.comment.test(line)) {
-
+      // Skip comments
     } else if (regex.param.test(line)) {
       const match = line.match(regex.param)
       if (section) {
@@ -466,7 +447,7 @@ function splitCsv (str) {
   }, { soFar: [], isConcatting: false }).soFar
 }
 
-export function gotoApp (app, other='') {
+export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
 
   const appLocations = {

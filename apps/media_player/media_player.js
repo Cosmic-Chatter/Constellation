@@ -257,7 +257,6 @@ document.addEventListener('click', unmute)
 constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 
 setInterval(constCommon.sendPing, 5000)

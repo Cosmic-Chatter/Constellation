@@ -176,8 +176,7 @@ async def send_defaults(config: const_config = Depends(get_config)):
         config_to_send["allow_restart"] = "true"
 
     # Add the current update availability to pass to the control server
-    config_to_send["helperSoftwareUpdateAvailable"] = \
-        str(config.helper_software_update_available).lower()
+    config_to_send["software_update"] = config.software_update
 
     # Reformat this content list as an array
     if "content" in config_to_send:
