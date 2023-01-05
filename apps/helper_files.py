@@ -2,6 +2,7 @@
 
 # Standard modules
 import configparser
+import json
 import logging
 import os
 import subprocess
@@ -26,6 +27,36 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
         _path = os.path.join(config.exec_path, *path_list)
 
     return _path
+
+
+def load_json(path: str):
+    """Load the requested JSON file from disk and return it as a dictionary."""
+
+    if not os.path.exists(path):
+        if config.debug:
+            print(f"load_json: file does not exist: {path}")
+        return None
+
+    with config.defaults_file_lock:
+        with open(path, 'r', encoding='UTF-8') as f:
+            try:
+                result = json.load(f)
+            except json.decoder.JSONDecodeError:
+                result = None
+            return result
+
+
+def write_json(data, path: str, append: bool = False) -> None:
+    """Take the given object and try to write it to a JSON file."""
+
+    if append:
+        mode = 'a'
+    else:
+        mode = 'w'
+
+    with config.defaults_file_lock:
+        with open(path, mode, encoding='UTF-8') as f:
+            json.dump(data, f)
 
 
 def with_extension(filename: str, ext: str) -> str:
@@ -205,7 +236,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["content", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
+    dir_list = ["configuration", "content", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

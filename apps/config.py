@@ -18,6 +18,11 @@ missingContentWarningList: list[dict] = []  # Holds a list of warning about miss
 NEXT_EVENT: tuple[datetime.time, list[str]] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
 HELPER_SOFTWARE_VERSION: float = 2.0
+debug: bool = True
+
+# DMX resources
+dmx_universes: dict = {}
+dmx_groups: dict = {}
 
 smart_restart: dict[str: Any] = {
     "mode": "patient",  # off | aggressive | patient
@@ -32,6 +37,7 @@ helper_software_update_available: bool = False
 # If we are serving the HTML file from over the network, this will be set
 # to True. If the HTML file has been loaded locally, it will stay False
 HELPING_REMOTE_CLIENT: bool = False
+
 # Threading resources
 defaults_file_lock: threading.Lock = threading.Lock()
 content_file_lock: threading.Lock = threading.Lock()
