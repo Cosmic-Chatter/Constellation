@@ -1,5 +1,6 @@
 # Standard imports
 from typing import Any, Union
+import uuid
 
 # Non-standard imports
 from PyDMXControl.controllers import OpenDMXController, uDMXController
@@ -27,24 +28,33 @@ class DMXUniverse:
         else:
             raise ValueError("'controller' must be one of 'OpenDMX' or 'uDMX'.")
 
-    def create_fixture(self, name: str, start_channel: int, channel_list: list[str]) -> 'DMXFixture':
+    def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
         """Create a fixture, add it to the universe."""
 
         if len(self.fixtures) == 32:
             # We have reached the maximum limit for this universe
             raise AttributeError("A DMX universe cannot contain more than 32 fixtures.")
 
-        fixture = DMXFixture(name, start_channel, channel_list)
+        fixture = DMXFixture(name, start_channel, channel_list, uuid_str)
         fixture.universe = self.name
         self.fixtures[name] = fixture
 
         self.controller.add_fixture(fixture)
+        config.dmx_fixtures.append(fixture)
 
         return fixture
 
+    def remove_fixture(self, name: str):
+        """Remove the given fixture from the universe."""
+        fixture = self.get_fixture(name)
+
+        fixture.universe = ""
+        del self.fixtures[name]
+        self.controller.del_fixture(fixture.id)
+
     def get_fixture(self, name: str) -> Union['DMXFixture', None]:
 
-        if "name" in self.fixtures:
+        if name in self.fixtures:
             return self.fixtures[name]
 
     def get_dict(self) -> dict[str, Any]:
@@ -66,18 +76,37 @@ class DMXUniverse:
 class DMXFixture(Fixture):
     """Constellation object for a DMX fixture"""
 
-    def __init__(self, name, start_channel, channel_list):
+    def __init__(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = ""):
         super().__init__(name=name,
                          start_channel=start_channel)
 
         for channel in channel_list:
             self._register_channel(channel)
 
-        self.universe = ""
+        if uuid_str == "":
+            self.uuid = str(uuid.uuid4()) # A unique ID
+        else:
+            self.uuid = uuid_str
+        self.universe: str = ""
+        self.groups: set[str] = set()
+
 
     def __repr__(self, *args, **kwargs):
-        return f"[DMXFixture: {self.name}]"
+        return f"[DMXFixture: '{self.name}' in universe '{self.universe}' with channels {self.channel_usage}]"
 
+    def __str__(self, *args, **kwargs):
+        return f"[DMXFixture: '{self.name}' in universe '{self.universe}' with channels {self.channel_usage}]"
+
+    def delete(self):
+        """Remove the fixture from all its groups, then its universe."""
+
+        # Remove from groups
+        for group_name in self.groups.copy():
+            group = get_group(group_name)
+            group.remove_fixture(self.name)
+
+        get_universe(self.universe).remove_fixture(self.name)
+    
     def set_brightness(self, value, duration=0, *args, **kwargs):
         self.dim(value, duration, *args, **kwargs)
 
@@ -95,9 +124,11 @@ class DMXFixture(Fixture):
         the_dict = {
             "name": self.name,
             "start_channel": self.start_channel,
-            "channels": channel_list
+            "channels": channel_list,
+            "uuid": self.uuid
         }
         return the_dict
+
 
 class DMXFixtureGroup:
     """Hold a collection of DMXFixtures."""
@@ -111,8 +142,20 @@ class DMXFixtureGroup:
         """Add one or more DMXFixtures to the group."""
 
         for fixture in fixture_list:
-            self.fixtures[fixture.name] = fixture
+            if fixture.name in self.fixtures:
+                # Remove (same name may not be same object)
+                self.fixtures[fixture.name].groups.delete(self.name)
 
+            self.fixtures[fixture.name] = fixture
+            fixture.groups.add(self.name)
+
+    def remove_fixture(self, name: str):
+        """Remove the specified fixture."""
+
+        fixture = self.get_fixture(name)
+        fixture.groups.remove(self.name)
+        del self.fixtures[name]
+    
     def get_fixture(self, name: str) -> Union[DMXFixture, None]:
 
         if name in self.fixtures:
@@ -143,15 +186,16 @@ class DMXFixtureGroup:
             raise ValueError("A scene with this name does not exist:", name)
 
         for key in self.scenes[name].values:
-            entry = self.scenes[name].values[key]
-            if "duration" in entry:
-                duration = entry["duration"]
-            else:
-                duration = 0
-            if "brightness" in entry:
-                self.fixtures[key].set_brightness(entry["brightness"], duration)
-            if "color" in entry:
-                self.fixtures[key].set_color(entry["color"], duration)
+            if key in self.fixtures:
+                entry = self.scenes[name].values[key]
+                if "duration" in entry:
+                    duration = entry["duration"]
+                else:
+                    duration = 0
+                if "brightness" in entry:
+                    self.fixtures[key].set_brightness(entry["brightness"], duration)
+                if "color" in entry:
+                    self.fixtures[key].set_color(entry["color"], duration)
 
     def get_dict(self) -> dict[str, Any]:
         """Return a dictionary that can be used to rebuild this group."""
@@ -216,14 +260,19 @@ def create_universe(name: str, controller: str = "OpenDMX", dynamic_frame=True) 
     return new_universe
 
 
-def get_fixture(name: str, group="", universe="") -> Union[DMXFixture, None]:
+def get_fixture(name: str = "", group: str = "", universe: str = "", uuid: Union[uuid.UUID, str] = "") -> Union[DMXFixture, None]:
     """Return the matched fixture from the appropriate location, if it exists."""
 
-    if group == "" and universe == "":
-        raise ValueError("You must specify one of group= or universe=")
-    elif group != "" and universe != "":
-        raise ValueError("You must specify either group= or universe=, not both.")
+    if group == "" and universe == "" and uuid == "":
+        raise ValueError("You must specify one of group=, universe=, uuid=")
+    if (group != "" or universe != "") and name == "":
+        raise ValueError("You must specify name= if you use group= or universe=")
 
+    if uuid != "":
+        search = [x for x in config.dmx_fixtures if x.uuid == uuid]
+        if len(search) > 0:
+            return search[0]
+        return None
     if group != "":
         return get_group(group).get_fixture(name)
     elif universe != "":
@@ -279,10 +328,8 @@ def read_dmx_configuration() -> None:
     for entry in universe_config:
         uni = create_universe(entry["name"], entry["controller"])
         for fix in entry["fixtures"]:
-            uni.create_fixture(fix["name"], fix["start_channel"], fix["channels"])
+            uni.create_fixture(fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
     
-    print(config.dmx_universes["Main"].fixtures)
-
     # Then, create any groups
     config.dmx_groups = {}
     group_config = config_dict["groups"]
@@ -290,8 +337,15 @@ def read_dmx_configuration() -> None:
     for entry in group_config:
         group = create_group(entry["name"])
         for subentry in entry["fixtures"]:
-            print(subentry)
-            fixture = get_fixture(subentry["name"], universe=subentry["universe"])
+            fixture = get_fixture(name=subentry["name"], universe=subentry["universe"])
             group.add_fixtures([fixture])
-        for scene in entry["scene"]:
+        for scene in entry["scenes"]:
             group.create_scene(scene["name"], scene["values"])
+
+
+def activate_dmx():
+    """Perform setup actions to get ready to use DMX in Constellation."""
+
+    if not config.dmx_active:
+        read_dmx_configuration()
+        config.dmx_active = True

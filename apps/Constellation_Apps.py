@@ -19,6 +19,7 @@ import uvicorn
 
 # Constellation modules
 import config as const_config
+import helper_dmx
 import helper_files
 import helper_system
 import helper_utilities
@@ -75,6 +76,9 @@ app.mount("/js",
 app.mount("/css",
           StaticFiles(directory=helper_files.get_path(["css"])),
           name="css")
+app.mount("/configuration",
+          StaticFiles(directory=helper_files.get_path(["configuration"], user_file=True)),
+          name="configuration") 
 app.mount("/content",
           StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
           name="content")
@@ -356,6 +360,27 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
     helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
 
     return {"success": True}
+
+
+# DMX actions
+@app.get("/DMX/getConfiguration")
+async def get_dmx_configuration():
+    """Return the JSON DMX configuration file."""
+
+    helper_dmx.activate_dmx()
+    config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+    config_dict = helper_files.load_json(config_path)
+
+    return {"success": True, "configuration": config_dict}
+
+
+@app.post("/DMX/{fixture_uuid}/{color}")
+def set_dmx_fixture_to_color(fixture_uuid: str = Body(description="The uniquie ID of this fixture."),
+                             color: list = Body(description="The color to be set.")):
+    """Set the given fixture to the specified color."""
+
+    helper_dmx.get_fixture(uuid=fixture_uuid).set_color(color)
+
 
 if __name__ == "__main__":
     # Check for missing content thumbnails and create them

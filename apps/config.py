@@ -23,6 +23,8 @@ debug: bool = True
 # DMX resources
 dmx_universes: dict = {}
 dmx_groups: dict = {}
+dmx_fixtures = []
+dmx_active: bool = False
 
 smart_restart: dict[str: Any] = {
     "mode": "patient",  # off | aggressive | patient
