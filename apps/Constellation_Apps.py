@@ -31,7 +31,6 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.DEBUG)
 
-
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
     # If the application is run as a --onefile bundle, the PyInstaller bootloader
@@ -52,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/dmx_control",
+          StaticFiles(directory=helper_files.get_path(["dmx_control"])),
+          name="dmx_control")
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
@@ -78,7 +80,7 @@ app.mount("/css",
           name="css")
 app.mount("/configuration",
           StaticFiles(directory=helper_files.get_path(["configuration"], user_file=True)),
-          name="configuration") 
+          name="configuration")
 app.mount("/content",
           StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
           name="content")
@@ -124,7 +126,7 @@ async def root():
 @app.get("/{file_name}.html", response_class=HTMLResponse)
 async def serve_html(file_name):
     # First try a local file and then a Constellation file
-    file_path = helper_files.get_path([file_name+".html"], user_file=True)
+    file_path = helper_files.get_path([file_name + ".html"], user_file=True)
     if not os.path.isfile(file_path):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
     with open(file_path, "r") as f:
@@ -174,7 +176,6 @@ async def send_clip_list(config: const_config = Depends(get_config)):
 
 @app.get("/getDefaults")
 async def send_defaults(config: const_config = Depends(get_config)):
-
     config_to_send = config.defaults_dict.copy()
     if "allow_restart" not in config_to_send:
         config_to_send["allow_restart"] = "true"
@@ -218,7 +219,7 @@ async def send_update(config: const_config = Depends(get_config)):
         "anydesk_id": config.defaults_dict.get("anydesk_id", ""),
         "autoplay_audio": config.defaults_dict.get("autoplay_audio", "false"),
         "commands": config.commandList,
-        "image_duration":  config.defaults_dict.get("image_duration", "10"),
+        "image_duration": config.defaults_dict.get("image_duration", "10"),
         "missingContentWarnings": config.missingContentWarningList
     }
     return response_dict
@@ -226,27 +227,23 @@ async def send_update(config: const_config = Depends(get_config)):
 
 @app.get("/restart")
 async def do_restart():
-
     helper_system.reboot()
 
 
 @app.get("/sleepDisplay")
 async def do_sleep():
-
     helper_system.sleep_display()
 
 
 @app.get("/shutdown")
 @app.get("/powerOff")
 async def do_shutdown():
-
     helper_system.shutdown()
 
 
 @app.get("/powerOn")
 @app.get("/wakeDisplay")
 async def do_wake():
-
     helper_system.wake_display()
 
 
@@ -333,7 +330,8 @@ async def upload_content(files: list[UploadFile] = File(),
                 await out_file.write(content)  # async write
         mimetype = mimetypes.guess_type(file_path, strict=False)[0]
         if mimetype is not None:
-            th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]), daemon=True)
+            th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]),
+                                  daemon=True)
             th.start()
     return {"success": True}
 
@@ -374,12 +372,52 @@ async def get_dmx_configuration():
     return {"success": True, "configuration": config_dict}
 
 
-@app.post("/DMX/{fixture_uuid}/{color}")
-def set_dmx_fixture_to_color(fixture_uuid: str = Body(description="The uniquie ID of this fixture."),
-                             color: list = Body(description="The color to be set.")):
+@app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
+def set_dmx_fixture_to_brightness(fixture_uuid: str,
+                                  value: list = Body(description="The brightness to be set."),
+                                  duration: float = Body(description="How long the brightness transition should take.",
+                                                         default=0)):
+    """Set the given fixture to the specified brightness."""
+
+    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture.set_brightness(value, duration)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
+@app.post("/DMX/fixture/{fixture_uuid}/setColor")
+def set_dmx_fixture_to_color(fixture_uuid: str,
+                             color: list = Body(description="The color to be set."),
+                             duration: float = Body(description="How long the color transition should take.",
+                                                    default=0)):
     """Set the given fixture to the specified color."""
 
-    helper_dmx.get_fixture(uuid=fixture_uuid).set_color(color)
+    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture.set_color(color, duration)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
+@app.post("/DMX/group/{group_name}/setBrightness")
+def set_dmx_fixture_to_brightness(group_name: str,
+                                  value: list = Body(description="The brightness to be set."),
+                                  duration: float = Body(description="How long the brightness transition should take.",
+                                                         default=0)):
+    """Set the given fixture to the specified brightness."""
+
+    group = helper_dmx.get_group(group_name)
+    group.set_brightness(value, duration)
+    return {"success": True, "configuration": group.get_dict()}
+
+
+@app.post("/DMX/group/{group_name}/setColor")
+def set_dmx_group_to_color(group_name: str,
+                           color: list = Body(description="The color to be set."),
+                           duration: float = Body(description="How long the color transition should take.",
+                                                  default=0)):
+    """Set the given fixture to the specified color."""
+
+    group = helper_dmx.get_group(group_name)
+    group.set_color(color, duration)
+    return {"success": True, "configuration": group.get_dict()}
 
 
 if __name__ == "__main__":
@@ -392,7 +430,8 @@ if __name__ == "__main__":
     # Activate Smart Restart
     helper_system.smart_restart_check()
 
-    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
+    print(
+        f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,

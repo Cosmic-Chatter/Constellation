@@ -252,13 +252,13 @@ function readUpdate (update) {
     if ('app_name' in update &&
         update.app_name !== config.constellationAppID &&
         update.app_name !== '') {
-          if (update.app_name === 'other') {
-            if (config.otherAppPath !== '') {
-              gotoApp('other', config.otherAppPath)
-            }
-          } else {
-            gotoApp(update.app_name)
-          }
+      if (update.app_name === 'other') {
+        if (config.otherAppPath !== '') {
+          gotoApp('other', config.otherAppPath)
+        }
+      } else {
+        gotoApp(update.app_name)
+      }
     }
   }
 
@@ -466,10 +466,11 @@ function splitCsv (str) {
   }, { soFar: [], isConcatting: false }).soFar
 }
 
-export function gotoApp (app, other='') {
+export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
 
   const appLocations = {
+    dmx_control: '/dmx_control.html',
     infostation: '/infostation.html',
     media_browser: '/media_browser.html',
     media_player: '/media_player.html',
