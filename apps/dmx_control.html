@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -10,9 +10,25 @@
 
     <title>Constellation DMX Control</title>
 
-    <link rel="stylesheet" href="css/bootstrap_4_6/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="css/coloris.min.css">
 
     <style>
+      .channel-entry {
+        background-color: #2D648B;
+        color: white;
+      }
+      /* Coloris formatting */
+      .clr-field button {
+        width: 100%;
+        height: 100%;
+      }
+      .fixture-header {
+        background-color: #28587B;
+        color: white;
+        font-weight: bold;
+        font-size: larger;
+      }
     </style>
   </head>
 
@@ -24,11 +40,110 @@
           <H3>DMX Configuration</H3>
         </div>
       </div>
+
+      <ul class="nav nav-tabs" id="main-nav" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="universes-tab" data-bs-toggle="tab" data-bs-target="#universes-tab-pane" type="button" role="tab" aria-controls="universes-tab-pane" aria-selected="true">Universes</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups-tab-pane" type="button" role="tab" aria-controls="groups-tab-pane" aria-selected="false">Groups</button>
+        </li>
+      </ul>
+      <div class="tab-content" id="main-nav-content">
+
+        <!-- Universes tab -->
+        <div class="tab-pane fade show active" id="universes-tab-pane" role="tabpanel" aria-labelledby="universes-tab" tabindex="0">
+          <div class="row mt-2">
+
+            <!-- No universes warning -->
+            <div id="noUniverseWarning" class="col-12 mt-4">
+              <div class="row">
+                <div class="col-6 offset-3">
+                  <div class="alert alert-primary">
+                    <H5 class="text-center">No universes found</H5>
+                    <span class="fw-italic">
+                      <p>A DMX universe contains and controls up to 32 fixtures. You must have a USB-to-DMX controller for each unvierse.</p> 
+                      <p>Most setups should have only one universe.</p>
+                  </span>
+                    <center>
+                      <button class="btn btn-primary">Create universe</button>
+                    </center>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add fixture modal -->
+            <div class="modal" tabindex="-1" role="dialog" id="addFixtureModal">
+              <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content" style="border:black 1px solid;">
+                  <div class="modal-header">
+                    <h4 class="modal-title">Add new fixture</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div class="row">
+                      <div class="col-6 col-sm-8">
+                        <label for="addFixtureName" class="form-label">Fixture name</label>
+                        <input type="text" class="form-control" id="addFixtureName">
+                      </div>
+                      <div class="col-6 col-sm-4">
+                        <label for="addFixtureStartingChannel" class="form-label">Starting channel</label>
+                        <input type="number" min="1" max="512" class="form-control" id="addFixtureStartingChannel">
+                      </div>
+
+                      <div class="col-12 mt-2">
+                        <label  class="form-label">Channel</label>
+                        <div id="addFixtureChannelList" class="row" style="max-height: 25vh; overflow-y: auto;"></div>
+                        <button id="addFixtureAddChannelButton" class="btn btn-primary btn-sm mt-2">Add channel</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="addFixtureFromModalButton">Add</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Universe row -->
+            <div class="col-12">
+              <div id='universeRow' class="row"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Groups tab -->
+        <div class="tab-pane fade" id="groups-tab-pane" role="tabpanel" aria-labelledby="groups-tab" tabindex="0">
+
+          <!-- No groups warning -->
+          <div class="row mt-2">
+            <div id="noGroupsWarning" class="col-12 mt-4">
+              <div class="row">
+                <div class="col-6 offset-3">
+                  <div class="alert alert-primary">
+                    <H5 class="text-center">No groups found</H5>
+                    <span class="fw-italic">
+                      <p>A <i>group</i> is a collection of DMX fixturess from one or more universes. Groups allow you to organize your fixtures in a way that is convenient for your needs.</p> 
+                      <p>Each fixture may be in multiple groups. Once you have a group, you can create a <i>scene</i>, which stores a set of values to be used at a later time.</p>
+                  </span>
+                    <center>
+                      <button class="btn btn-primary">Create group</button>
+                    </center>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
   <script src="js/jquery-3.6.1.min.js"></script>
-  <script src="js/bootstrap_5_0/bootstrap.min.js"></script>
+  <script src="js/bootstrap_5_3/bootstrap.min.js"></script>
   <script src="js/platform.js"></script>
+  <script src="js/coloris.min.js"></script>
 
   <script type="module" src="dmx_control/dmx_control.js"></script>
   </body>

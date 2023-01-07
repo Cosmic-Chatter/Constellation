@@ -365,11 +365,16 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
 async def get_dmx_configuration():
     """Return the JSON DMX configuration file."""
 
-    helper_dmx.activate_dmx()
-    config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
-    config_dict = helper_files.load_json(config_path)
+    success = helper_dmx.activate_dmx()
+    config_dict = {
+        "universes": [],
+        "groups": []
+    }
+    if success is True:
+        config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+        config_dict = helper_files.load_json(config_path)
 
-    return {"success": True, "configuration": config_dict}
+    return {"success": success, "configuration": config_dict}
 
 
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")

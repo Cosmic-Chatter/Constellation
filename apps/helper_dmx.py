@@ -1,4 +1,5 @@
 # Standard imports
+import os.path
 from typing import Any, Union
 import uuid
 
@@ -330,10 +331,13 @@ def write_dmx_configuration() -> None:
     helper_files.write_json(config_dict, config_path)
 
 
-def read_dmx_configuration() -> None:
+def read_dmx_configuration() -> bool:
     """Read dmx.json and turn it into a set of universes, fixtures, and groups."""
 
     config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+    if not os.path.exists(config_path):
+        return False
+
     config_dict = helper_files.load_json(config_path)
 
     # First, create any universes
@@ -357,10 +361,16 @@ def read_dmx_configuration() -> None:
         for scene in entry["scenes"]:
             group.create_scene(scene["name"], scene["values"])
 
+    return True
 
-def activate_dmx():
-    """Perform setup actions to get ready to use DMX in Constellation."""
+
+def activate_dmx() -> bool:
+    """Perform setup actions to get ready to use DMX in Constellation.
+
+    Returns True is DMX has been successfully activated (already or just now) and False otherwise.
+    """
 
     if not config.dmx_active:
-        read_dmx_configuration()
-        config.dmx_active = True
+        config.dmx_active = read_dmx_configuration()
+
+    return config.dmx_active

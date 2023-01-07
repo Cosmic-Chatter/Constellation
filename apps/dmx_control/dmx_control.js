@@ -1,4 +1,331 @@
+/* global Coloris */
+
 import * as constCommon from '../js/constellation_app_common.js'
+
+class DMXUniverse {
+  // A mirror for the DMXUniverse Python class
+
+  constructor (name, controller) {
+    this.name = name
+    this.controller = controller
+    this.fixtures = {}
+  }
+
+  addFixture (definition) {
+    // Create a new fixture and add it to this.fixtures.
+
+    const newFixture = new DMXFixture(definition.name, definition.starT_channel, definition.channel_list, definition.uuid)
+    this.fixtures[definition.name] = newFixture
+  }
+
+  createHTML () {
+    // Create the HTML representation for this universe.
+
+    const col = document.createElement('div')
+    col.classList = 'col-12'
+
+    const row1 = document.createElement('div')
+    row1.classList = 'row bg-secondary mx-0 rounded-top'
+    col.appendChild(row1)
+
+    const nameCol = document.createElement('div')
+    nameCol.classList = 'col-9 col-sm-10 col-lg-11 h4 px-2 py-2 mb-0'
+    nameCol.innerHTML = this.name
+    row1.appendChild(nameCol)
+
+    const addButtonCol = document.createElement('div')
+    addButtonCol.classList = 'col-3 col-sm-2 col-lg-1 align-self-center pe-1'
+    row1.appendChild(addButtonCol)
+
+    const addButton = document.createElement('button')
+    addButton.classList = 'btn btn-primary w-100'
+    addButton.innerHTML = 'Add'
+    addButton.addEventListener('click', () => {
+      showAddFixtureModal(this.name)
+    })
+    addButtonCol.appendChild(addButton)
+
+    const row2 = document.createElement('div')
+    row2.classList = 'row'
+    col.appendChild(row2)
+
+    $(nameCol).click(() => {
+      $(row2).slideToggle(300)
+    })
+
+    Object.keys(this.fixtures).forEach((key) => {
+      const fixture = this.fixtures[key]
+      row2.appendChild(fixture.createHTML())
+    })
+
+    return col
+  }
+}
+
+class DMXFixture {
+  // A mirror for the DMXFixture Python class.
+
+  constructor (name, startChannel, channelList, uuid) {
+    this.name = name
+    this.startChannel = startChannel
+    this.channelList = channelList
+    this.uuid = uuid
+  }
+
+  createHTML () {
+    // Create the HTML representation for this fixture.
+
+    const thisUUID = this.uuid
+
+    const col = document.createElement('div')
+    col.classList = 'col-12 col-sm-6 col-lg-4 mt-2'
+
+    const row = document.createElement('div')
+    row.classList = 'row mx-0'
+    col.appendChild(row)
+
+    const headerText = document.createElement('div')
+    headerText.classList = 'col-8 fixture-header'
+    headerText.innerHTML = this.name
+    row.appendChild(headerText)
+
+    const colorPickerCol = document.createElement('div')
+    colorPickerCol.classList = 'col-4 px-0 mx-0'
+    row.appendChild(colorPickerCol)
+
+    const colorPicker = document.createElement('input')
+    colorPicker.classList = 'coloris w-100'
+    colorPicker.setAttribute('id', 'fixture_' + this.uuid + '_' + 'colorPicker')
+    colorPicker.setAttribute('type', 'text')
+    colorPicker.setAttribute('data-coloris', true)
+    colorPicker.value = 'rgb(255,255,255)'
+    colorPicker.addEventListener('click', e => {
+      Coloris({
+        alpha: false,
+        theme: 'pill',
+        themeMode: 'dark',
+        format: 'rgb',
+        el: '#color-field'
+      })
+    })
+    colorPicker.addEventListener('input', () => {
+      onColorChangeFromPicker(thisUUID)
+    })
+    colorPickerCol.appendChild(colorPicker)
+
+    const expandMessage = document.createElement('div')
+    expandMessage.classList = 'col-12 text-center fst-italic small'
+    expandMessage.style.backgroundColor = '#28587B'
+    expandMessage.innerHTML = 'Tap to expand'
+    $(expandMessage).hide()
+    row.appendChild(expandMessage)
+
+    const row2 = document.createElement('div')
+    row2.classList = 'row mx-0'
+    col.appendChild(row2)
+
+    this.channelList.forEach((channel) => {
+      const channelCol = document.createElement('div')
+      channelCol.classList = 'col-12 channel-entry py-1'
+      row2.appendChild(channelCol)
+
+      const channelRow = document.createElement('div')
+      channelRow.classList = 'row'
+      channelCol.appendChild(channelRow)
+
+      const channelHeader = document.createElement('div')
+      channelHeader.classList = 'col-12'
+      channelHeader.innerHTML = channelNameToDisplayName(channel)
+      channelRow.appendChild(channelHeader)
+
+      const channelSliderCol = document.createElement('div')
+      channelSliderCol.classList = 'col-8'
+      channelRow.appendChild(channelSliderCol)
+
+      const channelSlider = document.createElement('input')
+      channelSlider.classList = 'form-range h-100'
+      channelSlider.setAttribute('id', 'fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
+      channelSlider.setAttribute('type', 'range')
+      channelSlider.setAttribute('min', 0)
+      channelSlider.setAttribute('max', 255)
+      channelSlider.setAttribute('step', 1)
+      channelSlider.value = 0
+      channelSlider.addEventListener('input', (e) => {
+        onChannelSliderChange(thisUUID, channel, parseInt(e.target.value))
+      })
+      channelSliderCol.appendChild(channelSlider)
+
+      const channelValueCol = document.createElement('div')
+      channelValueCol.classList = 'col-4 ps-0'
+      channelRow.appendChild(channelValueCol)
+
+      const channelValue = document.createElement('input')
+      channelValue.classList = 'form-control text-center'
+      channelValue.setAttribute('id', 'fixture_' + this.uuid + '_' + 'channelValue_' + channel)
+      channelValue.setAttribute('type', 'number')
+      channelValue.setAttribute('min', 0)
+      channelValue.setAttribute('max', 255)
+      channelValue.value = 0
+      channelValue.addEventListener('input', e => {
+        onChannelValueChange(thisUUID, channel, parseInt(e.target.value))
+      })
+      channelValueCol.appendChild(channelValue)
+    })
+
+    $([headerText, expandMessage]).click(() => {
+      $(row2).slideToggle({ duration: 300, complete: () => { $(expandMessage).slideToggle(100) } })
+    })
+
+    return col
+  }
+}
+
+function onColorChangeFromPicker (uuid) {
+  // When is a color is changed from the picker, update the interface to match.
+
+  const newColor = $('#fixture_' + uuid + '_' + 'colorPicker').val()
+  // newColor is a string of format 'rgb(123, 123, 132)'
+  const colorSplit = newColor.slice(4, -1).split(',')
+  const red = parseInt(colorSplit[0])
+  const green = parseInt(colorSplit[1])
+  const blue = parseInt(colorSplit[2])
+
+  // Set the sliders
+  $('#fixture_' + uuid + '_' + 'channelValue_r').val(red)
+  $('#fixture_' + uuid + '_' + 'channelValue_g').val(green)
+  $('#fixture_' + uuid + '_' + 'channelValue_b').val(blue)
+
+  // Set the inputs
+  $('#fixture_' + uuid + '_' + 'channelSlider_r').val(red)
+  $('#fixture_' + uuid + '_' + 'channelSlider_g').val(green)
+  $('#fixture_' + uuid + '_' + 'channelSlider_b').val(blue)
+}
+
+function onChannelSliderChange (uuid, channel, value) {
+  // When the slider changes, update the number field.
+  $('#fixture_' + uuid + '_' + 'channelValue_' + channel).val(value)
+  updatecolorPicker(uuid)
+}
+
+function onChannelValueChange (uuid, channel, value) {
+  // When the number box is changed, update the slider.
+  $('#fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
+  updatecolorPicker(uuid)
+}
+
+function updatecolorPicker (uuid) {
+  // Read the values from the number inputs and update the color picker
+
+  const red = $('#fixture_' + uuid + '_' + 'channelSlider_r').val()
+  const blue = $('#fixture_' + uuid + '_' + 'channelSlider_g').val()
+  const green = $('#fixture_' + uuid + '_' + 'channelSlider_b').val()
+  const colorStr = 'rgb(' + red + ',' + blue + ',' + green + ')'
+
+  // Update the input and the color of the parent div
+  $('#fixture_' + uuid + '_' + 'colorPicker').val(colorStr).parent()[0].style.color = colorStr
+}
+
+function showAddFixtureModal (universe) {
+  // Prepare the addFixtureModal and then show it.
+
+  $('#addFixtureModal').data('universe', universe)
+
+  $('#addFixtureName').val('')
+  $('#addFixtureStartingChannel').val('')
+  $('#addFixtureChannelList').empty()
+  $('#addFixtureFromModalButton').hide()
+
+  $('#addFixtureModal').modal('show')
+}
+
+function addChannelToModal () {
+  // Called when the Add channel button is pressed in the addFixtureModal.
+
+  const col = document.createElement('div')
+  col.classList = 'col-12 mt-1'
+
+  const row = document.createElement('div')
+  row.classList = 'row'
+  col.appendChild(row)
+
+  const selectCol = document.createElement('div')
+  selectCol.classList = 'col-10'
+  row.appendChild(selectCol)
+
+  const select = document.createElement('select')
+  select.classList = 'form-control'
+  selectCol.appendChild(select)
+
+  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'd'], ['Strobe', 'strobe'], ['Other', 'other']]
+
+  options.forEach((entry) => {
+    const option = document.createElement('option')
+    option.innerHTML = entry[0]
+    if (entry[1] === '') {
+      option.setAttribute('disabled', true)
+    } else {
+      option.value = entry[1]
+    }
+    select.appendChild(option)
+  })
+
+  const deleteCol = document.createElement('div')
+  deleteCol.classList = 'col-2 align-self-center'
+  row.appendChild(deleteCol)
+
+  const deleteButton = document.createElement('button')
+  deleteButton.classList = 'btn btn-danger btn-sm'
+  deleteButton.innerHTML = '\u2573'
+  deleteButton.addEventListener('click', () => {
+    $(col).remove()
+    if ($('#addFixtureChannelList').children().length === 0) {
+      $('#addFixtureFromModalButton').hide()
+    }
+  })
+  deleteCol.appendChild(deleteButton)
+
+  $('#addFixtureChannelList').append(col)
+  $('#addFixtureFromModalButton').show()
+}
+
+function addFixtureFromModal () {
+  // Collect the necessary information from the addFixtureModal and ask the helper to add the fixture.
+
+  const channelList = []
+  $('#addFixtureChannelList').children().each(function () { channelList.push($(this).find('select').val()) })
+
+  const definition = {
+    name: $('#addFixtureName').val(),
+    start_channel: parseInt($('#addFixtureStartingChannel').val()),
+    channel_list: channelList
+  }
+  console.log(definition)
+}
+
+function createUniverse (name, controller) {
+  // Create a new universe and add it to the global list.
+
+  const newUniverse = new DMXUniverse(name, controller)
+  universeList.push(newUniverse)
+  return newUniverse
+}
+
+function channelNameToDisplayName (name) {
+  // Take a name such as 'r' and convert it to the proper name to display.
+
+  const nameDict = {
+    a: 'Amber',
+    b: 'Blue',
+    g: 'Green',
+    r: 'Red',
+    uv: 'UV',
+    w: 'White'
+  }
+  if (name in nameDict) {
+    return nameDict[name]
+  }
+  return name
+}
 
 function updateFunc (update) {
   // Read updates for media player-specific actions and act on them
@@ -27,8 +354,55 @@ function getDMXConfiguration () {
     })
 }
 
+function rebuildUniverseInterface () {
+  // Take the list of universes and add the HTML representation of each.
+
+  $('#universeRow').empty()
+  universeList.forEach(universe => {
+    $('#universeRow').append(universe.createHTML())
+  })
+}
+
+function testSetup () {
+  // Temporary function to test things during development.
+
+  const universe = createUniverse('Main', 'OpenDMX')
+  universe.addFixture({
+    name: 'Left',
+    start_channel: 1,
+    channel_list: ['Strobe', 'r', 'g', 'b', 'w'],
+    uuid: '1'
+  })
+  universe.addFixture({
+    name: 'Middle',
+    start_channel: 6,
+    channel_list: ['r', 'g', 'b', 'w'],
+    uuid: '2'
+  })
+  universe.addFixture({
+    name: 'Right',
+    start_channel: 10,
+    channel_list: ['r', 'g', 'b', 'w'],
+    uuid: '3'
+  })
+  universe.addFixture({
+    name: 'Top',
+    start_channel: 14,
+    channel_list: ['r', 'g', 'b', 'w', 'X_rotate', 'Y_rotate'],
+    uuid: '4'
+  })
+
+  $('#noUniverseWarning').hide()
+  rebuildUniverseInterface()
+}
+
+$('#addFixtureAddChannelButton').click(addChannelToModal)
+$('#addFixtureFromModalButton').click(addFixtureFromModal)
+
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'
+
+const universeList = []
 
 constCommon.config.debug = true
 
@@ -41,4 +415,5 @@ constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 setInterval(constCommon.checkForHelperUpdates, 5000)
 
-getDMXConfiguration()
+// getDMXConfiguration()
+testSetup()
