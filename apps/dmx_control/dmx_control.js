@@ -7,6 +7,7 @@ class DMXUniverse {
 
   constructor (name, controller) {
     this.name = name
+    this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
     this.controller = controller
     this.fixtures = {}
   }
@@ -16,6 +17,21 @@ class DMXUniverse {
 
     const newFixture = new DMXFixture(definition.name, definition.starT_channel, definition.channel_list, definition.uuid)
     this.fixtures[definition.name] = newFixture
+
+    return newFixture
+  }
+
+  getFixtureByName (name) {
+    return this.fixtures[name]
+  }
+
+  getFixtureByUUID (uuid) {
+    let matchedFixture = null
+    Object.keys(this.fixtures).forEach((key) => {
+      const fixture = this.fixtures[key]
+      if (fixture.uuid === uuid) matchedFixture = fixture
+    })
+    return matchedFixture
   }
 
   createHTML () {
@@ -55,7 +71,7 @@ class DMXUniverse {
 
     Object.keys(this.fixtures).forEach((key) => {
       const fixture = this.fixtures[key]
-      row2.appendChild(fixture.createHTML())
+      row2.appendChild(fixture.createHTML(this.safeName))
     })
 
     return col
@@ -67,13 +83,15 @@ class DMXFixture {
 
   constructor (name, startChannel, channelList, uuid) {
     this.name = name
+    this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
     this.startChannel = startChannel
     this.channelList = channelList
     this.uuid = uuid
   }
 
-  createHTML () {
+  createHTML (collectionName) {
     // Create the HTML representation for this fixture.
+    // collectionName is the name of the universe/group/scene this HTML widget is being rendered for.
 
     const thisUUID = this.uuid
 
@@ -95,7 +113,7 @@ class DMXFixture {
 
     const colorPicker = document.createElement('input')
     colorPicker.classList = 'coloris w-100'
-    colorPicker.setAttribute('id', 'fixture_' + this.uuid + '_' + 'colorPicker')
+    colorPicker.setAttribute('id', collectionName + '_fixture_' + this.uuid + '_' + 'colorPicker')
     colorPicker.setAttribute('type', 'text')
     colorPicker.setAttribute('data-coloris', true)
     colorPicker.value = 'rgb(255,255,255)'
@@ -109,7 +127,7 @@ class DMXFixture {
       })
     })
     colorPicker.addEventListener('input', () => {
-      onColorChangeFromPicker(thisUUID)
+      onColorChangeFromPicker(collectionName, thisUUID)
     })
     colorPickerCol.appendChild(colorPicker)
 
@@ -144,14 +162,14 @@ class DMXFixture {
 
       const channelSlider = document.createElement('input')
       channelSlider.classList = 'form-range h-100'
-      channelSlider.setAttribute('id', 'fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
+      channelSlider.setAttribute('id', collectionName + '_fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
       channelSlider.setAttribute('type', 'range')
       channelSlider.setAttribute('min', 0)
       channelSlider.setAttribute('max', 255)
       channelSlider.setAttribute('step', 1)
       channelSlider.value = 0
       channelSlider.addEventListener('input', (e) => {
-        onChannelSliderChange(thisUUID, channel, parseInt(e.target.value))
+        onChannelSliderChange(collectionName, thisUUID, channel, parseInt(e.target.value))
       })
       channelSliderCol.appendChild(channelSlider)
 
@@ -161,13 +179,13 @@ class DMXFixture {
 
       const channelValue = document.createElement('input')
       channelValue.classList = 'form-control text-center'
-      channelValue.setAttribute('id', 'fixture_' + this.uuid + '_' + 'channelValue_' + channel)
+      channelValue.setAttribute('id', collectionName + '_fixture_' + this.uuid + '_' + 'channelValue_' + channel)
       channelValue.setAttribute('type', 'number')
       channelValue.setAttribute('min', 0)
       channelValue.setAttribute('max', 255)
       channelValue.value = 0
       channelValue.addEventListener('input', e => {
-        onChannelValueChange(thisUUID, channel, parseInt(e.target.value))
+        onChannelValueChange(collectionName, thisUUID, channel, parseInt(e.target.value))
       })
       channelValueCol.appendChild(channelValue)
     })
@@ -180,10 +198,91 @@ class DMXFixture {
   }
 }
 
-function onColorChangeFromPicker (uuid) {
+class DMXFixtureGroup {
+  // A mirror for the DMXFixtureGroup Python class.
+
+  constructor (name) {
+    this.name = name
+    this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
+    this.fixtures = {}
+    this.scenes = {}
+  }
+
+  addFixtures (fixtures) {
+    // Take an array of fixtures and add them to the group.
+
+    fixtures.forEach((fixture) => {
+      this.fixtures[fixture.name] = fixture
+    })
+  }
+
+  clearFixtures () {
+    this.fixtures = {}
+  }
+
+  createScene (name, values) {
+    // Create a new DMXScene and add it this this.scenes.
+
+    this.scenes[name] = new DMXScene(name, values)
+  }
+
+  createHTML () {
+    // Create the HTML representation for this universe.
+
+    const col = document.createElement('div')
+    col.classList = 'col-12'
+
+    const row1 = document.createElement('div')
+    row1.classList = 'row bg-secondary mx-0 rounded-top'
+    col.appendChild(row1)
+
+    const nameCol = document.createElement('div')
+    nameCol.classList = 'col-9 col-sm-10 col-lg-11 h4 px-2 py-2 mb-0'
+    nameCol.innerHTML = this.name
+    row1.appendChild(nameCol)
+
+    const addButtonCol = document.createElement('div')
+    addButtonCol.classList = 'col-3 col-sm-2 col-lg-1 align-self-center pe-1'
+    row1.appendChild(addButtonCol)
+
+    const addButton = document.createElement('button')
+    addButton.classList = 'btn btn-primary w-100'
+    addButton.innerHTML = 'Edit'
+    addButton.addEventListener('click', () => {
+      showEditGroupModal(this.name)
+    })
+    addButtonCol.appendChild(addButton)
+
+    const row2 = document.createElement('div')
+    row2.classList = 'row'
+    col.appendChild(row2)
+
+    $(nameCol).click(() => {
+      $(row2).slideToggle(300)
+    })
+
+    Object.keys(this.fixtures).forEach((key) => {
+      const fixture = this.fixtures[key]
+      row2.appendChild(fixture.createHTML(this.safeName))
+    })
+
+    return col
+  }
+}
+
+class DMXScene {
+  // A mirror for the DMXScene Python class
+
+  constructor (name, values) {
+    this.name = name
+    this.values = values
+  }
+}
+
+function onColorChangeFromPicker (collectionName, uuid) {
   // When is a color is changed from the picker, update the interface to match.
 
-  const newColor = $('#fixture_' + uuid + '_' + 'colorPicker').val()
+  const newColor = $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val()
   // newColor is a string of format 'rgb(123, 123, 132)'
   const colorSplit = newColor.slice(4, -1).split(',')
   const red = parseInt(colorSplit[0])
@@ -201,28 +300,28 @@ function onColorChangeFromPicker (uuid) {
   $('#fixture_' + uuid + '_' + 'channelSlider_b').val(blue)
 }
 
-function onChannelSliderChange (uuid, channel, value) {
+function onChannelSliderChange (collectionName, uuid, channel, value) {
   // When the slider changes, update the number field.
-  $('#fixture_' + uuid + '_' + 'channelValue_' + channel).val(value)
-  updatecolorPicker(uuid)
+  $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelValue_' + channel).val(value)
+  updatecolorPicker(collectionName, uuid)
 }
 
-function onChannelValueChange (uuid, channel, value) {
+function onChannelValueChange (collectionName, uuid, channel, value) {
   // When the number box is changed, update the slider.
-  $('#fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
+  $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
   updatecolorPicker(uuid)
 }
 
-function updatecolorPicker (uuid) {
+function updatecolorPicker (collectionName, uuid) {
   // Read the values from the number inputs and update the color picker
 
-  const red = $('#fixture_' + uuid + '_' + 'channelSlider_r').val()
-  const blue = $('#fixture_' + uuid + '_' + 'channelSlider_g').val()
-  const green = $('#fixture_' + uuid + '_' + 'channelSlider_b').val()
+  const red = $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_r').val()
+  const blue = $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_g').val()
+  const green = $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_b').val()
   const colorStr = 'rgb(' + red + ',' + blue + ',' + green + ')'
 
   // Update the input and the color of the parent div
-  $('#fixture_' + uuid + '_' + 'colorPicker').val(colorStr).parent()[0].style.color = colorStr
+  $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val(colorStr).parent()[0].style.color = colorStr
 }
 
 function showAddFixtureModal (universe) {
@@ -236,6 +335,46 @@ function showAddFixtureModal (universe) {
   $('#addFixtureFromModalButton').hide()
 
   $('#addFixtureModal').modal('show')
+}
+
+function showEditGroupModal (groupName) {
+  const group = getGroupByName(groupName)
+
+  $('#editGroupModal').data('group', groupName)
+  $('#editGroupModalTitle').html('Edit ' + groupName)
+
+  // Populate the list of fixtures
+  const fixtureSelect = $('#groupFixturesToIncludeSelect')
+  fixtureSelect.empty()
+  universeList.forEach((universe) => {
+    const header = document.createElement('option')
+    header.setAttribute('disabled', true)
+    header.innerHTML = universe.name
+    fixtureSelect.append(header)
+    Object.keys(universe.fixtures).forEach((fixtureName) => {
+      const fixtureOption = document.createElement('option')
+      fixtureOption.innerHTML = fixtureName
+      fixtureOption.value = universe.fixtures[fixtureName].uuid
+      fixtureSelect.append(fixtureOption)
+    })
+  })
+
+  $('#editGroupModal').modal('show')
+}
+
+function editGroupFromModal () {
+  // Called when the Save button is pressed in the editGroupModal
+  const group = getGroupByName($('#editGroupModal').data('group'))
+  group.clearFixtures()
+  const fixtureUUIDsToAdd = $('#groupFixturesToIncludeSelect').val()
+
+  fixtureUUIDsToAdd.forEach((uuid) => {
+    const fixture = getFixtureByUUID(uuid)
+    group.addFixtures([fixture])
+  })
+
+  rebuildGroupsInterface()
+  $('#editGroupModal').modal('hide')
 }
 
 function addChannelToModal () {
@@ -256,7 +395,7 @@ function addChannelToModal () {
   select.classList = 'form-control'
   selectCol.appendChild(select)
 
-  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'd'], ['Strobe', 'strobe'], ['Other', 'other']]
+  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'd'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Strobe', 'strobe'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Other', 'other']]
 
   options.forEach((entry) => {
     const option = document.createElement('option')
@@ -310,6 +449,14 @@ function createUniverse (name, controller) {
   return newUniverse
 }
 
+function createGroup (name) {
+  // Create a new universe and add it to the global list.
+
+  const newGroup = new DMXFixtureGroup(name)
+  groupList.push(newGroup)
+  return newGroup
+}
+
 function channelNameToDisplayName (name) {
   // Take a name such as 'r' and convert it to the proper name to display.
 
@@ -342,6 +489,25 @@ function updateFunc (update) {
   }
 }
 
+function getGroupByName (name) {
+  let matchedGroup = null
+  groupList.forEach((group) => {
+    if (group.name === name) {
+      matchedGroup = group
+    }
+  })
+  return matchedGroup
+}
+
+function getFixtureByUUID (uuid) {
+  let matchedFixture = null
+  universeList.forEach(universe => {
+    const fixture = universe.getFixtureByUUID(uuid)
+    if (fixture != null) matchedFixture = fixture
+  })
+  return matchedFixture
+}
+
 function getDMXConfiguration () {
   // Ask the helper for the current DMX configuration and update the interface.
 
@@ -363,46 +529,66 @@ function rebuildUniverseInterface () {
   })
 }
 
+function rebuildGroupsInterface () {
+  // Take the list of group and add the HTML representation of each.
+
+  $('#groupsRow').empty()
+  groupList.forEach(group => {
+    $('#groupsRow').append(group.createHTML())
+  })
+}
+
 function testSetup () {
   // Temporary function to test things during development.
 
   const universe = createUniverse('Main', 'OpenDMX')
-  universe.addFixture({
+  const leftFix = universe.addFixture({
     name: 'Left',
     start_channel: 1,
     channel_list: ['Strobe', 'r', 'g', 'b', 'w'],
     uuid: '1'
   })
-  universe.addFixture({
+  const middleFix = universe.addFixture({
     name: 'Middle',
     start_channel: 6,
     channel_list: ['r', 'g', 'b', 'w'],
     uuid: '2'
   })
-  universe.addFixture({
+  const rightFix = universe.addFixture({
     name: 'Right',
     start_channel: 10,
     channel_list: ['r', 'g', 'b', 'w'],
     uuid: '3'
   })
-  universe.addFixture({
+  const topFix = universe.addFixture({
     name: 'Top',
     start_channel: 14,
     channel_list: ['r', 'g', 'b', 'w', 'X_rotate', 'Y_rotate'],
     uuid: '4'
   })
 
+  const testGroup = createGroup('Test Group')
+  testGroup.addFixtures([leftFix, rightFix])
+
   $('#noUniverseWarning').hide()
+  $('#noGroupsWarning').hide()
   rebuildUniverseInterface()
+  rebuildGroupsInterface()
 }
 
+// Add event listeners
+// Universe tab
 $('#addFixtureAddChannelButton').click(addChannelToModal)
 $('#addFixtureFromModalButton').click(addFixtureFromModal)
+
+// Group tab
+$('#editGroupModalSaveButton').click(editGroupFromModal)
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'
 
 const universeList = []
+const groupList = []
 
 constCommon.config.debug = true
 

@@ -135,6 +135,30 @@
               </div>
             </div>
           </div>
+
+          <!-- Edit group modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="editGroupModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content" style="border:black 1px solid;">
+                <div class="modal-header">
+                  <h4 id="editGroupModalTitle" class="modal-title">Edit Group</h4>
+                </div>
+                <div class="modal-body">
+                  <label for="groupFixturesToIncludeSelect" class="form-label">Fixtures to include</label>
+                  <select multiple class="form-control" id="groupFixturesToIncludeSelect"></select>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" id="editGroupModalSaveButton">Save</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Groups row -->
+          <div class="col-12">
+            <div id='groupsRow' class="row"></div>
+          </div>
         </div>
       </div>
 
