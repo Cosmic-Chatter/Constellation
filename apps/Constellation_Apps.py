@@ -418,6 +418,21 @@ def set_dmx_fixture_to_brightness(fixture_uuid: str,
     return {"success": True, "configuration": fixture.get_dict()}
 
 
+@app.post("/DMX/fixture/{fixture_uuid}/setChannel")
+def set_dmx_fixture_channel(fixture_uuid: str,
+                            channel_name: str = Body(
+                                "The name of the chanel to set."),
+                            value: int = Body(
+                                description="The value to be set."),
+                            duration: float = Body(description="How long the transition should take.",
+                                                   default=0)):
+    """Set the given channel of the given fixture to the given value."""
+
+    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture.set_channel(channel_name, value)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
 @app.post("/DMX/fixture/{fixture_uuid}/setColor")
 def set_dmx_fixture_to_color(fixture_uuid: str,
                              color: list = Body(

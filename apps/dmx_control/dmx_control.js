@@ -112,6 +112,31 @@ class DMXFixture {
     })
   }
 
+  sendChannelUpdate(channel) {
+    // Wrapper to choose the most efficient way to update
+
+    if (['r', 'g', 'b'].includes(channel)) {
+      this.sendColorUpdate()
+    } else if (channel === 'dimmer') {
+      this.sendBrightnessUpdate()
+    } else {
+      this.sendGenericChannelUpdate(channel)
+    }
+  }
+
+  sendGenericChannelUpdate(channel) {
+    // Send a message to the helper asking it to update the given channel
+
+    constCommon.makeHelperRequest({
+      method: 'POST',
+      endpoint: '/DMX/fixture/' + this.uuid + '/setChannel',
+      params: {
+        channel_name: channel,
+        value: this.channelValues[channel]
+      }
+    })
+  }
+
   sendColorUpdate() {
     // Send a message to the helper asking it to update the color
 
@@ -362,17 +387,19 @@ function onChannelSliderChange(collectionName, uuid, channel, value) {
   const valueToUpdate = {}
   valueToUpdate[channel] = value
   fixture.setChannelValues(valueToUpdate)
-  if (['r', 'g', 'b'].includes(channel)) {
-    fixture.sendColorUpdate()
-  } else if (channel === 'dimmer') {
-    fixture.sendBrightnessUpdate()
-  }
+  fixture.sendChannelUpdate(channel)
 }
 
 function onChannelValueChange(collectionName, uuid, channel, value) {
   // When the number box is changed, update the slider.
   $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
-  updatecolorPicker(uuid)
+  updatecolorPicker(collectionName, uuid)
+
+  const fixture = getFixtureByUUID(uuid)
+  const valueToUpdate = {}
+  valueToUpdate[channel] = value
+  fixture.setChannelValues(valueToUpdate)
+  fixture.sendChannelUpdate(channel)
 }
 
 function updatecolorPicker(collectionName, uuid) {
@@ -642,8 +669,8 @@ function testSetup() {
   const leftFix = universe.addFixture({
     name: 'Left',
     start_channel: 1,
-    channels: ['Strobe', 'r', 'g', 'b', 'w'],
-    uuid: '1'
+    channels: ['Strobe', 'r', 'g', 'b'],
+    uuid: '8ec4979f-38d8-4a5b-b013-f3ebb90985cc'
   })
   const middleFix = universe.addFixture({
     name: 'Middle',
@@ -698,6 +725,6 @@ constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 setInterval(constCommon.checkForHelperUpdates, 5000)
 
+// testSetup()
 getDMXConfiguration()
 setInterval(getDMXStatus, 5000)
-// testSetup()
