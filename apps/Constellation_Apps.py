@@ -79,37 +79,46 @@ app.mount("/css",
           StaticFiles(directory=helper_files.get_path(["css"])),
           name="css")
 app.mount("/configuration",
-          StaticFiles(directory=helper_files.get_path(["configuration"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["configuration"], user_file=True)),
           name="configuration")
 app.mount("/content",
-          StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["content"], user_file=True)),
           name="content")
 app.mount("/_fonts",
           StaticFiles(directory=helper_files.get_path(["_fonts"])),
           name="_fonts")
 app.mount("/images",
-          StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["images"], user_file=True)),
           name="images")
 app.mount("/_static",
           StaticFiles(directory=helper_files.get_path(["_static"])),
           name="_static")
 app.mount("/static",
-          StaticFiles(directory=helper_files.get_path(["static"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["static"], user_file=True)),
           name="static")
 app.mount("/style",
-          StaticFiles(directory=helper_files.get_path(["style"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["style"], user_file=True)),
           name="style")
 app.mount("/text",
-          StaticFiles(directory=helper_files.get_path(["text"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["text"], user_file=True)),
           name="thumbs")
 app.mount("/thumbs",
-          StaticFiles(directory=helper_files.get_path(["thumbs"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["thumbs"], user_file=True)),
           name="thumbs")
 app.mount("/thumbnails",
-          StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["thumbnails"], user_file=True)),
           name="thumbnails")
 app.mount("/videos",
-          StaticFiles(directory=helper_files.get_path(["videos"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["videos"], user_file=True)),
           name="videos")
 
 
@@ -128,7 +137,8 @@ async def serve_html(file_name):
     # First try a local file and then a Constellation file
     file_path = helper_files.get_path([file_name + ".html"], user_file=True)
     if not os.path.isfile(file_path):
-        file_path = helper_files.get_path([file_name + ".html"], user_file=False)
+        file_path = helper_files.get_path(
+            [file_name + ".html"], user_file=False)
     with open(file_path, "r") as f:
         page = str(f.read())
     return page
@@ -148,7 +158,8 @@ async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
 
     if "content" in config.defaults_dict:
-        active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
+        active_content = [s.strip()
+                          for s in config.defaults_dict["content"].split(",")]
     else:
         active_content = ""
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
@@ -252,7 +263,8 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
     """POST requests to / are Constellation 1 legacy calls kept for compatibility with the web console"""
 
     if "action" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'action'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'action'")
     else:
         print("Legacy Constellation command received: ", data)
 
@@ -322,7 +334,8 @@ async def upload_content(files: list[UploadFile] = File(),
 
     for file in files:
         filename = file.filename
-        file_path = helper_files.get_path(["content", filename], user_file=True)
+        file_path = helper_files.get_path(
+            ["content", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
         with config.content_file_lock:
             async with aiofiles.open(file_path, 'wb') as out_file:
@@ -341,7 +354,8 @@ async def set_defaults(data: dict, force: bool = False, config: const_config = D
     """Update the given defaults with the specified values"""
 
     if "defaults" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'defaults'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'defaults'")
 
     helper_utilities.update_defaults(data["defaults"], force=True)
 
@@ -353,7 +367,8 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
     """Replace all defaults with only the given values."""
 
     if "defaults" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'defaults'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'defaults'")
 
     helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
 
@@ -371,15 +386,29 @@ async def get_dmx_configuration():
         "groups": []
     }
     if success is True:
-        config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+        config_path = helper_files.get_path(
+            ["configuration", "dmx.json"], user_file=True)
         config_dict = helper_files.load_json(config_path)
 
     return {"success": success, "configuration": config_dict}
 
 
+@app.get("/DMX/getStatus")
+async def get_dmx_status():
+    """Return a dictionary with the current channel value for every channel in every fixture."""
+
+    result = {}
+
+    for fixture in const_config.dmx_fixtures:
+        result[fixture.uuid] = fixture.get_all_channel_values()
+
+    return {"success": True, "status": result}
+
+
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
 def set_dmx_fixture_to_brightness(fixture_uuid: str,
-                                  value: list = Body(description="The brightness to be set."),
+                                  value: int = Body(
+                                      description="The brightness to be set."),
                                   duration: float = Body(description="How long the brightness transition should take.",
                                                          default=0)):
     """Set the given fixture to the specified brightness."""
@@ -391,7 +420,8 @@ def set_dmx_fixture_to_brightness(fixture_uuid: str,
 
 @app.post("/DMX/fixture/{fixture_uuid}/setColor")
 def set_dmx_fixture_to_color(fixture_uuid: str,
-                             color: list = Body(description="The color to be set."),
+                             color: list = Body(
+                                 description="The color to be set."),
                              duration: float = Body(description="How long the color transition should take.",
                                                     default=0)):
     """Set the given fixture to the specified color."""
@@ -403,10 +433,11 @@ def set_dmx_fixture_to_color(fixture_uuid: str,
 
 @app.post("/DMX/group/{group_name}/setBrightness")
 def set_dmx_fixture_to_brightness(group_name: str,
-                                  value: list = Body(description="The brightness to be set."),
+                                  value: int = Body(
+                                      description="The brightness to be set."),
                                   duration: float = Body(description="How long the brightness transition should take.",
                                                          default=0)):
-    """Set the given fixture to the specified brightness."""
+    """Set the given group to the specified brightness."""
 
     group = helper_dmx.get_group(group_name)
     group.set_brightness(value, duration)
@@ -415,10 +446,11 @@ def set_dmx_fixture_to_brightness(group_name: str,
 
 @app.post("/DMX/group/{group_name}/setColor")
 def set_dmx_group_to_color(group_name: str,
-                           color: list = Body(description="The color to be set."),
+                           color: list = Body(
+                               description="The color to be set."),
                            duration: float = Body(description="How long the color transition should take.",
                                                   default=0)):
-    """Set the given fixture to the specified color."""
+    """Set the given group to the specified color."""
 
     group = helper_dmx.get_group(group_name)
     group.set_color(color, duration)

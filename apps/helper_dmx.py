@@ -27,14 +27,16 @@ class DMXUniverse:
         elif controller == "uDMX":
             self.controller = uDMXController(dynamic_frame=dynamic_frame)
         else:
-            raise ValueError("'controller' must be one of 'OpenDMX' or 'uDMX'.")
+            raise ValueError(
+                "'controller' must be one of 'OpenDMX' or 'uDMX'.")
 
     def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
         """Create a fixture, add it to the universe."""
 
         if len(self.fixtures) == 32:
             # We have reached the maximum limit for this universe
-            raise AttributeError("A DMX universe cannot contain more than 32 fixtures.")
+            raise AttributeError(
+                "A DMX universe cannot contain more than 32 fixtures.")
 
         fixture = DMXFixture(name, start_channel, channel_list, uuid_str)
         fixture.universe = self.name
@@ -85,7 +87,7 @@ class DMXFixture(Fixture):
             self._register_channel(channel)
 
         if uuid_str == "":
-            self.uuid = str(uuid.uuid4()) # A unique ID
+            self.uuid = str(uuid.uuid4())  # A unique ID
         else:
             self.uuid = uuid_str
         self.universe: str = ""
@@ -106,7 +108,17 @@ class DMXFixture(Fixture):
             group.remove_fixture(self.name)
 
         get_universe(self.universe).remove_fixture(self.name)
-    
+
+    def get_all_channel_values(self) -> dict[str, int]:
+        """Return a dict with the current value of every channel."""
+
+        result = {}
+        for channel_index in self.channels:
+            channel = self.channels[channel_index]
+            result[channel["name"]] = channel["value"][0]
+
+        return result
+
     def set_brightness(self, value, duration=0, *args, **kwargs):
         self.dim(value, duration, *args, **kwargs)
 
@@ -155,12 +167,12 @@ class DMXFixtureGroup:
         fixture = self.get_fixture(name)
         fixture.groups.remove(self.name)
         del self.fixtures[name]
-    
+
     def get_fixture(self, name: str) -> Union[DMXFixture, None]:
 
         if name in self.fixtures:
             return self.fixtures[name]
-    
+
     def set_brightness(self, value, duration=0, *args, **kwargs):
         """Set the brightness of all fixtures."""
 
@@ -198,7 +210,8 @@ class DMXFixtureGroup:
                 else:
                     duration = 0
                 if "brightness" in entry:
-                    self.fixtures[key].set_brightness(entry["brightness"], duration)
+                    self.fixtures[key].set_brightness(
+                        entry["brightness"], duration)
                 if "color" in entry:
                     self.fixtures[key].set_color(entry["color"], duration)
 
@@ -215,6 +228,7 @@ class DMXFixtureGroup:
             fixture = self.fixtures[name]
             fixture_list.append({
                 "name": name,
+                "uuid": fixture.uuid,
                 "universe": fixture.universe
             })
 
@@ -280,7 +294,8 @@ def get_fixture(name: str = "",
     if group == "" and universe == "" and uuid == "":
         raise ValueError("You must specify one of group=, universe=, uuid=")
     if (group != "" or universe != "") and name == "":
-        raise ValueError("You must specify name= if you use group= or universe=")
+        raise ValueError(
+            "You must specify name= if you use group= or universe=")
 
     if uuid != "":
         search = [x for x in config.dmx_fixtures if x.uuid == uuid]
@@ -327,14 +342,16 @@ def write_dmx_configuration() -> None:
         "groups": group_list
     }
 
-    config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
     helper_files.write_json(config_dict, config_path)
 
 
 def read_dmx_configuration() -> bool:
     """Read dmx.json and turn it into a set of universes, fixtures, and groups."""
 
-    config_path = helper_files.get_path(["configuration", "dmx.json"], user_file=True)
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
     if not os.path.exists(config_path):
         return False
 
@@ -343,12 +360,13 @@ def read_dmx_configuration() -> bool:
     # First, create any universes
     config.dmx_universes = {}
     universe_config = config_dict["universes"]
-    
+
     for entry in universe_config:
         uni = create_universe(entry["name"], entry["controller"])
         for fix in entry["fixtures"]:
-            uni.create_fixture(fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
-    
+            uni.create_fixture(
+                fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
+
     # Then, create any groups
     config.dmx_groups = {}
     group_config = config_dict["groups"]
