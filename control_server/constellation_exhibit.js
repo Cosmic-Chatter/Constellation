@@ -870,7 +870,7 @@ function createProjectorLampStatusEntry (entry, number) {
   // Take a dictionary and turn it into HTML elements
 
   const containerCol = document.createElement('div')
-  containerCol.classList = 'col-3 mb-3'
+  containerCol.classList = 'col-6 col-sm-3 mb-3'
   $(containerCol).data('config', entry)
   $('#componentInfoModalProjectorLampList').append(containerCol)
 
