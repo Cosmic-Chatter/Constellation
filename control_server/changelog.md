@@ -8,6 +8,7 @@ __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspec
     - Change settings on your __*Constellation*__ apps with an easy quick-settings page.
     - Filter your component content for only those files compatible with your current app.
     - Get key app properties, including the OS, browser, IP address, and more at the click of a button.
+    - Rename content files from within the status page.
 - An easy-to-use update manager.
     - See changelogs and get direct download links for each of your components.
 
