@@ -2,7 +2,7 @@
 
 import * as constCommon from './constellation_app_common.js'
 
-function submitAddDefaultModal () {
+function submitAddDefaultModal() {
   if (!$('.settingValueInputField.visible').val().includes('=')) {
     addDefaultFromModal()
     $('#addSettingModal').modal('hide')
@@ -11,7 +11,7 @@ function submitAddDefaultModal () {
   }
 }
 
-function showAddDefaultModal () {
+function showAddDefaultModal() {
   $('#settingKeyInputField').val('')
   $('.settingValueInputField').val('').removeClass('visible').hide()
   $('#settingValueInputTextField').addClass('visible').show()
@@ -38,7 +38,7 @@ function showAddDefaultModal () {
   $('#addSettingModal').modal('show')
 }
 
-function populateDefaultFromOptionList () {
+function populateDefaultFromOptionList() {
   // When the user selects a option from the available keys, configure the modal for that data type
 
   const key = $('#availableKeys').val()
@@ -84,7 +84,7 @@ function populateDefaultFromOptionList () {
   }
 }
 
-function addDefaultFromModal () {
+function addDefaultFromModal() {
   // Gather the input from the modal and create a defaultCard
 
   const key = $('#settingKeyInputField').val().toLowerCase()
@@ -96,7 +96,7 @@ function addDefaultFromModal () {
   $('.settingValueInputField').val('')
 }
 
-function createDefaultCard (key, value) {
+function createDefaultCard(key, value) {
   // Create the HTML element corresponding to the given default and add it to
   // the cardRowCurrent
 
@@ -195,7 +195,7 @@ function createDefaultCard (key, value) {
   $('#cardRowCurrent').append(col)
 }
 
-function lookupKnownKey (key) {
+function lookupKnownKey(key) {
   // Search through the known keys and return a matching one, if it exists.
 
   let keyInfo = knownKeys.filter(function (knownKey) {
@@ -207,7 +207,7 @@ function lookupKnownKey (key) {
   return keyInfo
 }
 
-function getExistingKeys () {
+function getExistingKeys() {
   // Return the keys for all the currently-created cards
 
   const currentKeys = []
@@ -221,7 +221,7 @@ function getExistingKeys () {
   return currentKeys
 }
 
-function updateParser (defaultsList) {
+function updateParser(defaultsList) {
   // Take a list of defaults and build the interface for editing them.
 
   // Remove keys that don't go into defaults.ini
@@ -230,7 +230,8 @@ function updateParser (defaultsList) {
     'contentPath',
     'dictionary',
     'helperAddress',
-    'helperSoftwareUpdateAvailable']
+    'helperSoftwareUpdateAvailable',
+    'software_update']
   keysToIgnore.forEach((key) => {
     delete defaultsList[key]
   })
@@ -241,7 +242,7 @@ function updateParser (defaultsList) {
   })
 }
 
-function updateDefaults () {
+function updateDefaults() {
   // Iterate through the defaultCards and collect the new defaults.
 
   const newDefaults = {}
@@ -261,7 +262,7 @@ function updateDefaults () {
   })
 }
 
-function loadVersion () {
+function loadVersion() {
   // Load version.txt and update the GUI with the current version
 
   constCommon.makeHelperRequest({
@@ -274,7 +275,7 @@ function loadVersion () {
     })
 }
 
-function showAppHelpMOdal (app) {
+function showAppHelpMOdal(app) {
   // Ask the helper to send the relavent README.md file and display it in the modal
 
   const endpointStems = {
@@ -308,7 +309,7 @@ function showAppHelpMOdal (app) {
   $('#appHelpModal').modal('show')
 }
 
-function populateHelpTab () {
+function populateHelpTab() {
   // Load the overall README.md and add its contents to the Help tab
 
   constCommon.makeHelperRequest({
