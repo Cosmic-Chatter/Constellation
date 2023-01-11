@@ -19,3 +19,4 @@ __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspec
 - Proejctors and wake-on-LAN devices can now use maintenance tracking.
 - New schedule action: Set App.
     - Switch between apps like Media Player and Timelapse Viewer anytime you need to.
+- Media Player now offers basic support for audio files.
