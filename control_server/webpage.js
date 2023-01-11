@@ -109,7 +109,8 @@ function submitComponentContentChange () {
   // back to the server to be changed.
 
   const id = $('#componentInfoModalTitle').html().trim()
-  const selectedButtons = $('.componentContentButton.btn-primary').find('span')
+  const selectedButtons = $('.componentContentButton.btn-primary').find('.contentFilenameContainer')
+
   const contentList = []
   for (let i = 0; i < selectedButtons.length; i++) {
     const content = selectedButtons[i].innerHTML.trim()

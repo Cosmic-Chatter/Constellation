@@ -1096,6 +1096,7 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     button.classList = 'btn componentContentButton'
 
     const fileName = document.createElement('span')
+    fileName.classList = 'contentFilenameContainer'
     fileName.setAttribute('id', cleanFilename + 'NameField')
     fileName.innerHTML = contentList[i]
     button.appendChild(fileName)
@@ -1312,7 +1313,7 @@ function getAllowableContentTypes (appID) {
     heartbeat: ['ini'],
     infostation: ['ini'],
     media_browser: ['ini'],
-    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv'],
+    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', 'aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],

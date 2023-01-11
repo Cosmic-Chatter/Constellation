@@ -1,11 +1,11 @@
 # Media Player
 
-Media Player provides a simple yet flexible digital signage platform for displaying collections of images and videos.
+Media Player provides a simple yet flexible digital signage platform for displaying collections of audio, images, and videos.
 
 ## Configuration
 
 ### Selecting media
-To select media for display, simply select it as `content` in the **_Constellation_** web console. The files will play in alphabetical order. Video files will play for their entire duration, while the duration of images can be set from the component status page on the web console.
+To select media for display, simply select it as `content` in the **_Constellation_** web console. The files will play in alphabetical order. Audio and video files will play for their entire duration, while the duration of images can be set from the component status page on the web console.
 
 ### Synchronizing with other Media Player instances
 
