@@ -46,17 +46,17 @@ class DMXUniverse {
     col.appendChild(row1)
 
     const nameCol = document.createElement('div')
-    nameCol.classList = 'col-9 col-sm-10 col-lg-11 h4 px-2 py-2 mb-0'
+    nameCol.classList = 'col-9 col-sm-10 h4 px-2 py-2 mb-0'
     nameCol.innerHTML = this.name
     row1.appendChild(nameCol)
 
     const addButtonCol = document.createElement('div')
-    addButtonCol.classList = 'col-3 col-sm-2 col-lg-1 align-self-center pe-1'
+    addButtonCol.classList = 'col-3 col-sm-2 align-self-center pe-1'
     row1.appendChild(addButtonCol)
 
     const addButton = document.createElement('button')
     addButton.classList = 'btn btn-primary w-100'
-    addButton.innerHTML = 'Add'
+    addButton.innerHTML = 'Add Fixture'
     addButton.addEventListener('click', () => {
       showAddFixtureModal(this.name)
     })
@@ -91,6 +91,7 @@ class DMXFixture {
 
     this.channelValues = {}
     this.universe = null
+    this.groups = [] // Hold the name of every group this fixture is in
   }
 
   setChannelValues(valueDict) {
@@ -106,9 +107,19 @@ class DMXFixture {
 
     // Loop the channels and update their GUI representations
     Object.keys(this.channelValues).forEach(key => {
-      $('#' + this.universe + '_fixture_' + this.uuid + '_' + 'channelValue_' + key).val(this.channelValues[key])
-      $('#' + this.universe + '_fixture_' + this.uuid + '_' + 'channelSlider_' + key).val(this.channelValues[key])
-      updatecolorPicker(this.universe, this.uuid)
+      // Update the universe representation
+      const universe = getUniverseByName(this.universe)
+      $('#' + universe.safeName + '_fixture_' + this.uuid + '_' + 'channelValue_' + key).val(this.channelValues[key])
+      $('#' + universe.safeName + '_fixture_' + this.uuid + '_' + 'channelSlider_' + key).val(this.channelValues[key])
+      updatecolorPicker(universe.safeName, this.uuid)
+
+      // Update the group(s) representation
+      this.groups.forEach((groupName) => {
+        const group = getGroupByName(groupName)
+        $('#' + group.safeName + '_fixture_' + this.uuid + '_' + 'channelValue_' + key).val(this.channelValues[key])
+        $('#' + group.safeName + '_fixture_' + this.uuid + '_' + 'channelSlider_' + key).val(this.channelValues[key])
+        updatecolorPicker(group.safeName, this.uuid)
+      })
     })
   }
 
@@ -187,17 +198,8 @@ class DMXFixture {
     colorPicker.classList = 'coloris w-100'
     colorPicker.setAttribute('id', collectionName + '_fixture_' + this.uuid + '_' + 'colorPicker')
     colorPicker.setAttribute('type', 'text')
-    colorPicker.setAttribute('data-coloris', true)
+    // colorPicker.setAttribute('data-coloris', true)
     colorPicker.value = 'rgb(255,255,255)'
-    colorPicker.addEventListener('click', e => {
-      Coloris({
-        alpha: false,
-        theme: 'pill',
-        themeMode: 'dark',
-        format: 'rgb',
-        el: '#color-field'
-      })
-    })
     colorPicker.addEventListener('input', () => {
       onColorChangeFromPicker(collectionName, thisUUID)
     })
@@ -285,6 +287,9 @@ class DMXFixtureGroup {
 
     fixtures.forEach((fixture) => {
       this.fixtures[fixture.name] = fixture
+      if (!this.fixtures[fixture.name].groups.includes(this.name)) {
+        this.fixtures[fixture.name].groups.push(this.name)
+      }
     })
   }
 
@@ -299,7 +304,7 @@ class DMXFixtureGroup {
   }
 
   createHTML() {
-    // Create the HTML representation for this universe.
+    // Create the HTML representation for this group.
 
     const col = document.createElement('div')
     col.classList = 'col-12'
@@ -325,17 +330,66 @@ class DMXFixtureGroup {
     })
     addButtonCol.appendChild(addButton)
 
-    const row2 = document.createElement('div')
-    row2.classList = 'row'
-    col.appendChild(row2)
+    const contentDiv = document.createElement('div')
+    contentDiv.classList = 'px-1 pt-2 bg-secondary'
+    col.appendChild(contentDiv)
 
+    // Collapse the content div when the group's top bar is clicked.
     $(nameCol).click(() => {
-      $(row2).slideToggle(300)
+      $(contentDiv).slideToggle(300)
     })
+
+    const tabNav = document.createElement('nav')
+    tabNav.classList = 'nav nav-tabs'
+    contentDiv.appendChild(tabNav)
+
+    const fixtureTab = document.createElement('a')
+    fixtureTab.classList = 'nav-link active'
+    fixtureTab.setAttribute('aria-current', 'page')
+    fixtureTab.setAttribute('id', this.safeName + '_fixtureTab')
+    fixtureTab.setAttribute('href', '#' + this.safeName + '_fixturePane')
+    fixtureTab.setAttribute('data-bs-toggle', 'tab')
+    fixtureTab.setAttribute('data-bs-target', '#' + this.safeName + '_fixturePane')
+    fixtureTab.innerHTML = 'Fixtures'
+    tabNav.appendChild(fixtureTab)
+
+    const sceneTab = document.createElement('a')
+    sceneTab.classList = 'nav-link'
+    sceneTab.setAttribute('href', '#')
+    sceneTab.setAttribute('id', this.safeName + '_sceneTab')
+    sceneTab.setAttribute('href', '#' + this.safeName + '_scenePane')
+    sceneTab.setAttribute('data-bs-toggle', 'tab')
+    sceneTab.setAttribute('data-bs-target', '#' + this.safeName + '_scenePane')
+    sceneTab.innerHTML = 'Scenes'
+    tabNav.appendChild(sceneTab)
+
+    const tabPaneContainer = document.createElement('div')
+    tabPaneContainer.classList = 'tab-content'
+    contentDiv.appendChild(tabPaneContainer)
+
+    const fixturePane = document.createElement('div')
+    fixturePane.classList = 'tab-pane active'
+    fixturePane.setAttribute('id', this.safeName + '_fixturePane')
+    fixturePane.setAttribute('role', 'tabpanel')
+    fixturePane.setAttribute('aria-labelledby', this.safeName + '_fixturePane')
+    fixturePane.setAttribute('tabindex', '0')
+    tabPaneContainer.appendChild(fixturePane)
+
+    const scenePane = document.createElement('div')
+    scenePane.classList = 'tab-pane'
+    scenePane.setAttribute('id', this.safeName + '_scenePane')
+    scenePane.setAttribute('role', 'tabpanel')
+    scenePane.setAttribute('aria-labelledby', this.safeName + '_SceneTab')
+    scenePane.setAttribute('tabindex', '0')
+    tabPaneContainer.appendChild(scenePane)
+
+    const fixtureRow = document.createElement('div')
+    fixtureRow.classList = 'row'
+    fixturePane.appendChild(fixtureRow)
 
     Object.keys(this.fixtures).forEach((key) => {
       const fixture = this.fixtures[key]
-      row2.appendChild(fixture.createHTML(this.safeName))
+      fixtureRow.appendChild(fixture.createHTML(this.safeName))
     })
 
     return col
@@ -393,7 +447,7 @@ function onChannelSliderChange(collectionName, uuid, channel, value) {
 function onChannelValueChange(collectionName, uuid, channel, value) {
   // When the number box is changed, update the slider.
   $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
-  updatecolorPicker(collectionName, uuid)
+  // updatecolorPicker(collectionName, uuid)
 
   const fixture = getFixtureByUUID(uuid)
   const valueToUpdate = {}
@@ -411,7 +465,12 @@ function updatecolorPicker(collectionName, uuid) {
   const colorStr = 'rgb(' + red + ',' + blue + ',' + green + ')'
 
   // Update the input and the color of the parent div
-  $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val(colorStr).parent()[0].style.color = colorStr
+  try {
+    $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val(colorStr).closest('.clr-field')[0].style.color = colorStr
+  }
+  catch (TypeError) {
+    // This will fail is the value is changed before the Coloris color picker is activated.
+  }
 }
 
 function showAddFixtureModal(universe) {
@@ -584,6 +643,17 @@ function updateFunc(update) {
   }
 }
 
+function getUniverseByName(name) {
+  let matchedUniverse = null
+  universeList.forEach((universe) => {
+    if (universe.name === name) {
+      matchedUniverse = universe
+    }
+  })
+  return matchedUniverse
+}
+
+
 function getGroupByName(name) {
   let matchedGroup = null
   groupList.forEach((group) => {
@@ -623,12 +693,15 @@ function getDMXStatus() {
 function getDMXConfiguration() {
   // Ask the helper for the current DMX configuration and update the interface.
 
+  let configuration
+
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/getConfiguration'
   })
     .then((response) => {
-      response.configuration.universes.forEach((universeDef) => {
+      configuration = response.configuration
+      configuration.universes.forEach((universeDef) => {
         // First, create the universe
         const universeObj = createUniverse(universeDef.name, universeDef.controller)
         // Then, loop the fixtures and add each.
@@ -637,6 +710,17 @@ function getDMXConfiguration() {
         })
       })
       rebuildUniverseInterface()
+    })
+    .then(() => {
+      configuration.groups.forEach((groupDef) => {
+        // First, create the universe
+        const groupObj = createGroup(groupDef.name)
+        groupDef.fixtures.forEach((fixtureDef) => {
+          const fixture = getFixtureByUUID(fixtureDef.uuid)
+          groupObj.addFixtures([fixture])
+        })
+      })
+      rebuildGroupsInterface()
     })
     .then(() => {
       getDMXStatus()
@@ -650,15 +734,40 @@ function rebuildUniverseInterface() {
   $('#universeRow').empty()
   universeList.forEach(universe => {
     $('#universeRow').append(universe.createHTML())
+    // Then, bind the color picker to each element.
+    Object.keys(universe.fixtures).forEach(fixtureName => {
+      const fixture = universe.fixtures[fixtureName]
+      Coloris({
+        alpha: false,
+        theme: 'pill',
+        themeMode: 'dark',
+        format: 'rgb',
+        el: '#' + universe.safeName + '_fixture_' + fixture.uuid + '_' + 'colorPicker',
+        wrap: true
+      })
+    });
   })
 }
 
 function rebuildGroupsInterface() {
   // Take the list of group and add the HTML representation of each.
 
+  $('#noGroupsWarning').hide()
   $('#groupsRow').empty()
   groupList.forEach(group => {
     $('#groupsRow').append(group.createHTML())
+    // Then, bind the color picker to each element.
+    Object.keys(group.fixtures).forEach(fixtureName => {
+      const fixture = group.fixtures[fixtureName]
+      Coloris({
+        alpha: false,
+        theme: 'pill',
+        themeMode: 'dark',
+        format: 'rgb',
+        el: '#' + group.safeName + '_fixture_' + fixture.uuid + '_' + 'colorPicker',
+        wrap: true
+      })
+    });
   })
 }
 
