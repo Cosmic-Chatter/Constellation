@@ -90,14 +90,11 @@ export function sendPing () {
   }
 
   const pingRequest = function () {
-    // Parse the IP address of the helper to see if it will be the same as the client
-    const helperIPSameAsClient = config.helperAddress.includes('localhost') || config.helperAddress.includes('127.0.0.1') || config.helperAddress.includes('0.0.0.0')
 
     const requestDict = {
       id: config.id,
       group: config.group,
       helperAddress: config.helperAddress,
-      helperIPSameAsClient,
       allowed_actions: config.allowedActionsDict,
       constellation_app_id: config.constellationAppID,
       platform_details: config.platformDetails,

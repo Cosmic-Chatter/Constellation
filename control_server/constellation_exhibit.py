@@ -139,6 +139,17 @@ class ExhibitComponent(BaseComponent):
     def __repr__(self):
         return repr(f"[ExhibitComponent ID: {self.id} Group: {self.group}]")
 
+    def set_helper_address(self, address: str):
+        """Set the helper IP address, modifying it first, if necessary"""
+
+        # If address includes 'localhost', '127.0.0.1', etc., replace it with the actual IP address
+        # so that we can reach it.
+        address = address.replace('localhost', self.ip_address)
+        address = address.replace('127.0.0.1', self.ip_address)
+        address = address.replace('::1', self.ip_address)
+
+        self.helperAddress = address
+
     def seconds_since_last_interaction(self) -> float:
         """The number of seconds since an interaction was recorded."""
 
@@ -646,11 +657,7 @@ def update_exhibit_component_status(data, ip: str):
 
     component.ip_address = ip
     if "helperAddress" in data:
-        component.helperAddress = data["helperAddress"]
-
-    if "helperIPSameAsClient" in data and data["helperIPSameAsClient"] is False:
-        if "helperAddress" in data:
-            component.helperAddress = data["helperAddress"]
+        component.set_helper_address(data["helperAddress"])
 
     component.update_last_contact_datetime()
     if "AnyDeskID" in data:
