@@ -696,6 +696,7 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModaProejctorTabButton').show()
   } else {
     $('#componentInfoModaProejctorTabButton').hide()
+    $('#componentInfoModalModelGroup').hide()
   }
 
   // Must be after all the settings are configured
