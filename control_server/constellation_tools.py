@@ -83,6 +83,8 @@ def load_system_configuration(from_dict: Union[dict[str, Any], None] = None) -> 
 
     if config.debug:
         logging.getLogger('uvicorn').setLevel(logging.DEBUG)
+    else:
+        logging.getLogger('uvicorn').setLevel(logging.ERROR)
 
 
 def update_system_configuration(update: dict[str, Any]) -> None:

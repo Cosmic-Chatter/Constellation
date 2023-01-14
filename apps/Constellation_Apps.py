@@ -28,7 +28,7 @@ log_path: str = helper_files.get_path(["apps.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
