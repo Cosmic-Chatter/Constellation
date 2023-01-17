@@ -282,7 +282,7 @@ function scheduleTargetToDescription (target) {
   if (target === '__all') {
     return 'all components'
   } else if (target.startsWith('__group_')) {
-    return 'all ' + target.slice(7)
+    return 'all ' + target.slice(8)
   } else if (target.startsWith('__id_')) {
     return target.slice(5)
   } else if (target.endsWith('.exhibit')) {
