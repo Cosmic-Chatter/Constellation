@@ -1,5 +1,5 @@
 # Media Browser
-Media Browser provides a touch-screen interface for browsing, searching, and filtering large sets of images and videos.
+Media Browser provides a touch-screen interface for browsing, searching, and filtering large sets of images.
 
 ## Limitations
 - Multiple languages are not currently supported.
