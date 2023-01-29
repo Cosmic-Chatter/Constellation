@@ -1320,7 +1320,8 @@ function getAllowableContentTypes (appID) {
     sos_screen_player: ['ini'],
     timelapse_viewer: ['ini'],
     voting_kiosk: ['ini'],
-    word_cloud: ['ini']
+    word_cloud_input: ['ini'],
+    word_cloud_viewer: ['ini']
   }
   if (appID in supportedTypes) {
     return supportedTypes[appID]
