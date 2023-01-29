@@ -63,6 +63,9 @@ app.mount("/media_player",
 app.mount("/timelapse_viewer",
           StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])),
           name="timelapse_viewer")
+app.mount("/timeline_explorer",
+          StaticFiles(directory=helper_files.get_path(["timeline_explorer"])),
+          name="timeline_explorer")
 app.mount("/voting_kiosk",
           StaticFiles(directory=helper_files.get_path(["voting_kiosk"])),
           name="voting_kiosk")
