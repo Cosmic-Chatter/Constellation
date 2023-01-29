@@ -3,6 +3,7 @@ InfoStation provides a touchscreen interface for creating digital labels. It sup
 
 ## Limitations
 * Optimized for use with a vertical 16:9 display powered by a Linux or Windows PC.
+* Currently supports a maximum of two languages.
 
 ## Configuration
 
@@ -169,5 +170,3 @@ caption = A video of the Command and Service modules.
 title = Command and Service Modules
 credit = NASA
 ```
-
-### Options
