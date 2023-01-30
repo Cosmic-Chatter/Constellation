@@ -90,7 +90,6 @@ export function sendPing () {
   }
 
   const pingRequest = function () {
-
     const requestDict = {
       id: config.id,
       group: config.group,
@@ -455,6 +454,7 @@ export function gotoApp (app, other = '') {
     // sos_kiosk: 'SOS Kiosk',
     // sos_screen_player: 'SOS Screen Player',
     timelapse_viewer: '/timelapse_viewer.html',
+    timeline_explorer: '/timeline_explorer.html',
     voting_kiosk: '/voting_kiosk.html',
     word_cloud_input: '/word_cloud_input.html',
     word_cloud_viewer: '/word_cloud_viewer.html'
@@ -465,4 +465,27 @@ export function gotoApp (app, other = '') {
   } else {
     window.location = config.helperAddress + appLocations[app]
   }
+}
+
+export async function getAvailableDefinitions (appID) {
+  // Ask the helper for all the definition files for the given app and return a Promise with the result.
+
+  return makeHelperRequest({
+    method: 'GET',
+    endpoint: '/definitions/' + appID + '/getAvailable'
+  })
+}
+
+export async function writeDefinition (definition) {
+  // Send the given JSON definition to the helper to write to the content directory.
+
+  // Tag the definition with some useful properties
+  definition.constellation_version = config.softwareVersion
+  definition.lastEditedDate = new Date().toISOString()
+
+  return makeHelperRequest({
+    method: 'POST',
+    endpoint: '/definitions/write',
+    params: { definition }
+  })
 }

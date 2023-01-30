@@ -401,6 +401,7 @@ export function setScheduleActionValueSelector () {
       media_browser: 'Media Browser',
       media_player: 'Media Player',
       timelapse_viewer: 'Timelapse Viewer',
+      timeline_explorer: 'Timeline Explorer',
       voting_kiosk: 'Voting Kiosk',
       word_cloud_input: 'Word Cloud Input',
       word_cloud_viewer: 'Word Cloud Viewer'

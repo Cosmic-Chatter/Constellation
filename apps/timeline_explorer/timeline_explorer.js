@@ -1,3 +1,40 @@
+import * as constCommon from '../js/constellation_app_common.js'
+
+function updateFunc (update) {
+  // Read updates for media player-specific actions and act on them
+
+  if ('commands' in update) {
+    for (let i = 0; i < update.commands.length; i++) {
+      const cmd = (update.commands)[i]
+    }
+  }
+  // This should be last to make sure the path has been updated
+  if ('content' in update) {
+    if (update.content[0] !== currentContent) {
+
+    }
+  }
+}
+
+function loadDefinition (defName) {
+  // Use the given definition to set up the interface.
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/definitions/' + defName + '/load'
+  })
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        _loadDefinition(response.definition)
+      }
+    })
+}
+
+function _loadDefinition (def) {
+  // Helper function to manage setting up the interface.
+
+  $('#headerText').html(def.title || '')
+}
+
 // define variables
 const items = document.querySelectorAll('.timeline li')
 
@@ -24,7 +61,31 @@ function callbackFunc () {
   }
 }
 
-// listen for events
+// Add event listeners
 window.addEventListener('load', callbackFunc)
 window.addEventListener('resize', callbackFunc)
 document.getElementById('timeline-pane').addEventListener('scroll', callbackFunc)
+
+// Constellation stuff
+const currentContent = ''
+constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
+constCommon.config.constellationAppID = 'timeline_explorer'
+constCommon.config.debug = true
+constCommon.config.helperAddress = window.location.origin
+
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('preview')) {
+  // We are displaying this inside of a setup iframe
+  if (searchParams.has('definition')) {
+    loadDefinition(searchParams.get('definition'))
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+  constCommon.sendPing()
+
+  setInterval(constCommon.sendPing, 5000)
+}
+
+// Hide the cursor
+// document.body.style.cursor = 'none'

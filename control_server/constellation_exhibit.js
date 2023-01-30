@@ -854,6 +854,7 @@ function convertAppIDtoDisplayName (appName) {
       sos_screen_player: 'SOS Screen Player',
       static_component: 'Static component',
       timelapse_viewer: 'Timelapse Viewer',
+      timeline_explorer: 'Timeline Explorer',
       voting_kiosk: 'Voting Kiosk',
       wol_only: 'Wake on LAN',
       word_cloud_input: 'Word Cloud Input',
@@ -1319,6 +1320,7 @@ function getAllowableContentTypes (appID) {
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
     timelapse_viewer: ['ini'],
+    timeline_explorer: ['const'],
     voting_kiosk: ['ini'],
     word_cloud_input: ['ini'],
     word_cloud_viewer: ['ini']

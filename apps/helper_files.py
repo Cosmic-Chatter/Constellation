@@ -1,12 +1,13 @@
 """System Helper functions for managing files"""
 
 # Standard modules
-import configparser
+import glob
+import json
 import logging
 import os
 import subprocess
 import sys
-from typing import Union
+from typing import Any, Union
 
 # Non-standard imports
 import mimetypes
@@ -26,6 +27,53 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
         _path = os.path.join(config.exec_path, *path_list)
 
     return _path
+
+
+def load_json(path: str):
+    """Load the requested JSON file from disk and return it as a dictionary."""
+
+    if not os.path.exists(path):
+        if config.debug:
+            print(f"load_json: file does not exist: {path}")
+        return None
+
+    with config.content_file_lock:
+        with open(path, 'r', encoding='UTF-8') as f:
+            try:
+                result = json.load(f)
+            except json.decoder.JSONDecodeError:
+                result = None
+            return result
+
+
+def write_json(data, path: str, append: bool = False) -> None:
+    """Take the given object and try to write it to a JSON file."""
+
+    if append:
+        mode = 'a'
+    else:
+        mode = 'w'
+
+    with config.content_file_lock:
+        with open(path, mode, encoding='UTF-8') as f:
+            json.dump(data, f)
+
+
+def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
+    """Return all the *.const definition files that match the given app_id (or all of them)."""
+
+    all_def = glob.glob(get_path(["definitions"], user_file=True) + "/*.json")
+    to_return = {}
+    for path in all_def:
+        json_def = load_json(path)
+        if json_def is not None:
+            try:
+                if app_id == "all" or json_def["app"] == app_id:
+                    to_return[json_def["name"]] = json_def
+            except KeyError:
+                print("Error: Key not found: 'app'")
+
+    return to_return
 
 
 def with_extension(filename: str, ext: str) -> str:
@@ -205,7 +253,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["content", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
+    dir_list = ["content", "definitions", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="../_static/favicon.ico">
+
+    <link rel="stylesheet" href="../css/bootstrap_5_0/bootstrap.min.css">
+
+    <style>
+      #previewContainer {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      #previewFrame {
+        width: 1080px;
+        height: 1920px;
+        transform: scale(0.1);
+        transform-origin: 0 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+    </style>
+
+    <title>Timeline Explorer Setup</title>
+
+  </head>
+
+  <body>
+    <div class="container mt-2">
+      <H1>Timeline Explorer Setup</H1>
+      Use this utility to create and edit timeline configurations.
+      <div class="row mt-2">
+        <div class="col-2">
+          <button id="newDefinitionButton" class="btn btn-primary w-100">Create new</button>
+        </div>
+        <div class="col-2">
+          <button id="editDefinitionButton" class="btn btn-primary w-100">Edit existing</button>
+        </div>
+        <div class="col-3">
+          <select id="availableDefinitionSelect" class="form-select w-100">Edit existing</select>
+        </div>
+        <div id='editPane' class="col-6">
+          <div class="row mt-3 border-top">
+            <div class="col-12 mt-3">
+              <button id="definitionSaveButton" class="btn btn-success">Save</button>
+              <button id="previewRefreshButton" class="btn btn-info ms-1">Refresh preview</button>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-6">
+              <label for="definitionNameInput" class="form-label">Name</label>
+              <input type="text" class="form-control" id="definitionNameInput">
+            </div>
+            <div class="col-6">
+              <label for="definitionTitleInput" class="form-label">Title</label>
+              <input type="text" class="form-control" id="definitionTitleInput">
+            </div>
+          </div>
+        </div>
+        <div id='previewPane' class="col-6">
+          <div id="previewContainer">
+            <iframe id="previewFrame" class="mt-3" src="../timeline_explorer.html?preview=true"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script type="text/javascript" src="../js/jquery-3.6.1.min.js"></script>
+  <!-- <script type="text/javascript" src="js/popper.min.js"></script> -->
+  <script type="text/javascript" src="../js/bootstrap_5_0/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../js/showdown.min.js"></script>
+  <script type="text/javascript" src="../js/platform.js"></script>
+  <script type="module" src="setup.js"></script>
+
+  </body>
+
+</html>

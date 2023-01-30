@@ -152,6 +152,7 @@ time {
     #timeline-pane {
         height: 75vh;
         overflow-y: auto;
+        overflow-x: hidden;
     }
     #tools-pane {
         height: 10vh;
@@ -168,6 +169,7 @@ time {
     #timeline-pane {
         height: 87.5vh;
         overflow-y: auto;
+        overflow-x: hidden;
     }
     #tools-pane {
         height: 5vh;
