@@ -138,10 +138,12 @@ def get_thumbnail_name(filename: str) -> str:
     """Return the filename converted to the appropriate Constellation thumbnail format"""
 
     mimetype, _ = mimetypes.guess_type(filename)
-
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
+        if os.path.splitext(filename)[-1].lower() == '.webp':
+            # Hack to fix webp. Should be removed for python 3.10+
+            return with_extension(filename, "jpg")
         return ""
     if mimetype == "image":
         return with_extension(filename, "jpg")
@@ -156,10 +158,13 @@ def get_thumbnail(filename: str) -> (Union[str, None], str):
 
     thumb_name = get_thumbnail_name(filename)
     mimetype, _ = mimetypes.guess_type(filename)
+
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        pass
+        if os.path.splitext(filename)[-1].lower() == '.webp':
+            # Hack to fix webp. Should be removed for python 3.10+
+            mimetype = 'image'
 
     if thumb_name == "":
         return None, mimetype
@@ -176,7 +181,6 @@ def create_missing_thumbnails():
     """Check the content directory for files without thumbnails and create them"""
 
     content = get_all_directory_contents("content")
-
     for file in content:
         file_path, mimetype = get_thumbnail(file)
         if file_path is None:
