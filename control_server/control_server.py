@@ -1096,6 +1096,18 @@ async def get_help_text():
         with c_config.logLock:
             logging.error("Unable to read README.md")
         response = {"success": False, "reason": "Unable to read README.md"}
+    except PermissionError:
+        # For some reason, Pyinstaller insists on placing the README in a directory of the same name on Windows.
+        try:
+            readme_path = c_tools.get_path(["README.md","README.md"])
+            with open(readme_path, 'r', encoding='UTF-8') as f:
+                text = f.read()
+            response = {"success": True, "text": text}
+        except (FileNotFoundError, PermissionError):
+            with c_config.logLock:
+                logging.error("Unable to read README.md")
+            response = {"success": False, "reason": "Unable to read README.md"}
+
     return response
 
 
