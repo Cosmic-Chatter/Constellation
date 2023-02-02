@@ -123,7 +123,7 @@ async def serve_html(file_name):
     file_path = helper_files.get_path([file_name+".html"], user_file=True)
     if not os.path.isfile(file_path):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding='UTF-8') as f:
         page = str(f.read())
     return page
 
