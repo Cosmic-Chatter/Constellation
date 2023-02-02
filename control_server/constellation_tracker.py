@@ -18,9 +18,12 @@ def create_CSV(file_path: Union[str, os.PathLike], filename: str = "") -> str:
     """Load a tracker text file and convert it to a CSV"""
 
     dict_list = []
-    with open(file_path, 'r', encoding="UTF-8") as f:
-        for line in f.readlines():
-            dict_list.append(json.loads(line))
+    try:
+        with open(file_path, 'r', encoding="UTF-8") as f:
+            for line in f.readlines():
+                dict_list.append(json.loads(line))
+    except FileNotFoundError:
+        return ""
     return JSON_list_to_CSV(dict_list, filename=filename)
 
 
@@ -79,9 +82,9 @@ def get_raw_text(name: str, kind: str = 'flexible-tracker') -> tuple[str, bool, 
 
 
 def get_unique_keys(dict_list: list) -> list:
-    """Return a set of unique keys from a list of dicts"""
+    """Return a set of unique keys from a list of dicts, sorted for consistency."""
 
-    return list(set().union(*(d.keys() for d in dict_list)))
+    return sorted(list(set().union(*(d.keys() for d in dict_list))))
 
 
 def get_unique_values(dict_list: list, key: str) -> list:

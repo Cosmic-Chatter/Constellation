@@ -1,8 +1,11 @@
 export default {
+  assignableStaff: [],
   componentGroups: [],
   currentExhibit: '',
   errorDict: {},
   exhibitComponents: [],
+  issueList: [],
+  scheduleUpdateTime: 0,
   serverAddress: '',
   serverSoftwareUpdateAvailable: false,
   STATUS: {

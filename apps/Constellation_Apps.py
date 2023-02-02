@@ -1,4 +1,5 @@
 # Standard modules
+import shutil
 from functools import lru_cache
 import mimetypes
 import os
@@ -9,10 +10,11 @@ from typing import Any
 
 # Third-party modules
 import aiofiles
-from fastapi import FastAPI, Depends, File, HTTPException, UploadFile
+from fastapi import FastAPI, Body, Depends, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import logging
 import uvicorn
 
 # Constellation modules
@@ -20,6 +22,13 @@ import config as const_config
 import helper_files
 import helper_system
 import helper_utilities
+
+# Set up log file
+log_path: str = helper_files.get_path(["apps.log"], user_file=True)
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.INFO)
 
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
@@ -114,7 +123,7 @@ async def serve_html(file_name):
     file_path = helper_files.get_path([file_name+".html"], user_file=True)
     if not os.path.isfile(file_path):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding='UTF-8') as f:
         page = str(f.read())
     return page
 
@@ -167,8 +176,7 @@ async def send_defaults(config: const_config = Depends(get_config)):
         config_to_send["allow_restart"] = "true"
 
     # Add the current update availability to pass to the control server
-    config_to_send["helperSoftwareUpdateAvailable"] = \
-        str(config.helper_software_update_available).lower()
+    config_to_send["software_update"] = config.software_update
 
     # Reformat this content list as an array
     if "content" in config_to_send:
@@ -260,6 +268,14 @@ async def delete_file(data: dict[str, Any], config: const_config = Depends(get_c
     return response
 
 
+@app.post("/renameFile")
+async def rename_file(current_name: str = Body(description="The file to be renamed."),
+                      new_name: str = Body(description="The new name of the file.")):
+    """Rename a file in the content directory."""
+
+    return helper_files.rename_file(current_name, new_name)
+
+
 @app.post("/gotoClip")
 async def goto_clip(data: dict[str, Any], config: const_config = Depends(get_config)):
     """Command the client to display the given clip number"""
@@ -344,16 +360,13 @@ if __name__ == "__main__":
     # Check for missing content thumbnails and create them
     helper_files.create_missing_thumbnails()
 
-    # If it exists, load the dictionary that maps one value into another
-    helper_files.load_dictionary()
-
     # Check the GitHub server for an available software update
     helper_utilities.check_for_software_update()
 
     # Activate Smart Restart
     helper_system.smart_restart_check()
 
-    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of type {const_config.defaults_dict['type']} on port {const_config.defaults_dict['helper_port']}.")
+    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,

@@ -117,6 +117,7 @@ function seekVideoByFraction (direction, fraction) {
 
 function unmute () {
   document.getElementById('fullscreenVideo').muted = false
+  document.getElementById('audioPlayer').muted = false
 }
 
 function updateClipList (list) {
@@ -195,14 +196,17 @@ function changeMedia (source, delayPlay, playOnly) {
   const videoContainer = document.getElementById('videoOverlay')
   const image = document.getElementById('fullscreenImage')
   const imageContainer = document.getElementById('imageOverlay')
+  const audio = document.getElementById('audioPlayer')
 
   if (playOnly === false) { // We are going to load the media before we play it
     // Split off the extension
     const split = source.split('.')
     const ext = split[split.length - 1]
 
-    if (['mp4', 'mpeg', 'm4v', 'webm', 'mov', 'ogg', 'mpg'].includes(ext.toLowerCase())) {
+    if (['mp4', 'mpeg', 'm4v', 'webm', 'mov', 'ogv', 'mpg'].includes(ext.toLowerCase())) {
+      // Video file
       clearTimeout(sourceAdvanceTimer) // Only used for pictures
+      audio.pause()
       if (video.src !== source) {
         video.pause()
         video.src = source
@@ -227,17 +231,44 @@ function changeMedia (source, delayPlay, playOnly) {
         imageContainer.style.opacity = 0
       }
     } else if (['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp', 'heic', 'webp'].includes(ext.toLowerCase())) {
+      // Image file
       video.pause()
+      audio.pause()
       videoContainer.style.opacity = 0
       image.src = source
       imageContainer.style.opacity = 1
       clearTimeout(sourceAdvanceTimer)
       sourceAdvanceTimer = setTimeout(gotoNextSource, imageDuration)
+    } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'].includes(ext.toLowerCase())) {
+      // Audio file
+      video.pause()
+      videoContainer.style.opacity = 0
+      imageContainer.style.opacity = 0
+
+      if (audio.src !== source) {
+        audio.pause()
+        audio.src = source
+        audio.load()
+        audio.play()
+      }
+      if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
+        audio.loop = false
+        audio.onended = function () {
+          if (constCommon.config.autoplayEnabled === true) {
+            gotoNextSource()
+          } else {
+            audio.play()
+          }
+        }
+      } else {
+        audio.loop = true
+      }
     }
   } else {
     video.play()
     videoContainer.style.opacity = 1
     imageContainer.style.opacity = 0
+    clearTimeout(sourceAdvanceTimer)
   }
 }
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
@@ -257,7 +288,6 @@ document.addEventListener('click', unmute)
 constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 
 setInterval(constCommon.sendPing, 5000)

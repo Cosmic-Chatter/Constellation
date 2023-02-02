@@ -4,7 +4,7 @@
 import configparser
 import datetime
 import threading
-from typing import Union
+from typing import Any, Union
 
 # Path to the directory where the server is being launched from
 APP_PATH: str = ""
@@ -12,11 +12,16 @@ APP_PATH: str = ""
 EXEC_PATH: str = ""
 
 debug: bool = False  # True means print various debug info
-software_update_available: bool = False
 gallery_name: str = "Constellation"
+port: int = 8000
+ip_address: str = "localhost"
+
+software_version: float = 3.0
+software_update_available: bool = False
+software_update_available_version: str = ""
 
 # Threading resources
-polling_thread_dict = {}  # Holds references to the threads starting by various polling procedures
+polling_thread_dict: dict[str, threading.Timer] = {}
 logLock: threading.Lock = threading.Lock()
 galleryConfigurationLock: threading.Lock = threading.Lock()
 trackingDataWriteLock: threading.Lock = threading.Lock()
@@ -52,7 +57,7 @@ serverRebootTime = None
 rebooting: bool = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
-currentExhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
-galleryConfiguration: Union[configparser.ConfigParser, None] = None  # The configParser object holding the current config
+current_exhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
+exhibit_configuration: Union[list[dict[str, Any]], None] = None  # The configParser object holding the current config
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []

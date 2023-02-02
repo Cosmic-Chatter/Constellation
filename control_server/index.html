@@ -53,6 +53,10 @@
         overflow-wrap: break-word;
         width: 75%;
       }
+      .constellation-dialog {
+        max-width: min(95%, 750px); 
+        width: min(95%, 750px);
+      }
       .container {
         max-width: 1600px;
       }
@@ -78,6 +82,23 @@
       #issueMediaUploadFilename {
         overflow-wrap: break-word!important;
       }
+      #projectorStatusDetailTable {
+        background-color: #414242;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
+        margin-left: 0px;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-right: 0px;
+        border-collapse: collapse;
+        border: 2px solid #8e184f;
+      }
+      #updateInfoModalChangelogContainer {
+        max-height: 60vh;
+        min-height: 15vh;
+        overflow-y: auto;
+      }
     </style>
   </head>
 
@@ -88,7 +109,7 @@
       <div class="row mt-2 mb-2">
         <div class="col-auto">
           <H4><div id="galleryNameField"></div></H4>
-          <H1><div id="exhibitNameField"></div></H1>
+          <H2><div id="exhibitNameField"></div></H2>
         </div>
       </div>
 
@@ -107,7 +128,7 @@
         <div class="tab-pane fade show active" id="nav-components" role="tabpanel" aria-labelledby="nav-components-tab">
 
           <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header w-100 pr-0">
                   <div class='row modal-title align-items-middle w-100'>
@@ -120,9 +141,17 @@
                           Voting Kiosk
                         </button>
                         <div class="dropdown-menu" aria-labelledby="constellationComponentIdButton">
+                          <div id="componentInfoModalModelGroup">
+                            <span class="dropdown-header pl-3 pb-0">Model</span>
+                            <span id="componentInfoModalModel" class="dropdown-item-text pl-3"></span>
+                          </div>
                           <div id="componentInfoModalIPAddressGroup">
                             <span class="dropdown-header pl-3 pb-0">IP address</span>
                             <span id="componentInfoModalIPAddress" class="dropdown-item-text pl-3"></span>
+                          </div>
+                          <div id="componentInfoModalProtocolGroup">
+                            <span class="dropdown-header pl-3 pb-0">Protocol</span>
+                            <span id="componentInfoModalProtocol" class="dropdown-item-text pl-3"></span>
                           </div>
                           <div id="componentInfoModalHelperIPAddressGroup">
                             <span class="dropdown-header pl-3 pb-0">Helper IP address</span>
@@ -136,11 +165,17 @@
                             <span class="dropdown-header pl-3 pb-0">Browser</span>
                             <span id="componentInfoModalBrowser" class="dropdown-item-text pl-3"></span>
                           </div>
+                          <div id="componentInfoModalLatencyGroup">
+                            <span class="dropdown-header pl-3 pb-0">Latency</span>
+                            <span id="componentInfoModalLatency" class="dropdown-item-text pl-3"></span>
+                          </div>
                           <div id="componentInfoModalLastContactGroup">
                             <span class="dropdown-header pl-3 pb-0">Last contact</span>
                             <span id="componentInfoModalLastContact" class="dropdown-item-text pl-3"></span>
                           </div>
-                          
+                          <div id="componentInfoModalRemoveButtonGroup" class="mx-3 py-2">
+                            <button id="componentInfoModalRemoveComponentButton" class="btn btn-danger btn-sm  w-100 handCursor">Remove</button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -149,9 +184,9 @@
                     </div>
                   </div>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body ">
 
-                  <div class='row align-items-end' id="contentUploadSystemStatsView">
+                  <div class='row align-items-end mb-3' id="contentUploadSystemStatsView">
                     <div class='col-4'>
                       <strong id="contentUploadDiskSpaceFree"></strong>
                       <div class="progress" style="height: 20px;">
@@ -178,9 +213,13 @@
                     <hr>
                   </div>
 
-                  <ul class="nav nav-tabs mt-3" id="componentInfoModalTabList" role="tablist">
+                  <!-- Tab buttons -->
+                  <ul class="nav nav-tabs" id="componentInfoModalTabList" role="tablist">
                     <li class="nav-item">
                       <a class="nav-link active px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="true">Content</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
                     </li>
                     <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalMaintenanceTabButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
@@ -191,6 +230,7 @@
                   </ul>
 
                   <div class="tab-content" id="componentInfoModalTabContainer">
+                    <!-- Content pane -->
                     <div class="tab-pane fade show active" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
                       <div class="row mt-3" id="componentInfoConnectingNotice">
                         <div class='col-8 offset-2'>
@@ -211,7 +251,8 @@
                           </div>
                           <div class="form-group form-check">
                             <input type="checkbox" class="form-check-input" id="componentInfoModalThumbnailCheckbox" checked>
-                            <label class="form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
+                            <label class="d-none d-sm-block form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
+                            <label class="d-block d-sm-none form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbs</label>
                           </div>
                         </div>
                         <div class="col-12 w-100">
@@ -220,7 +261,6 @@
                         <div class='col-12'>
                           <button type="button" class="btn btn-primary mt-2" id="componentSaveConfirmationButton">Save changes</button>
                         </div>
-
                       </div>
 
                       <div id="componentcontentUploadInterface" class="form-group mt-3 mb-0">
@@ -246,6 +286,53 @@
                         </div>
                       </div>
                     </div>
+
+                    <!-- Projector status pane -->
+                    <div class="tab-pane fade" id="componentInfoModaProejctorTab" role="tabpanel" aria-labelledby="componentInfoModaProejctorTabButton">
+                      <div class="row mt-3">
+                        <div class="col-12">
+                          <div id="componentInfoModalProjectorLampList" class="row mx-0">
+                          </div>
+                        </div>
+                        <div class="col-12">
+                          <table id="projectorStatusDetailTable" class="table table-striped">
+                            <tbody>
+                              <tr>
+                                <th scope="row">Power state</th>
+                                <td><div id="projectorInfoPowerState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Lamp state</th>
+                                <td><div id="projectorInfoLampState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Fan state</th>
+                                <td><div id="projectorInfoFanState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Temperature state</th>
+                                <td><div id="projectorInfoTempState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Filter state</th>
+                                <td><div id="projectorInfoFilterState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Cover state</th>
+                                <td><div id="projectorInfoCoverState"></div></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Other</th>
+                                <td><div id="projectorInfoOtherState"></div></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <!-- Maintenance pane -->
                     <div class="tab-pane fade" id="componentInfoModalMaintenanceTab" role="tabpanel" aria-labelledby="componentInfoModalMaintenanceTabButton">
                       <div class="row mt-3">
                         <div class='col-12 col-md-6'>
@@ -281,6 +368,21 @@
                     </div>
                     <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
                       <div class="row mt-3">
+                        <div class="col-6 mt-1">
+                          <select id="componentInfoModalSettingsAppName" class="form-control componentInfoSetting">
+                            <option value="infostation">InfoStation</option>
+                            <option value="media_browser">Media Browser</option>
+                            <option value="media_player">Media Player</option>
+                            <option value="timelapse_viewer">Timelapse Viewer</option>
+                            <option value="voting_kiosk">Voting Kiosk</option>
+                            <option value="word_cloud_input">Word Cloud Input</option>
+                            <option value="word_cloud_viewer">Word Cloud Viewer</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        <div class="col-6 mt-1">
+                          <a id='componentInfoModalFullSettingsButton' class="btn btn-primary" target='_blank'>Open full settings</a>
+                        </div>
                         <div class="col-6 mt-1">
                           <div class="form-check">
                             <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRefresh">
@@ -355,6 +457,66 @@
             </div>
           </div>
 
+          <!-- Software update details modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="updateInfoModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content" style="border:black 1px solid;">
+                <div class="modal-header">
+                  <div class="row w-100">
+                    <div class="col-12">
+                      <h4 class="modal-title" id="updateInfoModalTitle">Update Available: <span id="updateInfoModalTitleID"></span></h4>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 pt-2">
+                      <div class="row pl-3 pr-1">
+                        <div class="col-9 bg-info font-weight-bold pl-2 py-1 rounded-left mr-0 pr-0">Your version</div>
+                        <div id="updateInfoModalCurrentVersion" class="col-3  py-1 bg-warning font-weight-bold rounded-right ml-0 pl-2">1.0</div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 pt-2">
+                      <div class="row pl-1 pr-3">
+                        <div class="col-9 bg-info font-weight-bold pl-2 py-1 rounded-left mr-0 pr-0">Latest version</div>
+                        <div id="updateInfoModalLatestVersion" class="col-3  py-1 bg-success font-weight-bold rounded-right ml-0 pl-2">2.0</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div id="updateInfoModalControlServerInstructions" class="col-6 border-right border-secondary">
+                      <H4>Installation instructions</H4>
+                      Follow these steps to update Control Server:
+                      <ol>
+                        <li>Click <i>Download update</i> and download the correct zipped update file for your operating system.</li>
+                        <li>Unzip the download to find the <code>control_server</code> executable.</li>
+                        <li>From the Control Server terminal window, press <code>Ctrl-c</code> to stop the server.</li>
+                        <li>Replacing the existing <code>control_server</code> file with the new one.</li>
+                        <li>Launch Control Server to complete the update.</li>
+                      </ol>
+                      <strong>For best results, update Control Server and all its components at the same time.</strong>
+                    </div>
+                    <div id="updateInfoModalAppsInstructions" class="col-6 border-right border-secondary">
+                      <H4>Installation instructions</H4>
+                      Follow these steps to update Constellation Apps:
+                      <ol>
+                        <li>Click <i>Download update</i> and download the correct zipped update file for your operating system.</li>
+                        <li>Unzip the download to find the <code>Constellation_Apps</code> executable.</li>
+                        <li>From the app's terminal window, press <code>Ctrl-c</code> to stop the server.</li>
+                        <li>Replacing the existing <code>Constellation_Apps</code> file with the new one.</li>
+                        <li>Launch Constellation Apps to complete the update. You may need to restart your browser for the update to take full effect.</li>
+                      </ol>
+                      <strong>For best results, update Control Server and all its components at the same time.</strong>
+                    </div>
+                    <div id="updateInfoModalChangelogContainer" class="col-6"></div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <a type="button" class="btn btn-primary" id="updateInfoModalDownloadButton" target="_blank">Download update</a>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="modal" tabindex="-1" role="dialog" id="fileDeleteModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content" style="border:black 1px solid;">
@@ -374,70 +536,6 @@
             </div>
           </div>
 
-          <div class="modal" tabindex="-1" role="dialog" id="projectorInfoModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header w-100">
-                  <div class='row modal-title align-items-middle w-100'>
-                    <div class='col-8'>
-                      <h4 id="projectorInfoModalTitle"></h4>
-                    </div>
-                    <div class='col-4'>
-                      <div id="projectorInfoModalIPAddress" align="right"></div>
-                    </div>
-                    <div class="col-12">
-                      <div id="projectorInfoModalDescription"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-body">
-                  <table class="table table-striped">
-                    <tbody>
-                      <tr>
-                        <th scope="row">Power state</th>
-                        <td><div id="projectorInfoPowerState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Lamp hours</th>
-                        <td><div id="projectorInfoLampHours"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Lamp state</th>
-                        <td><div id="projectorInfoLampState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Fan state</th>
-                        <td><div id="projectorInfoFanState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Temperature state</th>
-                        <td><div id="projectorInfoTempState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Filter state</th>
-                        <td><div id="projectorInfoFilterState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Cover state</th>
-                        <td><div id="projectorInfoCoverState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Other</th>
-                        <td><div id="projectorInfoOtherState"></div></td>
-                      </tr>
-                      <tr>
-                        <th scope="row">Model</th>
-                        <td><div id="projectorInfoModel"></div></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="row mt-3 ml-2" id="componentsTabSettingsRow">
             <div class="col">
               <div class="form-check">
@@ -448,7 +546,7 @@
               </div>
             </div>
           </div>
-          <div class="row" id="errorDisplayRow">
+          <div class="row" id="notificationDisplayRow">
           </div>
           <div class="row" id="componentGroupsRow">
           </div>
@@ -481,8 +579,9 @@
                             <option value="power_off">Power off</option>
                             <option value="refresh_page">Refresh components</option>
                             <option value="restart">Restart components</option>
-                            <option value="set_exhibit">Set exhibit</option>
+                            <option value="set_app">Set app</option>
                             <option value="set_content">Set content</option>
+                            <option value="set_exhibit">Set exhibit</option>
                           </select>
                         </div>
                         <div class="col-4">
@@ -848,116 +947,297 @@
             </div>
           </div>
 
-          <div class="modal" tabindex="-1" role="dialog" id="editGalleryConfigModal" >
-            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 1000px); width: min(95%, 1000px);">
+          <!-- Modal for managing system settings -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageSettingsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title h2">Edit Gallery Configuration</h5>
+                  <h5 class="modal-title">System Settings</h5>
                 </div>
-                <div class="modal-body" style="height: calc(70vh);">
-                  <div class='row h-100'>
-                    <div class='col-6 border-left' style="overflow-y: auto; height: 90%;">
-                      <H3>Help</H3>
-                      <p>
-                        The text area on the right displays the current settings for this Control Server. The settings are formatted as an INI file. Each word in [brackets] defines a section of the settings. This help text will describe the possible sections and settings.
-                      </p>
-                      <p>
-                        A few notes about editing INI files:
-                        <ul>
-                          <li>The bracketed section headers and keys must be capitalized as shown.</li>
-                          <li>The general format is: <code>key = value</code>, where <code>key</code> is the name of a setting and <code>value</code> is what it should be set to.</li>
-                          <li>You may not use the equals sign (=) except to separate keys and values.</li>
-                        </ul>
-                      </p>
-                  
-                      <H5><b>[CURRENT]</b></H5>
-                      This section contains some basic configuration information. 
-                      <table>
-                        <tr>
-                          <th>Key</th>
-                          <th>Value</th>
-                          <th>Required?</th>
-                        </tr>
-                        <tr>
-                          <td>current_exhibit</td>
-                          <td>This should be managed by Constellation, not set directly.</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>server_ip_address</td>
-                          <td>The static IP address of this Control Server. E.g., 10.8.1.21</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>server_port</td>
-                          <td>The port of this Control Server. E.g., 8082</td>
-                          <td>Yes</td>
-                        </tr>
-                        <tr>
-                          <td>assignable_staff</td>
-                          <td>A comma-separated list of people, departments, etc. who can be assigned issues. E.g., Exhibits, Facilities, Housekeeping</td>
-                          <td>No</td>
-                        </tr>
-                        <tr>
-                          <td>gallery_name</td>
-                          <td>A user-defined name for where this Control Server is operating. E.g., Adventure Science Center</td>
-                          <td>No</td>
-                        </tr>
-                        <tr>
-                          <td>reboot_time</td>
-                          <td>The time of day that Control Server (the app) should reboot. If you use this, make sure you have set a watchdog process to restart the server. E.g., 1 AM</td>
-                          <td>No</td>
-                        </tr>
-                      </table>
-
-                      <br>
-                      <H5><b>[PJLINK_PROJECTORS]</b></H5>
-                      This section configures projectors using the PJLink protocol. This is the preferred method for managing projectors. 
-                      <br><br>
-                      <p>
-                        <b>Basic format</b>
-                        <br>
-                        <code>ID = Static IP address</code>  
-                      </p>
-                      <p>
-                        <b>Projectors with passwords</b>
-                        <br>
-                        <code>ID = Static IP address, password</code>  
-                      </p>
-                      <p>
-                        <b>Example</b>
-                        <br>
-                        <code>Atrium Marquee = 10.8.1.41, securePass</code>  
-                      </p>
-                    </div>
-                    <div class='col-6 border-right' style="height: 90%;">
-                      <H3>Configuration</H3>
-                      <div class="form-group">
-                        <textarea class="form-control h-100" id="editGalleryConfigTextArea" rows="20" spellcheck="false" ></textarea>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>IP address</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">The IP address of the machine Control Server is running on.</label>
+                          <input id="manageSettingsModalIPInput" type="text" class="form-control manageSettingsInputField" value="255.255.255.255"></input>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-12 mt-3" style="height: 10%;">
-                      <div id="galleryConfigEditModalErrorMessage" class="alert alert-danger mt-2"></div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Port</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">The port Control Server should listen on.</label>
+                          <input id="manageSettingsModalPortInput" type="text" class="form-control manageSettingsInputField" placeholder="8082"></input>
+                        </div>
+                      </div>
                     </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Gallery name</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">A name describing the space managed by Control Server.</label>
+                          <input id="manageSettingsModalGalleryNameInput" type="text" class="form-control manageSettingsInputField" placeholder="Constellation"></input>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Assignable staff</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">A comma-separated list of names to whom issues can be assigned.</label>
+                        <input id="manageSettingsModalAssignableStaffInput" type="text" class="form-control manageSettingsInputField" placeholder=""></input>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                      <div class="row px-2 py-2 h-100">
+                        <div class="col-12 bg-primary rounded-top pt-2">
+                          <H4>Enable debug mode</H4>
+                        </div>
+                        <div class="col-12 bg-secondary py-2 rounded-bottom">
+                          <label class="font-italic">Print additional debug information to the terminal.</label>
+                          <select id="manageSettingsModalDebugSelect" class="form-control manageSettingsInputField" placeholder="">
+                            <option value=true>True</option>
+                            <option value=false>False</option>
+                          </select> 
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-12 mt-2">
+                      <div id="manageSettingsModalMissingIPWarning" class="text-danger">You must specify an IP address.</div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div id="manageSettingsModalRestartRequiredWarning" class="text-warning">This change requires a manual restart of Control Server to take affect.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageSettingsModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
-              <div class="modal-footer">
-                <button id="submitGalleryConfigChangeFromModalButton" type="button" class="btn btn-primary">Save</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              </div>
-            </div>
             </div>
           </div>
 
+          <!-- Modal for managing projectors -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageProjectorsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Projectors</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 16pt;">
+                          Current projectors
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageProjectorAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageProjectorList" class="row mx-2">
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageProjectorsEditIDInput">ID</label>
+                      <input id="manageProjectorsEditIDInput" type="text" class="form-control manageProjectorEditField">
+                      <label for="manageProjectorsEditGroupInput" class="mt-2">Group</label>
+                      <input id="manageProjectorsEditGroupInput" type="text" placeholder="Projectors" class="form-control manageProjectorEditField">
+                      <label for="manageProjectorsProtocolSelect" class="mt-2">Protocol</label>
+                      <select id="manageProjectorsProtocolSelect" class="form-control manageProjectorEditField">
+                        <option value="pjlink">PJLink</option>
+                        <option value="serial">Serial</option>
+                      </select>
+                      <label for="manageProjectorsEditIPInput" class="mt-2">IP address</label>
+                      <input id="manageProjectorsEditIPInput" type="text" class="form-control manageProjectorEditField">
+                      <label id='manageProjectorsEditPasswordInputLabel' for="manageProjectorsEditPasswordInput" class="mt-2">Password</label>
+                      <input id="manageProjectorsEditPasswordInput" type="text" class="form-control manageProjectorEditField">
+                      <label id='manageProjectorsEditMakeInputLabel' for="manageProjectorsEditMakeInput" class="mt-2">Make</label>
+                      <input id="manageProjectorsEditMakeInput" type="text" class="form-control manageProjectorEditField">
+                      <button id="manageProjectorDeleteButton" class="btn btn-danger btn-block mt-3">Delete projector</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageProjectorsModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for managing component descriptions -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageDescriptionsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Descriptions</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 15pt;">
+                          Current descriptions
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageDescriptionsAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageDescriptionsList" class="row mx-2">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageDescriptionsEditIDInput">ID</label>
+                      <input id="manageDescriptionsEditIDInput" type="text" class="form-control manageDescriptionsEditField">
+                      <label for="manageDescriptionsDescriptionEditField" class="mt-2">Description</label>
+                      <textarea id="manageDescriptionsDescriptionEditField" rows="5" class="form-control manageDescriptionsEditField"></textarea>
+                      <button id="manageDescriptionsDeleteButton" class="btn btn-danger btn-block mt-3">Delete description</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageDescriptionsModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for managing Wake on LAN devices -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageWakeOnLANModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Wake on LAN Devices</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 16pt;">
+                          Current devices
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageWakeOnLANAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageWakeOnLANList" class="row mx-2">
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageWakeOnLANEditIDInput">ID</label>
+                      <input id="manageWakeOnLANEditIDInput" type="text" class="form-control manageWakeOnLANEditField">
+                      <label for="manageWakeOnLANEditMACInput" class="mt-2">MAC address</label> 
+                      <span id="manageWakeOnLANEditMACInputWarning" class="badge badge-danger ml-1" data-toggle="tooltip" data-placement="top" title="MAC address must have 12 digits">!</span>
+                      <input id="manageWakeOnLANEditMACInput" type="text"  class="form-control manageWakeOnLANEditField">
+
+                      <label for="manageWakeOnLANEditIPInput" class="mt-2">IP address</label>
+                      <input id="manageWakeOnLANEditIPInput" type="text" class="form-control manageWakeOnLANEditField">
+                      <button id="manageWakeOnLANDeleteButton" class="btn btn-danger btn-block mt-3">Delete device</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageWakeOnLANModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for managing static components -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageStaticComponentsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Static Components</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col-7 px-1">
+                      <div class="row mb-3 pl-2 pr-3">
+                        <div class="col-9" style="font-size: 15pt;">
+                          Current components
+                        </div>
+                        <div class="col-3 px-2">
+                          <button id="manageStaticComponentsAddBUtton" class="btn btn-success btn-sm btn-block">Add</button>
+                        </div>
+                      </div>
+                      <div style="height: 400px; overflow-y:auto">
+                        <div id="manageStaticComponentsList" class="row mx-2">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-5 border-left">
+                      <H4>Edit properties</H4>
+                      <label for="manageStaticComponentsEditIDInput">ID</label>
+                      <input id="manageStaticComponentsEditIDInput" type="text" class="form-control manageStaticComponentsEditField">
+                      <label for="manageStaticComponentsEditGroupInput" class="mt-2">Group</label> 
+                      <input id="manageStaticComponentsEditGroupInput" type="text" placeholder="STATIC" class="form-control manageStaticComponentsEditField">
+                      <button id="manageStaticComponentsDeleteButton" class="btn btn-danger btn-block mt-3">Delete component</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="manageStaticComponentsModalSaveButton" type="button" class="btn btn-primary">Save</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <H3 class='mt-4'>Configuration</H3>
+          <div class="row mt-1">
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showManageSettingsModalButton">Server Settings</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showManageProjectorsModalButton">Projectors</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showComponentDescriptionEditModalButton">Descriptions</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 mt-2">
+              <button type="button" class="btn btn-primary w-100" id="showStaticComponentsEditModalButton">Static Components</button>
+            </div>
+          </div>
           <H3 class='mt-4'>Exhibits</H3>
-          <i>Exhibits enable you to define a set of content for your gallery.</i>
+          <i>Exhibits enable you to define a set of content and apps for your gallery.</i>
           <div class="row mt-3">
-            <div class="col-6 col-md-3 col-lg-2">
-              <button id="showEditGalleryConfigModalButton" type="button" class="btn btn-primary w-100" id="editConfigButton">Edit Settings</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2">
-              <button type="button" class="btn btn-primary w-100" id="reloadConfigurationButton">Reload Settings</button>
-            </div>
             <div class="col-6 col-md-4 col-lg-3">
               <div class="form-group">
                 <label for="exhibitSelect">Set current exhibit</label>

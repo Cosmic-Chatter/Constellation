@@ -9,14 +9,15 @@ export const config = {
   currentExhibit: 'default',
   currentInteraction: false,
   errorDict: {},
+  group: 'Default',
   helperAddress: 'http://localhost:8000',
-  id: 'TEMP',
+  id: 'TEMP ' + String(new Date().getTime()),
   imageDuration: 10, // seconds
+  otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 2.0,
-  type: 'TEMP',
+  softwareVersion: 3.0,
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
@@ -72,24 +73,28 @@ export function makeHelperRequest (opt) {
   return makeRequest(opt)
 }
 
+export function parseQueryString () {
+  // Read the query string to determine what options to set
+
+  const queryString = decodeURIComponent(window.location.search)
+  const searchParams = new URLSearchParams(queryString)
+
+  return searchParams
+}
+
 export function sendPing () {
   // Contact the control server and ask for any updates
-
   if (config.serverAddress === '') {
     console.log('Aborting ping... no config.serverAddress')
     return
   }
 
   const pingRequest = function () {
-    // Parse the IP address of the helper to see if it will be the same as the client
-    const helperIPSameAsClient = config.helperAddress.includes('localhost') || config.helperAddress.includes('127.0.0.1') || config.helperAddress.includes('0.0.0.0')
 
     const requestDict = {
       id: config.id,
-      type: config.type,
-      helperPort: config.helperAddress.split(':')[2], // Depreciated
+      group: config.group,
       helperAddress: config.helperAddress,
-      helperIPSameAsClient,
       allowed_actions: config.allowedActionsDict,
       constellation_app_id: config.constellationAppID,
       platform_details: config.platformDetails,
@@ -158,8 +163,7 @@ export function askForShutdown () {
 }
 
 function readUpdate (update) {
-  // Function to read a message from the server and take action based
-  // on the contents
+  // Function to read a message from the server and take action based on the contents
   // 'update' should be an object
 
   let sendUpdate = false
@@ -190,8 +194,8 @@ function readUpdate (update) {
   if ('id' in update) {
     config.id = update.id
   }
-  if ('type' in update) {
-    config.type = update.type
+  if ('group' in update) {
+    config.group = update.group
   }
   if (('server_ip_address' in update) && ('server_port' in update)) {
     config.serverAddress = 'http://' + update.server_ip_address + ':' + update.server_port
@@ -224,8 +228,8 @@ function readUpdate (update) {
   if ('allow_shutdown' in update) {
     config.allowedActionsDict.shutdown = update.allow_shutdown
   }
-  if ('helperSoftwareUpdateAvailable' in update) {
-    if (update.helperSoftwareUpdateAvailable === 'true') { config.errorDict.helperSoftwareUpdateAvailable = 'true' }
+  if ('software_update' in update) {
+    if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
@@ -233,8 +237,26 @@ function readUpdate (update) {
   if ('autoplay_audio' in update) {
     config.autoplayAudio = update.autoplay_audio
   }
+  if ('other_app_path' in update) {
+    config.otherAppPath = update.other_app_path
+  }
   if (sendUpdate) {
     sendConfigUpdate(update)
+  }
+
+  // After we have saved any updates, see if we should change the app
+  if (stringToBool(parseQueryString().get('showSettings')) === false) {
+    if ('app_name' in update &&
+        update.app_name !== config.constellationAppID &&
+        update.app_name !== '') {
+      if (update.app_name === 'other') {
+        if (config.otherAppPath !== '') {
+          gotoApp('other', config.otherAppPath)
+        }
+      } else {
+        gotoApp(update.app_name)
+      }
+    }
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -284,25 +306,6 @@ export function sendConfigUpdate (update) {
       method: 'POST',
       endpoint: '/setDefaults',
       params: requestDict
-    })
-}
-
-export function checkForSoftwareUpdate () {
-  if (config.softwareUpdateLocation === '') {
-    return
-  }
-
-  return makeRequest({
-    method: 'GET',
-    url: config.softwareUpdateLocation,
-    endpoint: '',
-    timeout: 1000,
-    rawResponse: true
-  })
-    .then((result) => {
-      if (parseFloat(result) > config.softwareVersion) {
-        config.errorDict.softwareUpdateAvailable = 'true'
-      }
     })
 }
 
@@ -374,7 +377,7 @@ export function parseINIString (data) {
   let section = null
   lines.forEach(function (line) {
     if (regex.comment.test(line)) {
-
+      // Skip comments
     } else if (regex.param.test(line)) {
       const match = line.match(regex.param)
       if (section) {
@@ -439,4 +442,27 @@ function splitCsv (str) {
     }
     return accum
   }, { soFar: [], isConcatting: false }).soFar
+}
+
+export function gotoApp (app, other = '') {
+  // Change the browser location to point to the given app.
+
+  const appLocations = {
+    infostation: '/infostation.html',
+    media_browser: '/media_browser.html',
+    media_player: '/media_player.html',
+    // media_player_kiosk: 'Media Player Kiosk',
+    // sos_kiosk: 'SOS Kiosk',
+    // sos_screen_player: 'SOS Screen Player',
+    timelapse_viewer: '/timelapse_viewer.html',
+    voting_kiosk: '/voting_kiosk.html',
+    word_cloud_input: '/word_cloud_input.html',
+    word_cloud_viewer: '/word_cloud_viewer.html'
+  }
+  console.log(config, app, other)
+  if (other !== '') {
+    window.location = config.helperAddress + other
+  } else {
+    window.location = config.helperAddress + appLocations[app]
+  }
 }

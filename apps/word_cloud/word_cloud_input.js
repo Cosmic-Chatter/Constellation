@@ -21,7 +21,7 @@ function sendTexttoServer () {
   // Send the server the text that the user has inputted
   const text = getCleanText()
   const requestDict = {
-    name: 'Word_Cloud_' + collectionNmae,
+    name: 'Word_Cloud_' + collectionName,
     text
   }
 
@@ -65,6 +65,11 @@ function updateFunc (update) {
 function updateContent (name, definition) {
   // Clean up the old survey, then create the new one.
 
+  if (!('SETTINGS' in definition)) {
+    console.log('Error: The INI file must include a [SETTINGS] section!')
+    return
+  }
+
   // Parse the settings and make the appropriate changes
   if ('prompt' in definition.SETTINGS) {
     document.getElementById('promptText').innerHTML = definition.SETTINGS.prompt
@@ -72,9 +77,9 @@ function updateContent (name, definition) {
     document.getElementById('promptText').innerHTML = ''
   }
   if ('collection_name' in definition.SETTINGS) {
-    collectionNmae = definition.SETTINGS.collection_name
+    collectionName = definition.SETTINGS.collection_name
   } else {
-    collectionNmae = 'default'
+    collectionName = 'default'
   }
   if ('prompt_size' in definition.SETTINGS) {
     document.getElementById('promptText').style.fontSize = definition.SETTINGS.prompt_size + 'vh'
@@ -131,15 +136,14 @@ const keyboard = new Keyboard({
 })
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'word_cloud'
+constCommon.config.constellationAppID = 'word_cloud_input'
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
 let currentContent = {}
-let collectionNmae = 'default'
+let collectionName = 'default'
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 setInterval(constCommon.sendPing, 5000)
 
 document.getElementById('clearButton').addEventListener('click', clear)

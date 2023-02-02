@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-from typing import Union
+from typing import Any, Union
 
 # Constellation imports
 import config
@@ -29,12 +29,15 @@ class Issue:
         self.details["assignedTo"] = details.get("assignedTo", [])
         self.details["media"] = details.get("media", None)
 
+    def __repr__(self):
+        return repr(f"[Issue Name: {self.details['issueName']}]")
+
     def refresh_last_update_date(self):
         self.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
         config.issueList_last_update_date = self.details["lastUpdateDate"]
 
 
-def delete_issue_media_file(file: str, owner: str = None):
+def delete_issue_media_file(file: str, owner: Union[str, None] = None) -> None:
     """Delete a media file from an issue"""
 
     file_path = c_tools.get_path(["issues", "media", file], user_file=True)
@@ -53,26 +56,26 @@ def delete_issue_media_file(file: str, owner: str = None):
         with config.issueLock:
             issue = get_issue(owner)
             issue.details["media"] = None
-            # issue.details["lastUpdateDate"] = datetime.datetime.now().isoformat()
             issue.refresh_last_update_date()
-            save_issueList()
+            save_issue_list()
 
 
-def edit_issue(details: dict):
+def create_issue(details: dict[str, Any]) -> Issue:
+    """Create a new issue and add it to the issueList"""
+
+    with config.issueLock:
+        new_issue = Issue(details)
+        config.issueList.append(new_issue)
+    return new_issue
+
+
+def edit_issue(details: dict) -> None:
     """Edit issue with the id given in details dict"""
     if "id" in details:
         issue = get_issue(details["id"])
         with config.issueLock:
-            issue.details["priority"] = details.get("priority", issue.details["priority"])
-            issue.details["issueName"] = details.get("issueName", issue.details["issueName"])
-            issue.details["issueDescription"] = details.get("issueDescription",
-                                                            issue.details["issueDescription"])
-            issue.details["relatedComponentIDs"] = details.get("relatedComponentIDs",
-                                                               issue.details["relatedComponentIDs"])
-            issue.details["assignedTo"] = details.get("assignedTo",
-                                                      issue.details["assignedTo"])
+            issue.details = issue.details | details
             issue.refresh_last_update_date()
-            issue.details["media"] = details.get("media", issue.details["media"])
 
 
 def get_issue(this_id: str) -> Issue:
@@ -81,7 +84,7 @@ def get_issue(this_id: str) -> Issue:
     return next((x for x in config.issueList if x.details["id"] == this_id), None)
 
 
-def remove_issue(this_id: str):
+def remove_issue(this_id: str) -> None:
     """Remove an Issue with the given id from the issueList"""
 
     # First, if there is a media file, delete it
@@ -93,10 +96,24 @@ def remove_issue(this_id: str):
         with config.issueLock:
             config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
             issue.refresh_last_update_date()
-            save_issueList()
+            save_issue_list()
 
 
-def save_issueList():
+def read_issue_list() -> None:
+    """Read issues.json and set up the issueList"""
+
+    try:
+        issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
+        with open(issue_file, "r", encoding="UTF-8") as file_object:
+            issues = json.load(file_object)
+
+        for issue in issues:
+            create_issue(issue)
+    except FileNotFoundError:
+        print("No stored issues to read")
+
+
+def save_issue_list() -> None:
     """Write the current issueList to file"""
 
     issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)

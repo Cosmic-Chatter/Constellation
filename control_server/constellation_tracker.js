@@ -62,3 +62,26 @@ export function loadLayoutDefinition (name, complete) {
       }
     })
 }
+
+export function downloadTrackerData (name) {
+  // Ask the server to send the data for the currently selected tracker as a CSV
+  // and initiate a download.
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/tracker/flexible-tracker/getDataAsCSV',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Convert the text to a file and initiate download
+        const fileBlob = new Blob([result.csv], {
+          type: 'text/plain'
+        })
+        const a = document.createElement('a')
+        a.href = window.URL.createObjectURL(fileBlob)
+        a.download = name + '.csv'
+        a.click()
+      }
+    })
+}

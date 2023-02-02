@@ -2,6 +2,7 @@
 
 # Standard modules
 import configparser
+import logging
 import os
 import subprocess
 import sys
@@ -33,8 +34,7 @@ def with_extension(filename: str, ext: str) -> str:
     if ext.startswith("."):
         ext = ext[1:]
 
-    split = filename.split(".")
-    return ".".join(split[0:-1]) + "." + ext
+    return os.path.splitext(filename)[0] + "." + ext
 
 
 def delete_file(file: str, absolute: bool = False):
@@ -55,12 +55,56 @@ def delete_file(file: str, absolute: bool = False):
             os.remove(thumb_path)
 
 
+def rename_file(old_name: str, new_name: str, absolute: bool = False):
+    """Rename the given file."""
+
+    if absolute:
+        old_path = old_name
+        new_path = new_name
+    else:
+        old_path = get_path(["content", old_name], user_file=True)
+        new_path = get_path(["content", new_name], user_file=True)
+
+    # If there is already a file at new_path, fail so that we don't overwrite it.
+    if os.path.exists(new_path):
+        return {
+            "success": False,
+            "error": "file_exists",
+            "reason": f"File {new_path} already exists."
+        }
+
+    thumb_path, _ = get_thumbnail(old_name)
+
+    print(f"Renaming file {old_path} to {new_path}")
+    logging.info("Renaming file %s to %s", old_path, new_path)
+
+    try:
+        with config.content_file_lock:
+            os.rename(old_path, new_path)
+            if thumb_path is not None:
+                new_thumb = get_thumbnail_name(new_name)
+                new_thumb_path = get_path(["thumbnails", new_thumb], user_file=True)
+                os.rename(thumb_path, new_thumb_path)
+    except FileExistsError:
+        return {
+            "success": False,
+            "error": "file_exists",
+            "reason": f"File {new_path} already exists."
+        }
+    except FileNotFoundError:
+        return {
+            "success": False,
+            "error": "file_not_found",
+            "reason": f"File {old_path} does not exist."
+        }
+    return {"success": True}
+
+
 def create_thumbnail(filename: str, mimetype: str):
     """Create a thumbnail from the given media file and add it to the thumbnails directory.
 
     If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
 
-    # with config.content_file_lock:
     try:
         ff = pyffmpeg.FFmpeg()
         if mimetype == "image":
@@ -90,34 +134,45 @@ def create_thumbnail(filename: str, mimetype: str):
         print("create_thumbnail: error loading FFmpeg: ", e)
 
 
-def load_dictionary():
-    """Look for a file called dictionary.ini and load it if it exists"""
-
-    dict_path = get_path(["dictionary.ini"], user_file=True)
-
-    if os.path.isfile(dict_path):
-        config.dictionary_object = configparser.ConfigParser(delimiters="=")
-        config.dictionary_object.optionxform = str  # Override the default, which is case-insensitive
-        config.dictionary_object.read(dict_path)
-
-
-def get_thumbnail(filename: str) -> (Union[str, None], str):
-    """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype"""
+def get_thumbnail_name(filename: str) -> str:
+    """Return the filename converted to the appropriate Constellation thumbnail format"""
 
     mimetype, _ = mimetypes.guess_type(filename)
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        mimetype = None
+        if os.path.splitext(filename)[-1].lower() == '.webp':
+            # Hack to fix webp. Should be removed for python 3.10+
+            return with_extension(filename, "jpg")
+        return ""
     if mimetype == "image":
-        thumb_path = get_path(["thumbnails", with_extension(filename, "jpg")], user_file=True)
+        return with_extension(filename, "jpg")
     elif mimetype == "video":
-        thumb_path = get_path(["thumbnails", with_extension(filename, "mp4")], user_file=True)
-    else:
-        thumb_path = None
+        return with_extension(filename, "mp4")
 
-    if thumb_path is not None and not os.path.exists(thumb_path):
-        thumb_path = None
+    return ""
+
+
+def get_thumbnail(filename: str) -> (Union[str, None], str):
+    """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype"""
+
+    thumb_name = get_thumbnail_name(filename)
+    mimetype, _ = mimetypes.guess_type(filename)
+
+    try:
+        mimetype = mimetype.split("/")[0]
+    except AttributeError:
+        if os.path.splitext(filename)[-1].lower() == '.webp':
+            # Hack to fix webp. Should be removed for python 3.10+
+            mimetype = 'image'
+
+    if thumb_name == "":
+        return None, mimetype
+
+    thumb_path = get_path(["thumbnails", thumb_name], user_file=True)
+
+    if not os.path.exists(thumb_path):
+        return None, mimetype
 
     return thumb_path, mimetype
 
@@ -126,7 +181,6 @@ def create_missing_thumbnails():
     """Check the content directory for files without thumbnails and create them"""
 
     content = get_all_directory_contents("content")
-
     for file in content:
         file_path, mimetype = get_thumbnail(file)
         if file_path is None:
@@ -142,10 +196,7 @@ def get_all_directory_contents(directory: str = "content") -> list:
 
 
 def get_directory_contents(directory: str, absolute: bool = False) -> list:
-    """Return the contents of an exhibit directory
-
-    if absolute == False, the path is appended to the default content directory
-    """
+    """Return the contents of a directory."""
 
     if absolute:
         contents = os.listdir(directory)
@@ -171,3 +222,11 @@ def check_directory_structure():
                 os.mkdir(content_path)
             except PermissionError:
                 print("Error: unable to create directory. Do you have write permission?")
+
+
+# Set up log file
+log_path: str = get_path(["apps.log"], user_file=True)
+logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
+                    filename=log_path,
+                    format='%(levelname)s, %(asctime)s, %(message)s',
+                    level=logging.DEBUG)

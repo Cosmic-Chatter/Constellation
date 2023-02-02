@@ -25,8 +25,13 @@ def check_for_software_update():
         for line in urllib.request.urlopen(
                 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
                 timeout=1):
-            if float(line.decode('utf-8')) > config.HELPER_SOFTWARE_VERSION:
-                config.helper_software_update_available = True
+            available_version = float(line.decode('utf-8'))
+            if available_version > config.HELPER_SOFTWARE_VERSION:
+                config.software_update = {
+                    "update_available": True,
+                    "current_version": str(config.HELPER_SOFTWARE_VERSION),
+                    "available_version": str(available_version)
+                }
                 break
     except urllib.error.HTTPError:
         print("cannot connect to update server")
@@ -34,7 +39,7 @@ def check_for_software_update():
     except urllib.error.URLError:
         print("network connection unavailable")
         return
-    if config.helper_software_update_available:
+    if config.software_update["update_available"]:
         print("update available!")
     else:
         print("up to date.")
@@ -96,10 +101,20 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
 
         if os.path.isfile(defaults_path):
             config.defaults_object.read(defaults_path)
+
+            if "type" in config.defaults_object["CURRENT"]:
+                # Replace 'type' key with 'group' key
+                config.defaults_object.set("CURRENT", "group", config.defaults_object["CURRENT"].get('type'))
+                settings_dict = dict(config.defaults_object["CURRENT"])
+                # Remove 'type'
+                settings_dict.pop("type")
+                update_defaults(settings_dict, force=True)
         else:
             handle_missing_defaults_file()
             read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)
-            threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}")).start()
+            timer = threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}"))
+            timer.daemon = True
+            timer.start()
             return
 
     default = config.defaults_object["CURRENT"]
@@ -153,10 +168,10 @@ def handle_missing_defaults_file():
         this_id = "TEMP"
     settings_dict["id"] = this_id
 
-    this_type = input("Enter a type for this app (no spaces, default: TEMP): ").strip().replace(' ', '-')
-    if this_type == "":
-        this_type = "TEMP"
-    settings_dict["type"] = this_type
+    this_group = input("Enter a group for this app (no spaces, default: Default): ").strip().replace(' ', '-')
+    if this_group == "":
+        this_group = "Default"
+    settings_dict["group"] = this_group
 
     ip_address = input(f"Enter the static Constellation Control Server IP address. If you do not know what this is, ask your system administrator. (default: localhost): ").strip()
     if ip_address == "":
@@ -207,7 +222,7 @@ def str_to_bool(val: str) -> bool:
             val_to_return = True
         else:
             val_to_return = False
-            print("strToBool: Warning: ambiguous string, returning False", val)
+            print("strToBool: Warning: ambiguous string, returning False:", val)
     return val_to_return
 
 
@@ -234,7 +249,6 @@ def update_defaults(data: dict, cull: bool = False, force: bool = False):
     If cull == True, remove any entries not included in 'data'
     """
 
-    update_made = force
     if "content" in data:
         if isinstance(data["content"], list):
             content = ""
@@ -244,9 +258,7 @@ def update_defaults(data: dict, cull: bool = False, force: bool = False):
                     content += ', '
                 content += file
             data["content"] = content
-        else:
-            # Unsupported data type, so don't make a change
-            content = config.defaults_dict["content"]
+
     if cull:
         new_dict = data
     else:

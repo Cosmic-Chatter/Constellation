@@ -267,7 +267,6 @@ function updateParser (update) {
 
 function loadContentFromINI (definition) {
   // Take an object parsed from an INI string and use it to load a new set of contet
-  console.log(definition)
 
   if (!('SETTINGS' in definition)) {
     console.log('Error: The INI file must include a [SETTINGS] section!')
@@ -513,7 +512,6 @@ let customCardsPerPage = false
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.softwareVersion = 2.0
 constCommon.config.constellationAppID = 'media_browser'
 constCommon.config.debug = true
 
@@ -521,7 +519,6 @@ let inactivityTimer = null
 let attractorAvailable = false
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 

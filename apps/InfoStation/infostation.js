@@ -1,7 +1,6 @@
 /* global showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
-import * as constTools from './constellation_tools.js'
 
 function updateContent (definition) {
   // Parse the current content file and build the interface correspondingly.
@@ -800,7 +799,6 @@ function videoOverlayShow (id, card) {
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.softwareVersion = 2.0
 constCommon.config.constellationAppID = 'infostation'
 constCommon.config.debug = true
 
@@ -825,7 +823,6 @@ $('#attractorOverlay').click(hideAttractor)
 $('#langToggleButton').click(toggleLang)
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 

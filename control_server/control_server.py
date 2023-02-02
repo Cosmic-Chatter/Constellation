@@ -6,6 +6,7 @@
 # Standard modules
 import configparser
 import datetime
+import threading
 from functools import lru_cache
 import json
 import logging
@@ -24,7 +25,7 @@ import uvicorn
 # Non-standard modules
 import aiofiles
 import dateutil.parser
-from fastapi import FastAPI, Body, Depends, File, Request, UploadFile
+from fastapi import FastAPI, Body, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -49,13 +50,13 @@ def constellation_schema():
 
     openapi_schema = get_openapi(
         title="Constellation Control Server",
-        version=str(SOFTWARE_VERSION),
+        version=str(c_config.software_version),
         description="Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
         routes=app.routes,
     )
     openapi_schema["info"] = {
         "title": "Constellation Control Server",
-        "version": str(SOFTWARE_VERSION),
+        "version": str(c_config.software_version),
         "description": "Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
         "contact": {
             "name": "Morgan Rehnberg",
@@ -72,12 +73,12 @@ def constellation_schema():
 
 
 def send_webpage_update():
-    """Function to collect the current exhibit status, format it, and send it back to the web client to update the page."""
+    """Collect the current exhibit status, format it, and send it back to the web client to update the page."""
 
     component_dict_list = []
     for item in c_config.componentList:
         temp = {"id": item.id,
-                "type": item.type}
+                "group": item.group}
         if "content" in item.config:
             temp["content"] = item.config["content"]
         if "error" in item.config:
@@ -95,42 +96,48 @@ def send_webpage_update():
         temp["class"] = "exhibitComponent"
         temp["status"] = item.current_status()
         temp["lastContactDateTime"] = item.last_contact_datetime
-        temp["ip_address"] = item.ip
-        temp["helperPort"] = item.helperPort
+        temp["ip_address"] = item.ip_address
         temp["helperAddress"] = item.helperAddress
-        temp["constellation_app_id"] = item.constellation_app_id
+        temp["constellation_app_id"] = item.config["app_name"]
         temp["platform_details"] = item.platform_details
+        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     for item in c_config.projectorList:
         temp = {"id": item.id,
-                "type": 'PROJECTOR',
-                "ip_address": item.ip}
+                "group": item.group,
+                "ip_address": item.ip_address}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        temp["class"] = "exhibitComponent"
+        temp["class"] = "projector"
+        temp["state"] = item.state
+        temp["protocol"] = item.connection_type
         temp["status"] = item.state["status"]
+        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     for item in c_config.wakeOnLANList:
         temp = {"id": item.id,
-                "type": 'WAKE_ON_LAN',
-                "ip_address": item.ip}
+                "group": 'WAKE_ON_LAN',
+                "ip_address": item.ip_address}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        temp["class"] = "exhibitComponent"
+        temp["class"] = "wolComponent"
         temp["status"] = item.state["status"]
+        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     # Also include an object with the status of the overall gallery
     temp = {"class": "gallery",
-            "currentExhibit": c_config.currentExhibit,
+            "current_exhibit": c_config.current_exhibit,
             "availableExhibits": c_config.exhibit_list,
             "galleryName": c_config.gallery_name,
+            "softwareVersion": str(c_config.software_version),
+            "softwareVersionAvailable": c_config.software_update_available_version,
             "updateAvailable": str(c_config.software_update_available).lower()}
     component_dict_list.append(temp)
 
@@ -153,18 +160,10 @@ def send_webpage_update():
     return component_dict_list
 
 
-def clear_terminal():
-    """Clear the terminal"""
+def command_line_setup_print_gui() -> None:
+    """Helper to print the header content for the setup tool"""
 
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-
-def command_line_setup():
-    """Prompt the user for several pieces of information on first-time setup"""
-
-    settings_dict = {}
-
-    clear_terminal()
+    c_tools.clear_terminal()
     print("##########################################################")
     print("Welcome to Constellation Control Server!")
     print("")
@@ -173,17 +172,27 @@ def command_line_setup():
     print("a few questions. If you don't know the answer, or wish to")
     print("accept the default, just press the enter key.")
     print("")
+
+
+def command_line_setup() -> None:
+    """Prompt the user for several pieces of information on first-time setup"""
+
+    settings_dict = {}
+
+    command_line_setup_print_gui()
     c_config.gallery_name = input("Enter a name for the gallery (default: Constellation): ").strip()
     if c_config.gallery_name == "":
         c_config.gallery_name = "Constellation"
     settings_dict["gallery_name"] = c_config.gallery_name
 
+    command_line_setup_print_gui()
     default_ip = socket.gethostbyname(socket.gethostname())
     ip_address = input(f"Enter this computer's static IP address (default: {default_ip}): ").strip()
     if ip_address == "":
         ip_address = default_ip
-    settings_dict["server_ip_address"] = ip_address
+    settings_dict["ip_address"] = ip_address
 
+    command_line_setup_print_gui()
     default_port = 8082
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -197,204 +206,135 @@ def command_line_setup():
         port = default_port
     else:
         port = int(port)
-    settings_dict["server_port"] = port
+    settings_dict["port"] = port
 
-    settings_dict["current_exhibit"] = "default.exhibit"
+    settings_dict["current_exhibit"] = "default"
+    # Create this exhibit file if it doesn't exist
+    if not os.path.exists(c_tools.get_path(["exhibits", "Default.json"], user_file=True)):
+        c_exhibit.create_new_exhibit("default", None)
 
-    return {"CURRENT": settings_dict}
+    # Write new system config to file
+    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
+    c_tools.write_json(settings_dict, config_path)
+
+    command_line_setup_print_gui()
+    print("Setup is complete! Control Server will now start.")
+    print("")
 
 
-def load_default_configuration():
-    """Read the current exhibit configuration from file and initialize it"""
+def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> None:
+    """Take a legacy galleryConfiguration.ini file and convert it to the appropriate JSON files."""
 
-    global server_port
-    global ip_address
-
-    # First, retrieve the config filename that defines the desired gallery
-    config_reader = configparser.ConfigParser(delimiters="=")
-    config_reader.optionxform = str  # Override default, which is case in-sensitive
-    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-
-    with c_config.galleryConfigurationLock:
-        config_reader.read(gal_path)
-    try:
-        current = config_reader["CURRENT"]
-    except KeyError:
-        # We don't have a config file, so let's get info from the user to create one
-        settings_dict = command_line_setup()
-        config_reader.read_dict(settings_dict)
-        with open(c_tools.get_path(["galleryConfiguration.ini"], user_file=True), "w", encoding="UTF-8") as f:
-            config_reader.write(f)
-        current = config_reader["CURRENT"]
-    server_port = current.getint("server_port", 8080)
-    ip_address = current.get("server_ip_address", socket.gethostbyname(socket.gethostname()))
-    c_config.gallery_name = current.get("gallery_name", "Constellation")
+    current = ini["CURRENT"]
+    new_config = {
+        "current_exhibit": os.path.splitext(current.get("current_exhibit", "default.exhibit"))[0],
+        "debug": current.getboolean("debug", False),
+        "gallery_name": current.get("gallery_name", "Constellation"),
+        "ip_address": current.get("server_ip_address", "localhost"),
+        "port": current.getint("server_port", 8080),
+    }
     staff_list = current.get("assignable_staff", "")
-    c_config.debug = current.getboolean("debug", False)
-    if c_config.debug:
-        c_tools.print_debug_details(loop=True)
-        logging.getLogger('uvicorn').setLevel(logging.DEBUG)
+    new_config["assignable_staff"] = [x.strip() for x in staff_list.split(",")]
 
-    if len(staff_list) > 0:
-        c_config.assignable_staff = [x.strip() for x in staff_list.split(",")]
-    else:
-        c_config.assignable_staff = []
+    # Write new system config to file
+    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
+    c_tools.write_json(new_config, config_path)
 
+    # Then, check for other sections that also need to be converted
+    try:
+        component_descriptions = dict(ini["COMPONENT_DESCRIPTIONS"])
+        # We have found legacy description definitions
+        c_exhibit.convert_descriptions_config_to_json(component_descriptions)
+    except KeyError:
+        pass
+
+    try:
+        pjlink_projectors = ini["PJLINK_PROJECTORS"]
+        # We have found legacy PJLink projector configuration... convert this to the new JSON format
+        c_proj.convert_config_to_json(dict(pjlink_projectors), "pjlink")
+    except KeyError:
+        pass
+
+    try:
+        serial_projectors = ini["SERIAL_PROJECTORS"]
+        # We have found legacy serial projector configuration... convert this to the new JSON format
+        c_proj.convert_config_to_json(dict(serial_projectors), "serial")
+    except KeyError:
+        pass
+
+    try:
+        wol = ini["WAKE_ON_LAN"]
+        # We have a legacy Wake on LAN device definition
+        c_exhibit.convert_wake_on_LAN_to_json(dict(wol))
+    except KeyError:
+        pass
+
+    try:
+        static = ini["STATIC_COMPONENTS"]
+        # We have a legacy static components definition
+        c_exhibit.convert_static_config_to_json(dict(static))
+    except KeyError:
+        pass
+
+    # Rename galleryConfiguration.ini
+    shutil.move(c_tools.get_path(["galleryConfiguration.ini"], user_file=True),
+                c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
+
+
+def load_default_configuration() -> None:
+    """Initialize the server in a default state."""
+
+    # First, check for a legacy configuration file
+    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
+    if os.path.exists(gal_path):
+        config_reader = configparser.ConfigParser(delimiters="=")
+        config_reader.optionxform = str  # Override default, which is case in-sensitive
+
+        with c_config.galleryConfigurationLock:
+            config_reader.read(gal_path)
+        try:
+            _ = config_reader["CURRENT"]
+            # We gave a legacy configuration file; convert it to JSON
+            convert_galleryConfigurationINI_to_json(config_reader)
+        except KeyError:
+            pass
+
+    # Also check for legacy exhibit files
+    exhibit_path = c_tools.get_path(["exhibits"], user_file=True)
+    for file in os.listdir(exhibit_path):
+        if os.path.splitext(file)[1].lower() == '.exhibit':
+            c_exhibit.convert_exhibits_ini_to_json(c_tools.get_path(["exhibits", file], user_file=True))
+
+    # Check if there is a configuration file
+    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
+    if not os.path.exists(config_path):
+        # We don't have a config file, so let's get info from the user to create one
+        command_line_setup()
+    c_tools.load_system_configuration()
+
+    c_tools.start_debug_loop()
     c_sched.retrieve_json_schedule()
+    c_exhibit.read_descriptions_configuration()
+    c_proj.read_projector_configuration()
+    c_exhibit.read_wake_on_LAN_configuration()
+    c_exhibit.read_static_components_configuration()
+    c_exhibit.read_exhibit_configuration(c_config.current_exhibit)
 
-    c_config.projectorList = []
-
-    # Load the component descriptions. Do this first, so they are available when
-    # creating the various components
-    try:
-        print("Reading component descriptions...", end="", flush=True)
-        c_config.componentDescriptions = dict(config_reader["COMPONENT_DESCRIPTIONS"])
-        print(" done")
-    except KeyError:
-        print("None found")
-        c_config.componentDescriptions = {}
-
-    # Parse list of PJLink projectors
-    try:
-        pjlink_projectors = config_reader["PJLINK_PROJECTORS"]
-        print("Connecting to PJLink projectors...", end="\r", flush=True)
-    except KeyError:
-        print("No PJLink projectors specified")
-        pjlink_projectors = []
-
-    n_proj = len(pjlink_projectors)
-    cur_proj = 0
-    for key in pjlink_projectors:
-        cur_proj += 1
-        print(f"Connecting to PJLink projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if c_proj.get_projector(key) is None:
-            # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, password"
-            split = pjlink_projectors[key].split(",")
-            if len(split) == 2:
-                # We have an IP address and a password
-                ip = split[0].strip()
-                password = split[1].strip()
-                if password == "":
-                    password = None
-                new_proj = c_proj.Projector(key, ip, "pjlink", password=password)
-            elif len(split) == 1:
-                # We have an IP address only
-                new_proj = c_proj.Projector(key, pjlink_projectors[key], "pjlink")
-            else:
-                print("Invalid PJLink projector entry:", pjlink_projectors[key])
-                break
-            c_config.projectorList.append(new_proj)
-    print("Connecting to PJLink projectors... done                      ")
-
-    # Parse list of serial projectors
-    try:
-        serial_projectors = config_reader["SERIAL_PROJECTORS"]
-        print("Connecting to serial projectors...", end="\r", flush=True)
-    except KeyError:
-        print("No serial projectors specified")
-        serial_projectors = []
-
-    n_proj = len(serial_projectors)
-    cur_proj = 0
-    for key in serial_projectors:
-        cur_proj += 1
-        print(f"Connecting to serial projectors... {cur_proj}/{n_proj}", end="\r", flush=True)
-        if c_proj.get_projector(key) is None:
-            # Try to split on a comma. If we get two elements back, that means
-            # we have the form "ip, password"
-            split = serial_projectors[key].split(",")
-            if len(split) == 2:
-                # We have an IP address and a make
-                ip = split[0].strip()
-                make = split[1].strip()
-                if make == "":
-                    make = None
-                new_proj = c_proj.Projector(key, ip, "serial", make=make)
-            elif len(split) == 1:
-                # We have an IP address only
-                new_proj = c_proj.Projector(key, serial_projectors[key], "serial")
-            else:
-                print("Invalid serial projector entry:", serial_projectors[key])
-                break
-            c_config.projectorList.append(new_proj)
-    print("Connecting to serial projectors... done                      ")
-
-    # Parse list of Wake on LAN devices
-    try:
-        wol = config_reader["WAKE_ON_LAN"]
-        print("Collecting Wake on LAN devices...", end="", flush=True)
-
-        for key in wol:
-            if c_exhibit.get_exhibit_component(key) is None:
-                # If 'get_exhibit_component' is not None, this key corresponds
-                # to a WoL device with a matching exhibit component ID and
-                # we have already loaded that component from the pickle file
-                value_split = wol[key].split(",")
-                if len(value_split) == 2:
-                    # We have been given a MAC address and IP address
-                    device = c_exhibit.WakeOnLANDevice(key,
-                                                       value_split[0].strip(),
-                                                       ip_address=value_split[1].strip())
-                elif len(value_split) == 1:
-                    # We have been given only a MAC address
-                    device = c_exhibit.WakeOnLANDevice(key, value_split[0].strip())
-                else:
-                    print(f"Wake on LAN device specified with unknown format: {wol[key]}")
-                    continue
-                c_config.wakeOnLANList.append(device)
-        print(" done")
-    except KeyError:
-        print("No wake on LAN devices specified")
-        c_config.wakeOnLANList = []
-
-    # Build any existing issues
-    try:
-        issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
-        with open(issue_file, "r", encoding="UTF-8") as file_object:
-            issues = json.load(file_object)
-        print("Reading stored issues...", end="", flush=True)
-
-        for issue in issues:
-            new_issue = c_issues.Issue(issue)
-            c_config.issueList.append(new_issue)
-        print(" done")
-    except FileNotFoundError:
-        print("No stored issues to read")
-
-    # Parse list of static components
-    try:
-        static_components = config_reader["STATIC_COMPONENTS"]
-        print("Adding static components... ", end="\r", flush=True)
-        for this_type in static_components:
-            split = static_components[this_type].split(",")
-            for this_id in split:
-                this_id = this_id.strip()
-                if c_exhibit.get_exhibit_component(this_id) is None:
-                    static_component = c_exhibit.add_exhibit_component(this_id, this_type, category="static")
-                    static_component.constellation_app_id = "static_component"
-        print("done")
-    except KeyError:
-        print("none specified")
-
-    # Parse the reboot_time if necessary
-    if "reboot_time" in current:
-        reboot_time = dateutil.parser.parse(current["reboot_time"])
-        if reboot_time < datetime.datetime.now():
-            reboot_time += datetime.timedelta(days=1)
-        c_config.serverRebootTime = reboot_time
-        print("Server will reboot at:", c_config.serverRebootTime.isoformat())
-
-    # Then, load the configuration for that exhibit
-    c_exhibit.read_exhibit_configuration(current["current_exhibit"])
-
-    # Update the components that the configuration has changed
+    # Update the components that their configuration may have changed
     for component in c_config.componentList:
         component.update_configuration()
 
+    # Build any existing issues
+    c_issues.read_issue_list()
 
-def quit_handler(*args):
-    """Handle cleanly shutting down the server"""
+    # Save the current software version in .last_ver
+    last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
+    with open(last_ver_path, 'w', encoding='UTF-8') as f:
+        f.write(str(c_config.software_version))
+
+
+def quit_handler(*args) -> None:
+    """Handle cleanly shutting down the server."""
 
     try:
         if c_config.rebooting is True:
@@ -415,6 +355,13 @@ def quit_handler(*args):
     for key in c_config.polling_thread_dict:
         c_config.polling_thread_dict[key].cancel()
 
+    for component in c_config.componentList:
+        component.clean_up()
+    for component in c_config.projectorList:
+        component.clean_up()
+    for component in c_config.wakeOnLANList:
+        component.clean_up()
+
     with c_config.logLock:
         logging.info("Server shutdown")
 
@@ -424,7 +371,7 @@ def quit_handler(*args):
                 sys.exit(exit_code)
 
 
-def error_handler(*exc_info):
+def error_handler(*exc_info) -> None:
     """Catch errors and log them to file"""
 
     text = "".join(traceback.format_exception(*exc_info)).replace('"', "'").replace("\n", "<newline>")
@@ -433,15 +380,16 @@ def error_handler(*exc_info):
     print(f"Error: see control_server.log for more details ({datetime.datetime.now()})")
 
 
-def check_for_software_update():
+def check_for_software_update() -> None:
     """Download the version.txt file from GitHub and check if there is an update"""
 
     print("Checking for update... ", end="")
     try:
         for line in urllib.request.urlopen(
                 "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/version.txt"):
-            if float(line.decode('utf-8')) > SOFTWARE_VERSION:
+            if float(line.decode('utf-8')) > c_config.software_version:
                 c_config.software_update_available = True
+                c_config.software_update_available_version = line.decode('utf-8').strip()
                 break
     except urllib.error.HTTPError:
         print("cannot connect to update server")
@@ -465,11 +413,6 @@ if getattr(sys, 'frozen', False):
 else:
     c_config.APP_PATH = c_config.EXEC_PATH
 
-server_port: int = 8080  # Default; should be set in galleryConfiguration.ini
-ip_address: str = socket.gethostbyname(socket.gethostname())  # Default; should be set in galleryConfiguration.ini
-ADDR: str = ""  # Accept connections from all interfaces
-SOFTWARE_VERSION = 2.0
-
 # Set up log file
 log_path: str = c_tools.get_path(["control_server.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
@@ -483,13 +426,34 @@ with c_config.logLock:
     logging.info("Server started")
 
 # Try to reload the previous state from the pickle file current_state.dat
+# First, check if we are loading from an updated version. If so, delete current_state.dat to avoid incompatibility.
+last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
+state_path = c_tools.get_path(["current_state.dat"], user_file=True)
+if not os.path.exists(last_ver_path):
+    # No version file means we are updating from 2.0 -> 3.0
+    try:
+        os.remove(state_path)
+    except (FileNotFoundError, EOFError):
+        pass
+else:
+    with open(last_ver_path, 'r', encoding='UTF-8') as f:
+        try:
+            if float(f.read()) < c_config.software_version:
+                try:
+                    logging.info("Update detected... deleting current_state.dat")
+                    os.remove(state_path)
+                except (FileNotFoundError, EOFError):
+                    pass
+        except ValueError:
+            pass
 try:
-    state_path = c_tools.get_path(["current_state.dat"], user_file=True)
     with open(state_path, "rb") as previous_state:
         c_config.componentList = pickle.load(previous_state)
-        print("Previous server state loaded")
+        if c_config.debug:
+            print("Previous server state loaded")
 except (FileNotFoundError, EOFError):
-    print("Could not load previous server state")
+    if c_config.debug:
+        print("Could not load previous server state")
 
 app = FastAPI()
 
@@ -527,7 +491,7 @@ class ExhibitComponent(BaseModel):
 async def create_exhibit(exhibit: Exhibit,
                          clone_from: Union[str, None] = Body(default=None,
                                                              description="The name of the exhibit to clone.")):
-    """Create a new exhibit INI file."""
+    """Create a new exhibit JSON file."""
 
     c_exhibit.create_new_exhibit(exhibit.name, clone_from)
     return {"success": True, "reason": ""}
@@ -559,12 +523,23 @@ async def queue_WOL_command(component: ExhibitComponent,
     return {"success": True, "reason": ""}
 
 
+@app.post("/exhibit/removeComponent")
+async def queue_command(component: ExhibitComponent = Body(embed=True)):
+    """Queue the specified command for the exhibit component to retrieve."""
+
+    to_remove = c_exhibit.get_exhibit_component(component.id)
+    print("Removing component:", component.id)
+    to_remove.remove()
+    return {"success": True, "reason": ""}
+
+
 @app.post("/exhibit/set")
 async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     """Set the specified exhibit as the current one."""
 
     print("Changing exhibit to:", exhibit.name)
-    c_exhibit.read_exhibit_configuration(exhibit.name, update_default=True)
+    c_tools.update_system_configuration({"current_exhibit": exhibit.name})
+    c_exhibit.read_exhibit_configuration(exhibit.name)
 
     # Update the components that the configuration has changed
     for component in c_config.componentList:
@@ -577,8 +552,19 @@ async def set_component_content(component: ExhibitComponent,
                                 content: list[str] = Body(description="The content to be set")):
     """Change the active content for the given exhibit component."""
 
-    print(f"Changing content for {component.id}:", content)
-    c_exhibit.set_component_content(component.id, content)
+    if c_config.debug:
+        print(f"Changing content for {component.id}:", content)
+    c_exhibit.update_exhibit_configuration(component.id, {"content": content})
+    return {"success": True, "reason": ""}
+
+
+@app.post("/exhibit/setComponentApp")
+async def set_component_app(component: ExhibitComponent,
+                            app_name: str = Body(description="The app to be set")):
+    """Change the active app for the given exhibit component."""
+
+    print(f"Changing app for {component.id}:", app_name)
+    c_exhibit.update_exhibit_configuration(component.id, {"app_name": app_name})
     return {"success": True, "reason": ""}
 
 
@@ -650,7 +636,7 @@ async def delete_tracker_template(data: dict[str, Any], tracker_type: str):
 
 @app.get("/tracker/{tracker_type}/getAvailableData")
 async def get_available_tracker_data(tracker_type: str):
-    """Send a list of all the available data files for the given tracker type."""
+    """Send a list of all the available data files for the given tracker group."""
 
     data_path = c_tools.get_path([tracker_type, "data"], user_file=True)
     data_list = []
@@ -664,7 +650,7 @@ async def get_available_tracker_data(tracker_type: str):
 
 @app.get("/tracker/{tracker_type}/getAvailableDefinitions")
 async def get_available_tracker_definitions(tracker_type: str):
-    """Send a list of all the available definitions for the given tracker type (usually flexible-tracker)."""
+    """Send a list of all the available definitions for the given tracker group (usually flexible-tracker)."""
 
     definition_list = []
     template_path = c_tools.get_path([tracker_type, "templates"], user_file=True)
@@ -687,10 +673,10 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
     if not name.lower().endswith(".txt"):
         name += ".txt"
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    if not os.path.exists(data_path):
+        return {"success": False, "reason": f"File {data['name']}.json does not exist!", "csv": ""}
     result = c_track.create_CSV(data_path)
-    response = {"success": True,
-                "csv": result}
-    return response
+    return {"success": True, "csv": result}
 
 
 @app.post("/tracker/{tracker_type}/getLayoutDefinition")
@@ -774,63 +760,44 @@ async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str):
 
 # Issue actions
 @app.post("/issue/create")
-async def create_issue(data: dict[str, Any]):
+async def create_issue(details: dict[str, Any] = Body(embed=True)):
     """Create a new issue."""
 
-    if "details" in data:
-        with c_config.issueLock:
-            new_issue = c_issues.Issue(data["details"])
-            c_config.issueList.append(new_issue)
-            c_issues.save_issueList()
-        response_dict = {"success": True}
-    else:
-        response_dict = {"success": False,
-                         "reason": "Must include field 'details'"}
-    return response_dict
+    c_issues.create_issue(details)
+    c_issues.save_issue_list()
+    return {"success": True}
 
 
 @app.post("/issue/delete")
-async def delete_issue(data: dict[str, Any]):
+async def delete_issue(id_to_delete: str = Body(description="The ID of the issue to delete.", embed=True)):
     """Delete an issue."""
 
-    if "id" in data:
-        c_issues.remove_issue(data["id"])
-        c_issues.save_issueList()
-        response_dict = {"success": True, "reason": ""}
-    else:
-        response_dict = {"success": False, "reason": "Must include field 'id'"}
-    return response_dict
+    c_issues.remove_issue(id_to_delete)
+    c_issues.save_issue_list()
+    return {"success": True, "reason": ""}
 
 
 @app.post("/issue/deleteMedia")
-async def delete_issue_media(data: dict[str, Any]):
+async def delete_issue_media(filename: str = Body(description="The filename to be deleted."),
+                             owner: Union[str, None] = Body(default=None, description="The ID of the Issue this media file belonged to.")):
     """Delete the media file linked to an issue and remove the reference."""
 
-    if "filename" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'filename' field."}
-        return response
-    this_id = None
-    if "id" in data:
-        this_id = data["id"]
-    c_issues.delete_issue_media_file(data["filename"], owner=this_id)
-    response = {"success": True}
-    return response
+    c_issues.delete_issue_media_file(filename, owner=owner)
+    return {"success": True}
 
 
 @app.post("/issue/edit")
-async def edit_issue(data: dict[str, Any]):
+async def edit_issue(details: dict[str, Any] = Body(description="The details to be changed.", embed=True)):
     """Make changes to an existing issue."""
 
-    if "details" in data and "id" in data["details"]:
-        c_issues.edit_issue(data["details"])
-        c_issues.save_issueList()
+    if "id" in details:
+        c_issues.edit_issue(details)
+        c_issues.save_issue_list()
         response_dict = {"success": True}
     else:
         response_dict = {
             "success": False,
-            "reason": "Must include field 'details' with proper"
-                      "ty 'id'"
+            "reason": "'details' must include property 'id'"
         }
     return response_dict
 
@@ -937,19 +904,20 @@ async def update_maintenance_status(data: dict[str, Any]):
 
 
 # Projector actions
-@app.post("/projector/getUpdate")
-async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
-    """Poll the projector for an update and return it"""
 
-    proj = c_proj.get_projector(projector.id)
-    if proj is not None:
-        response_dict = {"success": True,
-                         "state": proj.state}
-    else:
-        response_dict = {"success": False,
-                         "reason": f"Projector {projector.id} does not exist",
-                         "status": "DELETE"}
-    return response_dict
+# @app.post("/projector/getUpdate")
+# async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
+#     """Poll the projector for an update and return it"""
+#
+#     proj = c_proj.get_projector(projector.id)
+#     if proj is not None:
+#         response_dict = {"success": True,
+#                          "state": proj.state}
+#     else:
+#         response_dict = {"success": False,
+#                          "reason": f"Projector {projector.id} does not exist",
+#                          "status": "DELETE"}
+#     return response_dict
 
 
 @app.post("/projector/queueCommand")
@@ -964,8 +932,9 @@ async def queue_projector_command(component: ExhibitComponent,
 
 # Schedule actions
 @app.post("/schedule/convert")
-async def convert_schedule(date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
-                           convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
+async def convert_schedule(
+        date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
+        convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
     """Convert between date- and day-specific schedules."""
 
     with c_config.scheduleLock:
@@ -986,7 +955,8 @@ async def convert_schedule(date: str = Body(description="The date of the schedul
 
 @app.post("/schedule/deleteAction")
 async def delete_schedule_action(schedule_name: str = Body(description="The schedule to delete the action from."),
-                                 schedule_id: str = Body(description="The unique identifier of the action to be deleted.")):
+                                 schedule_id: str = Body(
+                                     description="The unique identifier of the action to be deleted.")):
     """Delete the given action from the specified schedule."""
 
     c_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
@@ -1106,32 +1076,12 @@ async def check_connection():
     return {"success": True}
 
 
-@app.get("/system/getConfiguration")
-async def get_configuration():
-    """Return a dictionary with galleryConfiguration.ini."""
+@app.get("/system/{target}/getConfiguration")
+async def get_json_configuration(target: str):
+    """Return the requested JSON configuration."""
 
-    config_reader = configparser.ConfigParser(delimiters="=")
-    config_reader.optionxform = str  # Override default, which is case in-sensitive
-    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-    with c_config.galleryConfigurationLock:
-        config_reader.read(gal_path)
-
-    config_dict = {}
-    for section in config_reader.sections():
-        config_dict[section] = {}
-        for key, val in config_reader.items(section):
-            config_dict[section][key] = val
-    return {"success": True, "configuration": config_dict}
-
-
-@app.get("/system/getConfigurationRawText")
-async def get_configuration_raw_text():
-    """Return the raw text for galleryConfiguration.ini."""
-
-    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-    with open(gal_path, 'r', encoding='UTF-8') as f:
-        text = f.read()
-    return {"success": True, "configuration": text}
+    config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
+    return {"configuration": c_tools.load_json(config_path)}
 
 
 @app.get("/system/getHelpText")
@@ -1146,6 +1096,29 @@ async def get_help_text():
         with c_config.logLock:
             logging.error("Unable to read README.md")
         response = {"success": False, "reason": "Unable to read README.md"}
+    except PermissionError:
+        # For some reason, Pyinstaller insists on placing the README in a directory of the same name on Windows.
+        try:
+            readme_path = c_tools.get_path(["README.md","README.md"])
+            with open(readme_path, 'r', encoding='UTF-8') as f:
+                text = f.read()
+            response = {"success": True, "text": text}
+        except (FileNotFoundError, PermissionError):
+            with c_config.logLock:
+                logging.error("Unable to read README.md")
+            response = {"success": False, "reason": "Unable to read README.md"}
+
+    return response
+
+
+@app.get('/system/getSoftwareVersion')
+async def get_version():
+    """Send the current software version."""
+
+    response = {
+        "success": True,
+        "version": str(c_config.software_version)
+    }
     return response
 
 
@@ -1156,21 +1129,13 @@ async def get_update():
     return send_webpage_update()
 
 
-@app.get("/system/reloadConfiguration")
-async def reload_configuration():
-    """Reload galleryConfiguration.ini"""
-
-    load_default_configuration()
-    return {"success": True}
-
-
 @app.post("/system/ping")
 async def handle_ping(data: dict[str, Any], request: Request):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
-    if "id" not in data or "type" not in data:
+    if "id" not in data or "group" not in data:
         response = {"success": False,
-                    "reason": "Request missing 'id' or 'type' field."}
+                    "reason": "Request missing 'id' or 'group' field."}
         return response
 
     this_id = data['id']
@@ -1183,47 +1148,31 @@ async def handle_ping(data: dict[str, Any], request: Request):
     return dict_to_send
 
 
-@app.post("/system/updateConfigurationRawText")
-async def update_configuration_raw_text(data: dict[str, Any]):
-    """Use the given plain text to rewrite galleryConfiguration.ini."""
+@app.post("/system/{target}/updateConfiguration")
+async def update_configuration(target: str, configuration=Body(
+        description="A JSON object specifying the configuration.",
+        embed=True)):
+    """Write the given object to the matching JSON file as the configuration."""
 
-    if "configuration" not in data:
-        return {"success": False, "reason": "Missing required field 'configuration'"}
+    if target == "system":
+        c_tools.update_system_configuration(configuration)
+    else:
+        config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
+        c_tools.write_json(configuration, config_path)
 
-    response_dict = {"success": True}
-    config_reader = configparser.ConfigParser(delimiters="=")
-    config_reader.optionxform = str  # Override default, which is case in-sensitive
-    try:
-        # Try to parse the raw text to look for errors
-        config_reader.read_string((data["configuration"]))
-        config_reader.get("CURRENT", "server_ip_address")
-        config_reader.get("CURRENT", "server_port")
-        config_reader.get("CURRENT", "current_exhibit")
-        config_reader.get("CURRENT", "gallery_name")
+        if target == "projectors":
+            # Use a separate thread for this one, as connecting to projectors is blocking
+            th = threading.Thread(target=c_proj.read_projector_configuration,
+                                  name='c_proj.read_projector_configuration()')
+            th.start()
+        elif target == "descriptions":
+            c_exhibit.read_descriptions_configuration()
+        elif target == "wake_on_LAN":
+            c_exhibit.read_wake_on_LAN_configuration()
+        elif target == "static":
+            c_exhibit.read_static_components_configuration()
 
-        gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-        with open(gal_path, 'w', encoding='UTF-8') as f:
-            f.write(data["configuration"])
-    except configparser.MissingSectionHeaderError:
-        response_dict["success"] = False
-        response_dict["reason"] = "You must have at least a [CURRENT] section"
-    except configparser.ParsingError as e:
-        error = e.errors[0]
-        err_line = error[0]
-        err_msg = error[1].replace('\\n', '')
-        response_dict["success"] = False
-        response_dict["reason"] = f"Error in line {err_line}: {err_msg}"
-    except configparser.DuplicateOptionError as e:
-        response_dict["success"] = False
-        response_dict[
-            "reason"] = f"Section [{e.section}] has a repeated option: {e.option} (line {e.lineno})"
-    except configparser.NoSectionError:
-        response_dict["success"] = False
-        response_dict["reason"] = "You must have a [CURRENT] section"
-    except configparser.NoOptionError as e:
-        response_dict["success"] = False
-        response_dict["reason"] = f"You must have the {e.option} setting in the [{e.section}] section"
-    return response_dict
+    return {"success": True}
 
 
 @app.post("/")
@@ -1252,6 +1201,14 @@ except RuntimeError:
     os.mkdir(c_tools.get_path(["static"], user_file=True))
     app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
               name="static")
+try:
+    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+              name="issues")
+except RuntimeError:
+    # Directory does not exist, so create it
+    os.mkdir(c_tools.get_path(["issues"], user_file=True))
+    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+              name="issues")
 app.mount("/",
           StaticFiles(directory=c_tools.get_path([""]), html=True),
           name="root")
@@ -1268,9 +1225,12 @@ if __name__ == "__main__":
     if c_config.debug:
         log_level = "debug"
 
+    print(f"Launching Control Server for {c_config.gallery_name}.")
+    print(f"To access the server, visit http://{c_config.ip_address}:{c_config.port}")
+
     # Must use only one worker, since we are relying on the config module being in global
     uvicorn.run(app,
-                host=ADDR,
+                host="",  # Accept connections on all interfaces
                 log_level=log_level,
-                port=int(server_port),
+                port=int(c_config.port),
                 reload=False, workers=1)

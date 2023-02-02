@@ -144,6 +144,7 @@ def queue_json_schedule(schedule: dict) -> None:
 
             # print("scheduling timer: ", event)
             timer = threading.Timer(seconds_from_now, execute_scheduled_action, args=(event["action"], event["target"], event["value"]))
+            timer.daemon = True
             timer.start()
             new_timers.append(timer)
 
@@ -152,6 +153,7 @@ def queue_json_schedule(schedule: dict) -> None:
         seconds_until_reboot = (config.serverRebootTime - datetime.datetime.now()).total_seconds()
         if seconds_until_reboot >= 0:
             timer = threading.Timer(seconds_until_reboot, c_tools.reboot_server)
+            timer.daemon = True
             timer.start()
             new_timers.append(timer)
 
@@ -159,6 +161,7 @@ def queue_json_schedule(schedule: dict) -> None:
     midnight = datetime.datetime.combine(datetime.datetime.now() + datetime.timedelta(days=1), datetime.time.min)
     seconds_until_midnight = (midnight - datetime.datetime.now()).total_seconds()
     timer = threading.Timer(seconds_until_midnight, retrieve_json_schedule)
+    timer.daemon = True
     timer.start()
     new_timers.append(timer)
 
@@ -172,6 +175,14 @@ def queue_json_schedule(schedule: dict) -> None:
 def execute_scheduled_action(action: str, target: Union[str, None], value: Union[list, str, None]):
     """Dispatch the appropriate action when called by a schedule timer"""
 
+    if action == 'set_app' and target is not None and value is not None:
+        if isinstance(value, str):
+            value = [value]
+        if target.startswith("__id_"):
+            target = target[5:]
+        print(f"Changing app for {target} to {value}")
+        logging.info("Changing app for %s to %s", target, value)
+        c_exhibit.update_exhibit_configuration(target, {"app_name": value})
     if action == 'set_content' and target is not None and value is not None:
         if isinstance(value, str):
             value = [value]
@@ -179,11 +190,11 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
             target = target[5:]
         print(f"Changing content for {target} to {value}")
         logging.info("Changing content for %s to %s", target, value)
-        c_exhibit.set_component_content(target, value)
+        c_exhibit.update_exhibit_configuration(target, {"content": value})
     elif action == 'set_exhibit' and target is not None:
         print("Changing exhibit to:", target)
         logging.info("Changing exhibit to %s", target)
-        c_exhibit.read_exhibit_configuration(target, update_default=True)
+        c_exhibit.read_exhibit_configuration(target)
 
         # Update the components that the configuration has changed
         for component in config.componentList:
@@ -191,18 +202,17 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
     elif target is not None:
         if target == "__all":
             c_exhibit.command_all_exhibit_components(action)
-        elif target.startswith("__type"):
-            this_type = target[7:]
-            if this_type == "PROJECTOR":
-                for projector in config.projectorList:
-                    projector.queue_command(action)
-            elif this_type == "WAKE_ON_LAN":
-                for device in config.wakeOnLANList:
-                    device.queue_command(action)
-            else:
-                for component in config.componentList:
-                    if component.type == this_type:
-                        component.queue_command(action)
+        elif target.startswith("__group"):
+            group = target[8:]
+            for component in config.componentList:
+                if component.group == group:
+                    component.queue_command(action)
+            for component in config.projectorList:
+                if component.group == group:
+                    component.queue_command(action)
+            for component in config.wakeOnLANList:
+                if component.group == group:
+                    component.queue_command(action)
         elif target.startswith("__id"):
             c_exhibit.get_exhibit_component(target[5:]).queue_command(action)
     else:

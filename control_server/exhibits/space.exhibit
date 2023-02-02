@@ -1,3 +1,7 @@
 [WINDOW1]
 content = default.png
 
+[TEST]
+app_name = voting_kiosk
+content = show_topics.ini
+
