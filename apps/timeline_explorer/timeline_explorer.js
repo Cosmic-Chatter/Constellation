@@ -44,7 +44,7 @@ function _loadDefinition (def) {
     rawResponse: true
   })
     .then((response) => {
-      $('#timelineContainer').empty()
+      // $('#timelineContainer').empty()
       constCommon.csvToJSON(response).forEach((entry) => {
         createTimelineEntry(entry)
       })
