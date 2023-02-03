@@ -203,7 +203,7 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
         if target == "__all":
             c_exhibit.command_all_exhibit_components(action)
         elif target.startswith("__group"):
-            group = target[7:]
+            group = target[8:]
             for component in config.componentList:
                 if component.group == group:
                     component.queue_command(action)

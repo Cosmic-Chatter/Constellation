@@ -94,6 +94,11 @@
         border-collapse: collapse;
         border: 2px solid #8e184f;
       }
+      #updateInfoModalChangelogContainer {
+        max-height: 60vh;
+        min-height: 15vh;
+        overflow-y: auto;
+      }
     </style>
   </head>
 
@@ -453,6 +458,66 @@
             </div>
           </div>
 
+          <!-- Software update details modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="updateInfoModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content" style="border:black 1px solid;">
+                <div class="modal-header">
+                  <div class="row w-100">
+                    <div class="col-12">
+                      <h4 class="modal-title" id="updateInfoModalTitle">Update Available: <span id="updateInfoModalTitleID"></span></h4>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 pt-2">
+                      <div class="row pl-3 pr-1">
+                        <div class="col-9 bg-info font-weight-bold pl-2 py-1 rounded-left mr-0 pr-0">Your version</div>
+                        <div id="updateInfoModalCurrentVersion" class="col-3  py-1 bg-warning font-weight-bold rounded-right ml-0 pl-2">1.0</div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 pt-2">
+                      <div class="row pl-1 pr-3">
+                        <div class="col-9 bg-info font-weight-bold pl-2 py-1 rounded-left mr-0 pr-0">Latest version</div>
+                        <div id="updateInfoModalLatestVersion" class="col-3  py-1 bg-success font-weight-bold rounded-right ml-0 pl-2">2.0</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div id="updateInfoModalControlServerInstructions" class="col-6 border-right border-secondary">
+                      <H4>Installation instructions</H4>
+                      Follow these steps to update Control Server:
+                      <ol>
+                        <li>Click <i>Download update</i> and download the correct zipped update file for your operating system.</li>
+                        <li>Unzip the download to find the <code>control_server</code> executable.</li>
+                        <li>From the Control Server terminal window, press <code>Ctrl-c</code> to stop the server.</li>
+                        <li>Replacing the existing <code>control_server</code> file with the new one.</li>
+                        <li>Launch Control Server to complete the update.</li>
+                      </ol>
+                      <strong>For best results, update Control Server and all its components at the same time.</strong>
+                    </div>
+                    <div id="updateInfoModalAppsInstructions" class="col-6 border-right border-secondary">
+                      <H4>Installation instructions</H4>
+                      Follow these steps to update Constellation Apps:
+                      <ol>
+                        <li>Click <i>Download update</i> and download the correct zipped update file for your operating system.</li>
+                        <li>Unzip the download to find the <code>Constellation_Apps</code> executable.</li>
+                        <li>From the app's terminal window, press <code>Ctrl-c</code> to stop the server.</li>
+                        <li>Replacing the existing <code>Constellation_Apps</code> file with the new one.</li>
+                        <li>Launch Constellation Apps to complete the update. You may need to restart your browser for the update to take full effect.</li>
+                      </ol>
+                      <strong>For best results, update Control Server and all its components at the same time.</strong>
+                    </div>
+                    <div id="updateInfoModalChangelogContainer" class="col-6"></div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <a type="button" class="btn btn-primary" id="updateInfoModalDownloadButton" target="_blank">Download update</a>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="modal" tabindex="-1" role="dialog" id="fileDeleteModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content" style="border:black 1px solid;">
@@ -482,7 +547,7 @@
               </div>
             </div>
           </div>
-          <div class="row" id="errorDisplayRow">
+          <div class="row" id="notificationDisplayRow">
           </div>
           <div class="row" id="componentGroupsRow">
           </div>

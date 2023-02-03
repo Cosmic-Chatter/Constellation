@@ -211,7 +211,7 @@ class BaseComponent {
         console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", update.error)
         console.log(e)
       }
-      constTools.rebuildErrorList()
+      constTools.rebuildNotificationList()
     }
   }
 }
@@ -314,7 +314,7 @@ class Projector extends BaseComponent {
           }
         })
         constConfig.errorDict[this.id] = errorList
-        constTools.rebuildErrorList()
+        constTools.rebuildNotificationList()
       }
     }
     if ('protocol' in update) {
@@ -696,6 +696,7 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModaProejctorTabButton').show()
   } else {
     $('#componentInfoModaProejctorTabButton').hide()
+    $('#componentInfoModalModelGroup').hide()
   }
 
   // Must be after all the settings are configured
@@ -870,7 +871,7 @@ function createProjectorLampStatusEntry (entry, number) {
   // Take a dictionary and turn it into HTML elements
 
   const containerCol = document.createElement('div')
-  containerCol.classList = 'col-3 mb-3'
+  containerCol.classList = 'col-6 col-sm-3 mb-3'
   $(containerCol).data('config', entry)
   $('#componentInfoModalProjectorLampList').append(containerCol)
 
@@ -1096,6 +1097,7 @@ function populateComponentContent (availableContent, key, id, appName, div) {
     button.classList = 'btn componentContentButton'
 
     const fileName = document.createElement('span')
+    fileName.classList = 'contentFilenameContainer'
     fileName.setAttribute('id', cleanFilename + 'NameField')
     fileName.innerHTML = contentList[i]
     button.appendChild(fileName)
@@ -1312,13 +1314,14 @@ function getAllowableContentTypes (appID) {
     heartbeat: ['ini'],
     infostation: ['ini'],
     media_browser: ['ini'],
-    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv'],
+    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', 'aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
     timelapse_viewer: ['ini'],
     voting_kiosk: ['ini'],
-    word_cloud: ['ini']
+    word_cloud_input: ['ini'],
+    word_cloud_viewer: ['ini']
   }
   if (appID in supportedTypes) {
     return supportedTypes[appID]

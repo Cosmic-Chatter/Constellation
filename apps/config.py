@@ -2,7 +2,7 @@
 
 import datetime
 import threading
-from typing import Any
+from typing import Any, Union
 
 # Path to the directory where the server is being launched from
 application_path: str = ""
@@ -15,9 +15,9 @@ defaults_dict: dict = {}  # Dictionary holding default parameters from defaults.
 defaults_object = None  # configparser object holding the parsed input from defaults.ini
 dictionary_object = None  # Optionally-loaded configparser object from dictionary.ini
 missingContentWarningList: list[dict] = []  # Holds a list of warning about missing content
-NEXT_EVENT: tuple[datetime.time, list[str]] = None  # A tuple with the next event to occur and the time is happens
+NEXT_EVENT: Union[tuple[datetime.time, list[str]], None] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
-HELPER_SOFTWARE_VERSION: float = 2.0
+HELPER_SOFTWARE_VERSION: float = 3.0
 debug: bool = True
 
 # DMX resources
@@ -35,7 +35,11 @@ smart_restart: dict[str: Any] = {
     "active_hours_end": "10 pm",
 }
 
-helper_software_update_available: bool = False
+software_update: dict[str, Any] = {
+    "update_available": False,
+    "current_version": str(HELPER_SOFTWARE_VERSION),
+    "available_version": str(HELPER_SOFTWARE_VERSION)
+}
 # If we are serving the HTML file from over the network, this will be set
 # to True. If the HTML file has been loaded locally, it will stay False
 HELPING_REMOTE_CLIENT: bool = False

@@ -109,7 +109,8 @@ function submitComponentContentChange () {
   // back to the server to be changed.
 
   const id = $('#componentInfoModalTitle').html().trim()
-  const selectedButtons = $('.componentContentButton.btn-primary').find('span')
+  const selectedButtons = $('.componentContentButton.btn-primary').find('.contentFilenameContainer')
+
   const contentList = []
   for (let i = 0; i < selectedButtons.length; i++) {
     const content = selectedButtons[i].innerHTML.trim()
@@ -342,8 +343,15 @@ function askForUpdate () {
             }
             if ('updateAvailable' in component) {
               if (component.updateAvailable === 'true') {
-                constConfig.serverSoftwareUpdateAvailable = true
-                constTools.rebuildErrorList()
+                const notification = {
+                  update_available: true,
+                  current_version: component.softwareVersion,
+                  available_version: component.softwareVersionAvailable
+                }
+                constConfig.errorDict.__control_server = {
+                  software_update: notification
+                }
+                constTools.rebuildNotificationList()
               }
             }
           } else if (component.class === 'schedule') {

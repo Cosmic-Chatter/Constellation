@@ -17,7 +17,7 @@ export const config = {
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 2.0,
+  softwareVersion: 3.0,
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
@@ -90,14 +90,11 @@ export function sendPing () {
   }
 
   const pingRequest = function () {
-    // Parse the IP address of the helper to see if it will be the same as the client
-    const helperIPSameAsClient = config.helperAddress.includes('localhost') || config.helperAddress.includes('127.0.0.1') || config.helperAddress.includes('0.0.0.0')
 
     const requestDict = {
       id: config.id,
       group: config.group,
       helperAddress: config.helperAddress,
-      helperIPSameAsClient,
       allowed_actions: config.allowedActionsDict,
       constellation_app_id: config.constellationAppID,
       platform_details: config.platformDetails,
@@ -231,8 +228,8 @@ function readUpdate (update) {
   if ('allow_shutdown' in update) {
     config.allowedActionsDict.shutdown = update.allow_shutdown
   }
-  if ('helperSoftwareUpdateAvailable' in update) {
-    if (update.helperSoftwareUpdateAvailable === 'true') { config.errorDict.helperSoftwareUpdateAvailable = 'true' }
+  if ('software_update' in update) {
+    if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
@@ -312,25 +309,6 @@ export function sendConfigUpdate (update) {
     })
 }
 
-export function checkForSoftwareUpdate () {
-  if (config.softwareUpdateLocation === '') {
-    return
-  }
-
-  return makeRequest({
-    method: 'GET',
-    url: config.softwareUpdateLocation,
-    endpoint: '',
-    timeout: 1000,
-    rawResponse: true
-  })
-    .then((result) => {
-      if (parseFloat(result) > config.softwareVersion) {
-        config.errorDict.softwareUpdateAvailable = 'true'
-      }
-    })
-}
-
 export function arraysEqual (arr1, arr2) {
   // Function to check if two arrays have the same elements in the same order
 
@@ -399,7 +377,7 @@ export function parseINIString (data) {
   let section = null
   lines.forEach(function (line) {
     if (regex.comment.test(line)) {
-
+      // Skip comments
     } else if (regex.param.test(line)) {
       const match = line.match(regex.param)
       if (section) {

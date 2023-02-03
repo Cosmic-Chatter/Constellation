@@ -282,7 +282,7 @@ function scheduleTargetToDescription (target) {
   if (target === '__all') {
     return 'all components'
   } else if (target.startsWith('__group_')) {
-    return 'all ' + target.slice(7)
+    return 'all ' + target.slice(8)
   } else if (target.startsWith('__id_')) {
     return target.slice(5)
   } else if (target.endsWith('.exhibit')) {
@@ -295,10 +295,10 @@ function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
 
   const targetSelector = $('#scheduleTargetSelector')
 
-  if (optionsToAdd.includes("All")) {
+  if (optionsToAdd.includes('All')) {
     targetSelector.append(new Option('All', '__all'))
   }
-  if (optionsToAdd.includes("Groups")) {
+  if (optionsToAdd.includes('Groups')) {
     const sep = new Option('Groups', null)
     sep.setAttribute('disabled', true)
     targetSelector.append(sep)
@@ -306,19 +306,19 @@ function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
       targetSelector.append(new Option(item.group, '__group_' + item.group))
     })
   }
-  if (optionsToAdd.includes("ExhibitComponents") || optionsToAdd.includes("Projectors")) {
+  if (optionsToAdd.includes('ExhibitComponents') || optionsToAdd.includes('Projectors')) {
     const sep = new Option('IDs', null)
     sep.setAttribute('disabled', true)
     targetSelector.append(sep)
 
-    if (optionsToAdd.includes("ExhibitComponents")) {
+    if (optionsToAdd.includes('ExhibitComponents')) {
       constConfig.exhibitComponents.forEach((item) => {
         if (item.type === 'exhibit_component' && item.constellationAppId !== 'static_component') {
           targetSelector.append(new Option(item.id, '__id_' + item.id))
         }
       })
     }
-    if (optionsToAdd.includes("Projectors")) {
+    if (optionsToAdd.includes('Projectors')) {
       constConfig.exhibitComponents.forEach((item) => {
         if (item.type === 'projector') {
           targetSelector.append(new Option(item.id, '__id_' + item.id))
@@ -348,13 +348,12 @@ export function setScheduleActionTargetSelector () {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
 
-
     if (['power_on', 'power_off'].includes(action)) {
-      setScheduleActionTargetSelectorPopulateOptions(["All", "Groups", "ExhibitComponents", "Projectors"])
+      setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents', 'Projectors'])
     } else if (['refresh_page', 'restart'].includes(action)) {
-      setScheduleActionTargetSelectorPopulateOptions(["All", "Groups", "ExhibitComponents"])
+      setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents'])
     } else if (['set_app', 'set_content'].includes(action)) {
-      setScheduleActionTargetSelectorPopulateOptions(["ExhibitComponents"])
+      setScheduleActionTargetSelectorPopulateOptions(['ExhibitComponents'])
     }
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()

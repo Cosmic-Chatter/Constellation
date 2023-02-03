@@ -230,7 +230,8 @@ function updateParser (defaultsList) {
     'contentPath',
     'dictionary',
     'helperAddress',
-    'helperSoftwareUpdateAvailable']
+    'helperSoftwareUpdateAvailable',
+    'software_update']
   keysToIgnore.forEach((key) => {
     delete defaultsList[key]
   })
@@ -362,10 +363,10 @@ populateHelpTab()
 
 // showSettings == true means this was opened from the Control Server web console
 // showSettings == false means we should check-in in order to switch to a selected app
-if (constCommon.stringToBool(constCommon.parseQueryString().get('showSettings')) === false) {
-  constCommon.sendPing()
-  setInterval(constCommon.sendPing, 5000)
-}
+// if (constCommon.stringToBool(constCommon.parseQueryString().get('showSettings')) === false) {
+//   constCommon.sendPing()
+//   setInterval(constCommon.sendPing, 5000)
+// }
 
 // Add event handlers
 // Settings page

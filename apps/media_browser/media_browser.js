@@ -512,7 +512,6 @@ let customCardsPerPage = false
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.softwareVersion = 2.0
 constCommon.config.constellationAppID = 'media_browser'
 constCommon.config.debug = true
 
@@ -520,7 +519,6 @@ let inactivityTimer = null
 let attractorAvailable = false
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 setInterval(constCommon.sendPing, 5000)
 

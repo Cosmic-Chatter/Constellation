@@ -53,7 +53,7 @@ After specifying a `[SETTINGS]` section, you must specify a section for each opt
 
 [BAD]
 title = Poor
-icon = thumbs_down_red
+icon = thumbs-down_red
 
 [NEUTRAL]
 title = Okay
@@ -61,7 +61,7 @@ icon = images/my_image.png
 
 [GOOD]
 title = Good
-icon = thumbs_up_green
+icon = thumbs-up_green
 ```
 
 Each section name (i.e., `BAD`) will become the column name in the data spreadsheet stored on Control Server. Use the `text` field to describe the option and the `icon` field to provide an image. Custom images should be placed in the `images` directory and specified as shown for `[NEUTRAL]` above.

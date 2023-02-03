@@ -1,3 +1,5 @@
+/* global showdown */
+
 import constConfig from './config.js'
 
 export function makeRequest (opt) {
@@ -10,7 +12,11 @@ export function makeRequest (opt) {
     xhr.timeout = opt.timeout ?? 2000 // ms
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText))
+        if ('rawResponse' in opt && opt.rawResponse === true) {
+          resolve(xhr.responseText)
+        } else {
+          resolve(JSON.parse(xhr.responseText))
+        }
       } else {
         console.log('Submitted data: ', opt.params)
         console.log('Response: ', JSON.parse(xhr.response))
@@ -98,52 +104,100 @@ export function guessMimetype (filename) {
   }
 }
 
-export function rebuildErrorList () {
-  // Function to use the constConfig.errorDict to build a set of buttons indicating
-  // that there is a problem with a component.
+function showUpdateInfoModal (id, kind, details) {
+  // Populate the model with details about the update and show it.
 
-  // Clear the existing buttons
-  $('#errorDisplayRow').empty()
-  let html
-
-  if (constConfig.serverSoftwareUpdateAvailable) {
-    html = `
-        <div class="col-auto mt-3">
-          <button class='btn btn-info btn-block'>Server software update available</btn>
-        </div>
-      `
-    $('#errorDisplayRow').append(html)
+  if (kind !== 'control_server' && kind !== 'apps') {
+    console.log('Error showing update info modal. Unexpected update kind: ', kind)
+    return
   }
 
-  // Iterate through the items in the constConfig.errorDict. Each item should correspond
-  // to one component with an error.
-  Object.keys(constConfig.errorDict).forEach((item, i) => {
-    // Then, iterate through the errors on that given item
-    Object.keys(constConfig.errorDict[item]).forEach((itemError, j) => {
-      const itemErrorMsg = (constConfig.errorDict[item])[itemError]
-      if (itemErrorMsg.length > 0) {
-        // By default, errors are bad
-        let labelName = item + ': ' + itemError + ': ' + itemErrorMsg
-        let labelClass = 'btn-danger'
+  $('#updateInfoModalTitleID').html(id)
+  $('#updateInfoModalCurrentVersion').html(details.current_version)
+  $('#updateInfoModalLatestVersion').html(details.available_version)
+  $('#updateInfoModalDownloadButton').attr('href', 'https://github.com/Cosmic-Chatter/Constellation/releases/tag/' + details.available_version)
 
-        // But, if we are indicating an available update, make that less bad
-        if (itemError === 'helperSoftwareUpdateAvailable') {
-          labelName = item + ': System Helper software update available'
-          labelClass = 'btn-info'
-        } else if (itemError === 'softwareUpdateAvailable') {
-          labelName = item + ': Software update available'
-          labelClass = 'btn-info'
+  // Get the changelog
+  makeRequest({
+    method: 'GET',
+    url: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/changelog.md',
+    endpoint: '',
+    rawResponse: true
+  })
+    .then((response) => {
+      const markdownConverter = new showdown.Converter({ headerLevelStart: 4.0 })
+      markdownConverter.setFlavor('github')
+
+      const formattedText = markdownConverter.makeHtml(response)
+      $('#updateInfoModalChangelogContainer').html(formattedText)
+    })
+
+  if (kind === 'control_server') {
+    $('#updateInfoModalAppsInstructions').hide()
+    $('#updateInfoModalControlServerInstructions').show()
+  } else {
+    $('#updateInfoModalAppsInstructions').show()
+    $('#updateInfoModalControlServerInstructions').hide()
+  }
+
+  $('#updateInfoModal').modal('show')
+}
+
+export function rebuildNotificationList () {
+  // Function to use the constConfig.errorDict   to build a set of buttons indicating
+  // that there is a notification from a component.
+
+  // Clear the existing buttons
+  $('#notificationDisplayRow').empty()
+
+  // Iterate through the items in the constConfig.errorDict. Each item should correspond
+  // to one component with an notification.
+  Object.keys(constConfig.errorDict).forEach((item, i) => {
+    // Then, iterate through the notifications on that given item
+    Object.keys(constConfig.errorDict[item]).forEach((itemError, j) => {
+      let notification
+      if (itemError === 'software_update') {
+        if (item === '__control_server') {
+          const labelName = 'Control Server: Software update available'
+          notification = createNotificationHTML(labelName, 'update')
+          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal('Control Server', 'control_server', constConfig.errorDict[item].software_update) }))
+        } else {
+          const labelName = item + ': Software update available'
+          notification = createNotificationHTML(labelName, 'update')
+          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal(item, 'apps', constConfig.errorDict[item].software_update) }))
         }
-        // Create and add the button
-        html = `
-            <div class="col-auto mt-3">
-              <button class='btn ${labelClass} btn-block'>${labelName}</btn>
-            </div>
-          `
-        $('#errorDisplayRow').append(html)
+      } else {
+        const itemErrorMsg = (constConfig.errorDict[item])[itemError]
+        if (itemErrorMsg.length > 0) {
+          const labelName = item + ': ' + itemError + ': ' + itemErrorMsg
+          // Create and add the button
+          notification = createNotificationHTML(labelName, 'error')
+        }
       }
+      $('#notificationDisplayRow').append(notification)
     })
   })
+}
+
+function createNotificationHTML (name, kind) {
+  // Create and return a DOM element representing a notification.
+
+  let colorClass
+  if (kind === 'error') {
+    colorClass = 'btn-danger'
+  } else if (kind === 'update') {
+    colorClass = 'btn-info'
+  }
+
+  const col = document.createElement('div')
+  col.classList = 'col-auto mt-3'
+
+  const button = document.createElement('button')
+  button.classList = 'btn btn-block ' + colorClass
+  button.innerHTML = name
+  col.appendChild(button)
+
+  return col
 }
 
 export function stringToBool (str) {

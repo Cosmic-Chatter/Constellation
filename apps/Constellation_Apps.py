@@ -29,7 +29,8 @@ log_path: str = helper_files.get_path(["apps.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
+
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
@@ -137,9 +138,8 @@ async def serve_html(file_name):
     # First try a local file and then a Constellation file
     file_path = helper_files.get_path([file_name + ".html"], user_file=True)
     if not os.path.isfile(file_path):
-        file_path = helper_files.get_path(
-            [file_name + ".html"], user_file=False)
-    with open(file_path, "r") as f:
+        file_path = helper_files.get_path([file_name + ".html"], user_file=False)
+    with open(file_path, "r", encoding='UTF-8') as f:
         page = str(f.read())
     return page
 
@@ -192,8 +192,7 @@ async def send_defaults(config: const_config = Depends(get_config)):
         config_to_send["allow_restart"] = "true"
 
     # Add the current update availability to pass to the control server
-    config_to_send["helperSoftwareUpdateAvailable"] = \
-        str(config.helper_software_update_available).lower()
+    config_to_send["software_update"] = config.software_update
 
     # Reformat this content list as an array
     if "content" in config_to_send:
