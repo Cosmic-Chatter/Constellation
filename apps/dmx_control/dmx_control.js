@@ -300,7 +300,7 @@ class DMXFixtureGroup {
   createScene(name, values) {
     // Create a new DMXScene and add it this this.scenes.
 
-    this.scenes[name] = new DMXScene(name, values)
+    this.scenes[name] = new DMXScene(name, values, this.name)
   }
 
   createHTML() {
@@ -383,6 +383,7 @@ class DMXFixtureGroup {
     scenePane.setAttribute('tabindex', '0')
     tabPaneContainer.appendChild(scenePane)
 
+    // Add fixtures
     const fixtureRow = document.createElement('div')
     fixtureRow.classList = 'row'
     fixturePane.appendChild(fixtureRow)
@@ -392,16 +393,87 @@ class DMXFixtureGroup {
       fixtureRow.appendChild(fixture.createHTML(this.safeName))
     })
 
+    // Add scenes
+    const sceneRow = document.createElement('div')
+    sceneRow.classList = 'row'
+    scenePane.appendChild(sceneRow)
+
+    Object.keys(this.scenes).forEach((key) => {
+      const scene = this.scenes[key]
+      sceneRow.appendChild(scene.createHTML())
+    })
+
     return col
+  }
+
+  showScene(scene) {
+    // Tell the helper to set the given scene.
+
+    constCommon.makeHelperRequest({
+      method: "POST",
+      endpoint: '/DMX/group/' + this.name + '/showScene',
+      params: {
+        scene
+      }
+    })
   }
 }
 
 class DMXScene {
   // A mirror for the DMXScene Python class
 
-  constructor(name, values) {
+  constructor(name, values, group=null) {
     this.name = name
     this.values = values
+    this.group = group
+
+  }
+
+  createHTML() {
+    // Create the HTML representation for this scene.
+
+    const thisName = this.name
+    const thisGroup = this.group
+
+    const col = document.createElement('div')
+    col.classList = 'col-12 col-sm-4 col-lg-3 mt-2'
+
+    const topRow = document.createElement('div')
+    topRow.classList = 'row'
+    col.appendChild(topRow)
+
+    const header = document.createElement('div')
+    header.classList = 'col-12 text-center rounded-top fixture-header'
+    header.innerHTML = this.name
+    col.appendChild(header)
+
+    const bottomRow = document.createElement('div')
+    bottomRow.classList = 'row rounded-bottom mx-0 py-2 mb-2'
+    bottomRow.style.backgroundColor = '#2D648B'
+    col.appendChild(bottomRow)
+
+    const runCol = document.createElement('div')
+    runCol.classList = 'col-6'
+    bottomRow.appendChild(runCol)
+
+    const runButton = document.createElement('button')
+    runButton.classList = 'btn btn-primary w-100'
+    runButton.innerHTML = 'Run'
+    runButton.addEventListener('click', function() {
+      getGroupByName(thisGroup).showScene(thisName)
+    })
+    runCol.appendChild(runButton)
+
+    const editCol = document.createElement('div')
+    editCol.classList = 'col-6'
+    bottomRow.appendChild(editCol)
+
+    const editButton = document.createElement('button')
+    editButton.classList = 'btn btn-info w-100'
+    editButton.innerHTML = 'Edit'
+    editCol.appendChild(editButton)
+
+    return col
   }
 }
 
@@ -713,11 +785,15 @@ function getDMXConfiguration() {
     })
     .then(() => {
       configuration.groups.forEach((groupDef) => {
-        // First, create the universe
+        // First, create the group
         const groupObj = createGroup(groupDef.name)
+        // Then, add fixtures and scenes
         groupDef.fixtures.forEach((fixtureDef) => {
           const fixture = getFixtureByUUID(fixtureDef.uuid)
           groupObj.addFixtures([fixture])
+        })
+        groupDef.scenes.forEach((sceneDef) => {
+          groupObj.createScene(sceneDef.name, sceneDef.values)
         })
       })
       rebuildGroupsInterface()
@@ -828,7 +904,6 @@ constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
-constCommon.checkForSoftwareUpdate()
 constCommon.sendPing()
 
 setInterval(constCommon.sendPing, 5000)

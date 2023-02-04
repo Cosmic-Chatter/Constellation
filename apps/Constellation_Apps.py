@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import logging
+import pyftdi
 import uvicorn
 
 # Constellation modules
@@ -468,6 +469,19 @@ def set_dmx_group_to_color(group_name: str,
 
     group = helper_dmx.get_group(group_name)
     group.set_color(color, duration)
+    return {"success": True, "configuration": group.get_dict()}
+
+
+@app.post("/DMX/group/{group_name}/showScene")
+def set_dmx_group_scene(group_name: str,
+                        scene: str = Body(
+                            description="The scene to be run.",
+                            embed=True)):
+    """Run a scene for the given group."""
+
+    group = helper_dmx.get_group(group_name)
+    group.show_scene(scene)
+
     return {"success": True, "configuration": group.get_dict()}
 
 
