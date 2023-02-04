@@ -44,7 +44,7 @@ function _loadDefinition (def) {
     rawResponse: true
   })
     .then((response) => {
-      // $('#timelineContainer').empty()
+      $('#timelineContainer').empty()
       constCommon.csvToJSON(response).forEach((entry) => {
         createTimelineEntry(entry)
       })
@@ -63,9 +63,15 @@ function createTimelineEntry (entry) {
   container.classList = 'timeline-element'
   li.appendChild(container)
 
+  // Text
+  const flex1 = document.createElement('div')
+  flex1.style.flexBasis = '0'
+  flex1.style.flexGrow = '1'
+  container.appendChild(flex1)
+
   const timeEl = document.createElement('time')
   timeEl.innerHTML = converter.makeHtml(entry.Time)
-  container.appendChild(timeEl)
+  flex1.appendChild(timeEl)
 
   const title = document.createElement('div')
   if (parseInt(entry.Level) < 1) {
@@ -76,11 +82,28 @@ function createTimelineEntry (entry) {
     title.classList = 'size' + parseInt(entry.Level)
   }
   title.innerHTML = converter.makeHtml(entry.Title)
-  container.appendChild(title)
+  flex1.appendChild(title)
 
-  const bodyDiv = document.createElement('div')
-  bodyDiv.innerHTML = converter.makeHtml(entry.Body)
-  container.appendChild(bodyDiv)
+  const bodyEl = document.createElement('p')
+  bodyEl.classList = 'timeline-body'
+  bodyEl.innerHTML = converter.makeHtml(entry.Body)
+  flex1.appendChild(bodyEl)
+
+  // Image
+  if (entry.Image.trim() !== '' && entry.Image != null) {
+    // Make the timeline element wider to accomdate the image
+    container.classList.add('with-image')
+
+    const flex2 = document.createElement('div')
+    flex2.style.flexBasis = '0'
+    flex2.style.flexGrow = '1'
+    container.appendChild(flex2)
+
+    const image = document.createElement('img')
+    image.style.width = '100%'
+    image.src = 'content/' + entry.Image
+    flex2.appendChild(image)
+  }
 
   $('#timelineContainer').append(li)
   configureVisibleElements()

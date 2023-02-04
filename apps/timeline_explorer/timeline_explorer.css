@@ -7,7 +7,6 @@
 }
 
 body {
-  font: normal 16px/1.5 "Helvetica Neue", sans-serif;
   background: #719abf;
   color: #fff;
   overflow-x: hidden;
@@ -26,7 +25,7 @@ body {
 .timeline ul li {
   list-style-type: none;
   position: relative;
-  width: 6px;
+  /* width: 6px; */
   margin: 0 auto;
   padding-top: 50px;
   background: #fff;
@@ -48,7 +47,6 @@ body {
 .timeline ul li div.timeline-element {
   position: relative;
   bottom: 0;
-  /* width: 400px; */
   padding: 15px;
   background: #393A5A;
 }
@@ -60,10 +58,6 @@ body {
   width: 0;
   height: 0;
   border-style: solid;
-}
-
-.timeline ul li:nth-child(odd) div.timeline-element {
-  left: 45px;
 }
 
 .timeline ul li:nth-child(odd) div.timeline-element::before {
@@ -84,9 +78,7 @@ body {
 
 time {
   display: block;
-  font-size: 1.2rem;
   font-weight: bold;
-  margin-bottom: 8px;
 }
 
 #fontSizeDecreaseButton {
@@ -146,6 +138,10 @@ time {
     h1 {
         font-size: 8vh;
     }
+    time {
+      font-size: 1.8vh;
+      margin-bottom: 0.5vh;
+    }
     .size1 {
         font-size: 3.1vh;
         font-weight: bold;
@@ -162,12 +158,33 @@ time {
         font-size: 2.5vh;
         font-weight: bold;
     }
+    .timeline-body {
+      font-size: 1.5vh;
+    }
+    .timeline ul li { 
+      width: 0.5vw;
+    }
+    .timeline ul li:nth-child(odd) div.timeline-element {
+      flex-direction: row;
+      left: 2.5vw;
+    }
+    .timeline ul li:nth-child(even) div.timeline-element {
+      flex-direction: row-reverse;
+      left: -22vw;
+      /* - (20 + 2.5 - 0.5) */
+    }
+    .timeline ul li:nth-child(even) div.timeline-element.with-image {
+      left: -32vw;
+      /* - (30 + 2.5 - 0.5) */
+    }
     .timeline ul li div.timeline-element {
-        width: 400px;
+        width: 20vw;
+    }
+    .timeline ul li div.timeline-element.with-image {
+        width: 30vw;
     }
     .timeline-element {
         display: flex;
-        flex-direction: row;
         gap: 1vh;
     }
     #header-pane {
@@ -187,6 +204,10 @@ time {
     h1 {
         font-size: 4.5vh;
     }
+    time {
+      font-size: 1vh;
+      margin-bottom: 0.3vh;
+    }
     .size1 {
         font-size: 2vh;
         font-weight: bold;
@@ -203,8 +224,21 @@ time {
         font-size: 1.3vh;
         font-weight: bold;
     }
+    .timeline-body {
+      font-size: 0.85vh;
+    }
+    .timeline ul li { 
+      width: 1vw;
+    }
+    .timeline ul li:nth-child(odd) div.timeline-element {
+      left: 4.5vw;
+    }    
+    .timeline ul li:nth-child(even) div.timeline-element {
+      left: -43.5vw;
+      /* - (40 + 4.5 - 1) */
+    }
     .timeline ul li div.timeline-element {
-        width: 400px;
+        width: 40vw;
     }
     .timeline-element {
         display: flex;
@@ -224,13 +258,13 @@ time {
     }
 }
 
-@media screen and (max-width: 900px) {
+/* @media screen and (max-width: 900px) {
   .timeline ul li div.timeline-element {
     width: 250px;
   }
   .timeline ul li:nth-child(even) div.timeline-element {
     left: -289px;
-    /*250+45-6*/
+    (250+45-6)
   }
 }
 
@@ -249,7 +283,7 @@ time {
     border-width: 8px 16px 8px 0;
     border-color: transparent #393A5A transparent transparent;
   }
-}
+} */
 
 
 /* EXTRA/CLIP PATH STYLES
