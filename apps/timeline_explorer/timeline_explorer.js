@@ -35,24 +35,32 @@ function loadDefinition (defName) {
 function _loadDefinition (def) {
   // Helper function to manage setting up the interface.
 
-  $('#headerText').html(def.title || '')
+  // Tag the document with the defintion for later reference
+  $(document).data('timelineDefinition', def)
+
+  const defaultLang = Object.keys(def.languages)[0]
+  const langDef = def.languages[defaultLang]
+
+  $('#headerText').html(langDef.header_text || '')
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
   constCommon.makeHelperRequest({
     method: 'GET',
-    endpoint: '/content/Apollo_timeline.csv',
+    endpoint: '/content/' + def.spreadsheet,
     rawResponse: true
   })
     .then((response) => {
       $('#timelineContainer').empty()
       constCommon.csvToJSON(response).forEach((entry) => {
-        createTimelineEntry(entry)
+        createTimelineEntry(entry, defaultLang)
       })
     })
 }
 
-function createTimelineEntry (entry) {
+function createTimelineEntry (entry, langCode) {
   // Take the provided object and turn it into a set of HTML elements representing the entry.
+
+  const langDef = $(document).data('timelineDefinition').languages[langCode]
 
   // Initialize the Markdown converter
   const converter = new showdown.Converter({ parseImgDimensions: true })
@@ -70,7 +78,7 @@ function createTimelineEntry (entry) {
   container.appendChild(flex1)
 
   const timeEl = document.createElement('time')
-  timeEl.innerHTML = converter.makeHtml(entry.Time)
+  timeEl.innerHTML = converter.makeHtml(entry[langDef.time_key])
   flex1.appendChild(timeEl)
 
   const title = document.createElement('div')
@@ -79,29 +87,31 @@ function createTimelineEntry (entry) {
   } else if (parseInt(entry.Level) > 4) {
     title.classList = 'size4'
   } else {
-    title.classList = 'size' + parseInt(entry.Level)
+    title.classList = 'size' + parseInt(entry[langDef.level_key])
   }
-  title.innerHTML = converter.makeHtml(entry.Title)
+  title.innerHTML = converter.makeHtml(entry[langDef.title_key])
   flex1.appendChild(title)
 
   const bodyEl = document.createElement('p')
   bodyEl.classList = 'timeline-body'
-  bodyEl.innerHTML = converter.makeHtml(entry.Body)
+  bodyEl.innerHTML = converter.makeHtml(entry[langDef.short_text_key])
   flex1.appendChild(bodyEl)
 
   // Image
-  if (entry.Image.trim() !== '' && entry.Image != null) {
+  const imageName = entry[langDef.image_key]
+  if (imageName.trim() !== '' && imageName != null) {
     // Make the timeline element wider to accomdate the image
     container.classList.add('with-image')
 
     const flex2 = document.createElement('div')
     flex2.style.flexBasis = '0'
     flex2.style.flexGrow = '1'
+    flex2.style.alignSelf = 'center'
     container.appendChild(flex2)
 
     const image = document.createElement('img')
     image.style.width = '100%'
-    image.src = 'content/' + entry.Image
+    image.src = 'content/' + imageName
     flex2.appendChild(image)
   }
 
