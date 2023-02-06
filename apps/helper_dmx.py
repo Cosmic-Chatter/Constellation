@@ -38,7 +38,7 @@ class DMXUniverse:
             raise AttributeError(
                 "A DMX universe cannot contain more than 32 fixtures.")
 
-        fixture = DMXFixture(name, start_channel, channel_list, uuid_str)
+        fixture = DMXFixture(name, start_channel, channel_list, uuid_str=uuid_str)
         fixture.universe = self.name
         self.fixtures[name] = fixture
 
@@ -79,10 +79,19 @@ class DMXUniverse:
 class DMXFixture(Fixture):
     """Constellation object for a DMX fixture"""
 
-    def __init__(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = ""):
+    def __init__(self, 
+                 name: str, 
+                 start_channel: int, 
+                 channel_list: list[str],
+                 channel_visibility: Union[dict[str, bool], None] = None,
+                 uuid_str: str = ""):
         super().__init__(name=name,
                          start_channel=start_channel)
 
+        if channel_visibility is not None:
+            self.channel_visibility = channel_visibility
+        else:
+            self.channel_visibility = {}
         for channel in channel_list:
             self._register_channel(channel)
 
@@ -90,6 +99,7 @@ class DMXFixture(Fixture):
             self.uuid = str(uuid.uuid4())  # A unique ID
         else:
             self.uuid = uuid_str
+
         self.universe: str = ""
         self.groups: set[str] = set()
 
@@ -123,7 +133,6 @@ class DMXFixture(Fixture):
         self.dim(value, duration, *args, **kwargs)
 
     def set_color(self, color, duration=0, *args, **kwargs):
-        # print(color, duration)
         self.color(color, duration)
 
     def get_dict(self) -> dict[str, Any]:
@@ -205,15 +214,16 @@ class DMXFixtureGroup:
         for key in self.scenes[name].values:
             if key in self.fixtures:
                 entry = self.scenes[name].values[key]
+                print(entry)
                 if "duration" in entry:
                     duration = entry["duration"]
                 else:
                     duration = 0
-                if "brightness" in entry:
-                    self.fixtures[key].set_brightness(
-                        entry["brightness"], duration)
-                if "color" in entry:
-                    self.fixtures[key].set_color(entry["color"], duration)
+
+                for channel in entry:
+                    if channel == 'duration':
+                        continue
+                    self.fixtures[key].anim(duration, [channel, entry[channel]])
 
     def get_dict(self) -> dict[str, Any]:
         """Return a dictionary that can be used to rebuild this group."""
@@ -366,11 +376,9 @@ def read_dmx_configuration() -> bool:
         for fix in entry["fixtures"]:
             uni.create_fixture(
                 fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
-
     # Then, create any groups
     config.dmx_groups = {}
     group_config = config_dict["groups"]
-
     for entry in group_config:
         group = create_group(entry["name"])
         for subentry in entry["fixtures"]:

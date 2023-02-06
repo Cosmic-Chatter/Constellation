@@ -314,21 +314,33 @@ class DMXFixtureGroup {
     col.appendChild(row1)
 
     const nameCol = document.createElement('div')
-    nameCol.classList = 'col-9 col-sm-10 col-lg-11 h4 px-2 py-2 mb-0'
+    nameCol.classList = 'col-6 col-sm-8 h4 px-2 py-2 mb-0'
     nameCol.innerHTML = this.name
     row1.appendChild(nameCol)
 
-    const addButtonCol = document.createElement('div')
-    addButtonCol.classList = 'col-3 col-sm-2 col-lg-1 align-self-center pe-1'
-    row1.appendChild(addButtonCol)
+    const editFixturesCol = document.createElement('div')
+    editFixturesCol.classList = 'col-3 col-sm-2 align-self-center pe-1'
+    row1.appendChild(editFixturesCol)
 
-    const addButton = document.createElement('button')
-    addButton.classList = 'btn btn-primary w-100'
-    addButton.innerHTML = 'Edit'
-    addButton.addEventListener('click', () => {
+    const editFixturesButton = document.createElement('button')
+    editFixturesButton.classList = 'btn btn-primary w-100'
+    editFixturesButton.innerHTML = 'Edit fixtures'
+    editFixturesButton.addEventListener('click', () => {
       showEditGroupModal(this.name)
     })
-    addButtonCol.appendChild(addButton)
+    editFixturesCol.appendChild(editFixturesButton)
+
+    const addSceneCol = document.createElement('div')
+    addSceneCol.classList = 'col-3 col-sm-2 align-self-center pe-1'
+    row1.appendChild(addSceneCol)
+
+    const addSceneButton = document.createElement('button')
+    addSceneButton.classList = 'btn btn-primary w-100'
+    addSceneButton.innerHTML = 'Create scene'
+    addSceneButton.addEventListener('click', () => {
+      showEditSceneModal("", this.name)
+    })
+    addSceneCol.appendChild(addSceneButton)
 
     const contentDiv = document.createElement('div')
     contentDiv.classList = 'px-1 pt-2 bg-secondary'
@@ -406,6 +418,29 @@ class DMXFixtureGroup {
     return col
   }
 
+  getFixtureByName(name) {
+    return this.fixtures[name]
+  }
+
+  getFixtureByUUID(uuid) {
+    let matchedFixture = null
+    Object.keys(this.fixtures).forEach((key) => {
+      const fixture = this.fixtures[key]
+      if (fixture.uuid === uuid) matchedFixture = fixture
+    })
+    return matchedFixture
+  }
+
+  getSceneByName(name) {
+    let matchedScene = null
+    Object.keys(this.scenes).forEach((key) => {
+      const scene = this.scenes[key]
+      if (scene.name === name) matchedScene = scene
+    })
+    return matchedScene
+  }
+  
+
   showScene(scene) {
     // Tell the helper to set the given scene.
 
@@ -476,6 +511,7 @@ class DMXScene {
     return col
   }
 }
+
 
 function onColorChangeFromPicker(collectionName, uuid) {
   // When is a color is changed from the picker, update the interface to match.
@@ -559,24 +595,25 @@ function showAddFixtureModal(universe) {
 }
 
 function showEditGroupModal(groupName) {
+  // Configure the edit group modal and show it
+
   const group = getGroupByName(groupName)
 
   $('#editGroupModal').data('group', groupName)
   $('#editGroupModalTitle').html('Edit ' + groupName)
 
   // Populate the list of fixtures
-  const fixtureSelect = $('#groupFixturesToIncludeSelect')
-  fixtureSelect.empty()
+  const fixtureRow = $('#editGroupFixtureRow')
+  fixtureRow.empty()
   universeList.forEach((universe) => {
-    const header = document.createElement('option')
-    header.setAttribute('disabled', true)
+    const header = document.createElement('div')
+    header.classList = 'h5 col-12'
     header.innerHTML = universe.name
-    fixtureSelect.append(header)
+    fixtureRow.append(header)
     Object.keys(universe.fixtures).forEach((fixtureName) => {
-      const fixtureOption = document.createElement('option')
-      fixtureOption.innerHTML = fixtureName
-      fixtureOption.value = universe.fixtures[fixtureName].uuid
-      fixtureSelect.append(fixtureOption)
+      const fixture = universe.fixtures[fixtureName]
+
+      fixtureRow.append(createFixtureCheckbox(fixture, group))
     })
   })
 
@@ -587,15 +624,101 @@ function editGroupFromModal() {
   // Called when the Save button is pressed in the editGroupModal
   const group = getGroupByName($('#editGroupModal').data('group'))
   group.clearFixtures()
-  const fixtureUUIDsToAdd = $('#groupFixturesToIncludeSelect').val()
+  const fixturesElements = $('#editGroupFixtureRow').find('.form-check-input ').toArray()
 
-  fixtureUUIDsToAdd.forEach((uuid) => {
-    const fixture = getFixtureByUUID(uuid)
-    group.addFixtures([fixture])
+  let fixturesToAdd = []
+  fixturesElements.forEach((element) => {
+    if ($(element).prop('checked') === true) {
+      const fixture = getFixtureByUUID($(element).data('uuid'))
+      fixturesToAdd.push(fixture)
+    }
   })
 
+  group.addFixtures(fixturesToAdd)
   rebuildGroupsInterface()
   $('#editGroupModal').modal('hide')
+}
+
+function showEditSceneModal(sceneName, groupName) {
+  // Configure the edit scene modal and show it
+
+  const group = getGroupByName(groupName)
+  const scene = group.getSceneByName(sceneName)
+  $("#editSceneModal").data('group', group)
+  
+  $("#editSceneFixtureList").empty()
+  Object.keys(group.fixtures).forEach((fixtureName) => {
+    const fixture = group.getFixtureByName(fixtureName)
+    $("#editSceneFixtureList").append(createFixtureCheckbox(fixture, scene))
+  })
+
+  $("#editSceneModal").modal('show')
+}
+
+function editSceneFromModal() {
+  // Save the scene changse from the modal.
+
+  const sceneName = $("#editSceneModalSceneName").val().trim()
+  const duration = parseInt($("#editSceneModalDurationInput").val())
+  const checkboxes = $("#editSceneFixtureList").find(".form-check-input").toArray()
+  const groupName = $("#editSceneModal").data('group').name
+
+  const sceneDict = {}
+  checkboxes.forEach((box) => {
+    if ($(box).prop('checked') === true) {
+      const fixture = getFixtureByUUID($(box).data('uuid'))
+      const values = fixture.channelValues
+      values.duration = duration
+      sceneDict[fixture.name] = values
+    }
+  })
+  
+  constCommon.makeHelperRequest({
+    method: "POST",
+    endpoint: '/DMX/group/' + groupName + '/createScene',
+    params: {name: sceneName, values: sceneDict}
+  })
+  .then((result) => {
+    if ("success" in result && result.success === true) {
+      getGroupByName(groupName).createScene(sceneName, sceneDict)
+      $("#editSceneModal").modal("hide")
+    }
+  })
+  
+}
+
+function createFixtureCheckbox(fixture, collection=null) {
+  // Return a column that holds a checkbox representing the fixture.
+  // If 'collecion' is specified, the box will be checked if the fixture
+  // is in 'collecion'
+
+  const col = document.createElement('div')
+  col.classList = 'col-3 my-1'
+
+  const container = document.createElement('div')
+  container.classList = 'form-check'
+  col.appendChild(container)
+
+  const check = document.createElement('input')
+  check.classList = 'form-check-input'
+  check.setAttribute('type', 'checkbox')
+  check.setAttribute('id', 'editGroupFixture_' + fixture.uuid)
+  check.value = ""
+
+  if (collection != null && collection.getFixtureByUUID(fixture.uuid) != null) {
+    check.setAttribute('checked', true)
+  }
+
+  $(check).data("uuid", fixture.uuid)
+  container.appendChild(check)
+
+  const label = document.createElement('label')
+  label.class = 'form-check-label'
+  label.setAttribute('for', 'editGroupFixture_' + fixture.uuid)
+  label.innerHTML = fixture.name
+  container.appendChild(label)
+
+  return col
 }
 
 function addChannelToModal() {
@@ -892,6 +1015,7 @@ $('#addFixtureFromModalButton').click(addFixtureFromModal)
 
 // Group tab
 $('#editGroupModalSaveButton').click(editGroupFromModal)
+$("#editSceneModalSaveButton").click(editSceneFromModal)
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'

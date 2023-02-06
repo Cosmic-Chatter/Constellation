@@ -446,6 +446,18 @@ def set_dmx_fixture_to_color(fixture_uuid: str,
     return {"success": True, "configuration": fixture.get_dict()}
 
 
+@app.post("/DMX/group/{group_name}/createScene")
+def create_dmx_scene(group_name: str,
+                     name: str = Body(description="The name of the scene."),
+                     values: dict = Body(description="A dictionary of values for the scene.")):
+    """Create the given scene for the specified group."""
+
+    group = helper_dmx.get_group(group_name)
+    group.create_scene(name, values)
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
 @app.post("/DMX/group/{group_name}/setBrightness")
 def set_dmx_fixture_to_brightness(group_name: str,
                                   value: int = Body(
