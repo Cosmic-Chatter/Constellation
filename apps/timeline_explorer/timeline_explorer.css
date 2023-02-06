@@ -6,9 +6,18 @@
   box-sizing: border-box;
 }
 
+:root {
+  --backgroundColor: #719abf;
+  --headerColor: #22222E;
+  --footerColor: #22222E;
+  --itemColor: #393A5A;
+  --lineColor: white;
+  --textColor: white;
+}
+
 body {
-  background: #719abf;
-  color: #fff;
+  background: var(--backgroundColor);
+  color: var(--textColor);
   overflow-x: hidden;
   overflow-y: hidden;
   padding-bottom: 50px;
@@ -18,7 +27,7 @@ body {
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
 .timeline ul {
-  background: #719abf;
+  background: var(--backgroundColor);
   padding: 50px 0;
 }
 
@@ -48,7 +57,7 @@ body {
   position: relative;
   bottom: 0;
   padding: 15px;
-  background: #393A5A;
+  background: var(--itemColor);
 }
 
 .timeline ul li div.timeline-element::before {
@@ -100,7 +109,7 @@ time {
 }
 
 .timeline ul li.in-view::after {
-  background: #393A5A;
+  background: var(--itemColor);
 }
 
 .timeline ul li div.timeline-element {
@@ -124,10 +133,10 @@ time {
 }
 
 #header-pane {
-    background-color: #22222E;
+    background-color: var(--headerColor);
 }
 #tools-pane {
-    background-color: #22222E;
+    background-color: var(--footerColor);
 }
 
 
