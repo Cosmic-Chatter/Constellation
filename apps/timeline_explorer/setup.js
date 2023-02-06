@@ -1,3 +1,5 @@
+/* global Coloris */
+
 import * as constCommon from '../js/constellation_app_common.js'
 
 function populateAvailableDefinitions (definitions) {
@@ -368,6 +370,26 @@ const inputFields = {
 // Set up the save button in case the user starts editing immediately
 $('#definitionSaveButton').data('initialDefinition', { uuid: '', languages: {} })
 $('#definitionSaveButton').data('workingDefinition', { uuid: '', languages: {} })
+
+// Set up the color pickers
+function setUpColorPickers () {
+  Coloris({
+    el: '.coloris',
+    theme: 'pill',
+    themeMode: 'dark',
+    formatToggle: false,
+    clearButton: false,
+    swatches: [
+      '#000',
+      '#22222E',
+      '#393A5A',
+      '#719abf',
+      '#fff'
+    ]
+  })
+}
+// Call with a slight delay to make sure the elements are loaded
+setTimeout(setUpColorPickers, 100)
 
 constCommon.getAvailableDefinitions('timeline_explorer')
   .then((response) => {
