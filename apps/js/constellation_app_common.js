@@ -482,10 +482,21 @@ export async function writeDefinition (definition) {
   // Tag the definition with some useful properties
   definition.constellation_version = config.softwareVersion
   definition.lastEditedDate = new Date().toISOString()
-
   return makeHelperRequest({
     method: 'POST',
     endpoint: '/definitions/write',
     params: { definition }
   })
 }
+
+export function setObjectProperty (obj, keys, val) {
+  // Set the location given by the keys to val, creating the path if necessary.
+  // E.g., keys = ['prop1', 'prop2', 'prop3'] sets obj.prop1.prop2.prop3 to val
+  // From https://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
+
+  const lastKey = keys.pop()
+  const lastObj = keys.reduce((obj, key) =>
+    (obj[key] = obj[key] || {}),
+  obj)
+  lastObj[lastKey] = val
+};

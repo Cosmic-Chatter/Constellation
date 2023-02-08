@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="../css/coloris.min.css">
 
     <style>
+      /* Style for the color pickers */
+      .clr-field button, .clr-field input {
+        width: 100%;
+        border-radius: 5px;
+      }
       #previewContainer {
         width: 100%;
         height: 100%;
@@ -35,7 +40,7 @@
   </head>
 
   <body>
-    <div class="container mt-2">
+    <div class="container mt-2 mb-5">
       <H1>Timeline Explorer Setup</H1>
       Use this utility to create and edit timeline configurations.
       <div class="row mt-2">
@@ -102,12 +107,46 @@
               <h3>Appearance</h3>
               <div class="row">
                 <div class="col-6">
-                  <label for="colorPickerBackground">Background color</label>
+                  <label for="colorPicker_backgroundColor">Background color</label>
                   <div>
-                    <input id="colorPickerBackground" type="text" class="coloris form-control" value="#719abf">
+                    <input id="colorPicker_backgroundColor" type="text" class="coloris form-control" value="#719abf" data-property="backgroundColor" data-default="#719abf">
                   </div>
-
-                  
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_textColor">Text color</label>
+                  <div>
+                    <input id="colorPicker_textColor" type="text" class="coloris form-control" value="#fff" data-property="textColor" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_headerColor">Header color</label>
+                  <div>
+                    <input id="colorPicker_headerColor" type="text" class="coloris form-control" value="#22222E" data-property="headerColor" data-default="#22222E">
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_footerColor">Footer color</label>
+                  <div>
+                    <input id="colorPicker_footerColor" type="text" class="coloris form-control" value="#22222E" data-property="footerColor" data-default="#22222E">
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_itemColor">Item color</label>
+                  <div>
+                    <input id="colorPicker_itemColor" type="text" class="coloris form-control" value="#393A5A" data-property="itemColor" data-default="#393A5A">
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_lineColor">Line color</label>
+                  <div>
+                    <input id="colorPicker_lineColor" type="text" class="coloris form-control" value="#fff" data-property="lineColor" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="colorPicker_toolbarButtonColor">Toolbar button color</label>
+                  <div>
+                    <input id="colorPicker_toolbarButtonColor" type="text" class="coloris form-control" value="#393A5A" data-property="toolbarButtonColor" data-default="#393A5A">
+                  </div>
                 </div>
               </div>
             </div>

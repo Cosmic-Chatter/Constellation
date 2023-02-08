@@ -21,6 +21,7 @@ function updateFunc (update) {
 
 function loadDefinition (defName) {
   // Use the given definition to set up the interface.
+
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/definitions/' + defName + '/load'
@@ -38,9 +39,27 @@ function _loadDefinition (def) {
   // Tag the document with the defintion for later reference
   $(document).data('timelineDefinition', def)
 
-  const defaultLang = Object.keys(def.languages)[0]
-  const langDef = def.languages[defaultLang]
+  // Modify the style
+  if ('style' in def) {
+    if ('color' in def.style) {
+      Object.keys(def.style.color).forEach((key) => {
+        document.documentElement.style.setProperty('--' + key, def.style.color[key])
+      })
+    }
+    if ('font' in def.style) {
+      Object.keys(def.style.font).forEach((key) => {
+        const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
+        document.fonts.add(font)
+        console.log(key, def.style.font[key])
+      })
+    }
+  }
 
+  const langs = Object.keys(def.languages)
+  if (langs.length === 0) return
+
+  const defaultLang = langs[0]
+  const langDef = def.languages[defaultLang]
   $('#headerText').html(langDef.header_text || '')
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
@@ -89,6 +108,7 @@ function createTimelineEntry (entry, langCode) {
   } else {
     title.classList = 'size' + parseInt(entry[langDef.level_key])
   }
+  title.classList.add('timeline-item-header')
   title.innerHTML = converter.makeHtml(entry[langDef.title_key])
   flex1.appendChild(title)
 

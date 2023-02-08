@@ -10,7 +10,7 @@ function populateAvailableDefinitions (definitions) {
   const keys = Object.keys(definitions).sort()
 
   keys.forEach((name) => {
-    if (name.slice(0, 9) === '__preview') return
+    if ((name.slice(0, 9) === '__preview') || name.trim() === '') return
     const option = document.createElement('option')
     option.value = name
     option.innerHTML = name
@@ -22,8 +22,22 @@ function populateAvailableDefinitions (definitions) {
 function clearDefinitionInput () {
   // Clear all input related to a defnition
 
-  $('#definitionSaveButton').data('initialDefinition', { uuid: '', languages: {} })
-  $('#definitionSaveButton').data('workingDefinition', { uuid: '', languages: {} })
+  $('#definitionSaveButton').data('initialDefinition', {
+    uuid: '',
+    languages: {},
+    style: {
+      color: {},
+      font: {}
+    }
+  })
+  $('#definitionSaveButton').data('workingDefinition', {
+    uuid: '',
+    languages: {},
+    style: {
+      color: {},
+      font: {}
+    }
+  })
 
   // Language add
   $('#languageAddEmptyFieldsWarning').hide()
@@ -33,6 +47,14 @@ function clearDefinitionInput () {
   $('#definitionNameInput').val('')
   $('#languageNav').empty()
   $('#languageNavContent').empty()
+
+  // Reset style options
+  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor', 'toolbarButtonColor']
+  colorInputs.forEach((input) => {
+    const el = $('#colorPicker_' + input)
+    el.val(el.data('default'))
+    document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
 }
 
 function createNewDefinition () {
@@ -48,11 +70,17 @@ function editDefinition (name = '') {
 
   const def = getDefinitionByName(name)
 
-  $('#definitionSaveButton').data('initialDefinition', def)
-  $('#definitionSaveButton').data('workingDefinition', def)
+  $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
+  $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
   $('#definitionNameInput').val(def.name)
   $('#spreadsheetSelect').val(def.spreadsheet)
+
+  // Set the appropriate values for the color pickers
+  Object.keys(def.style.color).forEach((key) => {
+    $('#colorPicker_' + key).val(def.style.color[key])
+    document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
+  })
 
   // Build out the key input interface
   Object.keys(def.languages).forEach((lang) => {
@@ -99,7 +127,7 @@ function addLanguage () {
   workingDefinition.languages[code] = { display_name: displayName, code }
   createLanguageTab(code, displayName)
 
-  $('#definitionSaveButton').data('workingDefinition', workingDefinition)
+  $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
   $('#languageNameInput').val('')
   $('#languageCodeInput').val('')
 }
@@ -155,7 +183,7 @@ function createLanguageTab (code, displayName) {
     }
     input.setAttribute('id', langKey)
     input.addEventListener('change', function () {
-      updateWorkingDefinition(code, langKey, inputFields[key].property)
+      updateWorkingDefinition(['languages', code, inputFields[key].property], langKey)
     })
     col.appendChild(input)
   })
@@ -170,16 +198,13 @@ function createLanguageTab (code, displayName) {
   $(tabButton).click()
 }
 
-function updateWorkingDefinition (langCode, elementID, property) {
+function updateWorkingDefinition (property, elWithValue) {
   // Update a field in the working defintion.
+  // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
+  // for definition.style.color.headerColor
 
-  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-  const value = $('#' + elementID).val().trim()
-
-  workingDefinition.languages[langCode][property] = value
-
-  $('#definitionSaveButton').data('workingDefinition', workingDefinition)
-  console.log(workingDefinition)
+  const value = $('#' + elWithValue).val().trim()
+  constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
 }
 
 function getDefinitionByName (name = '') {
@@ -204,14 +229,12 @@ function previewDefinition () {
   const def = $('#definitionSaveButton').data('workingDefinition')
   // Set the uuid to a temp one
   def.uuid = '__previewTimeline'
-
   constCommon.writeDefinition(def)
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Configure the preview frame
         document.getElementById('previewFrame').src = '../timeline_explorer.html?preview=true&definition=__previewTimeline'
       }
-      document.getElementById('previewFrame').contentWindow.location.reload()
     })
 }
 
@@ -219,15 +242,17 @@ function saveDefintion () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
+  const initialDefinition = $('#definitionSaveButton').data('initialDefinition')
   definition.app = 'timeline_explorer'
   definition.name = $('#definitionNameInput').val()
+  definition.uuid = initialDefinition.uuid
 
   constCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         console.log('Saved!')
         // Update the UUID in case we have created a new definition
-        $('#definitionSaveButton').data('initialDefinition', definition)
+        $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
         constCommon.getAvailableDefinitions('timeline_explorer')
           .then((response) => {
             if ('success' in response && response.success === true) {
@@ -277,7 +302,7 @@ function onSpreadsheetSelectChange () {
     return
   } else {
     workingDefinition.spreadsheet = file
-    $('#definitionSaveButton').data('workingDefinition', workingDefinition)
+    $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
   }
 
   constCommon.makeHelperRequest({
@@ -368,8 +393,22 @@ const inputFields = {
 }
 
 // Set up the save button in case the user starts editing immediately
-$('#definitionSaveButton').data('initialDefinition', { uuid: '', languages: {} })
-$('#definitionSaveButton').data('workingDefinition', { uuid: '', languages: {} })
+$('#definitionSaveButton').data('initialDefinition', {
+  uuid: '',
+  languages: {},
+  style: {
+    color: {},
+    font: {}
+  }
+})
+$('#definitionSaveButton').data('workingDefinition', {
+  uuid: '',
+  languages: {},
+  style: {
+    color: {},
+    font: {}
+  }
+})
 
 // Set up the color pickers
 function setUpColorPickers () {
@@ -414,6 +453,11 @@ $('#languageAddButton').click(addLanguage)
 
 // Definition fields
 $('#spreadsheetSelect').change(onSpreadsheetSelectChange)
+
+// Style fields
+$('.coloris').change(function () {
+  updateWorkingDefinition(['style', 'color', $(this).data('property')], $(this).prop('id'))
+})
 
 // Preview frame
 window.addEventListener('load', resizePreview)
