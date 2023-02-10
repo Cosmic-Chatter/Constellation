@@ -24,6 +24,17 @@
 }
 
 @font-face {
+  font-family: "Title";
+  src: url("../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+  font-family: "Time";
+  src: url("../_fonts/OpenSans-Regular.ttf");
+}
+
+
+@font-face {
   font-family: "Body";
   src: url("../_fonts/OpenSans-Regular.ttf");
 }
@@ -102,6 +113,12 @@ body {
 time {
   display: block;
   font-weight: bold;
+  font-family: "Body";
+}
+
+.timeline-item-header {
+  font-weight: bold;
+  font-family: "Title";
 }
 
 #fontSizeDecreaseButton {
@@ -165,10 +182,6 @@ time {
     time {
       font-size: 1.8vh;
       margin-bottom: 0.5vh;
-    }
-    .timeline-item-header {
-      font-weight: bold;
-      font-family: "Header";
     }
     .size1 {
         font-size: 3.1vh;

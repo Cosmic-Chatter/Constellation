@@ -15,6 +15,9 @@
 
     <style>
       /* Style for the color pickers */
+      .clr-field {
+        width: 100%;
+      }
       .clr-field button, .clr-field input {
         width: 100%;
         border-radius: 5px;
@@ -25,9 +28,11 @@
         position: relative;
       }
       #previewFrame {
+        --previewHeight: 1920px;
         width: 1080px;
-        height: 1920px;
-        transform: scale(0.1);
+        height: var(--previewHeight);
+        /* transform: scale(0.1); */
+        /* transform: scale(calc(var(--previewHeight)) ); */
         transform-origin: 0 0;
         position: absolute;
         left: 0;
@@ -41,25 +46,40 @@
 
   <body>
     <div class="container mt-2 mb-5">
-      <H1>Timeline Explorer Setup</H1>
+      <H2>Timeline Explorer Setup</H2>
       Use this utility to create and edit timeline configurations.
-      <div class="row mt-2">
-        <div class="col-2">
+      <div class="row mt-2 gx-2">
+        <div class="col-4 col-md-3 col-lg-2">
           <button id="newDefinitionButton" class="btn btn-primary w-100">Create new</button>
         </div>
-        <div class="col-2">
+        <div class="col-4 col-md-3 col-lg-2">
           <button id="editDefinitionButton" class="btn btn-primary w-100">Edit existing</button>
         </div>
-        <div class="col-3">
+        <div class="col-4 col-lg-3">
           <select id="availableDefinitionSelect" class="form-select w-100">Edit existing</select>
         </div>
-        <div id='editPane' class="col-6">
-          <div class="row mt-3 border-top">
-            <div class="col-12 mt-3">
-              <button id="definitionSaveButton" class="btn btn-success">Save</button>
-              <button id="previewRefreshButton" class="btn btn-info ms-1">Refresh preview</button>
+        <!-- Top toolbar -->
+        <div class="col-12 col-lg-7">
+          <div class="row mt-3 pb-2 gx-2 gy-2 border-top border-bottom">
+            <div class="col-3 col-lg-2">
+              <button id="definitionSaveButton" class="btn btn-success w-100">Save</button>
+            </div>
+            <div class="col-4 col-xl-3">
+              <button id="previewRefreshButton" class="btn btn-info w-100">Refresh preview</button>
+            </div>
+            <div class="col-4 d-flex align-items-center">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" value="" id="refreshOnChangeCheckbox" checked>
+                <label class="form-check-label small" for="refreshOnChangeCheckbox">
+                  Refresh on change
+                </label>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+      <div class="row">
+        <div id='editPane' class="col-6 col-lg-7" style="height: 70vh; overflow-y: auto;">
           <div class="row mt-3">
             <div class="col-6">
               <label for="definitionNameInput" class="form-label">Definition name</label>
@@ -105,54 +125,77 @@
               <div class="tab-content" id="languageNavContent">
               </div>
               <h3>Appearance</h3>
-              <div class="row">
-                <div class="col-6">
-                  <label for="colorPicker_backgroundColor">Background color</label>
+              <h4>Colors</h4>
+              <div class="row gy-2 mb-3">
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_backgroundColor" class="form-label">Background</label>
                   <div>
                     <input id="colorPicker_backgroundColor" type="text" class="coloris form-control" value="#719abf" data-property="backgroundColor" data-default="#719abf">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_textColor">Text color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_textColor" class="form-label">Text</label>
                   <div>
                     <input id="colorPicker_textColor" type="text" class="coloris form-control" value="#fff" data-property="textColor" data-default="#fff">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_headerColor">Header color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_headerColor" class="form-label">Header</label>
                   <div>
                     <input id="colorPicker_headerColor" type="text" class="coloris form-control" value="#22222E" data-property="headerColor" data-default="#22222E">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_footerColor">Footer color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_footerColor" class="form-label">Footer</label>
                   <div>
                     <input id="colorPicker_footerColor" type="text" class="coloris form-control" value="#22222E" data-property="footerColor" data-default="#22222E">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_itemColor">Item color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_itemColor" class="form-label">Item</label>
                   <div>
                     <input id="colorPicker_itemColor" type="text" class="coloris form-control" value="#393A5A" data-property="itemColor" data-default="#393A5A">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_lineColor">Line color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_lineColor" class="form-label">Line</label>
                   <div>
                     <input id="colorPicker_lineColor" type="text" class="coloris form-control" value="#fff" data-property="lineColor" data-default="#fff">
                   </div>
                 </div>
-                <div class="col-6">
-                  <label for="colorPicker_toolbarButtonColor">Toolbar button color</label>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_toolbarButtonColor" class="form-label">Toolbar button</label>
                   <div>
-                    <input id="colorPicker_toolbarButtonColor" type="text" class="coloris form-control" value="#393A5A" data-property="toolbarButtonColor" data-default="#393A5A">
+                    <input id="colorPicker_toolbarButtonColor" type="text" class="coloris form-control w-100" value="#393A5A" data-property="toolbarButtonColor" data-default="#393A5A">
                   </div>
+                </div>
+              </div>
+              <h4>Fonts</h4>
+              <div class="row">
+                <div class="col-12">
+
+                </div>
+                <div class="col-6">
+                  <label for="fontSelect_Header" class="form-label">Header</label>
+                  <select id="fontSelect_Header" class="form-select font-select"></select>
+                </div>
+                <div class="col-6">
+                  <label for="fontSelect_Time" class="form-label">Time</label>
+                  <select id="fontSelect_Time" class="form-select font-select"></select>
+                </div>
+                <div class="col-6">
+                  <label for="fontSelect_Title" class="form-label">Title</label>
+                  <select id="fontSelect_Title" class="form-select font-select"></select>
+                </div>
+                <div class="col-6">
+                  <label for="fontSelect_Body" class="form-label">Body</label>
+                  <select id="fontSelect_Body" class="form-select font-select"></select>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div id='previewPane' class="col-6">
+        <div id='previewPane' class="col-6 col-lg-5">
           <div id="previewContainer">
             <iframe id="previewFrame" class="mt-3" src="../timeline_explorer.html?preview=true"></iframe>
           </div>

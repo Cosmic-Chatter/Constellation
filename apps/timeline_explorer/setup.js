@@ -156,7 +156,7 @@ function createLanguageTab (code, displayName) {
 
   // Create the various inputs
   const row = document.createElement('div')
-  row.classList = 'row'
+  row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
 
   Object.keys(inputFields).forEach((key) => {
@@ -184,6 +184,7 @@ function createLanguageTab (code, displayName) {
     input.setAttribute('id', langKey)
     input.addEventListener('change', function () {
       updateWorkingDefinition(['languages', code, inputFields[key].property], langKey)
+      previewDefinition(true)
     })
     col.appendChild(input)
   })
@@ -223,8 +224,14 @@ function getDefinitionByName (name = '') {
   return matchedDef
 }
 
-function previewDefinition () {
+function previewDefinition (automatic = false) {
   // Save the definition to a temporary file and load it into the preview frame.
+  // If automatic == true, we've called this function beceause a definition field
+  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
+
+  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
+    return
+  }
 
   const def = $('#definitionSaveButton').data('workingDefinition')
   // Set the uuid to a temp one
@@ -315,6 +322,55 @@ function onSpreadsheetSelectChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
+    })
+}
+
+function populateFontSelects () {
+  // Get a list of all the content and add the available font files to the appropriate selects.
+
+  const types = ['Header', 'Time', 'Title', 'Body']
+  $('.font-select').empty()
+
+  // First, search the content directory for any user-provided fonts
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  })
+    .then((result) => {
+      types.forEach((type) => {
+        const header = document.createElement('option')
+        header.value = 'User-provided'
+        header.innerHTML = 'User-provided'
+        header.setAttribute('disabled', true)
+        $('#fontSelect_' + type).append(header)
+
+        result.all_exhibits.forEach((item) => {
+          if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
+            const option = document.createElement('option')
+            option.value = '../content/' + item
+            option.innerHTML = item
+            $('#fontSelect_' + type).append(option)
+          }
+        })
+      })
+
+      // Then, add the defaults
+      const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
+
+      types.forEach((type) => {
+        const header = document.createElement('option')
+        header.value = 'Built-in'
+        header.innerHTML = 'Built-in'
+        header.setAttribute('disabled', true)
+        $('#fontSelect_' + type).append(header)
+
+        defaultFonts.forEach((font) => {
+          const option = document.createElement('option')
+          option.value = '../_fonts/' + font
+          option.innerHTML = font
+          $('#fontSelect_' + type).append(option)
+        })
+      })
     })
 }
 
@@ -457,6 +513,7 @@ $('#spreadsheetSelect').change(onSpreadsheetSelectChange)
 // Style fields
 $('.coloris').change(function () {
   updateWorkingDefinition(['style', 'color', $(this).data('property')], $(this).prop('id'))
+  previewDefinition(true)
 })
 
 // Preview frame
@@ -464,4 +521,5 @@ window.addEventListener('load', resizePreview)
 window.addEventListener('resize', resizePreview)
 
 populateSpreadsheetSelect()
+populateFontSelects()
 clearDefinitionInput()
