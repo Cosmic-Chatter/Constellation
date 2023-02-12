@@ -50,7 +50,6 @@ function _loadDefinition (def) {
       Object.keys(def.style.font).forEach((key) => {
         const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
         document.fonts.add(font)
-        console.log(key, def.style.font[key])
       })
     }
   }
@@ -58,9 +57,8 @@ function _loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
+  createLanguageSwitcher(def)
   const defaultLang = langs[0]
-  const langDef = def.languages[defaultLang]
-  $('#headerText').html(langDef.header_text || '')
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
   constCommon.makeHelperRequest({
@@ -70,10 +68,83 @@ function _loadDefinition (def) {
   })
     .then((response) => {
       $('#timelineContainer').empty()
-      constCommon.csvToJSON(response).forEach((entry) => {
-        createTimelineEntry(entry, defaultLang)
-      })
+      const csvAsJSON = constCommon.csvToJSON(response)
+      $(document).data('spreadsheet', csvAsJSON)
+      localize(defaultLang)
     })
+}
+
+function adjustFontSize (increment) {
+  // Adjust the font multiplier by the given amount
+
+  const root = document.querySelector(':root')
+  let fontModifierStr = root.style.getPropertyValue('--fontModifier')
+  if (fontModifierStr === '') {
+    fontModifierStr = '1'
+  }
+  let fontModifier = parseFloat(fontModifierStr)
+
+  fontModifier += increment
+  if (fontModifier < 1) {
+    fontModifier = 1
+  }
+  root.style.setProperty('--fontModifier', fontModifier)
+}
+
+function createLanguageSwitcher (def) {
+  // Take a definition file and use the language entries to make an appropriate language switcher.
+
+  const langs = Object.keys(def.languages)
+
+  if (langs.length === 1) {
+    // No switcher necessary
+    $('langSwitchDropdown').hide()
+    return
+  }
+
+  // Cycle the languagse and build an entry for each
+  $('#langSwitchOptions').empty()
+  langs.forEach((code) => {
+    const name = def.languages[code].display_name
+
+    const li = document.createElement('li')
+
+    const button = document.createElement('button')
+    button.classList = 'dropdown-item'
+    button.addEventListener('click', function () {
+      localize(code)
+    })
+    li.appendChild(button)
+
+    const flag = document.createElement('img')
+    flag.src = '../_static/flags/' + code + '.svg'
+    flag.style.width = '30%'
+    flag.addEventListener('error', function () {
+      this.src = '../_static/icons/translation-icon_black.svg'
+    })
+    button.appendChild(flag)
+
+    const span = document.createElement('span')
+    span.classList = 'ps-2'
+    span.style.verticalAlign = 'middle'
+    span.innerHTML = name
+    button.appendChild(span)
+
+    $('#langSwitchOptions').append(li)
+  })
+}
+
+function localize (lang) {
+  // Use the spreadhseet and defintion to set the content to the given language
+
+  const spreadhseet = $(document).data('spreadsheet')
+  const definition = $(document).data('timelineDefinition')
+
+  $('#timelineContainer').empty()
+  spreadhseet.forEach((entry) => {
+    createTimelineEntry(entry, lang)
+  })
+  $('#headerText').html(definition.languages[lang].header_text || '')
 }
 
 function createTimelineEntry (entry, langCode) {
@@ -170,6 +241,12 @@ function configureVisibleElements () {
 window.addEventListener('load', configureVisibleElements)
 window.addEventListener('resize', configureVisibleElements)
 document.getElementById('timeline-pane').addEventListener('scroll', configureVisibleElements)
+$('#fontSizeDecreaseButton').click(function () {
+  adjustFontSize(-0.1)
+})
+$('#fontSizeIncreaseButton').click(function () {
+  adjustFontSize(0.1)
+})
 
 // Constellation stuff
 let currentContent = ''
@@ -191,6 +268,6 @@ if (searchParams.has('preview')) {
 
   setInterval(constCommon.sendPing, 5000)
 }
-
+adjustFontSize(-100) // Make sure the font modifier is at 1 to start
 // Hide the cursor
 // document.body.style.cursor = 'none'

@@ -49,7 +49,7 @@ function clearDefinitionInput () {
   $('#languageNavContent').empty()
 
   // Reset style options
-  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor', 'toolbarButtonColor']
+  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
@@ -80,6 +80,11 @@ function editDefinition (name = '') {
   Object.keys(def.style.color).forEach((key) => {
     $('#colorPicker_' + key).val(def.style.color[key])
     document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+
+  // Set the appropriate values for the font selects
+  Object.keys(def.style.font).forEach((key) => {
+    $('#fontSelect_' + key).val(def.style.font[key])
   })
 
   // Build out the key input interface
@@ -206,6 +211,7 @@ function updateWorkingDefinition (property, elWithValue) {
 
   const value = $('#' + elWithValue).val().trim()
   constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
+  console.log($('#definitionSaveButton').data('workingDefinition'))
 }
 
 function getDefinitionByName (name = '') {
@@ -338,6 +344,12 @@ function populateFontSelects () {
   })
     .then((result) => {
       types.forEach((type) => {
+        // First, add the default
+        const defaultFont = document.createElement('option')
+        defaultFont.value = $('#fontSelect_' + type).data('default')
+        defaultFont.innerHTML = 'Default'
+        $('#fontSelect_' + type).append(defaultFont)
+
         const header = document.createElement('option')
         header.value = 'User-provided'
         header.innerHTML = 'User-provided'
@@ -513,6 +525,10 @@ $('#spreadsheetSelect').change(onSpreadsheetSelectChange)
 // Style fields
 $('.coloris').change(function () {
   updateWorkingDefinition(['style', 'color', $(this).data('property')], $(this).prop('id'))
+  previewDefinition(true)
+})
+$('.font-select').change(function () {
+  updateWorkingDefinition(['style', 'font', $(this).data('property')], $(this).prop('id'))
   previewDefinition(true)
 })
 

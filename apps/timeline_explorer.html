@@ -10,7 +10,7 @@
 
     <title>Constellation Timeline Explorer</title>
 
-    <link rel="stylesheet" href="css/bootstrap_5_0/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
     <link rel="stylesheet" href="timeline_explorer/timeline_explorer.css">
   </head>
 
@@ -29,79 +29,39 @@
             <div class="col-12 timeline">
                 <ul id="timelineContainer">
                     <li>
-                        <div class="timeline-element">
-                            <div style="flex-basis: 0; flex-grow: 1;">
-                                <time>1934</time>
-                                <div class="size1">Title Text</div>
-                                <p class="timeline-body">
-                                    At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium
-                                </p>
-                            </div>
-                            <div style="flex-basis: 0; flex-grow: 1;">
-                                <img src="content/Apollo7.jpg" width="100%">
-                            </div>
-                            
+                    <div class="timeline-element">
+                        <div style="flex-basis: 0; flex-grow: 1;">
+                            <time>July 16, 1969</time>
+                            <div class="size1 timeline-item-header">Level 1 Title</div>
+                            <p class="timeline-body">
+                                At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium
+                            </p>
                         </div>
+                        <div style="flex-basis: 0; flex-grow: 1;">
+                            <img src="content/Apollo7.jpg" width="100%">
+                        </div>
+                        
+                    </div>
                     </li>
                     <li>
                     <div class="timeline-element">
-                        <time>1937</time>
-                        <div class="size2">Title Text</div>
+                        <time>1972</time>
+                        <div class="size2 timeline-item-header">Level 2 Title</div>
                         Proin quam velit, efficitur vel neque vitae, rhoncus commodo mi. Suspendisse finibus mauris et bibendum molestie. Aenean ex augue, varius et pulvinar in, pretium non nisi.
                     </div>
                     </li>
                     <li>
                     <div class="timeline-element">
-                        <time>1940</time>
-                        <div class="size3">Title Text</div>
+                        <time>March 3</time>
+                        <div class="size3 timeline-item-header">Level 3 Title</div>
                         Proin iaculis, nibh eget efficitur varius, libero tellus porta dolor, at pulvinar tortor ex eget ligula. Integer eu dapibus arcu, sit amet sollicitudin eros.
                     </div>
                     </li>
                     <li>
                     <div class="timeline-element">
-                        <time>1943</time>
-                        <div class="size4">Title Text</div>
+                        <time>10:08 AM</time>
+                        <div class="size4 timeline-item-header">Level 4 Title</div>
                         In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1946</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1956</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1957</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1967</time> Aenean condimentum odio a bibendum rhoncus. Ut mauris felis, volutpat eget porta faucibus, euismod quis ante.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1977</time> Vestibulum porttitor lorem sed pharetra dignissim. Nulla maximus, dui a tristique iaculis, quam dolor convallis enim, non dignissim ligula ipsum a turpis.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>1985</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>2000</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
-                    </div>
-                    </li>
-                    <li>
-                    <div class="timeline-element">
-                        <time>2005</time> In mattis elit vitae odio posuere, nec maximus massa varius. Suspendisse varius volutpat mattis. Vestibulum id magna est.
                     </div>
                     </li>
                 </ul>
@@ -111,20 +71,56 @@
       
     <div id="tools-pane" class="container-fluid">
         <div class='row h-100'>
-            <div class='col-1 pe-0'>
-              <input id="fontSizeDecreaseButton" class='w-100 h-100' type='image' src='InfoStation/icons/text_size_down.png'></input>
+            <div class='col h-100 text-center'>
+              <button id="fontSizeDecreaseButton" type="button" class="btn btn-link h-100">
+                <img src="_static/icons/font_size_decrease.svg" height="60%">
+            </button>
             </div>
-            <div class='col-1 ps-0'>
-              <input id="fontSizeIncreaseButton" class='w-100 h-100' type='image' src='InfoStation/icons/text_size_up.png'></input>
+            <div class='col h-100 text-center'>
+                <button id="fontSizeIncreaseButton" type="button" class="btn btn-link h-100">
+                    <img src="_static/icons/font_size_increase.svg" height="60%">
+                </button>
             </div>
-            <div class='col-4'>
-              <button id="langToggleButton" class='btn h-100'>Español</button>
+            <div class="col"></div>
+            <div class="col"></div>
+            <div class="col"></div>
+            <div class="col"></div>
+            <div class="col"></div>
+            <div class='col h-100'>
+                <div id="langSwitchDropdown" class="btn-group dropup w-100 h-100 text-center">
+                    <button type="button" class="btn btn-link" data-bs-toggle="dropdown" aria-expanded="false">
+                      <img src="_static/icons/translation-icon_white.svg" height="80%">
+                    </button>
+                    <ul id="langSwitchOptions" class="dropdown-menu">
+                        <li><button class="dropdown-item">
+                                <img src="_static/flags/en.svg" width="30%">
+                                English
+                            </button>
+                        </li>
+                        <li><button class="dropdown-item">
+                            <img src="_static/flags/fr.svg" width="30%">
+                            Français
+                            </button>
+                        </li>
+                        <li><button class="dropdown-item">
+                            <img src="_static/flags/pt.svg" width="30%">
+                            Português
+                            </button>
+                        </li>
+                        <li><button class="dropdown-item">
+                            <img src="_static/icons/translation-icon_black.svg" width="30%">
+                            Espanol
+                            </button>
+                        </li>
+                    </ul>
+                </div>
             </div>
+            
         </div>
     </div>
 
     <script src="js/jquery-3.6.1.min.js"></script>
-    <script src="js/bootstrap_5_0/bootstrap.min.js"></script>
+    <script src="js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
     <script src="js/platform.js"></script>
     <script src="js/showdown.min.js"></script>
     <script type="module" src="timeline_explorer/timeline_explorer.js"></script>

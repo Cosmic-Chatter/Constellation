@@ -15,6 +15,9 @@
   --lineColor: white;
   --textColor: white;
   --toolbarButtonColor: #393A5A;
+
+  /* Font modifiers */
+  --fontModifier: '1.0';
 }
 
 /* Font definitions */
@@ -44,8 +47,13 @@ body {
   color: var(--textColor);
   overflow-x: hidden;
   overflow-y: hidden;
-  padding-bottom: 50px;
+  /* padding-bottom: 50px; */
   font-family: "Body";
+}
+
+button:active {
+  outline: none;
+  border: none;
 }
 
 /* TIMELINE
@@ -113,7 +121,7 @@ body {
 time {
   display: block;
   font-weight: bold;
-  font-family: "Body";
+  font-family: "Time";
 }
 
 .timeline-item-header {
@@ -122,10 +130,10 @@ time {
 }
 
 #fontSizeDecreaseButton {
-    background-color: var(--toolbarButtonColor);
+    /* background-color: var(--toolbarButtonColor); */
 }
 #fontSizeIncreaseButton {
-    background-color: var(--toolbarButtonColor);
+    /* background-color: var(--toolbarButtonColor); */
 }
 #langToggleButton {
     background-color: var(--toolbarButtonColor);
@@ -177,26 +185,26 @@ time {
 
 @media (orientation: landscape) {
     h1 {
-        font-size: 8vh;
+        font-size: min(calc(8vh * var(--fontModifier)), 12vh);
     }
     time {
-      font-size: 1.8vh;
+      font-size: calc(1.8vh * var(--fontModifier));
       margin-bottom: 0.5vh;
     }
     .size1 {
-        font-size: 3.1vh;
+        font-size: calc(3.1vh * var(--fontModifier));
     }
     .size2 {
-        font-size: 2.9vh;
+        font-size: calc(2.9vh * var(--fontModifier));
     }
     .size3 {
-        font-size: 2.7vh;
+        font-size: calc(2.7vh * var(--fontModifier));
     }
     .size4 {
-        font-size: 2.5vh;
+        font-size: calc(2.5vh * var(--fontModifier));
     }
     .timeline-body {
-      font-size: 1.5vh;
+      font-size: calc(1.5vh * var(--fontModifier));
     }
     .timeline ul li { 
       width: 0.5vw;
@@ -207,18 +215,20 @@ time {
     }
     .timeline ul li:nth-child(even) div.timeline-element {
       flex-direction: row-reverse;
-      left: -22vw;
+      /* left: -22vw; */
+      left: max(calc(-1 * (20vw * var(--fontModifier) + 2.5vw - 0.5vw) ), -47vw);
       /* - (20 + 2.5 - 0.5) */
     }
     .timeline ul li:nth-child(even) div.timeline-element.with-image {
-      left: -32vw;
+      /* left: -32vw; */
+      left: max(calc(-1 * (30vw * var(--fontModifier) + 2.5vw - 0.5vw) ), -47vw);
       /* - (30 + 2.5 - 0.5) */
     }
     .timeline ul li div.timeline-element {
-        width: 20vw;
+        width: min(calc(20vw * var(--fontModifier)), 45vw);
     }
     .timeline ul li div.timeline-element.with-image {
-        width: 30vw;
+        width: min(calc(30vw * var(--fontModifier)), 45vw);
     }
     .timeline-element {
         display: flex;
@@ -239,30 +249,31 @@ time {
   
 @media (orientation: portrait) {
     h1 {
-        font-size: 4.5vh;
+        /* font-size: 4.5vh; */
+        font-size: min(calc(4.5vh * var(--fontModifier)), 5vh);;
     }
     time {
-      font-size: 1vh;
+      font-size: calc(1vh * var(--fontModifier));
       margin-bottom: 0.3vh;
     }
     .size1 {
-        font-size: 2vh;
+        font-size: calc(2vh * var(--fontModifier));
         font-weight: bold;
     }
     .size2 {
-        font-size: 1.7vh;
+        font-size: calc(1.7vh * var(--fontModifier));
         font-weight: bold;
     }
     .size3 {
-        font-size: 1.5vh;
+        font-size: calc(1.5vh * var(--fontModifier));
         font-weight: bold;
     }
     .size4 {
-        font-size: 1.3vh;
+        font-size: calc(1.3vh * var(--fontModifier));
         font-weight: bold;
     }
     .timeline-body {
-      font-size: 0.85vh;
+      font-size: calc(0.85vh * var(--fontModifier));
     }
     .timeline ul li { 
       width: 1vw;
