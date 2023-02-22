@@ -303,6 +303,14 @@ class DMXFixtureGroup {
     this.scenes.push(new DMXScene(name, values, this.name, uuid, duration))
   }
 
+  deleteScene(uuid) {
+    // Remove the given scene.
+
+    this.scenes = this.scenes.filter(function( obj ) {
+      return obj.uuid !== uuid;
+  });
+  }
+
   createHTML() {
     // Create the HTML representation for this group.
 
@@ -453,7 +461,6 @@ class DMXFixtureGroup {
     return matchedScene
   }
   
-
   showScene(name, uuid) {
     // Tell the helper to set the given scene.
 
@@ -693,17 +700,20 @@ function showEditSceneModal(sceneName, groupName, uuid="") {
   })
 
   $("#editSceneModalSceneName").val(sceneName)
-  if (scene != null) {
-    $("#editSceneModalDurationInput").val(scene.duration)
-  }
 
   if (uuid !== "") {
     // We are editing an existing scene
+    $("#editSceneModalDurationInput").val(scene.duration)
+
     $("#editSceneModalTitle").html('Edit scene: ' +sceneName)
     $("#editSceneModalSaveButton").html("Save")
+    $("#editSceneModalDeleteButton").show()
   } else {
+    $("#editSceneModalDurationInput").val(0)
     $("#editSceneModalTitle").html('Add scene')
     $("#editSceneModalSaveButton").html("Create")
+    $("#editSceneModalDeleteButton").hide()
+
   }
 
   $("#editSceneModal").modal('show')
@@ -764,6 +774,28 @@ function editSceneFromModal() {
       }
     })
   }
+}
+
+function deleteSceneFromModal() {
+  // Delete the scene we are currently editing.
+
+  const groupName = $("#editSceneModal").data('group').name
+  const uuid = $("#editSceneModal").data('uuid')
+
+  constCommon.makeHelperRequest({
+    method: "POST",
+    endpoint: '/DMX/group/' + groupName + '/deleteScene',
+    params: {uuid}
+  })
+  .then((result) => {
+    if ("success" in result && result.success === true) {
+      const group = getGroupByName(groupName)
+      group.deleteScene(uuid)
+      $("#editSceneModal").modal("hide")
+      rebuildGroupsInterface()
+    }
+  })
+
 }
 
 function createFixtureCheckbox(fixture, collection=null) {
@@ -1095,6 +1127,7 @@ $('#addFixtureFromModalButton').click(addFixtureFromModal)
 // Group tab
 $('#editGroupModalSaveButton').click(editGroupFromModal)
 $("#editSceneModalSaveButton").click(editSceneFromModal)
+$("#editSceneModalDeleteButton").click(deleteSceneFromModal)
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'

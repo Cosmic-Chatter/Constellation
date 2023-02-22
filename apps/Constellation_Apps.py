@@ -466,7 +466,7 @@ def create_dmx_scene(group_name: str,
                      values: dict = Body(description="A dictionary of values for the scene."),
                      duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Edit the given scene for the specified group."""
-    print(group_name, uuid, name)
+
     group = helper_dmx.get_group(group_name)
     
     scene = group.get_scene(uuid_str=uuid)
@@ -474,6 +474,18 @@ def create_dmx_scene(group_name: str,
     scene.name = name
     scene.duration = duration
     scene.set_values(values)
+
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
+@app.post("/DMX/group/{group_name}/deleteScene")
+def create_dmx_scene(group_name: str,
+                     uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
+    """Delete the given scene for the specified group."""
+
+    group = helper_dmx.get_group(group_name)
+    group.delete_scene(uuid)
 
     helper_dmx.write_dmx_configuration()
     return {"success": True}

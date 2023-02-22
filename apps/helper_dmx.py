@@ -204,6 +204,11 @@ class DMXFixtureGroup:
 
         return self.scenes[-1].uuid
 
+    def delete_scene(self, uuid_str):
+        """Remove the given scene."""
+
+        self.scenes = [scene for scene in self.scenes if scene.uuid != uuid_str]
+    
     def get_scene(self, name: str = "", uuid_str: str = "") -> Union['DMXScene', None]:
 
         if name == "" and uuid_str == "":
