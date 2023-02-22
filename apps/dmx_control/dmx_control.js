@@ -279,7 +279,7 @@ class DMXFixtureGroup {
     this.name = name
     this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
     this.fixtures = {}
-    this.scenes = {}
+    this.scenes = []
   }
 
   addFixtures(fixtures) {
@@ -297,10 +297,10 @@ class DMXFixtureGroup {
     this.fixtures = {}
   }
 
-  createScene(name, values) {
+  createScene(name, uuid, values, duration=0) {
     // Create a new DMXScene and add it this this.scenes.
 
-    this.scenes[name] = new DMXScene(name, values, this.name)
+    this.scenes.push(new DMXScene(name, values, this.name, uuid, duration))
   }
 
   createHTML() {
@@ -433,22 +433,35 @@ class DMXFixtureGroup {
 
   getSceneByName(name) {
     let matchedScene = null
-    Object.keys(this.scenes).forEach((key) => {
-      const scene = this.scenes[key]
-      if (scene.name === name) matchedScene = scene
+
+    this.scenes.forEach((scene) => {
+      if (scene.name === name) {
+        matchedScene = scene
+      }
+    })
+    return matchedScene
+  }
+
+  getSceneByUUID(uuid) {
+    let matchedScene = null
+
+    this.scenes.forEach((scene) => {
+      if (scene.uuid === uuid) {
+        matchedScene = scene
+      }
     })
     return matchedScene
   }
   
 
-  showScene(scene) {
+  showScene(name, uuid) {
     // Tell the helper to set the given scene.
 
     constCommon.makeHelperRequest({
       method: "POST",
       endpoint: '/DMX/group/' + this.name + '/showScene',
       params: {
-        scene
+        name, uuid
       }
     })
   }
@@ -457,17 +470,19 @@ class DMXFixtureGroup {
 class DMXScene {
   // A mirror for the DMXScene Python class
 
-  constructor(name, values, group=null) {
+  constructor(name, values, group=null, uuid="", duration=0) {
     this.name = name
     this.values = values
     this.group = group
-
+    this.uuid = uuid
+    this.duration = duration
   }
 
   createHTML() {
     // Create the HTML representation for this scene.
 
     const thisName = this.name
+    const thisUUID = this.uuid
     const thisGroup = this.group
 
     const col = document.createElement('div')
@@ -495,7 +510,7 @@ class DMXScene {
     runButton.classList = 'btn btn-primary w-100'
     runButton.innerHTML = 'Run'
     runButton.addEventListener('click', function() {
-      getGroupByName(thisGroup).showScene(thisName)
+      getGroupByName(thisGroup).showScene(thisName, thisUUID)
     })
     runCol.appendChild(runButton)
 
@@ -506,9 +521,33 @@ class DMXScene {
     const editButton = document.createElement('button')
     editButton.classList = 'btn btn-info w-100'
     editButton.innerHTML = 'Edit'
+    editButton.addEventListener('click', function() {
+      showEditSceneModal(thisName, thisGroup, thisUUID)
+    })
     editCol.appendChild(editButton)
 
     return col
+  }
+
+  getFixtureByName(name) {
+    // Return the fixture, if it is in this scene
+
+    if (name in this.values) {
+      if (this.group != null) {
+        return getGroupByName(this.group).getFixtureByName(name)
+      }
+    }
+  }
+
+  getFixtureByUUID(uuid) {
+    // Pass the request to the group
+
+    if (this.group != null) {
+      const fixture = getGroupByName(this.group).getFixtureByUUID(uuid)
+      if (fixture.name in this.values) {
+        return fixture
+      }
+    }
   }
 }
 
@@ -639,18 +678,33 @@ function editGroupFromModal() {
   $('#editGroupModal').modal('hide')
 }
 
-function showEditSceneModal(sceneName, groupName) {
+function showEditSceneModal(sceneName, groupName, uuid="") {
   // Configure the edit scene modal and show it
 
   const group = getGroupByName(groupName)
   const scene = group.getSceneByName(sceneName)
   $("#editSceneModal").data('group', group)
-  
+  $("#editSceneModal").data('uuid', uuid)
+
   $("#editSceneFixtureList").empty()
   Object.keys(group.fixtures).forEach((fixtureName) => {
     const fixture = group.getFixtureByName(fixtureName)
     $("#editSceneFixtureList").append(createFixtureCheckbox(fixture, scene))
   })
+
+  $("#editSceneModalSceneName").val(sceneName)
+  if (scene != null) {
+    $("#editSceneModalDurationInput").val(scene.duration)
+  }
+
+  if (uuid !== "") {
+    // We are editing an existing scene
+    $("#editSceneModalTitle").html('Edit scene: ' +sceneName)
+    $("#editSceneModalSaveButton").html("Save")
+  } else {
+    $("#editSceneModalTitle").html('Add scene')
+    $("#editSceneModalSaveButton").html("Create")
+  }
 
   $("#editSceneModal").modal('show')
 }
@@ -662,6 +716,7 @@ function editSceneFromModal() {
   const duration = parseInt($("#editSceneModalDurationInput").val())
   const checkboxes = $("#editSceneFixtureList").find(".form-check-input").toArray()
   const groupName = $("#editSceneModal").data('group').name
+  const uuid = $("#editSceneModal").data('uuid')
 
   const sceneDict = {}
   checkboxes.forEach((box) => {
@@ -673,18 +728,42 @@ function editSceneFromModal() {
     }
   })
   
-  constCommon.makeHelperRequest({
-    method: "POST",
-    endpoint: '/DMX/group/' + groupName + '/createScene',
-    params: {name: sceneName, values: sceneDict}
-  })
-  .then((result) => {
-    if ("success" in result && result.success === true) {
-      getGroupByName(groupName).createScene(sceneName, sceneDict)
-      $("#editSceneModal").modal("hide")
-    }
-  })
-  
+  if (uuid === "") {
+    // We are creating a new scene
+
+    constCommon.makeHelperRequest({
+      method: "POST",
+      endpoint: '/DMX/group/' + groupName + '/createScene',
+      params: {name: sceneName, values: sceneDict, duration}
+    })
+    .then((result) => {
+      if ("success" in result && result.success === true) {
+        const group = getGroupByName(groupName)
+        group.createScene(sceneName, result.uuid, sceneDict, duration)
+        $("#editSceneModal").modal("hide")
+        rebuildGroupsInterface()
+      }
+    })
+  } else {
+    // We are editing an existing scene
+
+    constCommon.makeHelperRequest({
+      method: "POST",
+      endpoint: '/DMX/group/' + groupName + '/editScene',
+      params: {name: sceneName, values: sceneDict, duration, uuid}
+    })
+    .then((result) => {
+      if ("success" in result && result.success === true) {
+        const group = getGroupByName(groupName)
+        const scene = group.getSceneByUUID(uuid)
+        scene.name = sceneName
+        scene.duration = duration
+        scene.values = sceneDict
+        $("#editSceneModal").modal("hide")
+        rebuildGroupsInterface()
+      }
+    })
+  }
 }
 
 function createFixtureCheckbox(fixture, collection=null) {
@@ -916,7 +995,7 @@ function getDMXConfiguration() {
           groupObj.addFixtures([fixture])
         })
         groupDef.scenes.forEach((sceneDef) => {
-          groupObj.createScene(sceneDef.name, sceneDef.values)
+          groupObj.createScene(sceneDef.name, sceneDef.uuid, sceneDef.values, sceneDef.duration)
         })
       })
       rebuildGroupsInterface()

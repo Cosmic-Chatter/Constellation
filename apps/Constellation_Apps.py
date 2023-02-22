@@ -449,11 +449,32 @@ def set_dmx_fixture_to_color(fixture_uuid: str,
 @app.post("/DMX/group/{group_name}/createScene")
 def create_dmx_scene(group_name: str,
                      name: str = Body(description="The name of the scene."),
-                     values: dict = Body(description="A dictionary of values for the scene.")):
+                     values: dict = Body(description="A dictionary of values for the scene."),
+                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Create the given scene for the specified group."""
 
     group = helper_dmx.get_group(group_name)
-    group.create_scene(name, values)
+    uuid_str = group.create_scene(name, values, duration=duration)
+    helper_dmx.write_dmx_configuration()
+    return {"success": True, "uuid": uuid_str}
+
+
+@app.post("/DMX/group/{group_name}/editScene")
+def create_dmx_scene(group_name: str,
+                     uuid: str = Body(description="The UUID of the scene to edit."),
+                     name: str = Body(description="The name of the scene."),
+                     values: dict = Body(description="A dictionary of values for the scene."),
+                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
+    """Edit the given scene for the specified group."""
+    print(group_name, uuid, name)
+    group = helper_dmx.get_group(group_name)
+    
+    scene = group.get_scene(uuid_str=uuid)
+
+    scene.name = name
+    scene.duration = duration
+    scene.set_values(values)
+
     helper_dmx.write_dmx_configuration()
     return {"success": True}
 
@@ -486,13 +507,20 @@ def set_dmx_group_to_color(group_name: str,
 
 @app.post("/DMX/group/{group_name}/showScene")
 def set_dmx_group_scene(group_name: str,
-                        scene: str = Body(
-                            description="The scene to be run.",
-                            embed=True)):
+                        name: str = Body(
+                            description="The name of the scene to be run.",
+                            default=""),
+                        uuid: str = Body(
+                            description="The UUID of the scene to be run.",
+                            default="")
+                        ):
     """Run a scene for the given group."""
 
+    if name == "" and uuid == "":
+        return {"success": False, "reason": "Must pass a value for either uuid or name."}
+
     group = helper_dmx.get_group(group_name)
-    group.show_scene(scene)
+    group.show_scene(name=name, uuid_str=uuid)
 
     return {"success": True, "configuration": group.get_dict()}
 
