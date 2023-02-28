@@ -92,7 +92,10 @@
                   <select class="form-select" id="spreadsheetSelect"></select>
                 </div>
                 <div class="col-12 mt-2">
-                  <button class="btn btn-primary w-100">Upload new</button>
+                  <label class="btn btn-outline-primary w-100">
+                    <span id="uploadSpreadsheetName" class="w-100">Upload new</span>
+                    <input id="uploadSpreadsheetInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".csv">
+                  </label>
                 </div>
               </div>
             </div>
@@ -174,6 +177,12 @@
               <div class="row">
                 <div class="col-12">
 
+                </div>
+                <div class="col-12">
+                  <label class="btn btn-outline-primary w-100">
+                    <span id="uploadFontName" class="w-100">Upload new</span>
+                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
+                  </label>
                 </div>
                 <div class="col-6">
                   <label for="fontSelect_Header" class="form-label">Header</label>

@@ -21,9 +21,8 @@ function populateAvailableDefinitions (definitions) {
 
 function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
-  console.log('clearDefinitionInput')
 
-  if (full == true) {
+  if (full === true) {
   // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
@@ -304,6 +303,72 @@ function deleteLanguageFlag (lang) {
   })
 }
 
+function onSpreadsheetUploadChange () {
+  // Classed when the user selects CSV files to upload
+
+  const fileInput = $('#uploadSpreadsheetInput')[0]
+  const files = fileInput.files
+  const formData = new FormData()
+
+  $('#uploadSpreadsheetName').html('Uploading')
+
+  Object.keys(files).forEach((key) => {
+    const file = files[key]
+    formData.append('files', file)
+  })
+
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', '/uploadContent', true)
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
+    if (this.status === 200) {
+      const response = JSON.parse(this.responseText)
+
+      if ('success' in response) {
+        $('#uploadSpreadsheetName').html('Upload new')
+        populateSpreadsheetSelect()
+      }
+    } else if (this.status === 422) {
+      console.log(JSON.parse(this.responseText))
+    }
+  }
+  xhr.send(formData)
+}
+
+function onFontUploadChange () {
+  // Classed when the user selects font files to upload
+
+  const fileInput = $('#uploadFontInput')[0]
+  const files = fileInput.files
+  const formData = new FormData()
+
+  $('#uploadFontName').html('Uploading')
+
+  Object.keys(files).forEach((key) => {
+    const file = files[key]
+    formData.append('files', file)
+  })
+
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', '/uploadContent', true)
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
+    if (this.status === 200) {
+      const response = JSON.parse(this.responseText)
+
+      if ('success' in response) {
+        $('#uploadFontName').html('Upload new')
+        populateFontSelects()
+      }
+    } else if (this.status === 422) {
+      console.log(JSON.parse(this.responseText))
+    }
+  }
+  xhr.send(formData)
+}
+
 function onFlagUploadChange (lang) {
   // Called when the user selects a flag image file to upload
 
@@ -316,7 +381,7 @@ function onFlagUploadChange (lang) {
 
   const ext = file.name.split('.').pop()
   const newName = $('#definitionSaveButton').data('workingDefinition').uuid + '_flag_' + lang + '.' + ext
-  console.log(newName)
+
   const formData = new FormData()
 
   formData.append('files', fileInput.files[0], newName)
@@ -328,7 +393,7 @@ function onFlagUploadChange (lang) {
     if (this.readyState !== 4) return
     if (this.status === 200) {
       const response = JSON.parse(this.responseText)
-      console.log(response)
+
       if ('success' in response) {
         $('#uploadFlagFilename_' + lang).html('Upload')
         $('#flagImg_' + lang).attr('src', '../content/' + newName)
@@ -639,6 +704,7 @@ $('#languageAddButton').click(addLanguage)
 
 // Definition fields
 $('#spreadsheetSelect').change(onSpreadsheetSelectChange)
+$('#uploadSpreadsheetInput').change(onSpreadsheetUploadChange)
 
 // Style fields
 $('.coloris').change(function () {
@@ -646,6 +712,8 @@ $('.coloris').change(function () {
   updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
   previewDefinition(true)
 })
+$('#uploadFontInput').change(onFontUploadChange)
+
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
