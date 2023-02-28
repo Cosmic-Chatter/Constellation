@@ -19,26 +19,27 @@ class DMXUniverse:
 
     def __init__(self, name: str, 
                        controller: str = "OpenDMX",
-                       device_details: Union[dict[str, Any], None] = None,
-                       dynamic_frame = True):
+                       device_details: dict[str, Any] = {},
+                       dynamic_frame = True,
+                       uuid_str: str = ""):
 
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
         self.controller_type = controller
 
-        self.address: Union[int, None] = None
-        self.bus: Union[int, None] = None
-        self.serial_number: Union[str, None] = None
+        if uuid_str != "":
+            self.uuid = uuid_str
+        else:
+            self.uuid = str(uuid.uuid4())  # A unique ID
+
+        self.address: Union[int, None] = device_details.get("address", None)
+        self.bus: Union[int, None] = device_details.get("bus", None)
+        self.serial_number: Union[str, None] = device_details.get("serial_number", None)
 
         if controller == "OpenDMX":
-            if device_details is not None:
-                self.serial_number = device_details["serial_number"]
             self.controller = OpenDMXController(dynamic_frame=dynamic_frame,
                                                 ftdi_serial=self.serial_number)
         elif controller == "uDMX":
-            if device_details is not None:
-                self.address = device_details["address"]
-                self.bus = device_details["bus"]
             self.controller = uDMXController(dynamic_frame=dynamic_frame,
                                              udmx_address=self.address,
                                              udmx_bus=self.bus)
@@ -86,6 +87,10 @@ class DMXUniverse:
 
         the_dict = {
             "name": self.name,
+            "uuid": self.uuid,
+            "address": self.address,
+            "bus": self.bus,
+            "serial_number": self.serial_number,
             "controller": self.controller_type,
             "fixtures": fixture_list
         }
@@ -133,7 +138,7 @@ class DMXFixture(Fixture):
             group = get_group(group_name)
             group.remove_fixture(self.name)
 
-        get_universe(self.universe).remove_fixture(self.name)
+        get_universe(name=self.universe).remove_fixture(self.name)
 
     def get_all_channel_values(self) -> dict[str, int]:
         """Return a dict with the current value of every channel."""
@@ -329,11 +334,20 @@ def create_group(name: str) -> DMXFixtureGroup:
     return new_group
 
 
-def create_universe(name: str, controller: str = "OpenDMX", dynamic_frame=True) -> DMXUniverse:
+def create_universe(name: str, 
+                    controller: str = "OpenDMX", 
+                    device_details: dict[str, Any] = {}, 
+                    dynamic_frame: bool = True,
+                    uuid_str: str = "") -> DMXUniverse:
     """Create a new DMXUniverse and add it to config.dmx_universes."""
 
-    new_universe = DMXUniverse(name, controller, dynamic_frame=dynamic_frame)
-    config.dmx_universes[name] = new_universe
+    new_universe = DMXUniverse(name, 
+                               controller = controller, 
+                               device_details = device_details,
+                               dynamic_frame = dynamic_frame,
+                               uuid_str=uuid_str)
+
+    config.dmx_universes.append(new_universe)
 
     return new_universe
 
@@ -358,7 +372,7 @@ def get_fixture(name: str = "",
     if group != "":
         return get_group(group).get_fixture(name)
     elif universe != "":
-        return get_universe(universe).get_fixture(name)
+        return get_universe(name=universe).get_fixture(name)
 
 
 def get_group(name: str) -> Union[DMXFixtureGroup, None]:
@@ -368,11 +382,16 @@ def get_group(name: str) -> Union[DMXFixtureGroup, None]:
         return config.dmx_groups[name]
 
 
-def get_universe(name: str) -> Union[DMXUniverse, None]:
+def get_universe(name: str = "", uuid_str: str = "") -> Union[DMXUniverse, None]:
     """Return the matching DMXUniverse."""
 
-    if name in config.dmx_universes:
-        return config.dmx_universes[name]
+    for universe in config.dmx_universes:
+        if uuid_str != "":
+            if universe.uuid == uuid_str:
+                return universe
+        if name != "":
+            if universe.name == name:
+                return universe
 
 
 def write_dmx_configuration() -> None:
@@ -382,8 +401,7 @@ def write_dmx_configuration() -> None:
     universe_list = []
     group_list = []
 
-    for name in config.dmx_universes:
-        universe = config.dmx_universes[name]
+    for universe in config.dmx_universes:
         universe_list.append(universe.get_dict())
 
     for name in config.dmx_groups:
@@ -411,11 +429,19 @@ def read_dmx_configuration() -> bool:
     config_dict = helper_files.load_json(config_path)
 
     # First, create any universes
-    config.dmx_universes = {}
+    config.dmx_universes = []
     universe_config = config_dict["universes"]
 
     for entry in universe_config:
-        uni = create_universe(entry["name"], entry["controller"])
+        details = {
+            "address": entry["address"],
+            "bus": entry['bus'],
+            "serial_number": entry["serial_number"]
+        }
+        uni = create_universe(entry["name"], 
+                              controller = entry["controller"], 
+                              device_details = details,
+                              uuid_str = entry["uuid"])
         for fix in entry["fixtures"]:
             uni.create_fixture(
                 fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])

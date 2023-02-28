@@ -5,8 +5,9 @@ import * as constCommon from '../js/constellation_app_common.js'
 class DMXUniverse {
   // A mirror for the DMXUniverse Python class
 
-  constructor(name, controller) {
+  constructor(name, uuid, controller) {
     this.name = name
+    this.uuid = uuid
     this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
     this.controller = controller
     this.fixtures = {}
@@ -58,7 +59,7 @@ class DMXUniverse {
     addButton.classList = 'btn btn-primary w-100'
     addButton.innerHTML = 'Add Fixture'
     addButton.addEventListener('click', () => {
-      showAddFixtureModal(this.name)
+      showAddFixtureModal(this.name, this.uuid)
     })
     addButtonCol.appendChild(addButton)
 
@@ -627,10 +628,11 @@ function updatecolorPicker(collectionName, uuid) {
   }
 }
 
-function showAddFixtureModal(universe) {
+function showAddFixtureModal(universeName, universeUUID) {
   // Prepare the addFixtureModal and then show it.
 
-  $('#addFixtureModal').data('universe', universe)
+  $('#addFixtureModal').data('universeName', universeName)
+  $('#addFixtureModal').data('universeUUID', universeUUID)
 
   $('#addFixtureName').val('')
   $('#addFixtureStartingChannel').val('')
@@ -850,7 +852,7 @@ function addChannelToModal() {
   select.classList = 'form-control'
   selectCol.appendChild(select)
 
-  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'dimmer'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Strobe', 'strobe'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Other', 'other']]
+  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'dimmer'], ['Color mode', 'color_mode'], ['Mode', 'mode'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Pan speed', 'pan_speed'], ['Strobe', 'strobe'], ['Strobe speed', 'strobe_speed'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Tilt speed', 'tilt_speed'], ['Other', 'other']]
 
   options.forEach((entry) => {
     const option = document.createElement('option')
@@ -891,15 +893,24 @@ function addFixtureFromModal() {
   const definition = {
     name: $('#addFixtureName').val(),
     start_channel: parseInt($('#addFixtureStartingChannel').val()),
-    channels: channelList
+    channels: channelList,
+    universe: $('#addFixtureModal').data('universeUUID')
   }
-  console.log(definition)
+  
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/DMX/fixture/create',
+    params: definition
+  })
+  .then((response) => {
+    console.log(response)
+  })
 }
 
-function createUniverse(name, controller) {
+function createUniverse(name, uuid, controller) {
   // Create a new universe and add it to the global list.
 
-  const newUniverse = new DMXUniverse(name, controller)
+  const newUniverse = new DMXUniverse(name, uuid, controller)
   universeList.push(newUniverse)
   return newUniverse
 }
@@ -923,10 +934,18 @@ function channelNameToDisplayName(name) {
     uv: 'UV',
     w: 'White',
     color: 'Color',
+    color_mode: 'Color mode',
     dimmer: 'Dimmer',
     mode: 'Mode',
+    pan: 'Pan',
+    pan_fine: 'Pan (fine)',
+    pan_speed: 'Pan speed',
     speed: 'Speed',
     strobe: "Strobe",
+    strobe_speed: 'Strobe speed',
+    tilt: 'Tilt',
+    tilt_fine: 'Tilt (fine)',
+    tilt_speed: 'Tilt speed'
   }
   if (name in nameDict) {
     return nameDict[name]
@@ -1007,30 +1026,34 @@ function getDMXConfiguration() {
   })
     .then((response) => {
       configuration = response.configuration
-      configuration.universes.forEach((universeDef) => {
-        // First, create the universe
-        const universeObj = createUniverse(universeDef.name, universeDef.controller)
-        // Then, loop the fixtures and add each.
-        universeDef.fixtures.forEach((fixture) => {
-          universeObj.addFixture(fixture)
+      if (configuration.universes.length > 0) {
+        configuration.universes.forEach((universeDef) => {
+          // First, create the universe
+          const universeObj = createUniverse(universeDef.name, universeDef.uuid, universeDef.controller)
+          // Then, loop the fixtures and add each.
+          universeDef.fixtures.forEach((fixture) => {
+            universeObj.addFixture(fixture)
+          })
         })
-      })
-      rebuildUniverseInterface()
+        rebuildUniverseInterface()
+      }
     })
     .then(() => {
-      configuration.groups.forEach((groupDef) => {
-        // First, create the group
-        const groupObj = createGroup(groupDef.name)
-        // Then, add fixtures and scenes
-        groupDef.fixtures.forEach((fixtureDef) => {
-          const fixture = getFixtureByUUID(fixtureDef.uuid)
-          groupObj.addFixtures([fixture])
+      if (configuration.groups.length > 0) {
+        configuration.groups.forEach((groupDef) => {
+          // First, create the group
+          const groupObj = createGroup(groupDef.name)
+          // Then, add fixtures and scenes
+          groupDef.fixtures.forEach((fixtureDef) => {
+            const fixture = getFixtureByUUID(fixtureDef.uuid)
+            groupObj.addFixtures([fixture])
+          })
+          groupDef.scenes.forEach((sceneDef) => {
+            groupObj.createScene(sceneDef.name, sceneDef.uuid, sceneDef.values, sceneDef.duration)
+          })
         })
-        groupDef.scenes.forEach((sceneDef) => {
-          groupObj.createScene(sceneDef.name, sceneDef.uuid, sceneDef.values, sceneDef.duration)
-        })
-      })
-      rebuildGroupsInterface()
+        rebuildGroupsInterface()
+      }
     })
     .then(() => {
       getDMXStatus()
@@ -1081,48 +1104,69 @@ function rebuildGroupsInterface() {
   })
 }
 
-function testSetup() {
-  // Temporary function to test things during development.
+function showAddUniverseMOdal() {
+  // Show the addUniverseModal
 
-  const universe = createUniverse('Main', 'OpenDMX')
-  const leftFix = universe.addFixture({
-    name: 'Left',
-    start_channel: 1,
-    channels: ['Strobe', 'r', 'g', 'b'],
-    uuid: '8ec4979f-38d8-4a5b-b013-f3ebb90985cc'
+  // Clear previous input
+  $('#addUniverseName').val('')
+  $('#addUniverseController').empty()
+  $('#addUniverseMissingNameWarning').hide()
+
+  // Get a list of available DMX controllers
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/DMX/getAvailableControllers'
   })
-  const middleFix = universe.addFixture({
-    name: 'Middle',
-    start_channel: 6,
-    channels: ['r', 'g', 'b', 'w'],
-    uuid: '2'
-  })
-  const rightFix = universe.addFixture({
-    name: 'Right',
-    start_channel: 10,
-    channels: ['r', 'g', 'b', 'w'],
-    uuid: '3'
-  })
-  const topFix = universe.addFixture({
-    name: 'Top',
-    start_channel: 14,
-    channels: ['r', 'g', 'b', 'w', 'X_rotate', 'Y_rotate'],
-    uuid: '4'
+  .then((response) => {
+    const controllers = response.controllers
+
+    controllers.forEach((controller) => {
+      const option = document.createElement('option')
+      if (controller.model === "OpenDMX") {
+        option.innerHTML = `OpenDMX (S/N: ${controller.serial_number}, bus: ${controller.bus}, address: ${controller.address})`
+      } else if (controller.model === 'uDMX') {
+        option.innerHTML = `uDMX (Bus: ${controller.bus}, address: ${controller.address})`
+      }
+      $(option).data('value', controller)
+
+      $('#addUniverseController').append(option)
+    })
   })
 
-  const testGroup = createGroup('Test Group')
-  testGroup.addFixtures([leftFix, rightFix])
+  $('#addUniverseModal').modal('show')
+}
 
-  $('#noUniverseWarning').hide()
-  $('#noGroupsWarning').hide()
-  rebuildUniverseInterface()
-  rebuildGroupsInterface()
+function addUniverseFromModal() {
+  // Use the addUniverseModal to create a new universe.
+
+  const name = $('#addUniverseName').val().trim()
+  const controller = $('#addUniverseController').find(":selected").data("value")
+
+  if (name === '') {
+    $('#addUniverseMissingNameWarning').show()
+    return
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/DMX/universe/create',
+    params: {
+      name,
+      controller: controller.model,
+      device_details: controller
+    }
+  })
+  .then((response) => {
+    console.log(response)
+  })
 }
 
 // Add event listeners
 // Universe tab
+$("#showAddUniverseModalButton").click(showAddUniverseMOdal)
 $('#addFixtureAddChannelButton').click(addChannelToModal)
 $('#addFixtureFromModalButton').click(addFixtureFromModal)
+$('#addUniverseFromModalButton').click(addUniverseFromModal)
 
 // Group tab
 $('#editGroupModalSaveButton').click(editGroupFromModal)

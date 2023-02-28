@@ -376,6 +376,14 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
 
 
 # DMX actions
+
+@app.get("/DMX/getAvailableControllers")
+async def get_dmx_controllers():
+    """Return a list of connected DMX controllers."""
+
+    return {"success": True, "controllers": helper_dmx.get_available_controllers()}
+
+
 @app.get("/DMX/getConfiguration")
 async def get_dmx_configuration():
     """Return the JSON DMX configuration file."""
@@ -403,6 +411,19 @@ async def get_dmx_status():
         result[fixture.uuid] = fixture.get_all_channel_values()
 
     return {"success": True, "status": result}
+
+
+@app.post("/DMX/fixture/create")
+def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
+                       channels: list[str] = Body(description="A list of channel names."),
+                       start_channel: int = Body(description="The first channel to allocate."),
+                       universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
+    """Create a new DMX fixture"""
+
+    new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "fixture": new_fixture}
 
 
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
@@ -535,6 +556,20 @@ def set_dmx_group_scene(group_name: str,
     group.show_scene(name=name, uuid_str=uuid)
 
     return {"success": True, "configuration": group.get_dict()}
+
+
+@app.post("/DMX/universe/create")
+def create_dmx_universe(name: str = Body(description="The name of the universe."),
+                        controller: str = Body(description="The type of this controller (OpenBMX or uDMX)."),
+                        device_details: dict[str, Any] = Body(description="A dictionary of hardware details for the controller.")):
+    """Create a new DMXUniverse."""
+
+    new_universe = helper_dmx.create_universe(name,
+                                          controller=controller,
+                                          device_details=device_details)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "universe": new_universe.get_dict()}    
 
 
 if __name__ == "__main__":
