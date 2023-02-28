@@ -117,7 +117,12 @@ function createLanguageSwitcher (def) {
     li.appendChild(button)
 
     const flag = document.createElement('img')
-    flag.src = '../_static/flags/' + code + '.svg'
+    const customImg = def.languages[code].custom_flag
+    if (customImg != null) {
+      flag.src = '../content/' + customImg
+    } else {
+      flag.src = '../_static/flags/' + code + '.svg'
+    }
     flag.style.width = '30%'
     flag.addEventListener('error', function () {
       this.src = '../_static/icons/translation-icon_black.svg'

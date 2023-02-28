@@ -19,25 +19,35 @@ function populateAvailableDefinitions (definitions) {
   })
 }
 
-function clearDefinitionInput () {
+function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
+  console.log('clearDefinitionInput')
 
-  $('#definitionSaveButton').data('initialDefinition', {
-    uuid: '',
-    languages: {},
-    style: {
-      color: {},
-      font: {}
-    }
-  })
-  $('#definitionSaveButton').data('workingDefinition', {
-    uuid: '',
-    languages: {},
-    style: {
-      color: {},
-      font: {}
-    }
-  })
+  if (full == true) {
+  // Get a new temporary uuid
+    constCommon.makeHelperRequest({
+      method: 'GET',
+      endpoint: '/uuid/new'
+    })
+      .then((response) => {
+        $('#definitionSaveButton').data('initialDefinition', {
+          uuid: response.uuid,
+          languages: {},
+          style: {
+            color: {},
+            font: {}
+          }
+        })
+        $('#definitionSaveButton').data('workingDefinition', {
+          uuid: response.uuid,
+          languages: {},
+          style: {
+            color: {},
+            font: {}
+          }
+        })
+      })
+  }
 
   // Language add
   $('#languageAddEmptyFieldsWarning').hide()
@@ -66,12 +76,14 @@ function createNewDefinition () {
 function editDefinition (name = '') {
   // Populate the given definition for editing.
 
-  clearDefinitionInput()
-
+  clearDefinitionInput(false)
+  console.log($('#definitionSaveButton').data('workingDefinition').uuid)
   const def = getDefinitionByName(name)
-
+  console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
+
+  console.log($('#definitionSaveButton').data('workingDefinition').uuid)
 
   $('#definitionNameInput').val(def.name)
   $('#spreadsheetSelect').val(def.spreadsheet)
@@ -88,12 +100,16 @@ function editDefinition (name = '') {
   })
 
   // Build out the key input interface
+  let first = null
   Object.keys(def.languages).forEach((lang) => {
+    if (first == null) first = lang
     const langDef = def.languages[lang]
     createLanguageTab(lang, langDef.display_name)
+    $('#languagePane_' + lang).removeClass('active').removeClass('show')
 
     $('#headerText' + '_' + lang).val(langDef.header_text)
   })
+  $('#languageTab_' + first).click()
 
   // Load the spreadsheet to populate the existing keys
   onSpreadsheetSelectChange()
@@ -159,11 +175,68 @@ function createLanguageTab (code, displayName) {
   tabPane.setAttribute('aria-labelledby', 'languageTab_' + code)
   $('#languageNavContent').append(tabPane)
 
-  // Create the various inputs
   const row = document.createElement('div')
   row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
 
+  // Create the flag input
+  const flagImgCol = document.createElement('div')
+  flagImgCol.classList = 'col-2 d-flex'
+  row.append(flagImgCol)
+
+  const flagImg = document.createElement('img')
+  flagImg.setAttribute('id', 'flagImg_' + code)
+  const customFlag = $('#definitionSaveButton').data('workingDefinition').languages[code].custom_flag
+  if (customFlag != null) {
+    flagImg.src = '../content/' + customFlag
+  } else {
+    flagImg.src = '../_static/flags/' + code + '.svg'
+  }
+  flagImg.classList = 'align-self-center'
+  flagImg.style.width = '100%'
+  flagImg.addEventListener('error', function () {
+    this.src = '../_static/icons/translation-icon_black.svg'
+  })
+  flagImgCol.appendChild(flagImg)
+
+  const clearFlagCol = document.createElement('div')
+  clearFlagCol.classList = 'col-1 d-flex mx-0 px-0 text-center4'
+  row.appendChild(clearFlagCol)
+
+  const clearFlagButton = document.createElement('button')
+  clearFlagButton.classList = 'btn btn-danger h-50 align-self-center'
+  clearFlagButton.innerHTML = '✕'
+  clearFlagButton.addEventListener('click', function () {
+    deleteLanguageFlag(code)
+  })
+  clearFlagCol.append(clearFlagButton)
+
+  const uploadFlagCol = document.createElement('div')
+  uploadFlagCol.classList = 'col-3 d-flex'
+  row.append(uploadFlagCol)
+
+  const uploadFlagBox = document.createElement('label')
+  uploadFlagBox.classList = 'btn btn-outline-primary w-100 h-50 align-self-center'
+  uploadFlagCol.appendChild(uploadFlagBox)
+
+  const uploadFlagFileName = document.createElement('span')
+  uploadFlagFileName.setAttribute('id', 'uploadFlagFilename_' + code)
+  uploadFlagFileName.classList = 'w-100'
+  uploadFlagFileName.innerHTML = 'Upload'
+  uploadFlagBox.appendChild(uploadFlagFileName)
+
+  const uploadFlagInput = document.createElement('input')
+  uploadFlagInput.setAttribute('id', 'uploadFlagInput_' + code)
+  uploadFlagInput.classList = 'form-control-file w-100 align-self-center'
+  uploadFlagInput.setAttribute('type', 'file')
+  uploadFlagInput.setAttribute('hidden', true)
+  uploadFlagInput.setAttribute('accept', 'image/*')
+  uploadFlagInput.addEventListener('change', function () {
+    onFlagUploadChange(code)
+  })
+  uploadFlagBox.appendChild(uploadFlagInput)
+
+  // Create the various inputs
   Object.keys(inputFields).forEach((key) => {
     const langKey = key + '_' + code
     const col = document.createElement('div')
@@ -188,7 +261,8 @@ function createLanguageTab (code, displayName) {
     }
     input.setAttribute('id', langKey)
     input.addEventListener('change', function () {
-      updateWorkingDefinition(['languages', code, inputFields[key].property], langKey)
+      const value = $(this).val().trim()
+      updateWorkingDefinition(['languages', code, inputFields[key].property], value)
       previewDefinition(true)
     })
     col.appendChild(input)
@@ -204,12 +278,74 @@ function createLanguageTab (code, displayName) {
   $(tabButton).click()
 }
 
-function updateWorkingDefinition (property, elWithValue) {
+function deleteLanguageFlag (lang) {
+  // Ask the server to delete the language flag and remove it from the working definition.
+
+  const flag = $('#definitionSaveButton').data('workingDefinition').languages[lang].custom_flag
+
+  if (flag == null) {
+    // No custom flag
+    return
+  }
+
+  // Delete filename from working definition
+  delete $('#definitionSaveButton').data('workingDefinition').languages[lang].custom_flag
+
+  // Remove the icon
+  $('#flagImg_' + lang).attr('src', '../_static/flags/' + lang + '.svg')
+
+  // Delete from server
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/deleteFile',
+    params: {
+      file: flag
+    }
+  })
+}
+
+function onFlagUploadChange (lang) {
+  // Called when the user selects a flag image file to upload
+
+  const fileInput = $('#uploadFlagInput_' + lang)[0]
+
+  const file = fileInput.files[0]
+  if (file == null) return
+
+  $('#uploadFlagFilename_' + lang).html('Uploading')
+
+  const ext = file.name.split('.').pop()
+  const newName = $('#definitionSaveButton').data('workingDefinition').uuid + '_flag_' + lang + '.' + ext
+  console.log(newName)
+  const formData = new FormData()
+
+  formData.append('files', fileInput.files[0], newName)
+
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', '/uploadContent', true)
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState !== 4) return
+    if (this.status === 200) {
+      const response = JSON.parse(this.responseText)
+      console.log(response)
+      if ('success' in response) {
+        $('#uploadFlagFilename_' + lang).html('Upload')
+        $('#flagImg_' + lang).attr('src', '../content/' + newName)
+        updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
+      }
+    } else if (this.status === 422) {
+      console.log(JSON.parse(this.responseText))
+    }
+  }
+  xhr.send(formData)
+}
+
+function updateWorkingDefinition (property, value) {
   // Update a field in the working defintion.
   // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
   // for definition.style.color.headerColor
 
-  const value = $('#' + elWithValue).val().trim()
   constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
   console.log($('#definitionSaveButton').data('workingDefinition'))
 }
@@ -460,24 +596,6 @@ const inputFields = {
   }
 }
 
-// Set up the save button in case the user starts editing immediately
-$('#definitionSaveButton').data('initialDefinition', {
-  uuid: '',
-  languages: {},
-  style: {
-    color: {},
-    font: {}
-  }
-})
-$('#definitionSaveButton').data('workingDefinition', {
-  uuid: '',
-  languages: {},
-  style: {
-    color: {},
-    font: {}
-  }
-})
-
 // Set up the color pickers
 function setUpColorPickers () {
   Coloris({
@@ -524,11 +642,13 @@ $('#spreadsheetSelect').change(onSpreadsheetSelectChange)
 
 // Style fields
 $('.coloris').change(function () {
-  updateWorkingDefinition(['style', 'color', $(this).data('property')], $(this).prop('id'))
+  const value = $(this).val().trim()
+  updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
   previewDefinition(true)
 })
 $('.font-select').change(function () {
-  updateWorkingDefinition(['style', 'font', $(this).data('property')], $(this).prop('id'))
+  const value = $(this).val().trim()
+  updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
   previewDefinition(true)
 })
 

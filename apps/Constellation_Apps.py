@@ -221,6 +221,13 @@ async def send_defaults(config: const_config = Depends(get_config)):
     return config_to_send
 
 
+@app.get('/uuid/new')
+async def get_new_uuid():
+    """Return a new uuid."""
+
+    return {"success": True, "uuid": str(uuid.uuid4())}
+
+
 @app.get("/getUpdate")
 async def send_update(config: const_config = Depends(get_config)):
     """Get some key info for updating the component and web console."""
