@@ -6,6 +6,7 @@ import uuid
 # Non-standard imports
 from PyDMXControl.controllers import OpenDMXController, uDMXController
 from PyDMXControl.profiles.defaults import Fixture
+from pyftdi.ftdi import Ftdi
 
 
 # Constellation modules
@@ -16,16 +17,31 @@ import helper_files
 class DMXUniverse:
     """A DMX controller and up to 32 fixtures."""
 
-    def __init__(self, name: str, controller: str = "OpenDMX", dynamic_frame=True):
+    def __init__(self, name: str, 
+                       controller: str = "OpenDMX",
+                       device_details: Union[dict[str, Any], None] = None,
+                       dynamic_frame = True):
 
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
         self.controller_type = controller
 
+        self.address: Union[int, None] = None
+        self.bus: Union[int, None] = None
+        self.serial_number: Union[str, None] = None
+
         if controller == "OpenDMX":
-            self.controller = OpenDMXController(dynamic_frame=dynamic_frame)
+            if device_details is not None:
+                self.serial_number = device_details["serial_number"]
+            self.controller = OpenDMXController(dynamic_frame=dynamic_frame,
+                                                ftdi_serial=self.serial_number)
         elif controller == "uDMX":
-            self.controller = uDMXController(dynamic_frame=dynamic_frame)
+            if device_details is not None:
+                self.address = device_details["address"]
+                self.bus = device_details["bus"]
+            self.controller = uDMXController(dynamic_frame=dynamic_frame,
+                                             udmx_address=self.address,
+                                             udmx_bus=self.bus)
         else:
             raise ValueError(
                 "'controller' must be one of 'OpenDMX' or 'uDMX'.")
@@ -427,3 +443,24 @@ def activate_dmx() -> bool:
         config.dmx_active = read_dmx_configuration()
 
     return config.dmx_active
+
+def get_available_controllers() -> list[dict[str, Any]]:
+    """Return a list of Ftdi devices."""
+
+    all_devices = Ftdi.list_devices()
+
+    device_list = []
+    for entry in all_devices:
+        device = entry[0]
+        device_dict = {
+            "serial_number": device.sn,
+            "bus": device.bus,
+            "address": device.address
+        }
+        if device.vid == 1027 and device.pid == 24577:
+            device_dict["model"] = "OpenDMX"
+        elif device.vid == 5824 and device.pid == 1500:
+            device_dict["model"] = "uDMX"
+        device_list.append(device_dict)
+    
+    return device_list
