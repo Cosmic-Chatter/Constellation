@@ -119,7 +119,7 @@ def save_issue_list() -> None:
     issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
 
     with open(issue_file, "w", encoding="UTF-8") as file_object:
-        json.dump([x.details for x in config.issueList], file_object)
+        json.dump([x.details for x in config.issueList], file_object, indent=2, sort_keys=True)
 
 
 # Set up log file

@@ -78,7 +78,7 @@ def write_json_schedule(schedule_name: str, schedule: dict) -> bool:
     with config.scheduleLock:
         try:
             with open(schedule_path, "w", encoding="UTF-8") as f:
-                json.dump(schedule, f)
+                json.dump(schedule, f, indent=2, sort_keys=True)
             return True
         except PermissionError:
             print(f"update_json_schedule: cannot open file {schedule_path} for writing. Do you have write permission?")

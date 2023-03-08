@@ -56,7 +56,7 @@ def write_json(data, path: str, append: bool = False) -> None:
 
     with config.content_file_lock:
         with open(path, mode, encoding='UTF-8') as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2, sort_keys=True)
 
 
 def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
