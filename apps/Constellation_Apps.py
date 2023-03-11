@@ -149,6 +149,7 @@ async def get_available_content(config: const_config = Depends(get_config)):
     else:
         active_content = ""
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
+                "definitions": helper_files.get_available_definitions(),
                 "thumbnails": helper_files.get_directory_contents("thumbnails"),
                 "active_content": active_content,
                 "system_stats": helper_utilities.get_system_stats(),

@@ -1,7 +1,6 @@
 """Defines configuration variables that can be shared across classes, etc."""
 
 # Standard imports
-import configparser
 import datetime
 import threading
 from typing import Any, Union
@@ -57,7 +56,7 @@ serverRebootTime = None
 rebooting: bool = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
-current_exhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
-exhibit_configuration: Union[list[dict[str, Any]], None] = None  # The configParser object holding the current config
+current_exhibit: Union[str, None] = None  # The JSON file defining the current exhibit "name.json"
+exhibit_configuration: Union[list[dict[str, Any]], None] = None
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []

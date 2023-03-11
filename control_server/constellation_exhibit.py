@@ -1,5 +1,4 @@
 # Standard imports
-import configparser
 import datetime
 import logging
 import shutil
@@ -39,10 +38,11 @@ class BaseComponent:
 
         self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
 
-        self.config = {"commands": [],
-                       "allowed_actions": [],
+        self.config = {"allowed_actions": [],
+                       "app_name": "",
+                       "commands": [],
                        "description": config.componentDescriptions.get(id_, ""),
-                       "app_name": ""}
+                       }
 
     def __repr__(self):
         return repr(f"[BaseComponent ID: {self.id} Group: {self.group}]")
@@ -193,7 +193,6 @@ class ExhibitComponent(BaseComponent):
 
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
-
             if "content" in component_config:
                 self.config["content"] = component_config["content"]
             if "app_name" in component_config:
@@ -526,30 +525,6 @@ def poll_wake_on_LAN_devices():
     config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 
-def convert_exhibits_ini_to_json(name: str):
-    """Take a legacy INI exhibits file and convert it to JSON"""
-
-    config_parser = configparser.ConfigParser()
-    config_parser.read(name)
-
-    new_config = []
-    for key in config_parser.sections():
-        section = config_parser[key]
-        new_entry = {"id": key.strip()}
-        content = section.get("content", "")
-        new_entry["content"] = [x.strip() for x in content.split(",")]
-        if "app_name" in section:
-            new_entry["app_name"] = section.get("app_name")
-
-        new_config.append(new_entry)
-
-    # Rename the legacy file to save it
-    shutil.move(name, name + '.old')
-
-    # Write the new file
-    c_tools.write_json(new_config, os.path.splitext(name)[0] + '.json')
-
-
 def read_exhibit_configuration(name: str):
     # We want the format of name to be "XXXX.json", but it might be
     # "exhibits/XXXX.json"
@@ -574,10 +549,6 @@ def read_exhibit_configuration(name: str):
         return
 
     exhibit_path = c_tools.get_path(["exhibits", name + ".json"], user_file=True)
-    if os.path.splitext(name)[1].lower() == '.ini':
-        # We have a legacy exhibit file, so convert first
-        convert_exhibits_ini_to_json(exhibit_path)
-
     config.current_exhibit = os.path.splitext(name)[0]
     config.exhibit_configuration = c_tools.load_json(exhibit_path)
 
@@ -594,7 +565,7 @@ def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_n
     match_found = False
     for index, component in enumerate(exhibit_config):
         if component["id"] == this_id:
-            exhibit_config[index] |= update  # Use new dict merge operator
+            exhibit_config[index] |= update
             match_found = True
     if not match_found:
         exhibit_config.append({"id": this_id} | update)
@@ -690,80 +661,6 @@ def update_exhibit_component_status(data, ip: str):
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])
-
-
-def convert_descriptions_config_to_json(old_config: dict[str: str]):
-    """Take a dictionary from the legacy INI format of specifying component descriptions and convert it to JSON."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-        if key in [entry['id'] for entry in new_config]:
-            # Assume the new config is more up to date than this legacy file
-            continue
-
-        new_entry = {"id": key,
-                     "description": old_config[key]}
-        new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
-
-
-def convert_static_config_to_json(old_config: dict[str: str]):
-    """Take a dictionary from the legacy INI method of specifying static components and convert it to JSON."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "static.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-
-        # Components are specified in the form 'GROUP = ID1, ID2, ID3'
-        split = old_config[key].split(',')
-        for entry in split:
-            new_entry = {"id": entry.strip(),
-                         "group": key.strip()}
-            new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
-
-
-def convert_wake_on_LAN_to_json(old_config: dict[str: str]):
-    """Take a configparser object from reading galleryConfiguration.ini and use it to create a JSON config file."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-        if key in [entry['id'] for entry in new_config]:
-            # Assume the new config is more up to date than this legacy file
-            continue
-
-        new_entry = {'id': key.strip()}
-        split = old_config[key].split(",")
-        error = False
-        if len(split) == 1:
-            new_entry["mac_address"] = old_config[key].strip()
-        elif len(split) == 2:
-            new_entry["mac_address"] = split[0].strip()
-            new_entry["ip_address"] = split[1].strip()
-        else:
-            error = True
-            print(f"constellation_exhibit.convert_wake_on_LAN_to_json: error parsing line {key} = {old_config[key]}")
-
-        if not error:
-            new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
 
 
 def read_descriptions_configuration():

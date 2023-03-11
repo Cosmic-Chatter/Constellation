@@ -127,16 +127,10 @@ function submitComponentContentChange () {
 function sendComponentContentChangeRequest (id, content) {
   // Send a request to the server to initiate a content change
 
-  const requestDict = {
-    component: {
-      id
-    },
-    content
-  }
   constTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/exhibit/setComponentContent',
-    params: requestDict
+    endpoint: '/component/' + id + '/setContent',
+    params: { content }
   })
 }
 
@@ -1103,6 +1097,7 @@ $('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSet
 $('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID').on('input', function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
+$('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
 // Schedule tab
 // =========================
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)

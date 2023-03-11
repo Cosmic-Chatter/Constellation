@@ -4,7 +4,6 @@
 # Released under the MIT license
 
 # Standard modules
-import configparser
 import datetime
 import threading
 from functools import lru_cache
@@ -222,88 +221,8 @@ def command_line_setup() -> None:
     print("")
 
 
-def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> None:
-    """Take a legacy galleryConfiguration.ini file and convert it to the appropriate JSON files."""
-
-    current = ini["CURRENT"]
-    new_config = {
-        "current_exhibit": os.path.splitext(current.get("current_exhibit", "default.exhibit"))[0],
-        "debug": current.getboolean("debug", False),
-        "gallery_name": current.get("gallery_name", "Constellation"),
-        "ip_address": current.get("server_ip_address", "localhost"),
-        "port": current.getint("server_port", 8080),
-    }
-    staff_list = current.get("assignable_staff", "")
-    new_config["assignable_staff"] = [x.strip() for x in staff_list.split(",")]
-
-    # Write new system config to file
-    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
-    c_tools.write_json(new_config, config_path)
-
-    # Then, check for other sections that also need to be converted
-    try:
-        component_descriptions = dict(ini["COMPONENT_DESCRIPTIONS"])
-        # We have found legacy description definitions
-        c_exhibit.convert_descriptions_config_to_json(component_descriptions)
-    except KeyError:
-        pass
-
-    try:
-        pjlink_projectors = ini["PJLINK_PROJECTORS"]
-        # We have found legacy PJLink projector configuration... convert this to the new JSON format
-        c_proj.convert_config_to_json(dict(pjlink_projectors), "pjlink")
-    except KeyError:
-        pass
-
-    try:
-        serial_projectors = ini["SERIAL_PROJECTORS"]
-        # We have found legacy serial projector configuration... convert this to the new JSON format
-        c_proj.convert_config_to_json(dict(serial_projectors), "serial")
-    except KeyError:
-        pass
-
-    try:
-        wol = ini["WAKE_ON_LAN"]
-        # We have a legacy Wake on LAN device definition
-        c_exhibit.convert_wake_on_LAN_to_json(dict(wol))
-    except KeyError:
-        pass
-
-    try:
-        static = ini["STATIC_COMPONENTS"]
-        # We have a legacy static components definition
-        c_exhibit.convert_static_config_to_json(dict(static))
-    except KeyError:
-        pass
-
-    # Rename galleryConfiguration.ini
-    shutil.move(c_tools.get_path(["galleryConfiguration.ini"], user_file=True),
-                c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
-
-
 def load_default_configuration() -> None:
     """Initialize the server in a default state."""
-
-    # First, check for a legacy configuration file
-    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-    if os.path.exists(gal_path):
-        config_reader = configparser.ConfigParser(delimiters="=")
-        config_reader.optionxform = str  # Override default, which is case in-sensitive
-
-        with c_config.galleryConfigurationLock:
-            config_reader.read(gal_path)
-        try:
-            _ = config_reader["CURRENT"]
-            # We gave a legacy configuration file; convert it to JSON
-            convert_galleryConfigurationINI_to_json(config_reader)
-        except KeyError:
-            pass
-
-    # Also check for legacy exhibit files
-    exhibit_path = c_tools.get_path(["exhibits"], user_file=True)
-    for file in os.listdir(exhibit_path):
-        if os.path.splitext(file)[1].lower() == '.exhibit':
-            c_exhibit.convert_exhibits_ini_to_json(c_tools.get_path(["exhibits", file], user_file=True))
 
     # Check if there is a configuration file
     config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
@@ -487,6 +406,37 @@ class ExhibitComponent(BaseModel):
     )
 
 
+@app.post("/component/{component_id}/setApp")
+async def set_component_content(component_id: str,
+                                app_name: str = Body(description="The app to be set.", embed=True)):
+    """Set the app for the component."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
+
+    return {"success": True}
+
+
+@app.post("/component/{component_id}/setContent")
+async def set_component_content(component_id: str,
+                                content: list[str] = Body(description="The content to be set.", embed=True)):
+    """Set the content for the component. Setting content clears the definition."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"content": content, "definition": ""})
+
+    return {"success": True}
+
+
+@app.post("/component/{component_id}/setDefinition")
+async def set_component_definition(component_id: str,
+                                   uuid: str = Body(description="The UUID of the definition file to be set.",
+                                                    embed=True)):
+    """Set the definition for the component. Setting a definition clears all content."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"content": [], "definition": uuid})
+
+    return {"success": True}
+
+
 @app.post("/exhibit/create")
 async def create_exhibit(exhibit: Exhibit,
                          clone_from: Union[str, None] = Body(default=None,
@@ -544,17 +494,6 @@ async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     # Update the components that the configuration has changed
     for component in c_config.componentList:
         component.update_configuration()
-    return {"success": True, "reason": ""}
-
-
-@app.post("/exhibit/setComponentContent")
-async def set_component_content(component: ExhibitComponent,
-                                content: list[str] = Body(description="The content to be set")):
-    """Change the active content for the given exhibit component."""
-
-    if c_config.debug:
-        print(f"Changing content for {component.id}:", content)
-    c_exhibit.update_exhibit_configuration(component.id, {"content": content})
     return {"success": True, "reason": ""}
 
 
@@ -901,23 +840,6 @@ async def update_maintenance_status(data: dict[str, Any]):
             success = False
             reason = f"You do not have write permission for the file {file_path}"
     return {"success": success, "reason": reason}
-
-
-# Projector actions
-
-# @app.post("/projector/getUpdate")
-# async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
-#     """Poll the projector for an update and return it"""
-#
-#     proj = c_proj.get_projector(projector.id)
-#     if proj is not None:
-#         response_dict = {"success": True,
-#                          "state": proj.state}
-#     else:
-#         response_dict = {"success": False,
-#                          "reason": f"Projector {projector.id} does not exist",
-#                          "status": "DELETE"}
-#     return response_dict
 
 
 @app.post("/projector/queueCommand")

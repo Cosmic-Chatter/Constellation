@@ -9,11 +9,12 @@ function populateAvailableDefinitions (definitions) {
   availableDefinitions = definitions
   const keys = Object.keys(definitions).sort()
 
-  keys.forEach((name) => {
-    if ((name.slice(0, 9) === '__preview') || name.trim() === '') return
+  keys.forEach((uuid) => {
+    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
+    const definition = definitions[uuid]
     const option = document.createElement('option')
-    option.value = name
-    option.innerHTML = name
+    option.value = uuid
+    option.innerHTML = definition.name
 
     $('#availableDefinitionSelect').append(option)
   })
@@ -72,12 +73,11 @@ function createNewDefinition () {
   clearDefinitionInput()
 }
 
-function editDefinition (name = '') {
+function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  console.log($('#definitionSaveButton').data('workingDefinition').uuid)
-  const def = getDefinitionByName(name)
+  const def = getDefinitionByUUID(uuid)
   console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -415,16 +415,16 @@ function updateWorkingDefinition (property, value) {
   console.log($('#definitionSaveButton').data('workingDefinition'))
 }
 
-function getDefinitionByName (name = '') {
-  // Return the definition with this name
+function getDefinitionByUUID (uuid = '') {
+  // Return the definition with this UUID
 
-  if (name === '') {
-    name = $('#availableDefinitionSelect').val()
+  if (uuid === '') {
+    uuid = $('#availableDefinitionSelect').val()
   }
   let matchedDef = null
   Object.keys(availableDefinitions).forEach((key) => {
     const def = availableDefinitions[key]
-    if (def.name === name) {
+    if (def.uuid === uuid) {
       matchedDef = def
     }
   })

@@ -557,8 +557,10 @@ export function showExhibitComponentInfo (id) {
   if (id === '') {
     id = $('#componentInfoModalTitle').html()
   }
+  $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
+  console.log(obj)
 
   $('#componentInfoModalTitle').html(id)
 
@@ -947,6 +949,81 @@ export function removeExhibitComponentFromModal () {
     })
 }
 
+function populateComponentDefinitionList (definitions) {
+  // Take a dictionary of definitions and convert it to GUI elements.
+
+  $('#componentInfoModalDefinitionList').empty()
+
+  Object.keys(definitions).forEach((uuid) => {
+    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
+
+    const definition = definitions[uuid]
+
+    const col = document.createElement('div')
+    col.setAttribute('id', 'definitionButton_' + uuid)
+    col.classList = 'col-4 mt-2 handCursor definition-entry'
+    $(col).data('definition', definition)
+    col.addEventListener('click', () => {
+      handleDefinitionItemSelection(uuid)
+    })
+
+    const row = document.createElement('div')
+    row.classList = 'row px-2'
+    col.appendChild(row)
+
+    const name = document.createElement('div')
+    name.setAttribute('id', 'definitionButtonName_' + uuid)
+    name.classList = 'col-12 bg-primary rounded-top py-1 position-relative'
+    name.style.fontSize = '18px'
+    name.innerHTML = definition.name
+    row.appendChild(name)
+
+    const selectedBadge = document.createElement('span')
+    selectedBadge.setAttribute('id', 'definitionButtonSelectedBadge_' + uuid)
+    selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
+    selectedBadge.style.right = '0%'
+    selectedBadge.style.top = '0%'
+    selectedBadge.style.display = 'none'
+    selectedBadge.innerHTML = '✓'
+    name.append(selectedBadge)
+
+    const app = document.createElement('div')
+    app.classList = 'col-12 bg-info rounded-bottom py-1'
+    app.setAttribute('id', 'definitionButtonApp_' + uuid)
+    app.innerHTML = convertAppIDtoDisplayName(definition.app)
+    row.appendChild(app)
+
+    $('#componentInfoModalDefinitionList').append(col)
+  })
+}
+
+function handleDefinitionItemSelection (uuid) {
+  // Called when a user clicks on the definition in the componentInfoModal.
+
+  $('.definition-entry').removeClass('definition-selected')
+  $('#definitionButton_' + uuid).addClass('definition-selected')
+  $('.definition-selected-button').hide()
+  $('#definitionButtonSelectedBadge_' + uuid).show()
+}
+
+export function submitDefinitionSelectionFromModal () {
+  // Called when the "Save changes" button is pressed on the definitions pane of the componentInfoModal.
+
+  const definition = $('.definition-selected').data('definition')
+  const id = $('#componentInfoModal').data('id')
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/' + id + '/setDefinition',
+    params: { uuid: definition.uuid }
+  })
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/' + id + '/setApp',
+    params: { app_name: definition.app }
+  })
+}
+
 function updateComponentInfoModalFromHelper (id) {
   // Ask the given helper to send an update and use it to update the interface.
 
@@ -976,6 +1053,11 @@ function updateComponentInfoModalFromHelper (id) {
       $('#componentAvailableContentRow').show()
       $('#componentcontentUploadInterface').show()
       $('#componentInfoConnectingNotice').hide()
+
+      // Create entries for available definitions
+      if (availableContent.definitions != null) {
+        populateComponentDefinitionList(availableContent.definitions)
+      }
 
       // If available, configure for multiple file upload
       if ('multiple_file_upload' in availableContent) {

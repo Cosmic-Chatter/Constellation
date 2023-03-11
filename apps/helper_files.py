@@ -60,7 +60,7 @@ def write_json(data, path: str, append: bool = False) -> None:
 
 
 def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
-    """Return all the *.const definition files that match the given app_id (or all of them)."""
+    """Return all the *.json definition files that match the given app_id (or all of them)."""
 
     all_def = glob.glob(get_path(["definitions"], user_file=True) + "/*.json")
     to_return = {}
@@ -69,7 +69,7 @@ def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
         if json_def is not None:
             try:
                 if app_id == "all" or json_def["app"] == app_id:
-                    to_return[json_def["name"]] = json_def
+                    to_return[json_def["uuid"]] = json_def
             except KeyError:
                 print("Error: Key not found: 'app'")
 
