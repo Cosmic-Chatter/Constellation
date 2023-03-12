@@ -5,17 +5,9 @@ import * as constCommon from '../js/constellation_app_common.js'
 function updateFunc (update) {
   // Read updates for media player-specific actions and act on them
 
-  if ('commands' in update) {
-    for (let i = 0; i < update.commands.length; i++) {
-      const cmd = (update.commands)[i]
-    }
-  }
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (update.content[0] !== currentContent) {
-      currentContent = update.content[0]
-      loadDefinition(currentContent)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    loadDefinition(currentDefintion)
   }
 }
 
@@ -98,10 +90,11 @@ function createLanguageSwitcher (def) {
 
   if (langs.length === 1) {
     // No switcher necessary
-    $('langSwitchDropdown').hide()
+    $('#langSwitchDropdown').hide()
     return
   }
 
+  $('#langSwitchDropdown').show()
   // Cycle the languagse and build an entry for each
   $('#langSwitchOptions').empty()
   langs.forEach((code) => {
@@ -254,14 +247,14 @@ $('#fontSizeIncreaseButton').click(function () {
 })
 
 // Constellation stuff
-let currentContent = ''
+let currentDefintion = ''
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'timeline_explorer'
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
 const searchParams = constCommon.parseQueryString()
-if (searchParams.has('preview')) {
+if (searchParams.has('standalone')) {
   // We are displaying this inside of a setup iframe
   if (searchParams.has('definition')) {
     loadDefinition(searchParams.get('definition'))

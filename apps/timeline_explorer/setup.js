@@ -101,9 +101,13 @@ function editDefinition (uuid = '') {
   // Build out the key input interface
   let first = null
   Object.keys(def.languages).forEach((lang) => {
-    if (first == null) first = lang
     const langDef = def.languages[lang]
-    createLanguageTab(lang, langDef.display_name)
+    if (first == null) {
+      createLanguageTab(lang, langDef.display_name, true)
+      first = lang
+    } else {
+      createLanguageTab(lang, langDef.display_name, false)
+    }
     $('#languagePane_' + lang).removeClass('active').removeClass('show')
 
     $('#headerText' + '_' + lang).val(langDef.header_text)
@@ -114,7 +118,7 @@ function editDefinition (uuid = '') {
   onSpreadsheetSelectChange()
 
   // Configure the preview frame
-  document.getElementById('previewFrame').src = '../timeline_explorer.html?preview=true&definition=' + def.uuid
+  document.getElementById('previewFrame').src = '../timeline_explorer.html?standalone=true&definition=' + def.uuid
 }
 
 function addLanguage () {
@@ -152,8 +156,9 @@ function addLanguage () {
   $('#languageCodeInput').val('')
 }
 
-function createLanguageTab (code, displayName) {
+function createLanguageTab (code, displayName, first) {
   // Create a new language tab for the given details.
+  // Set first=true when creating the first tab
 
   // Create the tab button
   const tabButton = document.createElement('button')
@@ -169,6 +174,7 @@ function createLanguageTab (code, displayName) {
   // Create corresponding pane
   const tabPane = document.createElement('div')
   tabPane.classList = 'tab-pane fade'
+  if (first) tabPane.classList.add('show', 'active')
   tabPane.setAttribute('id', 'languagePane_' + code)
   tabPane.setAttribute('role', 'tabpanel')
   tabPane.setAttribute('aria-labelledby', 'languageTab_' + code)
@@ -180,7 +186,7 @@ function createLanguageTab (code, displayName) {
 
   // Create the flag input
   const flagImgCol = document.createElement('div')
-  flagImgCol.classList = 'col-2 d-flex'
+  flagImgCol.classList = 'col-3 col-lg-2 d-flex'
   row.append(flagImgCol)
 
   const flagImg = document.createElement('img')
@@ -199,11 +205,11 @@ function createLanguageTab (code, displayName) {
   flagImgCol.appendChild(flagImg)
 
   const clearFlagCol = document.createElement('div')
-  clearFlagCol.classList = 'col-1 d-flex mx-0 px-0 text-center4'
+  clearFlagCol.classList = 'col-2 col-lg-1 d-flex mx-0 px-0 text-center4'
   row.appendChild(clearFlagCol)
 
   const clearFlagButton = document.createElement('button')
-  clearFlagButton.classList = 'btn btn-danger h-50 align-self-center'
+  clearFlagButton.classList = 'btn btn-danger align-self-center'
   clearFlagButton.innerHTML = '✕'
   clearFlagButton.addEventListener('click', function () {
     deleteLanguageFlag(code)
@@ -211,17 +217,17 @@ function createLanguageTab (code, displayName) {
   clearFlagCol.append(clearFlagButton)
 
   const uploadFlagCol = document.createElement('div')
-  uploadFlagCol.classList = 'col-3 d-flex'
+  uploadFlagCol.classList = 'col-7 col-lg-3 d-flex'
   row.append(uploadFlagCol)
 
   const uploadFlagBox = document.createElement('label')
-  uploadFlagBox.classList = 'btn btn-outline-primary w-100 h-50 align-self-center'
+  uploadFlagBox.classList = 'btn btn-outline-primary w-100 align-self-center d-flex'
   uploadFlagCol.appendChild(uploadFlagBox)
 
   const uploadFlagFileName = document.createElement('span')
   uploadFlagFileName.setAttribute('id', 'uploadFlagFilename_' + code)
-  uploadFlagFileName.classList = 'w-100'
-  uploadFlagFileName.innerHTML = 'Upload'
+  uploadFlagFileName.classList = 'w-100 align-self-center'
+  uploadFlagFileName.innerHTML = 'Upload flag'
   uploadFlagBox.appendChild(uploadFlagFileName)
 
   const uploadFlagInput = document.createElement('input')
@@ -235,11 +241,21 @@ function createLanguageTab (code, displayName) {
   })
   uploadFlagBox.appendChild(uploadFlagInput)
 
+  // Create the delete button
+  const deleteCol = document.createElement('div')
+  deleteCol.classList = 'col col-12 col-lg-6 col-xl-4 d-flex'
+  row.appendChild(deleteCol)
+
+  const deleteButton = document.createElement('button')
+  deleteButton.classList = 'btn btn-danger w-100 align-self-center'
+  deleteButton.innerHTML = 'Delete language'
+  deleteCol.appendChild(deleteButton)
+
   // Create the various inputs
   Object.keys(inputFields).forEach((key) => {
     const langKey = key + '_' + code
     const col = document.createElement('div')
-    col.classList = 'col-6'
+    col.classList = 'col-12 col-md-6'
     row.appendChild(col)
 
     const label = document.createElement('label')

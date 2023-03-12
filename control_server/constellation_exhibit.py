@@ -282,11 +282,14 @@ class WakeOnLANDevice(BaseComponent):
         if self.ip_address is not None:
             try:
                 ping = icmplib.ping(self.ip_address, privileged=False, count=1)
+                prior_status = self.state["status"]
                 if ping.is_alive:
                     self.state["status"] = "SYSTEM ON"
                     self.last_contact_datetime = datetime.datetime.now()
                 elif self.seconds_since_last_contact() > 60:
                     self.state["status"] = "OFFLINE"
+                if prior_status != self.state["status"]:
+                    config.last_update_time = time.time()
             except icmplib.exceptions.SocketPermissionError:
                 if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
@@ -301,7 +304,13 @@ class WakeOnLANDevice(BaseComponent):
 class Projector(BaseComponent):
     """Holds basic data about a projector."""
 
-    def __init__(self, id_: str, group: str, ip_address: str, connection_type: str, mac_address: str = None, make: str = None,
+    def __init__(self,
+                 id_: str,
+                 group: str,
+                 ip_address: str,
+                 connection_type: str,
+                 mac_address: str = None,
+                 make: str = None,
                  password: str = None):
 
         super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
@@ -350,6 +359,7 @@ class Projector(BaseComponent):
             # print(e)
             error = True
 
+        prior_status = self.state["status"]
         if error and (self.seconds_since_last_contact() > 60):
             self.state = {"status": "OFFLINE"}
         else:
@@ -357,21 +367,23 @@ class Projector(BaseComponent):
                 self.state["status"] = "ONLINE"
             else:
                 self.state["status"] = "STANDBY"
+        if prior_status != self.state["status"]:
+            config.last_update_time = time.time()
 
     def queue_command(self, cmd: str):
-
         """Function to spawn a thread that sends a command to the projector.
 
         Named "queue_command" to match what is used for exhibitComponents
         """
 
         print(f"Queuing command {cmd} for {self.id}")
-        thread_ = threading.Thread(target=self.send_command, args=[cmd], name=f"CommandProjector_{self.id}_{str(time.time())}")
+        thread_ = threading.Thread(target=self.send_command,
+                                   args=[cmd],
+                                   name=f"CommandProjector_{self.id}_{str(time.time())}")
         thread_.daemon = True
         thread_.start()
 
     def send_command(self, cmd: str):
-
         """Connect to a PJLink projector and send a command"""
 
         # Translate commands for projector_control
@@ -404,6 +416,7 @@ def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -
 
     component = ExhibitComponent(this_id, group, category)
     config.componentList.append(component)
+    config.last_update_time = time.time()
 
     return component
 
@@ -462,6 +475,7 @@ def create_new_exhibit(name: str, clone: Union[str, None]):
         # Make a new file
         c_tools.write_json([], new_file)
 
+    config.last_update_time = time.time()
     check_available_exhibits()
 
 
@@ -480,6 +494,7 @@ def delete_exhibit(name: str):
         except FileNotFoundError:
             print(f"Error: Unable to delete exhibit {file_to_delete}. File not found!")
 
+    config.last_update_time = time.time()
     check_available_exhibits()
 
 
@@ -633,10 +648,6 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
         component.config["autoplay_audio"] = data["autoplay_audio"]
     if "imageDuration" in data:
         component.config["image_duration"] = data["imageDuration"]
-    # if "currentInteraction" in data:
-    #     if data["currentInteraction"] is True or \
-    #             (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
-    #         component.update_last_interaction_datetime()
     if "allowed_actions" in data:
         allowed_actions = data["allowed_actions"]
         for key in allowed_actions:
@@ -719,5 +730,3 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.DEBUG)
-
-

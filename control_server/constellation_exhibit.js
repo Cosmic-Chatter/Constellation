@@ -254,6 +254,9 @@ class ExhibitComponent extends BaseComponent {
     if ('content' in update) {
       this.content = update.content
     }
+    if ('definition' in update) {
+      this.definition = update.definition
+    }
     if ('helperAddress' in update) {
       this.helperAddress = update.helperAddress
     }
@@ -651,6 +654,7 @@ export function showExhibitComponentInfo (id) {
   $('#componentSaveConfirmationButton').hide()
   $('#componentAvailableContentRow').hide()
   $('#componentcontentUploadInterface').hide()
+  $('#componentInfoModalDefinitionSaveButton').hide()
   constMaint.setComponentInfoModalMaintenanceStatus(id)
 
   if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
@@ -951,6 +955,8 @@ export function removeExhibitComponentFromModal () {
 function populateComponentDefinitionList (definitions) {
   // Take a dictionary of definitions and convert it to GUI elements.
 
+  const component = getExhibitComponent($('#componentInfoModal').data('id'))
+
   $('#componentInfoModalDefinitionList').empty()
 
   Object.keys(definitions).forEach((uuid) => {
@@ -982,7 +988,9 @@ function populateComponentDefinitionList (definitions) {
     selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
     selectedBadge.style.right = '0%'
     selectedBadge.style.top = '0%'
-    selectedBadge.style.display = 'none'
+    if (component.definition !== definition.uuid) {
+      selectedBadge.style.display = 'none'
+    }
     selectedBadge.innerHTML = '✓'
     name.append(selectedBadge)
 
@@ -1003,6 +1011,7 @@ function handleDefinitionItemSelection (uuid) {
   $('#definitionButton_' + uuid).addClass('definition-selected')
   $('.definition-selected-button').hide()
   $('#definitionButtonSelectedBadge_' + uuid).show()
+  $('#componentInfoModalDefinitionSaveButton').show()
 }
 
 export function submitDefinitionSelectionFromModal () {
@@ -1021,6 +1030,7 @@ export function submitDefinitionSelectionFromModal () {
     endpoint: '/component/' + id + '/setApp',
     params: { app_name: definition.app }
   })
+  $('#componentInfoModalDefinitionSaveButton').hide()
 }
 
 function updateComponentInfoModalFromHelper (id) {
