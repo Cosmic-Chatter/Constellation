@@ -8,5 +8,6 @@ pyserial
 python-dateutil
 python-multipart
 requests
+sse-starlette
 uvicorn
 wakeonlan

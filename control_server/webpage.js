@@ -118,7 +118,6 @@ function submitComponentContentChange () {
   }
 
   sendComponentContentChangeRequest(id, contentList)
-  askForUpdate()
 
   // Hide the modal
   $('#componentInfoModal').modal('hide')
@@ -185,7 +184,7 @@ function changeExhibit (warningShown) {
       endpoint: '/exhibit/set',
       params: requestDict
     })
-      .then(askForUpdate)
+    // .then(askForUpdate)
   }
 }
 
@@ -304,94 +303,107 @@ function deleteTrackerTemplate (name = '') {
     })
 }
 
-function askForUpdate () {
-  // Send a message to the control server asking for the latest component
-  // updates
+function parseUpdate (update) {
+  // Take a dictionary of updates from Control Server and act on them.
 
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/getUpdate'
-  })
-    .then((update) => {
-      let numComps = 0
-      let numOnline = 0
-      let numStatic = 0
-      for (let i = 0; i < update.length; i++) {
-        const component = update[String(i)]
-        if ('class' in component) {
-          if (['exhibitComponent', 'wolComponent', 'projector'].includes(component.class)) {
-            numComps += 1
-            if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
-              numOnline += 1
-            }
-            if (component.status === constConfig.STATUS.STATIC.name) {
-              numStatic += 1
-            }
-            constExhibit.updateComponentFromServer(component)
-          } else if (component.class === 'gallery') {
-            setCurrentExhibitName(component.current_exhibit)
-            updateAvailableExhibits(component.availableExhibits)
-            if ('galleryName' in component) {
-              $('#galleryNameField').html(component.galleryName)
-              document.title = component.galleryName
-            }
-            if ('updateAvailable' in component) {
-              if (component.updateAvailable === 'true') {
-                const notification = {
-                  update_available: true,
-                  current_version: component.softwareVersion,
-                  available_version: component.softwareVersionAvailable
-                }
-                constConfig.errorDict.__control_server = {
-                  software_update: notification
-                }
-                constTools.rebuildNotificationList()
-              }
-            }
-          } else if (component.class === 'schedule') {
-            if (constConfig.scheduleUpdateTime !== component.updateTime) {
-              constSchedule.populateSchedule(component)
-            }
-          } else if (component.class === 'issues') {
-            // Check for the time of the most recent update. If it is more
-            // recent than our existing date, rebuild the issue list
-            const currentLastDate = Math.max.apply(Math, constConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
-            const updatedDate = new Date(component.lastUpdateDate)
-            if (!constTools.arraysEqual(constConfig.assignableStaff, component.assignable_staff)) {
-              constConfig.assignableStaff = component.assignable_staff
-              // Populate the filter
-              $('#issueListFilterAssignedToSelect').empty()
-              $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
-              $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
-              for (let i = 0; i < constConfig.assignableStaff.length; i++) {
-                $('#issueListFilterAssignedToSelect').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
-              }
-            }
-            if (updatedDate > currentLastDate) {
-              constConfig.issueList = component.issueList
-              constIssues.rebuildIssueList()
-            }
-          }
+  if ('gallery' in update) {
+    setCurrentExhibitName(update.gallery.current_exhibit)
+    updateAvailableExhibits(update.gallery.availableExhibits)
+
+    if ('galleryName' in update.gallery) {
+      $('#galleryNameField').html(update.gallery.galleryName)
+      document.title = update.gallery.galleryName
+    }
+
+    if ('updateAvailable' in update.gallery) {
+      if (update.gallery.updateAvailable === 'true') {
+        const notification = {
+          update_available: true,
+          current_version: update.gallery.softwareVersion,
+          available_version: update.gallery.softwareVersionAvailable
         }
+        constConfig.errorDict.__control_server = {
+          software_update: notification
+        }
+        constTools.rebuildNotificationList()
       }
-      // Set the favicon to reflect the aggregate status
-      if (numOnline === numComps) {
-        $("link[rel='icon']").attr('href', 'icon/green.ico')
-      } else if (numOnline === 0) {
-        $("link[rel='icon']").attr('href', 'icon/red.ico')
-      } else {
-        $("link[rel='icon']").attr('href', 'icon/yellow.ico')
-      }
-      // If there are no static components, hide the "SHow STATIC" button
-      if (numStatic === 0) {
-        $('#componentsTabSettingsShowStatic').parent().parent().hide()
-      } else {
-        $('#componentsTabSettingsShowStatic').parent().parent().show()
-      }
+    }
+  }
 
-      // constExhibit.rebuildComponentInterface()
+  if ('issues' in update) {
+    // Check for the time of the most recent update. If it is more
+    // recent than our existing date, rebuild the issue list
+
+    const currentLastDate = Math.max.apply(Math, constConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
+    const updatedDate = new Date(update.issues.lastUpdateDate)
+
+    if (!constTools.arraysEqual(constConfig.assignableStaff, update.issues.assignable_staff)) {
+      constConfig.assignableStaff = update.issues.assignable_staff
+      // Populate the filter
+      $('#issueListFilterAssignedToSelect').empty()
+      $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
+      $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
+      for (let i = 0; i < constConfig.assignableStaff.length; i++) {
+        $('#issueListFilterAssignedToSelect').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
+      }
+    }
+    if (updatedDate > currentLastDate) {
+      constConfig.issueList = update.issues.issueList
+      constIssues.rebuildIssueList()
+    }
+  }
+
+  if ('schedule' in update) {
+    if (constConfig.scheduleUpdateTime !== update.schedule.updateTime) {
+      constSchedule.populateSchedule(update.schedule)
+    }
+  }
+
+  if ('components' in update) {
+    let numComps = 0
+    let numOnline = 0
+    let numStatic = 0
+
+    update.components.forEach((component) => {
+      numComps += 1
+      if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
+        numOnline += 1
+      }
+      if (component.status === constConfig.STATUS.STATIC.name) {
+        numStatic += 1
+      }
+      constExhibit.updateComponentFromServer(component)
     })
+
+    // Set the favicon to reflect the aggregate status
+    if (numOnline === numComps) {
+      $("link[rel='icon']").attr('href', 'icon/green.ico')
+    } else if (numOnline === 0) {
+      $("link[rel='icon']").attr('href', 'icon/red.ico')
+    } else {
+      $("link[rel='icon']").attr('href', 'icon/yellow.ico')
+    }
+    // If there are no static components, hide the "SHow STATIC" button
+    if (numStatic === 0) {
+      $('#componentsTabSettingsShowStatic').parent().parent().hide()
+    } else {
+      $('#componentsTabSettingsShowStatic').parent().parent().show()
+    }
+  }
 }
+
+// function askForUpdate () {
+//   // Send a message to the control server asking for the latest component
+//   // updates
+
+//   constTools.makeServerRequest({
+//     method: 'GET',
+//     endpoint: '/system/getUpdate'
+//   })
+//     .then((update) => {
+//       parseUpdate(update)
+//     })
+// }
 
 function populateHelpTab () {
   // Ask the server to send the latest README, convert the Markdown to
@@ -1249,8 +1261,19 @@ $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFr
 
 constConfig.serverAddress = location.origin
 
-askForUpdate()
-setInterval(askForUpdate, 5000)
+// Subscribe to updates from the control server
+const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
+eventSource.addEventListener('update', function (event) {
+  const update = JSON.parse(event.data)
+  parseUpdate(update)
+})
+eventSource.addEventListener('end', function (event) {
+  console.log('Handling end....')
+  eventSource.close()
+})
+
+// askForUpdate()
+// setInterval(askForUpdate, 5000)
 populateHelpTab()
 constMaintenance.refreshMaintenanceRecords()
 parseQueryString()

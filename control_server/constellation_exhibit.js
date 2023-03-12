@@ -560,7 +560,6 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
-  console.log(obj)
 
   $('#componentInfoModalTitle').html(id)
 

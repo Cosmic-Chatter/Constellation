@@ -14,6 +14,7 @@ debug: bool = False  # True means print various debug info
 gallery_name: str = "Constellation"
 port: int = 8000
 ip_address: str = "localhost"
+last_update_time: float = 0  # Will hold time.time() of last change to the server
 
 software_version: float = 3.0
 software_update_available: bool = False

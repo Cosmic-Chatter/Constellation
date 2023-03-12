@@ -13,6 +13,7 @@ import requests
 import wakeonlan
 
 # Constellation imports
+import component_helpers
 import config
 import constellation_tools as c_tools
 import projector_control
@@ -76,6 +77,7 @@ class BaseComponent:
     def update_last_contact_datetime(self):
 
         self.last_contact_datetime = datetime.datetime.now()
+        config.last_update_time = time.time()
 
     def poll_latency(self):
         """If we have an IP address, ping the host to measure its latency."""
@@ -117,7 +119,10 @@ class ExhibitComponent(BaseComponent):
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
-        self.lastInteractionDateTime: datetime.datetime = datetime.datetime(2020, 1, 1)
+        self.config["content"] = []
+        self.config["definition"] = ""
+
+        self.status_manager = component_helpers.ComponentStatusManager(category)
 
         if category != "static":
             self.update_configuration()
@@ -139,6 +144,11 @@ class ExhibitComponent(BaseComponent):
     def __repr__(self):
         return repr(f"[ExhibitComponent ID: {self.id} Group: {self.group}]")
 
+    def update_last_contact_datetime(self, interaction: bool = False):
+
+        super().update_last_contact_datetime()
+        self.status_manager.update_last_contact_datetime(interaction=interaction)
+
     def set_helper_address(self, address: str):
         """Set the helper IP address, modifying it first, if necessary"""
 
@@ -150,40 +160,13 @@ class ExhibitComponent(BaseComponent):
 
         self.helperAddress = address
 
-    def seconds_since_last_interaction(self) -> float:
-        """The number of seconds since an interaction was recorded."""
-
-        diff = datetime.datetime.now() - self.lastInteractionDateTime
-        return diff.total_seconds()
-
-    def update_last_interaction_datetime(self):
-
-        self.lastInteractionDateTime = datetime.datetime.now()
-
     def current_status(self) -> str:
         """Return the current status of the component
 
         Options: [OFFLINE, SYSTEM ON, ONLINE, ACTIVE, WAITING, STATIC]
         """
 
-        if self.category == "static":
-            return "STATIC"
-
-        if self.seconds_since_last_contact() < 30:
-            if self.seconds_since_last_interaction() < 10:
-                status = "ACTIVE"
-            else:
-                status = "ONLINE"
-        elif self.seconds_since_last_contact() < 60:
-            status = "WAITING"
-        else:
-            # If we have a measurable latency, the device must be on and connected to the network
-            if self.latency is not None:
-                status = "SYSTEM ON"
-            else:
-                status = "OFFLINE"
-
-        return status
+        return self.status_manager.status
 
     def update_configuration(self):
         """Update the component's configuration based on current exhibit configuration."""
@@ -191,17 +174,28 @@ class ExhibitComponent(BaseComponent):
         if config.exhibit_configuration is None or self.category == 'static':
             return
 
+        update_made = False
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
-            if "content" in component_config:
+
+            if "content" in component_config and self.config["content"] != component_config["content"]:
                 self.config["content"] = component_config["content"]
-            if "app_name" in component_config:
+                update_made = True
+            if "definition" in component_config and self.config["definition"] != component_config["definition"]:
+                self.config["definition"] = component_config["definition"]
+                update_made = True
+            if "app_name" in component_config and self.config["app_name"] != component_config["app_name"]:
                 self.config["app_name"] = component_config["app_name"]
+                update_made = True
         except IndexError:
             # This component is not specified in the current exhibit configuration
             self.config["content"] = []
+            self.config["definition"] = ""
 
         self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]
+
+        if update_made:
+            config.last_update_time = time.time()
 
     def queue_command(self, command: str):
         """Queue a command to be sent to the component on the next ping"""
@@ -551,6 +545,7 @@ def read_exhibit_configuration(name: str):
     exhibit_path = c_tools.get_path(["exhibits", name + ".json"], user_file=True)
     config.current_exhibit = os.path.splitext(name)[0]
     config.exhibit_configuration = c_tools.load_json(exhibit_path)
+    config.last_update_time = time.time()
 
 
 def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_name: str = ""):
@@ -613,7 +608,7 @@ def update_synchronization_list(this_id: str, other_ids: list[str]):
             config.synchronizationList.pop(match_index)
 
 
-def update_exhibit_component_status(data, ip: str):
+def update_exhibit_component_status(data: dict[str, Any], ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
     this_id = data["id"]
@@ -630,17 +625,18 @@ def update_exhibit_component_status(data, ip: str):
     if "helperAddress" in data:
         component.set_helper_address(data["helperAddress"])
 
-    component.update_last_contact_datetime()
+    component.update_last_contact_datetime(interaction=data.get("currentInteraction", False))
+
     if "AnyDeskID" in data:
         component.config["AnyDeskID"] = data["AnyDeskID"]
     if "autoplay_audio" in data:
         component.config["autoplay_audio"] = data["autoplay_audio"]
     if "imageDuration" in data:
         component.config["image_duration"] = data["imageDuration"]
-    if "currentInteraction" in data:
-        if data["currentInteraction"] is True or \
-                (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
-            component.update_last_interaction_datetime()
+    # if "currentInteraction" in data:
+    #     if data["currentInteraction"] is True or \
+    #             (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
+    #         component.update_last_interaction_datetime()
     if "allowed_actions" in data:
         allowed_actions = data["allowed_actions"]
         for key in allowed_actions:

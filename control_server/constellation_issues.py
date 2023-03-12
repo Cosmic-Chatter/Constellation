@@ -58,6 +58,7 @@ def delete_issue_media_file(file: str, owner: Union[str, None] = None) -> None:
             issue.details["media"] = None
             issue.refresh_last_update_date()
             save_issue_list()
+        config.last_update_time = time.time()
 
 
 def create_issue(details: dict[str, Any]) -> Issue:
@@ -66,6 +67,7 @@ def create_issue(details: dict[str, Any]) -> Issue:
     with config.issueLock:
         new_issue = Issue(details)
         config.issueList.append(new_issue)
+    config.last_update_time = time.time()
     return new_issue
 
 
@@ -76,6 +78,7 @@ def edit_issue(details: dict) -> None:
         with config.issueLock:
             issue.details = issue.details | details
             issue.refresh_last_update_date()
+        config.last_update_time = time.time()
 
 
 def get_issue(this_id: str) -> Issue:
@@ -97,6 +100,7 @@ def remove_issue(this_id: str) -> None:
             config.issueList = [x for x in config.issueList if x.details["id"] != this_id]
             issue.refresh_last_update_date()
             save_issue_list()
+    config.last_update_time = time.time()
 
 
 def read_issue_list() -> None:

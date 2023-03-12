@@ -129,12 +129,6 @@ time {
   font-family: "Title";
 }
 
-#fontSizeDecreaseButton {
-    /* background-color: var(--toolbarButtonColor); */
-}
-#fontSizeIncreaseButton {
-    /* background-color: var(--toolbarButtonColor); */
-}
 #langToggleButton {
     background-color: var(--toolbarButtonColor);
     color: var(--textColor);
