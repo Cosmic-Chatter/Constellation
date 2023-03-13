@@ -1,4 +1,4 @@
-/* global Coloris */
+/* global Coloris, bootstrap */
 
 import * as constCommon from '../js/constellation_app_common.js'
 
@@ -71,6 +71,25 @@ function createNewDefinition () {
   // Set up for a new definition
 
   clearDefinitionInput()
+}
+
+function deleteDefinition () {
+  // Delete the definition currently listed in the select.
+
+  const definition = $('#availableDefinitionSelect').val()
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/definitions/' + definition + '/delete'
+  })
+    .then(() => {
+      constCommon.getAvailableDefinitions('timeline_explorer')
+        .then((response) => {
+          if ('success' in response && response.success === true) {
+            populateAvailableDefinitions(response.definitions)
+          }
+        })
+    })
 }
 
 function editDefinition (uuid = '') {
@@ -162,7 +181,7 @@ function createLanguageTab (code, displayName, first) {
 
   // Create the tab button
   const tabButton = document.createElement('button')
-  tabButton.classList = 'nav-link'
+  tabButton.classList = 'nav-link language-tab'
   tabButton.setAttribute('id', 'languageTab_' + code)
   tabButton.setAttribute('data-bs-toggle', 'tab')
   tabButton.setAttribute('data-bs-target', '#languagePane_' + code)
@@ -249,6 +268,9 @@ function createLanguageTab (code, displayName, first) {
   const deleteButton = document.createElement('button')
   deleteButton.classList = 'btn btn-danger w-100 align-self-center'
   deleteButton.innerHTML = 'Delete language'
+  deleteButton.addEventListener('click', () => {
+    deleteLanguageTab(code)
+  })
   deleteCol.appendChild(deleteButton)
 
   // Create the various inputs
@@ -291,6 +313,15 @@ function createLanguageTab (code, displayName, first) {
 
   // Switch to this new tab
   $(tabButton).click()
+}
+
+function deleteLanguageTab (lang) {
+  // Delete the given language tab.
+
+  delete $('#definitionSaveButton').data('workingDefinition').languages[lang]
+  $('#languageTab_' + lang).remove()
+  $('#languagePane_' + lang).remove()
+  $('.language-tab').click()
 }
 
 function deleteLanguageFlag (lang) {
@@ -463,7 +494,7 @@ function previewDefinition (automatic = false) {
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Configure the preview frame
-        document.getElementById('previewFrame').src = '../timeline_explorer.html?preview=true&definition=__previewTimeline'
+        document.getElementById('previewFrame').src = '../timeline_explorer.html?standalone=true&definition=__previewTimeline'
       }
     })
 }
@@ -669,12 +700,12 @@ const inputFields = {
     name: 'Image key',
     kind: 'select',
     property: 'image_key'
-  },
-  keyThumbnailSelect: {
-    name: 'Thumbnail key',
-    kind: 'select',
-    property: 'thumbnail_key'
   }
+  // keyThumbnailSelect: {
+  //   name: 'Thumbnail key',
+  //   kind: 'select',
+  //   property: 'thumbnail_key'
+  // }
 }
 
 // Set up the color pickers
@@ -717,6 +748,22 @@ $('#previewRefreshButton').click(() => {
   previewDefinition()
 })
 $('#languageAddButton').click(addLanguage)
+
+// Definition delete popover button
+const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
+deleteDefinitionButton.setAttribute('data-bs-toggle', 'popover')
+deleteDefinitionButton.setAttribute('title', 'Are you sure?')
+deleteDefinitionButton.setAttribute('data-bs-content', '<a id="DefinitionDeletePopover" class="btn btn-danger w-100">Confirm</a>')
+deleteDefinitionButton.setAttribute('data-bs-trigger', 'focus')
+deleteDefinitionButton.setAttribute('data-bs-html', 'true')
+$(document).on('click', '#DefinitionDeletePopover', function () {
+  deleteDefinition()
+})
+deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionButton.focus() })
+const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+popoverTriggerList.map(function (popoverTriggerEl) {
+  return new bootstrap.Popover(popoverTriggerEl)
+})
 
 // Definition fields
 $('#spreadsheetSelect').change(onSpreadsheetSelectChange)

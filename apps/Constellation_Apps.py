@@ -165,6 +165,16 @@ async def get_available_definitions(app_id: str):
     return {"success": True, "definitions": helper_files.get_available_definitions(app_id)}
 
 
+@app.get("/definitions/{this_uuid}/delete")
+async def delete_definition(this_uuid: str):
+    """Delete the given definition."""
+
+    path = helper_files.get_path(["definitions", helper_files.with_extension(this_uuid, "json")], user_file=True)
+    helper_files.delete_file(path)
+
+    return {"success": True}
+
+
 @app.get("/definitions/{this_uuid}/load")
 async def load_definition(this_uuid: str):
     """Load the given definition and return the JSON."""

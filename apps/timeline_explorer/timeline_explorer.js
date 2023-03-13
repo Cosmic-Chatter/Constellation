@@ -188,7 +188,7 @@ function createTimelineEntry (entry, langCode) {
 
   // Image
   const imageName = entry[langDef.image_key]
-  if (imageName.trim() !== '' && imageName != null) {
+  if (imageName != null && imageName.trim() !== '') {
     // Make the timeline element wider to accomdate the image
     container.classList.add('with-image')
 
