@@ -47,17 +47,29 @@ class DMXUniverse {
     col.appendChild(row1)
 
     const nameCol = document.createElement('div')
-    nameCol.classList = 'col-9 col-sm-10 h4 px-2 py-2 mb-0'
+    nameCol.classList = 'col-6 col-md-6 col-lg-8 h4 px-2 py-2 mb-0'
     nameCol.innerHTML = this.name
     row1.appendChild(nameCol)
 
+    const editButtonCol = document.createElement('div')
+    editButtonCol.classList = 'col-3 col-md-3 col-lg-2 align-self-center pe-1'
+    row1.appendChild(editButtonCol)
+
+    const editButton = document.createElement('button')
+    editButton.classList = 'btn btn-primary w-100'
+    editButton.innerHTML = 'Edit universe'
+    editButton.addEventListener('click', () => {
+      showUniverseEditModal(this.name, this.uuid)
+    })
+    editButtonCol.appendChild(editButton)
+
     const addButtonCol = document.createElement('div')
-    addButtonCol.classList = 'col-3 col-sm-2 align-self-center pe-1'
+    addButtonCol.classList = 'col-3 col-md-3 col-lg-2 align-self-center pe-1'
     row1.appendChild(addButtonCol)
 
     const addButton = document.createElement('button')
     addButton.classList = 'btn btn-primary w-100'
-    addButton.innerHTML = 'Add Fixture'
+    addButton.innerHTML = 'Add fixture'
     addButton.addEventListener('click', () => {
       showAddFixtureModal(this.name, this.uuid)
     })
@@ -628,6 +640,25 @@ function updatecolorPicker(collectionName, uuid) {
   }
 }
 
+function showUniverseEditModal(universeName, universeUUID) {
+  // Prepare the editUniverseModal and then show it.
+
+  const universe = getUniverseByUUID(universeUUID)
+  console.log(universe)
+
+  document.getElementById('editUniverseModalName').innerHTML = universeName
+
+  // Populate the list of fixtures
+  const fixtureRow = $('#editUniverseFixtureRow')
+  fixtureRow.empty()
+  Object.keys(universe.fixtures).forEach((fixtureName) => {
+    const fixture = universe.fixtures[fixtureName]
+    fixtureRow.append(createFixtureCheckbox(fixture, universe))
+  })
+
+  $("#editUniverseModal").modal('show')
+}
+
 function showAddFixtureModal(universeName, universeUUID) {
   // Prepare the addFixtureModal and then show it.
 
@@ -974,6 +1005,14 @@ function getUniverseByName(name) {
     if (universe.name === name) {
       matchedUniverse = universe
     }
+  })
+  return matchedUniverse
+}
+
+function getUniverseByUUID(uuid) {
+  let matchedUniverse = null
+  universeList.forEach(universe => {
+    if (universe.uuid === uuid) matchedUniverse = universe
   })
   return matchedUniverse
 }

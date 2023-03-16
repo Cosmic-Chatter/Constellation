@@ -414,7 +414,7 @@ async def get_dmx_status():
 
 
 @app.post("/DMX/fixture/create")
-def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
+async def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
                        channels: list[str] = Body(description="A list of channel names."),
                        start_channel: int = Body(description="The first channel to allocate."),
                        universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
@@ -423,11 +423,11 @@ def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
-    return {"success": True, "fixture": new_fixture}
+    return {"success": True, "fixture": new_fixture.get_dict()}
 
 
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
-def set_dmx_fixture_to_brightness(fixture_uuid: str,
+async def set_dmx_fixture_to_brightness(fixture_uuid: str,
                                   value: int = Body(
                                       description="The brightness to be set."),
                                   duration: float = Body(description="How long the brightness transition should take.",
@@ -440,7 +440,7 @@ def set_dmx_fixture_to_brightness(fixture_uuid: str,
 
 
 @app.post("/DMX/fixture/{fixture_uuid}/setChannel")
-def set_dmx_fixture_channel(fixture_uuid: str,
+async def set_dmx_fixture_channel(fixture_uuid: str,
                             channel_name: str = Body(
                                 "The name of the chanel to set."),
                             value: int = Body(
@@ -455,7 +455,7 @@ def set_dmx_fixture_channel(fixture_uuid: str,
 
 
 @app.post("/DMX/fixture/{fixture_uuid}/setColor")
-def set_dmx_fixture_to_color(fixture_uuid: str,
+async def set_dmx_fixture_to_color(fixture_uuid: str,
                              color: list = Body(
                                  description="The color to be set."),
                              duration: float = Body(description="How long the color transition should take.",
@@ -468,7 +468,7 @@ def set_dmx_fixture_to_color(fixture_uuid: str,
 
 
 @app.post("/DMX/group/{group_name}/createScene")
-def create_dmx_scene(group_name: str,
+async def create_dmx_scene(group_name: str,
                      name: str = Body(description="The name of the scene."),
                      values: dict = Body(description="A dictionary of values for the scene."),
                      duration: float = Body(description="The transition length in milliseconds.", default=0)):
@@ -481,7 +481,7 @@ def create_dmx_scene(group_name: str,
 
 
 @app.post("/DMX/group/{group_name}/editScene")
-def create_dmx_scene(group_name: str,
+async def create_dmx_scene(group_name: str,
                      uuid: str = Body(description="The UUID of the scene to edit."),
                      name: str = Body(description="The name of the scene."),
                      values: dict = Body(description="A dictionary of values for the scene."),
@@ -501,7 +501,7 @@ def create_dmx_scene(group_name: str,
 
 
 @app.post("/DMX/group/{group_name}/deleteScene")
-def create_dmx_scene(group_name: str,
+async def create_dmx_scene(group_name: str,
                      uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
     """Delete the given scene for the specified group."""
 
@@ -513,7 +513,7 @@ def create_dmx_scene(group_name: str,
 
 
 @app.post("/DMX/group/{group_name}/setBrightness")
-def set_dmx_fixture_to_brightness(group_name: str,
+async def set_dmx_fixture_to_brightness(group_name: str,
                                   value: int = Body(
                                       description="The brightness to be set."),
                                   duration: float = Body(description="How long the brightness transition should take.",
@@ -526,7 +526,7 @@ def set_dmx_fixture_to_brightness(group_name: str,
 
 
 @app.post("/DMX/group/{group_name}/setColor")
-def set_dmx_group_to_color(group_name: str,
+async def set_dmx_group_to_color(group_name: str,
                            color: list = Body(
                                description="The color to be set."),
                            duration: float = Body(description="How long the color transition should take.",
@@ -539,7 +539,7 @@ def set_dmx_group_to_color(group_name: str,
 
 
 @app.post("/DMX/group/{group_name}/showScene")
-def set_dmx_group_scene(group_name: str,
+async def set_dmx_group_scene(group_name: str,
                         name: str = Body(
                             description="The name of the scene to be run.",
                             default=""),
@@ -559,7 +559,7 @@ def set_dmx_group_scene(group_name: str,
 
 
 @app.post("/DMX/universe/create")
-def create_dmx_universe(name: str = Body(description="The name of the universe."),
+async def create_dmx_universe(name: str = Body(description="The name of the universe."),
                         controller: str = Body(description="The type of this controller (OpenBMX or uDMX)."),
                         device_details: dict[str, Any] = Body(description="A dictionary of hardware details for the controller.")):
     """Create a new DMXUniverse."""

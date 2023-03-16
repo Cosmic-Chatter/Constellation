@@ -21,7 +21,7 @@ HELPER_SOFTWARE_VERSION: float = 3.0
 debug: bool = True
 
 # DMX resources
-dmx_universes: dict = {}
+dmx_universes: list = []
 dmx_groups: dict = {}
 dmx_fixtures = []
 dmx_active: bool = False

@@ -103,6 +103,33 @@
               </div>
             </div>
 
+            <!-- Edit universe modal -->
+            <div class="modal" tabindex="-1" role="dialog" id="editUniverseModal">
+              <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content" style="border:black 1px solid;">
+                  <div class="modal-header">
+                    <h4 class="modal-title">Edit universe: <span id="editUniverseModalName"></span></h4>
+                  </div>
+                  <div class="modal-body">
+                    <div class="row gy-2">
+                      <div class="col-8">
+                        <label for="addFixtureName" class="form-label">Universe name</label>
+                        <input type="text" class="form-control" id="addUniverseModalNameInput">
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Fixtures</label>
+                        <div id="editUniverseFixtureRow" class="row"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="editUniverseFromModal">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Add fixture modal -->
             <div class="modal" tabindex="-1" role="dialog" id="addFixtureModal">
               <div class="modal-dialog modal-dialog-centered" role="document">
