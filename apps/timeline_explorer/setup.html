@@ -21,6 +21,9 @@
       .clr-field button, .clr-field input {
         width: 100%;
         border-radius: 5px;
+        border: var(--bs-border-color);
+        border-width: 1px;
+        border-style: solid;
       }
       #previewContainer {
         width: 100%;
@@ -48,7 +51,7 @@
   </head>
 
   <body>
-    <div class="container mt-2 mb-5">
+    <div id="mainContainer" class="container mt-2 mb-5">
       <H2>Timeline Explorer Setup</H2>
       Use this utility to create and edit timeline configurations.
       <div class="row my-1 gx-2 gy-2">
@@ -85,7 +88,7 @@
         </div>
       </div>
       <div class="row">
-        <div id='editPane' class="col-6 col-lg-7" style="height: 70vh; overflow-y: auto;">
+        <div id='editPane' class="col-6 col-lg-7">
           <div class="row mt-3">
             <div class="col-12 col-md-6">
               <label for="definitionNameInput" class="form-label">Definition name</label>
@@ -94,18 +97,43 @@
             <div class="col-12 col-md-6">
               <label for="spreadsheetSelect" class="form-label">Spreadsheet</label>
               <div class="row pb-2">
-                <div class="col-12">
+                <div class="col-12 col-xl-7 col-xxl-8">
                   <select class="form-select" id="spreadsheetSelect"></select>
                 </div>
-                <div class="col-12 mt-2">
+                <div class="col-12 col-xl-5 col-xxl-4 mt-2 mt-xl-0">
                   <label class="btn btn-outline-primary w-100">
-                    <span id="uploadSpreadsheetName" class="w-100">Upload new</span>
+                    <span id="uploadSpreadsheetName" class="w-100">Upload</span>
                     <input id="uploadSpreadsheetInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".csv">
                   </label>
                 </div>
               </div>
             </div>
-            <div class="col-12">
+            <div class="col-12 col-md-6">
+              <label for="attractorSelect" class="form-label">
+                Attractor
+                <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="An attractor is a fullscreen image or video that takes over when the app is idle." style="font-size: 0.55em;">?</span>
+              </label>
+              <div class="row pb-2">
+                <div class="col-12 col-xl-7 col-xxl-8">
+                  <select class="form-select" id="attractorSelect"></select>
+                </div>
+                <div class="col-12 col-xl-5 col-xxl-4 mt-2 mt-xl-0">
+                  <label class="btn btn-outline-primary w-100">
+                    <span id="uploadAttractorName" class="w-100">Upload</span>
+                    <input id="uploadAttractorInput" class="form-control-file w-100 align-self-center" type="file" hidden="true" accept="video/*,image/*">
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 col-xxl-3">
+              <label for="inactivityTimeoutField" class="form-label">
+                Inactivity timeout
+                <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Seconds of inactivity before the attractor is shown." style="font-size: 0.55em;">?</span>
+              </label>
+              <input type="number" class="form-control" min="10" value="30" id="inactivityTimeoutField"></select>
+            </div>
+
+            <div class="col-12 mt-2">
               <h3>Content</h3>
               <i>For each language you suppot, you need to match columns in your spreadsheet to properties of the timeline.</i>
               <div class="row">
@@ -174,29 +202,27 @@
                 </div>
               </div>
               <h4>Fonts</h4>
-              <div class="row">
-                <div class="col-12">
-
-                </div>
-                <div class="col-12">
+              <div class="row gy-2">
+                <div class="col-12 col-lg-3">
                   <label class="btn btn-outline-primary w-100">
-                    <span id="uploadFontName" class="w-100">Upload new</span>
+                    <span id="uploadFontName" class="w-100">Upload</span>
                     <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
                   </label>
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-0 col-lg-9"></div>
+                <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_Header" class="form-label">Header</label>
                   <select id="fontSelect_Header" class="form-select font-select" data-property="Header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_Time" class="form-label">Time</label>
                   <select id="fontSelect_Time" class="form-select font-select" data-property="Time" data-default="../_fonts/OpenSans-Regular.ttf"></select>
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_Title" class="form-label">Title</label>
                   <select id="fontSelect_Title" class="form-select font-select" data-property="Title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_Body" class="form-label">Body</label>
                   <select id="fontSelect_Body" class="form-select font-select" data-property="Body" data-default="../_fonts/OpenSans-Regular.ttf"></select>
                 </div>

@@ -1,6 +1,7 @@
 /* global Coloris, bootstrap */
 
 import * as constCommon from '../js/constellation_app_common.js'
+import * as constFileSelect from '../js/constellation_file_select_modal.js'
 
 function populateAvailableDefinitions (definitions) {
   // Take a list of definitions and add them to the select.
@@ -735,6 +736,12 @@ constCommon.getAvailableDefinitions('timeline_explorer')
     }
   })
 
+// Activate tooltips
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+
 // Add event listeners
 // -------------------------------------------------------------
 
@@ -790,3 +797,8 @@ window.addEventListener('resize', resizePreview)
 populateSpreadsheetSelect()
 populateFontSelects()
 clearDefinitionInput()
+
+constFileSelect.createFileSelectionModal({ filetypes: [] })
+  .then((files) => {
+    console.log(files)
+  })

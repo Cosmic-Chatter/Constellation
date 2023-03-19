@@ -500,3 +500,15 @@ export function setObjectProperty (obj, keys, val) {
   obj)
   lastObj[lastKey] = val
 };
+
+export function guessMimetype (filename) {
+  // Use filename's extension to guess the mimetype
+
+  const ext = filename.split('.').slice(-1)[0].toLowerCase()
+
+  if (['mp4', 'mpeg', 'webm', 'mov', 'm4v', 'avi', 'flv'].includes(ext)) {
+    return 'video'
+  } else if (['jpeg', 'jpg', 'tiff', 'tif', 'png', 'bmp', 'gif', 'webp', 'eps', 'ps', 'svg'].includes(ext)) {
+    return 'image'
+  }
+}

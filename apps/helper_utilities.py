@@ -168,7 +168,7 @@ def handle_missing_defaults_file():
         this_id = "TEMP"
     settings_dict["id"] = this_id
 
-    this_group = input("Enter a group for this app (no spaces, default: Default): ").strip().replace(' ', '-')
+    this_group = input("Enter a group for this app (default: Default): ").strip()
     if this_group == "":
         this_group = "Default"
     settings_dict["group"] = this_group
