@@ -11,125 +11,160 @@ export function createFileSelectionModal (userOptions) {
 
   // Merge in user options
   options = { ...options, ...userOptions }
-
-  console.log(options)
-
   return new Promise(function (resolve, reject) {
-    // If the document body does not already have a file select modal, create it.
+    const selectedFiles = []
 
-    let modal = document.getElementById('constFileSelectModal')
-    if (modal == null) {
-      modal = document.createElement('div')
-      modal.classList = 'modal'
-      modal.setAttribute('id', 'constFileSelectModal')
-      modal.setAttribute('tabindex', '-1000') // Always on top
-      modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 id="constFileSelectModalTitle" class="modal-title">Select Files</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <div class="row mb-2">
-                <div class='col-2'>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" id="constFileSelectModalThumbnailCheckbox" checked>
-                    <label class="form-check-label" for="constFileSelectModalThumbnailCheckbox">
-                      Thumbnails
-                    </label>
-                  </div>
+    const modal = document.createElement('div')
+    modal.classList = 'modal'
+    modal.setAttribute('id', 'constFileSelectModal')
+    modal.setAttribute('tabindex', '-1000') // Always on top
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 id="constFileSelectModalTitle" class="modal-title">Select Files</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-2">
+              <div class='col-2'>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="" id="constFileSelectModalThumbnailCheckbox" checked>
+                  <label class="form-check-label" for="constFileSelectModalThumbnailCheckbox">
+                    Thumbnails
+                  </label>
                 </div>
-              </div>
-              <div class="row flex-column-reverse flex-lg-row">
-              <div class="col-12 col-lg-8" style="height: 55vh; overflow-y: auto;">
-                <div id="constFileSelectModalFileList"  class='row'></div>
-              </div>
-              <div id="constFileSelectModalFilePreview" class="col-12 col-lg-4 mb-3">
-                <div class="row justify-content-center">
-                  <div class='col-6 col-lg-12'>
-                    <img id="constFileSelectModalFilePreviewImage" style="width: 100%; height: 200px; object-fit: contain;"></img>
-                    <video id="constFileSelectModalFilePreviewVideo" loop autoplay disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; height: 200px; object-fit: contain;"></video>
-                  </div>
-                  <div class='col-6 col-lg-12 mt-2 text-center h6' style="word-wrap: break-word">
-                  <span id="constFileSelectModalFilePreviewFilename" ></span>
-                  <div class='row'>
-                    <div class='col-12 col-sm-6'>
-                      <button class='btn btn-sm btn-info w-100 mt-3'>Rename</button>
-                    </div>
-                    <div class='col-12 col-sm-6'>
-                      <button class='btn btn-sm btn-danger w-100 mt-3'>Delete</button>
-                    </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
               </div>
             </div>
-            <div class="modal-footer">
-              <div class='row w-100 px-0'>
-                <div class='col-9 ps-0'>
-                  <div id="constFileSelectModalUploadInterface" class="form-group">
-                    <div class="row align-middle d-flex">
-                      <div class="col-4">
-                        <label class="btn btn-outline-secondary w-100">
-                          <span id="constFileSelectModalUploadfilename" style="overflow-wrap: break-word!important;">Upload new</span>
-                          <input hidden type="file" class="form-control-file" id="constFileSelectModalUpload" multiple>
-                        </label>
-                      </div>
-                      <div id="constFileSelectModalUploadSubmitCol" class="col-2">
-                        <button id="constFileSelectModalUploadSubmitButton" class='btn w-100 btn-outline-primary'>Upload</button>
-                      </div>
-                      <div class='col-8 my-auto' id='constFileSelectModalUploadProgressBarContainer'>
-                        <div class="progress" style="height: 25px;">
-                          <div id='constFileSelectModalUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                      </div>
-                      <div class='col-12 text-danger mt-2' id='constFileSelectModalUploadOverwriteWarning'>Warning: this upload will overwrite a file of the same name.</div>
-                    </div>
+            <div class="row flex-column-reverse flex-lg-row">
+            <div class="col-12 col-lg-8" style="height: 55vh; overflow-y: auto;">
+              <div id="constFileSelectModalFileList"  class='row'></div>
+            </div>
+            <div id="constFileSelectModalFilePreview" class="col-12 col-lg-4 mb-3">
+              <div class="row justify-content-center">
+                <div class='col-6 col-lg-12'>
+                  <img id="constFileSelectModalFilePreviewImage" style="width: 100%; height: 200px; object-fit: contain;"></img>
+                  <video id="constFileSelectModalFilePreviewVideo" loop autoplay disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; height: 200px; object-fit: contain;"></video>
+                </div>
+                <div class='col-6 col-lg-12 mt-2 text-center h6' style="word-wrap: break-word">
+                <span id="constFileSelectModalFilePreviewFilename" ></span>
+                <div id="constFileSelectModalFilePreviewEditContainer" class='row align-items-center'>
+                  <div class='col-12'>
+                    <input id="constFileSelectModalFilePreviewEditField" type='text' class='form-control'>
+                  </div>
+                  <div id="constFileSelectModalFilePreviewEditFileExistsWarning" class='col-12 text-danger text-center mt-2'>
+                  A file with this name already exists.
+                  </div>
+                  <div class='col-6 col-sm-3 offset-sm-3 mt-2'>
+                    <button id="constFileSelectModalFilePreviewEditCancelButton" class='btn btn-danger btn-sm w-100'>✕</button>
+                  </div>
+                  <div class='col-6 col-sm-3 mt-2'>
+                    <button id="constFileSelectModalFilePreviewEditSaveButton" class='btn btn-success btn-sm w-100'>✓</button>
                   </div>
                 </div>
-                <div class='col-3 justify-content-end d-flex pe-0'>
-                  <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">Close</button>
-                  <button id="constFileSelectModalChooseButton" type="button" class="btn btn-primary">Choose</button>
+                
+                <div class='row'>
+                  <div class='col-12 col-sm-6'>
+                    <button id="constFileSelectModalRenameFileButton" class='btn btn-sm btn-info w-100 mt-3'>Rename</button>
+                  </div>
+                  <div id="constFileSelectModalDeleteFileButton" class='col-12 col-sm-6'>
+                    <button class='btn btn-sm btn-danger w-100 mt-3' data-bs-toggle='popover' title='Are you sure?' data-bs-content='<a id="fileDeletePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger='focus' data-bs-html='true'>Delete</button>
+                  </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class='row w-100 px-0'>
+              <div class='col-9 ps-0'>
+                <div id="constFileSelectModalUploadInterface" class="form-group">
+                  <div class="row align-middle d-flex">
+                    <div class="col-4">
+                      <label class="btn btn-outline-secondary w-100">
+                        <span id="constFileSelectModalUploadfilename" style="overflow-wrap: break-word!important;">Upload new</span>
+                        <input hidden type="file" class="form-control-file" id="constFileSelectModalUpload" multiple>
+                      </label>
+                    </div>
+                    <div id="constFileSelectModalUploadSubmitCol" class="col-2">
+                      <button id="constFileSelectModalUploadSubmitButton" class='btn w-100 btn-outline-primary'>Upload</button>
+                    </div>
+                    <div class='col-8 my-auto' id='constFileSelectModalUploadProgressBarContainer'>
+                      <div class="progress" style="height: 25px;">
+                        <div id='constFileSelectModalUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </div>
+                    <div class='col-12 text-danger mt-2' id='constFileSelectModalUploadOverwriteWarning'>Warning: this upload will overwrite a file of the same name.</div>
+                  </div>
+                </div>
+              </div>
+              <div class='col-3 justify-content-end d-flex pe-0'>
+                <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">Close</button>
+                <button id="constFileSelectModalChooseButton" type="button" class="btn btn-primary">Choose</button>
               </div>
             </div>
           </div>
         </div>
-      `
-      document.body.appendChild(modal)
+      </div>
+    `
+    document.body.appendChild(modal)
 
-      // Thumbnails checkbox
-      document.getElementById('constFileSelectModalThumbnailCheckbox').addEventListener('change', (event) => {
-        modal.querySelectorAll('.const-file-thumb-container').forEach((el) => {
-          if (event.target.checked === true) {
-            el.style.display = 'block'
-          } else {
-            el.style.display = 'none'
-          }
-        })
+    // Thumbnails checkbox
+    document.getElementById('constFileSelectModalThumbnailCheckbox').addEventListener('change', (event) => {
+      modal.querySelectorAll('.const-file-thumb-container').forEach((el) => {
+        if (event.target.checked === true) {
+          el.style.display = 'block'
+        } else {
+          el.style.display = 'none'
+        }
       })
+    })
 
-      // File upload
-      document.getElementById('constFileSelectModalUpload').addEventListener('change', onUploadContentChange)
-      document.getElementById('constFileSelectModalUploadSubmitButton').addEventListener('click', uploadFile)
+    // File upload
+    document.getElementById('constFileSelectModalUpload').addEventListener('change', onUploadContentChange)
+    document.getElementById('constFileSelectModalUploadSubmitButton').addEventListener('click', () => {
+      uploadFile(options)
+    })
 
-      modal.addEventListener('hide.bs.modal', () => {
-        // If we dismiss the modal in any way other than clicking the Choose button,
-        // return no files.
-        resolve([])
+    // File rename
+    document.getElementById('constFileSelectModalFilePreviewEditContainer').style.display = 'none'
+    document.getElementById('constFileSelectModalRenameFileButton').addEventListener('click', showRenameField)
+    document.getElementById('constFileSelectModalFilePreviewEditCancelButton').addEventListener('click', cancelFileRename)
+    document.getElementById('constFileSelectModalFilePreviewEditSaveButton').addEventListener('click', renameFile)
+
+    // File delete
+    const deleteBUtton = document.getElementById('constFileSelectModalDeleteFileButton')
+    deleteBUtton.addEventListener('click', function () { deleteBUtton.focus() })
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
+    document.addEventListener('click', (event) => {
+      if (event.target.getAttribute('id') !== 'fileDeletePopover') return
+      deleteFile()
+    })
+
+    document.getElementById('constFileSelectModalChooseButton').addEventListener('click', () => {
+      modal.querySelectorAll('.const-file-selected').forEach((el) => {
+        selectedFiles.push(el.getAttribute('data-filename'))
       })
+      bootstrap.Modal.getInstance(modal).hide()
+    },
+    { once: true })
 
-      document.getElementById('constFileSelectModalChooseButton').addEventListener('click', () => {
-        const selectedFiles = []
-        modal.querySelectorAll('.const-file-selected').forEach((el) => {
-          selectedFiles.push(el.getAttribute('data-filename'))
-        })
-        resolve(selectedFiles)
-        bootstrap.Modal.getInstance(modal).hide()
-      })
-    }
+    modal.addEventListener('hidden.bs.modal', () => {
+      // If we dismiss the modal in any way other than clicking the Choose button,
+      // return no files.
+
+      // Destroy the modal
+      const modal = document.getElementById('constFileSelectModal')
+      modal.parentElement.removeChild(modal)
+
+      // Return any selected files
+      resolve(selectedFiles)
+    },
+    { once: true })
 
     const title = document.getElementById('constFileSelectModalTitle')
     if (options.multiple) {
@@ -141,19 +176,27 @@ export function createFileSelectionModal (userOptions) {
     document.getElementById('constFileSelectModalUploadProgressBarContainer').style.display = 'none'
     document.getElementById('constFileSelectModalUploadOverwriteWarning').style.display = 'none'
 
-    constCommon.makeHelperRequest({
-      method: 'GET',
-      endpoint: '/getAvailableContent'
-    })
-      .then((result) => {
-        populateComponentContent(result, options)
-        previewFile('', [])
+    populateComponentContent(options)
+      .then(() => {
+        new bootstrap.Modal(modal).show()
       })
-    new bootstrap.Modal(modal).show()
   })
 }
 
-function populateComponentContent (fileDict, options) {
+function populateComponentContent (options) {
+  // Get a list of the available files and create an element for each.
+
+  return constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  })
+    .then((result) => {
+      _populateComponentContent(result, options)
+      previewFile('', [])
+    })
+}
+
+function _populateComponentContent (fileDict, options) {
   // Build HTML elements for every file in fileDict.all_exhibits, modified by
   // the options passed in from createFileSelectionModal()
 
@@ -167,6 +210,7 @@ function populateComponentContent (fileDict, options) {
 
   // Clear any existing files
   fileRow.innerHTML = ''
+  const showThumbs = document.getElementById('constFileSelectModalThumbnailCheckbox').checked
 
   fileList.forEach((file) => {
     const extension = file.split('.').slice(-1)[0].toLowerCase()
@@ -195,12 +239,15 @@ function populateComponentContent (fileDict, options) {
     `
     fileRow.appendChild(entry)
 
+    entry.setAttribute('data-filename', file)
+
     // Hover
     entry.addEventListener('mouseenter', (event) => {
       document.querySelectorAll('.const-file-entry').forEach((el) => {
         el.classList.remove('bg-secondary', 'text-dark')
       })
       event.target.classList.add('bg-secondary', 'text-dark')
+      const file = event.target.getAttribute('data-filename')
       previewFile(file, thumbnailList)
     })
 
@@ -214,26 +261,22 @@ function populateComponentContent (fileDict, options) {
     // Thumbnail
     const thumbContainer = entry.querySelector('.const-file-thumb-container')
 
-    let thumb, thumbName
-    if (mimetype === 'image') {
-      thumbName = file.replace(/\.[^/.]+$/, '') + '.jpg'
-      if (thumbnailList.includes(thumbName)) {
-        thumb = document.createElement('img')
-        thumb.src = constCommon.config.helperAddress + '/thumbnails/' + thumbName
-      }
-    } else if (mimetype === 'video') {
-      thumbName = file.replace(/\.[^/.]+$/, '') + '.mp4'
-      if (thumbnailList.includes(thumbName)) {
-        thumb = document.createElement('video')
-        thumb.setAttribute('loop', true)
-        thumb.setAttribute('autoplay', true)
-        thumb.setAttribute('disablePictureInPicture', true)
-        thumb.setAttribute('webkit-playsinline', true)
-        thumb.setAttribute('playsinline', true)
-        thumb.src = constCommon.config.helperAddress + '/thumbnails/' + thumbName
-      }
+    let thumb
+    const thumbRoot = file.replace(/\.[^/.]+$/, '')
+
+    if (mimetype === 'image' && thumbnailList.includes(thumbRoot + '.jpg')) {
+      thumb = document.createElement('img')
+      thumb.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.jpg'
+    } else if (mimetype === 'video' && thumbnailList.includes(thumbRoot + '.mp4')) {
+      thumb = document.createElement('video')
+      thumb.setAttribute('loop', true)
+      thumb.setAttribute('autoplay', true)
+      thumb.setAttribute('disablePictureInPicture', true)
+      thumb.setAttribute('webkit-playsinline', true)
+      thumb.setAttribute('playsinline', true)
+      thumb.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.mp4'
     } else {
-      // We have something other than an image or video
+      // Not an image or video, or we don't have a thumbnail
       thumb = document.createElement('img')
       thumb.src = constCommon.config.helperAddress + '/_static/icons/document_white.svg'
     }
@@ -241,6 +284,7 @@ function populateComponentContent (fileDict, options) {
     thumb.style.width = '100%'
     thumb.style.height = '50px'
     thumb.style.objectFit = 'contain'
+    if (showThumbs === false) thumbContainer.style.display = 'none'
 
     // Filename
     const filename = entry.querySelector('.const-file-name')
@@ -267,24 +311,19 @@ function previewFile (file, thumbnailList) {
   document.getElementById('constFileSelectModalFilePreviewFilename').innerHTML = file
   document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', file)
 
-  let thumbName
+  const thumbRoot = file.replace(/\.[^/.]+$/, '')
   const mimetype = constCommon.guessMimetype(file)
-  if (mimetype === 'image') {
+
+  if (mimetype === 'image' && thumbnailList.includes(thumbRoot + '.jpg')) {
     img.style.display = 'block'
     vid.style.display = 'none'
-    thumbName = file.replace(/\.[^/.]+$/, '') + '.jpg'
-    if (thumbnailList.includes(thumbName)) {
-      img.src = constCommon.config.helperAddress + '/thumbnails/' + thumbName
-    }
-  } else if (mimetype === 'video') {
+    img.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.jpg'
+  } else if (mimetype === 'video' && thumbnailList.includes(thumbRoot + '.mp4')) {
     img.style.display = 'none'
     vid.style.display = 'block'
-    thumbName = file.replace(/\.[^/.]+$/, '') + '.mp4'
-    if (thumbnailList.includes(thumbName)) {
-      vid.src = constCommon.config.helperAddress + '/thumbnails/' + thumbName
-    }
+    vid.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.mp4'
   } else {
-    // We have something other than an image or video
+    // We have something other than an image or video, or we are missing a thumbnail
     img.style.display = 'block'
     vid.style.display = 'none'
     img.src = constCommon.config.helperAddress + '/_static/icons/document_white.svg'
@@ -345,7 +384,7 @@ function onUploadContentChange () {
   }
 }
 
-function uploadFile () {
+function uploadFile (options) {
   // Handle uploading files
 
   const fileInput = document.getElementById('constFileSelectModalUpload')
@@ -374,6 +413,8 @@ function uploadFile () {
         if ('success' in response) {
           console.log('success')
           document.getElementById('constFileSelectModalUploadProgressBarContainer').style.display = 'none'
+          document.getElementById('constFileSelectModalUploadfilename').innerHTML = 'Upload new'
+          populateComponentContent(options)
         }
       } else if (this.status === 422) {
         console.log(JSON.parse(this.responseText))
@@ -393,4 +434,91 @@ function uploadFile () {
 
     xhr.send(formData)
   }
+}
+
+function deleteFile () {
+  // Delete the current file in the preview pane
+
+  const file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/deleteFile',
+    params: { file }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        const entry = document.getElementById('constFileSelectModal').querySelector(`.const-file-entry[data-filename="${file}"]`)
+        previewFile('', [])
+        document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', '')
+        entry.parentElement.removeChild(entry)
+      }
+    })
+}
+
+function showRenameField () {
+  // Show the rename field for the file currently being previewed.
+
+  const filename = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
+
+  if (filename === '') return
+
+  document.getElementById('constFileSelectModalFilePreviewEditContainer').style.display = 'flex'
+  document.getElementById('constFileSelectModalFilePreviewFilename').style.display = 'none'
+  document.getElementById('constFileSelectModalFilePreviewEditFileExistsWarning').style.display = 'none'
+
+  const fileNameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename
+  const renameField = document.getElementById('constFileSelectModalFilePreviewEditField')
+  renameField.setAttribute('filename', filename) // Save the original name to ensure we rename the correct file
+  renameField.value = filename
+  renameField.setSelectionRange(0, fileNameWithoutExt.length)
+  renameField.focus()
+}
+
+function cancelFileRename () {
+  document.getElementById('constFileSelectModalFilePreviewEditContainer').style.display = 'none'
+  document.getElementById('constFileSelectModalFilePreviewFilename').style.display = 'block'
+}
+
+function renameFile () {
+  // Get the new name and send it to the helper to be changed.
+
+  const renameField = document.getElementById('constFileSelectModalFilePreviewEditField')
+  const originalName = renameField.getAttribute('filename')
+  const newName = renameField.value
+
+  if (originalName === newName) {
+    cancelFileRename()
+    return
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/renameFile',
+    params: {
+      current_name: originalName,
+      new_name: newName
+    }
+  })
+    .then((result) => {
+      if ('success' in result) {
+        if (result.success === false && result.error === 'file_exists') {
+          document.getElementById('constFileSelectModalFilePreviewEditFileExistsWarning').style.display = 'block'
+        } else if (result.success === true) {
+          // Update the preview pane
+          document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', newName)
+          // Update the entry
+          const entry = document.getElementById('constFileSelectModal').querySelector(`.const-file-entry[data-filename="${originalName}"]`)
+          entry.setAttribute('data-filename', newName)
+          entry.querySelector('.const-file-name').title = newName
+          entry.querySelector('.const-file-name').innerHTML = shortenFilename(newName)
+          entry.querySelector('.const-file-select-box').setAttribute('data-filename', newName)
+
+          // Update the preview filename
+          document.getElementById('constFileSelectModalFilePreviewFilename').innerHTML = newName
+          document.getElementById('constFileSelectModalFilePreviewEditContainer').style.display = 'none'
+          document.getElementById('constFileSelectModalFilePreviewFilename').style.display = 'block'
+        }
+      }
+    })
 }
