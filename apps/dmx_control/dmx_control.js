@@ -17,7 +17,7 @@ class DMXUniverse {
     // Create a new fixture and add it to this.fixtures.
 
     const newFixture = new DMXFixture(definition.name, definition.start_channel, definition.channels, definition.uuid)
-    newFixture.universe = this.name
+    newFixture.universe = this.uuid
     this.fixtures[definition.name] = newFixture
 
     return newFixture
@@ -121,7 +121,7 @@ class DMXFixture {
     // Loop the channels and update their GUI representations
     Object.keys(this.channelValues).forEach(key => {
       // Update the universe representation
-      const universe = getUniverseByName(this.universe)
+      const universe = getUniverseByUUID(this.universe)
       $('#' + universe.safeName + '_fixture_' + this.uuid + '_' + 'channelValue_' + key).val(this.channelValues[key])
       $('#' + universe.safeName + '_fixture_' + this.uuid + '_' + 'channelSlider_' + key).val(this.channelValues[key])
       updatecolorPicker(universe.safeName, this.uuid)
@@ -217,6 +217,18 @@ class DMXFixture {
       onColorChangeFromPicker(collectionName, thisUUID)
     })
     colorPickerCol.appendChild(colorPicker)
+
+    const universeCol = document.createElement('div')
+    universeCol.classList = 'col-6 fst-italic pt-1'
+    universeCol.style.backgroundColor = '#28587B'
+    universeCol.innerHTML = getUniverseByUUID(this.universe).name
+    row.appendChild(universeCol)
+
+    const channelsCol = document.createElement('div')
+    channelsCol.classList = 'col-6 text-end pt-1'
+    channelsCol.style.backgroundColor = '#28587B'
+    channelsCol.innerHTML = 'Channels ' + String(this.startChannel) + ' - ' + String(this.startChannel + this.channelList.length - 1)
+    row.appendChild(channelsCol)
 
     const expandMessage = document.createElement('div')
     expandMessage.classList = 'col-12 text-center fst-italic small'
@@ -644,9 +656,11 @@ function showUniverseEditModal(universeName, universeUUID) {
   // Prepare the editUniverseModal and then show it.
 
   const universe = getUniverseByUUID(universeUUID)
-  console.log(universe)
+  $('#editUniverseModal').data('uuid', universeUUID)
+  $('#editUniverseModal').data('name', universe.name)
 
   document.getElementById('editUniverseModalName').innerHTML = universeName
+  document.getElementById('editUniverseModalNameInput').value = universeName
 
   // Populate the list of fixtures
   const fixtureRow = $('#editUniverseFixtureRow')
@@ -657,6 +671,54 @@ function showUniverseEditModal(universeName, universeUUID) {
   })
 
   $("#editUniverseModal").modal('show')
+}
+
+function updateUniverseFromModal() {
+  // Gather information from the editUniverseModal and send it to Control Server to make an update.
+
+  const uuid = $('#editUniverseModal').data('uuid')
+  const currentName = $('#editUniverseModal').data('name')
+
+  const promiseList = []
+
+  // Get all the checkboxes for the fixtures and iterate through them to find unchecked ones.
+  const fixtureChecks = document.querySelectorAll('#editUniverseFixtureRow > div > div > input')
+  fixtureChecks.forEach((fixture) => {
+    if (fixture.checked === false) {
+      const fixture_uuid = fixture.getAttribute('data-uuid')
+      promiseList.push(constCommon.makeHelperRequest({
+        method: "POST",
+        endpoint: "/DMX/fixture/remove",
+        params: {fixture_uuid}
+      }))
+    }
+  })
+
+  // Change the name
+  const newName = document.getElementById('editUniverseModalNameInput').value
+  if (newName !== currentName) {
+    promiseList.push(constCommon.makeHelperRequest({
+      method: 'POST',
+      endpoint: '/DMX/universe/rename',
+      params: {
+        uuid,
+        new_name: newName
+      }
+    })
+    .then(() => {
+      getUniverseByUUID(uuid).name = newName
+    })
+    )
+  }
+
+  // Once all the promises have resolved, rebuild the interface
+  if (promiseList.length > 0) {
+    Promise.all(promiseList)
+    .then(() => {
+      getDMXConfiguration()
+    })
+  }
+  $("#editUniverseModal").modal('hide')
 }
 
 function showAddFixtureModal(universeName, universeUUID) {
@@ -847,6 +909,7 @@ function createFixtureCheckbox(fixture, collection=null) {
   check.classList = 'form-check-input'
   check.setAttribute('type', 'checkbox')
   check.setAttribute('id', 'editGroupFixture_' + fixture.uuid)
+  check.setAttribute('data-uuid', fixture.uuid)
   check.value = ""
 
   if (collection != null && collection.getFixtureByUUID(fixture.uuid) != null) {
@@ -883,7 +946,7 @@ function addChannelToModal() {
   select.classList = 'form-control'
   selectCol.appendChild(select)
 
-  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Brightness', 'dimmer'], ['Color mode', 'color_mode'], ['Mode', 'mode'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Pan speed', 'pan_speed'], ['Strobe', 'strobe'], ['Strobe speed', 'strobe_speed'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Tilt speed', 'tilt_speed'], ['Other', 'other']]
+  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Dimmer', 'dimmer'], ['Color mode', 'color_mode'], ['Mode', 'mode'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Pan speed', 'pan_speed'], ['Strobe', 'strobe'], ['Strobe speed', 'strobe_speed'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Tilt speed', 'tilt_speed'], ['Other', 'other']]
 
   options.forEach((entry) => {
     const option = document.createElement('option')
@@ -934,7 +997,10 @@ function addFixtureFromModal() {
     params: definition
   })
   .then((response) => {
-    console.log(response)
+    if ('success' in response && response.success === true) {
+      getDMXConfiguration()
+    $('#addFixtureModal').modal('hide')
+    }
   })
 }
 
@@ -1064,6 +1130,8 @@ function getDMXConfiguration() {
     endpoint: '/DMX/getConfiguration'
   })
     .then((response) => {
+      universeList.length = 0
+      groupList.length = 0
       configuration = response.configuration
       if (configuration.universes.length > 0) {
         configuration.universes.forEach((universeDef) => {
@@ -1206,6 +1274,7 @@ $("#showAddUniverseModalButton").click(showAddUniverseMOdal)
 $('#addFixtureAddChannelButton').click(addChannelToModal)
 $('#addFixtureFromModalButton').click(addFixtureFromModal)
 $('#addUniverseFromModalButton').click(addUniverseFromModal)
+$('#editUniverseModalSaveButton').click(updateUniverseFromModal)
 
 // Group tab
 $('#editGroupModalSaveButton').click(editGroupFromModal)

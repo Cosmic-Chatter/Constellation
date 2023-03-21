@@ -425,6 +425,14 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
 
     return {"success": True, "fixture": new_fixture.get_dict()}
 
+@app.post("/DMX/fixture/remove")
+async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
+    """Remove the given DMX fixture from its universe and any groups"""
+
+    helper_dmx.get_fixture(uuid=fixture_uuid).delete()
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True}
 
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
 async def set_dmx_fixture_to_brightness(fixture_uuid: str,
@@ -570,6 +578,16 @@ async def create_dmx_universe(name: str = Body(description="The name of the univ
     helper_dmx.write_dmx_configuration()
 
     return {"success": True, "universe": new_universe.get_dict()}    
+
+@app.post("/DMX/universe/rename")
+async def create_dmx_universe(uuid: str = Body(description="The UUID of the universe."),
+                              new_name: str = Body(description="The new name to set.")):
+    """Change the name for a universe."""
+
+    helper_dmx.get_universe(uuid_str=uuid).name = new_name
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True}
 
 
 if __name__ == "__main__":

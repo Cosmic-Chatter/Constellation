@@ -56,7 +56,7 @@ class DMXUniverse:
                 "A DMX universe cannot contain more than 32 fixtures.")
 
         fixture = DMXFixture(name, start_channel, channel_list, uuid_str=uuid_str)
-        fixture.universe = self.name
+        fixture.universe = self.uuid
         self.fixtures[name] = fixture
 
         self.controller.add_fixture(fixture)
@@ -121,24 +121,27 @@ class DMXFixture(Fixture):
         else:
             self.uuid = uuid_str
 
-        self.universe: str = ""
+        self.universe: str = ""  # UUID of the universe this belongs to.
         self.groups: set[str] = set()
 
     def __repr__(self, *args, **kwargs):
-        return f"[DMXFixture: '{self.name}' in universe '{self.universe}' with channels {self.channel_usage}]"
+        return f"[DMXFixture: '{self.name}' in universe '{get_universe(uuid_str=self.universe).name}' with channels {self.channel_usage}]"
 
     def __str__(self, *args, **kwargs):
-        return f"[DMXFixture: '{self.name}' in universe '{self.universe}' with channels {self.channel_usage}]"
+        return f"[DMXFixture: '{self.name}' in universe '{get_universe(uuid_str=self.universe).name}' with channels {self.channel_usage}]"
 
     def delete(self):
         """Remove the fixture from all its groups, then its universe."""
+        
+        # Remove from config
+        config.dmx_fixtures = [x for x in config.dmx_fixtures if x.uuid != self.uuid]
 
         # Remove from groups
         for group_name in self.groups.copy():
             group = get_group(group_name)
             group.remove_fixture(self.name)
 
-        get_universe(name=self.universe).remove_fixture(self.name)
+        get_universe(uuid_str=self.universe).remove_fixture(self.name)
 
     def get_all_channel_values(self) -> dict[str, int]:
         """Return a dict with the current value of every channel."""
@@ -178,7 +181,6 @@ class DMXFixtureGroup:
     def __init__(self, name):
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
-        # self.scenes: dict[str, DMXScene] = {}
         self.scenes: list[DMXScene] = []
 
     def add_fixtures(self, fixture_list: list[DMXFixture]):
