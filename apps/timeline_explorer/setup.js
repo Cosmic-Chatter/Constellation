@@ -50,6 +50,12 @@ function clearDefinitionInput (full = true) {
       })
   }
 
+  // Spreadsheet
+  const spreadsheetSelect = document.getElementById('spreadsheetSelect')
+  spreadsheetSelect.innerHTML = 'Select file'
+  spreadsheetSelect.setAttribute('data-filename', '')
+  $(spreadsheetSelect).data('availableKeys', [])
+
   // Language add
   $('#languageAddEmptyFieldsWarning').hide()
   $('#languageAddExistsWarning').hide()
@@ -102,10 +108,16 @@ function editDefinition (uuid = '') {
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
-  console.log($('#definitionSaveButton').data('workingDefinition').uuid)
-
   $('#definitionNameInput').val(def.name)
-  $('#spreadsheetSelect').val(def.spreadsheet)
+
+  // Spreadsheet
+  $('#spreadsheetSelect').html(def.spreadsheet)
+  document.getElementById('spreadsheetSelect').setAttribute('data-filename', def.spreadsheet)
+
+  // Attractor
+  $('#attractorSelect').html(def.attractor)
+  document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
+  document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {
@@ -123,19 +135,20 @@ function editDefinition (uuid = '') {
   Object.keys(def.languages).forEach((lang) => {
     const langDef = def.languages[lang]
     if (first == null) {
-      createLanguageTab(lang, langDef.display_name, true)
+      createLanguageTab(lang, langDef.display_name)
       first = lang
     } else {
-      createLanguageTab(lang, langDef.display_name, false)
+      createLanguageTab(lang, langDef.display_name)
     }
     $('#languagePane_' + lang).removeClass('active').removeClass('show')
 
     $('#headerText' + '_' + lang).val(langDef.header_text)
   })
   $('#languageTab_' + first).click()
+  $('#languagePane_' + first).addClass('active')
 
   // Load the spreadsheet to populate the existing keys
-  onSpreadsheetSelectChange()
+  onSpreadsheetFileChange()
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timeline_explorer.html?standalone=true&definition=' + def.uuid
@@ -176,7 +189,7 @@ function addLanguage () {
   $('#languageCodeInput').val('')
 }
 
-function createLanguageTab (code, displayName, first) {
+function createLanguageTab (code, displayName) {
   // Create a new language tab for the given details.
   // Set first=true when creating the first tab
 
@@ -194,7 +207,6 @@ function createLanguageTab (code, displayName, first) {
   // Create corresponding pane
   const tabPane = document.createElement('div')
   tabPane.classList = 'tab-pane fade'
-  if (first) tabPane.classList.add('show', 'active')
   tabPane.setAttribute('id', 'languagePane_' + code)
   tabPane.setAttribute('role', 'tabpanel')
   tabPane.setAttribute('aria-labelledby', 'languageTab_' + code)
@@ -351,38 +363,38 @@ function deleteLanguageFlag (lang) {
   })
 }
 
-function onSpreadsheetUploadChange () {
-  // Classed when the user selects CSV files to upload
+// function onSpreadsheetUploadChange () {
+//   // Classed when the user selects CSV files to upload
 
-  const fileInput = $('#uploadSpreadsheetInput')[0]
-  const files = fileInput.files
-  const formData = new FormData()
+//   const fileInput = $('#uploadSpreadsheetInput')[0]
+//   const files = fileInput.files
+//   const formData = new FormData()
 
-  $('#uploadSpreadsheetName').html('Uploading')
+//   $('#uploadSpreadsheetName').html('Uploading')
 
-  Object.keys(files).forEach((key) => {
-    const file = files[key]
-    formData.append('files', file)
-  })
+//   Object.keys(files).forEach((key) => {
+//     const file = files[key]
+//     formData.append('files', file)
+//   })
 
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', '/uploadContent', true)
+//   const xhr = new XMLHttpRequest()
+//   xhr.open('POST', '/uploadContent', true)
 
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
+//   xhr.onreadystatechange = function () {
+//     if (this.readyState !== 4) return
+//     if (this.status === 200) {
+//       const response = JSON.parse(this.responseText)
 
-      if ('success' in response) {
-        $('#uploadSpreadsheetName').html('Upload new')
-        populateSpreadsheetSelect()
-      }
-    } else if (this.status === 422) {
-      console.log(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send(formData)
-}
+//       if ('success' in response) {
+//         $('#uploadSpreadsheetName').html('Upload new')
+//         populateSpreadsheetSelect()
+//       }
+//     } else if (this.status === 422) {
+//       console.log(JSON.parse(this.responseText))
+//     }
+//   }
+//   xhr.send(formData)
+// }
 
 function onFontUploadChange () {
   // Classed when the user selects font files to upload
@@ -533,31 +545,22 @@ function resizePreview () {
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
-function populateSpreadsheetSelect () {
-  // Get a list of all the content and add the available csv files to the select.
+function onAttractorFileChange () {
+  // Called when a new image or video is selected.
 
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      $('#spreadsheetSelect').empty()
-      result.all_exhibits.forEach((item) => {
-        if (item.split('.').pop().toLowerCase() === 'csv') {
-          const option = document.createElement('option')
-          option.value = item
-          option.innerHTML = item
-          $('#spreadsheetSelect').append(option)
-        }
-      })
-      $('#spreadsheetSelect').val(null)
-    })
+  const file = document.getElementById('attractorSelect').getAttribute('data-filename')
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  workingDefinition.attractor = file
+  $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
+
+  previewDefinition(true)
 }
 
-function onSpreadsheetSelectChange () {
+function onSpreadsheetFileChange () {
   // Called when a new spreadsheet is selected. Get the csv file and populate the options.
 
-  const file = $('#spreadsheetSelect').val()
+  const file = document.getElementById('spreadsheetSelect').getAttribute('data-filename')
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
   if (file == null) {
@@ -577,6 +580,7 @@ function onSpreadsheetSelectChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
+      previewDefinition(true)
     })
 }
 
@@ -664,6 +668,13 @@ function populateKeySelects (keyList) {
       }
     })
   })
+}
+
+function rotatePreview () {
+  // Toggle the preview between landscape and portrait orientations.
+
+  document.getElementById('previewFrame').classList.toggle('preview-landscape')
+  document.getElementById('previewFrame').classList.toggle('preview-portrait')
 }
 
 // All the available definitions
@@ -754,6 +765,10 @@ $('#definitionSaveButton').click(saveDefintion)
 $('#previewRefreshButton').click(() => {
   previewDefinition()
 })
+document.getElementById('previewRotateButton').addEventListener('click', () => {
+  console.log('here')
+  rotatePreview()
+})
 $('#languageAddButton').click(addLanguage)
 
 // Definition delete popover button
@@ -773,8 +788,32 @@ popoverTriggerList.map(function (popoverTriggerEl) {
 })
 
 // Definition fields
-$('#spreadsheetSelect').change(onSpreadsheetSelectChange)
-$('#uploadSpreadsheetInput').change(onSpreadsheetUploadChange)
+document.getElementById('spreadsheetSelect').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['csv'], multiple: false })
+    .then((files) => {
+      if (files.length === 1) {
+        event.target.innerHTML = files[0]
+        event.target.setAttribute('data-filename', files[0])
+        onSpreadsheetFileChange()
+      }
+    })
+})
+
+document.getElementById('attractorSelect').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['image', 'video'], multiple: false })
+    .then((files) => {
+      if (files.length === 1) {
+        event.target.innerHTML = files[0]
+        event.target.setAttribute('data-filename', files[0])
+        onAttractorFileChange()
+      }
+    })
+})
+
+document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
+  updateWorkingDefinition(['inactivity_timeout'], event.target.value)
+  previewDefinition(true)
+})
 
 // Style fields
 $('.coloris').change(function () {
@@ -794,11 +833,6 @@ $('.font-select').change(function () {
 window.addEventListener('load', resizePreview)
 window.addEventListener('resize', resizePreview)
 
-populateSpreadsheetSelect()
+// populateSpreadsheetSelect()
 populateFontSelects()
 clearDefinitionInput()
-
-constFileSelect.createFileSelectionModal({ filetypes: [] })
-  .then((files) => {
-    console.log(files)
-  })
