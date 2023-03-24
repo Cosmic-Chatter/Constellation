@@ -1,3 +1,17 @@
+# **Constellation 3.1**
+__*Constellation*__ 3.1 introduces a new app, Timeline Explorer. Turn a spreadsheet into an interactive timeline, and control its look and feel like never before.
+
+## <ins>New features</ins>
+- Timeline Explorer is the fastest way to build a fully-interactive timeline.
+  - Display your timeline in portrait or landscape orientation to best fit your needs.
+- The all-new setup experience enables you to control every aspect of Timeline Explorer with the graphical interface—editing `INI` files is a thing of the past!
+  - This powerful new configuration experience is coming to the rest of __*Constellation*__ Apps through the 3.X release series.
+
+## <ins>Updated features</ins>
+- Switch timelines seamlessly with the new Definitions Tab in the component info panel.
+  - Selecting a new definition doesn't just change the content, it switches automatically to the correct app so that everything always looks right for guests.
+- The Control Server web console now updates in real-time—no more delay between a serer update and the web console's display.
+
 # **Constellation 3.0**
 __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspect of Control Server is now managed via the web console. Want to update the settings for one of your apps? You can do that from anywhere. Need to tweak how a projector is handled? That's easy, too!
 
