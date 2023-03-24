@@ -50,7 +50,7 @@ function _loadDefinition (def) {
   if (langs.length === 0) return
 
   createLanguageSwitcher(def)
-  const defaultLang = langs[0]
+  defaultLang = langs[0]
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
   constCommon.makeHelperRequest({
@@ -64,6 +64,17 @@ function _loadDefinition (def) {
       $(document).data('spreadsheet', csvAsJSON)
       localize(defaultLang)
     })
+
+  // Set up the attractor
+  inactivityTimeout = def.inactivity_timeout || 30
+  if ('attractor' in def && def.attractor.trim() !== '') {
+    const fileType = constCommon.guessMimetype(def.attractor)
+    if (['image', 'video'].includes(fileType)) {
+      setAttractor(def.attractor, fileType)
+    }
+  } else {
+    setAttractor('', '')
+  }
 }
 
 function adjustFontSize (increment) {
@@ -235,6 +246,49 @@ function configureVisibleElements () {
   }
 }
 
+function setAttractor (filename, fileType) {
+  attractorAvailable = true
+  if (fileType === 'video') {
+    document.getElementById('attractorVideo').src = 'content/' + filename
+    document.getElementById('attractorImage').style.display = 'none'
+    document.getElementById('attractorVideo').style.display = 'block'
+  } else if (fileType === 'image') {
+    document.getElementById('attractorImage').src = 'content/' + filename
+    document.getElementById('attractorImage').style.display = 'block'
+    document.getElementById('attractorVideo').style.display = 'none'
+  } else {
+    attractorAvailable = false
+  }
+}
+
+function hideAttractor () {
+  // Hide the attractor and begin a timer to reinstate it.
+
+  document.getElementById('attractorOverlay').style.display = 'none'
+  document.getElementById('attractorVideo').pause()
+
+  clearTimeout(attractorTimer)
+  constCommon.config.currentInteraction = true
+
+  attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+}
+
+function showAttractor () {
+  // Show the attractor and reset the timeline.
+
+  if (attractorAvailable) {
+    document.getElementById('attractorVideo').play()
+    document.getElementById('attractorOverlay').style.opacity = 1
+  } else {
+    document.getElementById('attractorOverlay').style.opacity = 0
+  }
+  document.getElementById('attractorOverlay').style.display = 'block'
+  adjustFontSize(-100)
+  localize(defaultLang)
+
+  constCommon.config.currentInteraction = false
+}
+
 // Add event listeners
 window.addEventListener('load', configureVisibleElements)
 window.addEventListener('resize', configureVisibleElements)
@@ -245,6 +299,15 @@ $('#fontSizeDecreaseButton').click(function () {
 $('#fontSizeIncreaseButton').click(function () {
   adjustFontSize(0.1)
 })
+document.getElementById('attractorOverlay').addEventListener('touchstart', hideAttractor)
+
+// Attractor
+let attractorAvailable = false
+let attractorTimer = null
+let inactivityTimeout = 30
+
+// Language
+let defaultLang
 
 // Constellation stuff
 let currentDefintion = ''
@@ -262,10 +325,13 @@ if (searchParams.has('standalone')) {
 } else {
   // We are displaying this for real
   constCommon.askForDefaults()
-  constCommon.sendPing()
+    .then(() => {
+      constCommon.sendPing()
 
-  setInterval(constCommon.sendPing, 5000)
+      setInterval(constCommon.sendPing, 5000)
+    })
 }
 adjustFontSize(-100) // Make sure the font modifier is at 1 to start
+hideAttractor()
 // Hide the cursor
 // document.body.style.cursor = 'none'

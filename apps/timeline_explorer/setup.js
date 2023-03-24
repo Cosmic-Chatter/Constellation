@@ -809,6 +809,12 @@ document.getElementById('attractorSelect').addEventListener('click', (event) => 
       }
     })
 })
+document.getElementById('attractorSelectClear').addEventListener('click', (event) => {
+  const attractorSelect = document.getElementById('attractorSelect')
+  attractorSelect.innerHTML = 'Select file'
+  attractorSelect.setAttribute('data-filename', '')
+  onAttractorFileChange()
+})
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
   updateWorkingDefinition(['inactivity_timeout'], event.target.value)

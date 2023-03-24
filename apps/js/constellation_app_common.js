@@ -506,7 +506,7 @@ export function guessMimetype (filename) {
 
   const ext = filename.split('.').slice(-1)[0].toLowerCase()
 
-  if (['mp4', 'mpeg', 'webm', 'mov', 'm4v', 'avi', 'flv'].includes(ext)) {
+  if (['mp4', 'mpeg', 'mpg', 'webm', 'mov', 'm4v', 'avi', 'flv'].includes(ext)) {
     return 'video'
   } else if (['jpeg', 'jpg', 'tiff', 'tif', 'png', 'bmp', 'gif', 'webp', 'eps', 'ps', 'svg'].includes(ext)) {
     return 'image'
