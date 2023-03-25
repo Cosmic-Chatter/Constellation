@@ -708,14 +708,19 @@ export function showExhibitComponentInfo (id) {
   toggleExhibitComponentInfoSettingWarnings()
   $('#componentInfoModalSettingsSaveButton').hide()
 
-  // Show the approriate panes depending on the type
+  // Show the approriate panes depending on the type and constellationAppID
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
-    $('#componentInfoModalContentTabButton').show()
+    if (['timeline_explorer'].includes(obj.constellationAppId) === false) {
+      $('#componentInfoModalContentTabButton').show()
+      $('#componentInfoModalContentTabButton').tab('show')
+    } else {
+      $('#componentInfoModalContentTabButton').hide()
+      $('#componentInfoModalDefinitionTabButton').tab('show')
+    }
 
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
-    $('#componentInfoModalContentTabButton').tab('show')
   } else {
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalContentTabButton').hide()
@@ -1485,6 +1490,13 @@ export function submitComponentSettingsChange () {
     $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(app))
     obj.constellationAppId = app
     updateComponentInfoModalFromHelper(obj.id)
+
+    // If we have a modern definition-based app, hide the content tab
+    if (['timeline_explorer'].includes(app) === true) {
+      $('#componentInfoModalContentTabButton').hide()
+    } else {
+      $('#componentInfoModalContentTabButton').show()
+    }
 
     constTools.makeServerRequest({
       method: 'POST',
