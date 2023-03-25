@@ -4,7 +4,7 @@
 # Released under the MIT license
 
 # Standard modules
-import configparser
+import asyncio
 import datetime
 import threading
 from functools import lru_cache
@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from sse_starlette.sse import EventSourceResponse
 
 # Constellation modules
 import config as c_config
@@ -75,12 +76,24 @@ def constellation_schema():
 def send_webpage_update():
     """Collect the current exhibit status, format it, and send it back to the web client to update the page."""
 
+    update_dict = {}
+
     component_dict_list = []
     for item in c_config.componentList:
-        temp = {"id": item.id,
-                "group": item.group}
+        temp = {"class": "exhibitComponent",
+                "constellation_app_id": item.config["app_name"],
+                "helperAddress": item.helperAddress,
+                "id": item.id,
+                "ip_address": item.ip_address,
+                "group": item.group,
+                "lastContactDateTime": item.last_contact_datetime,
+                "latency": item.latency,
+                "platform_details": item.platform_details,
+                "status": item.current_status()}
         if "content" in item.config:
             temp["content"] = item.config["content"]
+        if "definition" in item.config:
+            temp["definition"] = item.config["definition"]
         if "error" in item.config:
             temp["error"] = item.config["error"]
         if "allowed_actions" in item.config:
@@ -93,71 +106,55 @@ def send_webpage_update():
             temp["image_duration"] = item.config["image_duration"]
         if "autoplay_audio" in item.config:
             temp["autoplay_audio"] = item.config["autoplay_audio"]
-        temp["class"] = "exhibitComponent"
-        temp["status"] = item.current_status()
-        temp["lastContactDateTime"] = item.last_contact_datetime
-        temp["ip_address"] = item.ip_address
-        temp["helperAddress"] = item.helperAddress
-        temp["constellation_app_id"] = item.config["app_name"]
-        temp["platform_details"] = item.platform_details
-        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     for item in c_config.projectorList:
-        temp = {"id": item.id,
+        temp = {"class": "projector",
                 "group": item.group,
-                "ip_address": item.ip_address}
+                "id": item.id,
+                "ip_address": item.ip_address,
+                "latency": item.latency,
+                "protocol": item.connection_type,
+                "state": item.state,
+                "status": item.state["status"]}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        temp["class"] = "projector"
-        temp["state"] = item.state
-        temp["protocol"] = item.connection_type
-        temp["status"] = item.state["status"]
-        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
     for item in c_config.wakeOnLANList:
-        temp = {"id": item.id,
+        temp = {"class": "wolComponent",
+                "id": item.id,
                 "group": 'WAKE_ON_LAN',
-                "ip_address": item.ip_address}
+                "ip_address": item.ip_address,
+                "latency": item.latency,
+                "status": item.state["status"]}
         if "allowed_actions" in item.config:
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        temp["class"] = "wolComponent"
-        temp["status"] = item.state["status"]
-        temp["latency"] = item.latency
         component_dict_list.append(temp)
 
-    # Also include an object with the status of the overall gallery
-    temp = {"class": "gallery",
-            "current_exhibit": c_config.current_exhibit,
-            "availableExhibits": c_config.exhibit_list,
-            "galleryName": c_config.gallery_name,
-            "softwareVersion": str(c_config.software_version),
-            "softwareVersionAvailable": c_config.software_update_available_version,
-            "updateAvailable": str(c_config.software_update_available).lower()}
-    component_dict_list.append(temp)
+    update_dict["components"] = component_dict_list
+    update_dict["gallery"] = {"current_exhibit": c_config.current_exhibit,
+                              "availableExhibits": c_config.exhibit_list,
+                              "galleryName": c_config.gallery_name,
+                              "softwareVersion": str(c_config.software_version),
+                              "softwareVersionAvailable": c_config.software_update_available_version,
+                              "updateAvailable": str(c_config.software_update_available).lower()}
 
-    # Also include an object containing the current issues
-    temp = {"class": "issues",
-            "issueList": [x.details for x in c_config.issueList],
-            "lastUpdateDate": c_config.issueList_last_update_date,
-            "assignable_staff": c_config.assignable_staff}
-    component_dict_list.append(temp)
+    update_dict["issues"] = {"issueList": [x.details for x in c_config.issueList],
+                             "lastUpdateDate": c_config.issueList_last_update_date,
+                             "assignable_staff": c_config.assignable_staff}
 
-    # Also include an object containing the current schedule
     c_sched.retrieve_json_schedule()
     with c_config.scheduleLock:
-        temp = {"class": "schedule",
-                "updateTime": c_config.scheduleUpdateTime,
-                "schedule": c_config.json_schedule_list,
-                "nextEvent": c_config.json_next_event}
-        component_dict_list.append(temp)
+        update_dict["schedule"] = {"updateTime": c_config.scheduleUpdateTime,
+                                   "schedule": c_config.json_schedule_list,
+                                   "nextEvent": c_config.json_next_event}
 
-    return component_dict_list
+    return update_dict
 
 
 def command_line_setup_print_gui() -> None:
@@ -222,88 +219,8 @@ def command_line_setup() -> None:
     print("")
 
 
-def convert_galleryConfigurationINI_to_json(ini: configparser.ConfigParser) -> None:
-    """Take a legacy galleryConfiguration.ini file and convert it to the appropriate JSON files."""
-
-    current = ini["CURRENT"]
-    new_config = {
-        "current_exhibit": os.path.splitext(current.get("current_exhibit", "default.exhibit"))[0],
-        "debug": current.getboolean("debug", False),
-        "gallery_name": current.get("gallery_name", "Constellation"),
-        "ip_address": current.get("server_ip_address", "localhost"),
-        "port": current.getint("server_port", 8080),
-    }
-    staff_list = current.get("assignable_staff", "")
-    new_config["assignable_staff"] = [x.strip() for x in staff_list.split(",")]
-
-    # Write new system config to file
-    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
-    c_tools.write_json(new_config, config_path)
-
-    # Then, check for other sections that also need to be converted
-    try:
-        component_descriptions = dict(ini["COMPONENT_DESCRIPTIONS"])
-        # We have found legacy description definitions
-        c_exhibit.convert_descriptions_config_to_json(component_descriptions)
-    except KeyError:
-        pass
-
-    try:
-        pjlink_projectors = ini["PJLINK_PROJECTORS"]
-        # We have found legacy PJLink projector configuration... convert this to the new JSON format
-        c_proj.convert_config_to_json(dict(pjlink_projectors), "pjlink")
-    except KeyError:
-        pass
-
-    try:
-        serial_projectors = ini["SERIAL_PROJECTORS"]
-        # We have found legacy serial projector configuration... convert this to the new JSON format
-        c_proj.convert_config_to_json(dict(serial_projectors), "serial")
-    except KeyError:
-        pass
-
-    try:
-        wol = ini["WAKE_ON_LAN"]
-        # We have a legacy Wake on LAN device definition
-        c_exhibit.convert_wake_on_LAN_to_json(dict(wol))
-    except KeyError:
-        pass
-
-    try:
-        static = ini["STATIC_COMPONENTS"]
-        # We have a legacy static components definition
-        c_exhibit.convert_static_config_to_json(dict(static))
-    except KeyError:
-        pass
-
-    # Rename galleryConfiguration.ini
-    shutil.move(c_tools.get_path(["galleryConfiguration.ini"], user_file=True),
-                c_tools.get_path(["galleryConfiguration.old.ini"], user_file=True))
-
-
 def load_default_configuration() -> None:
     """Initialize the server in a default state."""
-
-    # First, check for a legacy configuration file
-    gal_path = c_tools.get_path(["galleryConfiguration.ini"], user_file=True)
-    if os.path.exists(gal_path):
-        config_reader = configparser.ConfigParser(delimiters="=")
-        config_reader.optionxform = str  # Override default, which is case in-sensitive
-
-        with c_config.galleryConfigurationLock:
-            config_reader.read(gal_path)
-        try:
-            _ = config_reader["CURRENT"]
-            # We gave a legacy configuration file; convert it to JSON
-            convert_galleryConfigurationINI_to_json(config_reader)
-        except KeyError:
-            pass
-
-    # Also check for legacy exhibit files
-    exhibit_path = c_tools.get_path(["exhibits"], user_file=True)
-    for file in os.listdir(exhibit_path):
-        if os.path.splitext(file)[1].lower() == '.exhibit':
-            c_exhibit.convert_exhibits_ini_to_json(c_tools.get_path(["exhibits", file], user_file=True))
 
     # Check if there is a configuration file
     config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
@@ -487,6 +404,37 @@ class ExhibitComponent(BaseModel):
     )
 
 
+@app.post("/component/{component_id}/setApp")
+async def set_component_content(component_id: str,
+                                app_name: str = Body(description="The app to be set.", embed=True)):
+    """Set the app for the component."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
+
+    return {"success": True}
+
+
+@app.post("/component/{component_id}/setContent")
+async def set_component_content(component_id: str,
+                                content: list[str] = Body(description="The content to be set.", embed=True)):
+    """Set the content for the component. Setting content clears the definition."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"content": content, "definition": ""})
+
+    return {"success": True}
+
+
+@app.post("/component/{component_id}/setDefinition")
+async def set_component_definition(component_id: str,
+                                   uuid: str = Body(description="The UUID of the definition file to be set.",
+                                                    embed=True)):
+    """Set the definition for the component. Setting a definition clears all content."""
+
+    c_exhibit.update_exhibit_configuration(component_id, {"content": [], "definition": uuid})
+
+    return {"success": True}
+
+
 @app.post("/exhibit/create")
 async def create_exhibit(exhibit: Exhibit,
                          clone_from: Union[str, None] = Body(default=None,
@@ -544,17 +492,6 @@ async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     # Update the components that the configuration has changed
     for component in c_config.componentList:
         component.update_configuration()
-    return {"success": True, "reason": ""}
-
-
-@app.post("/exhibit/setComponentContent")
-async def set_component_content(component: ExhibitComponent,
-                                content: list[str] = Body(description="The content to be set")):
-    """Change the active content for the given exhibit component."""
-
-    if c_config.debug:
-        print(f"Changing content for {component.id}:", content)
-    c_exhibit.update_exhibit_configuration(component.id, {"content": content})
     return {"success": True, "reason": ""}
 
 
@@ -779,7 +716,8 @@ async def delete_issue(id_to_delete: str = Body(description="The ID of the issue
 
 @app.post("/issue/deleteMedia")
 async def delete_issue_media(filename: str = Body(description="The filename to be deleted."),
-                             owner: Union[str, None] = Body(default=None, description="The ID of the Issue this media file belonged to.")):
+                             owner: Union[str, None] = Body(default=None,
+                                                            description="The ID of the Issue this media file belonged to.")):
     """Delete the media file linked to an issue and remove the reference."""
 
     c_issues.delete_issue_media_file(filename, owner=owner)
@@ -815,7 +753,7 @@ async def get_issue_list():
 
 @app.post("/issue/uploadMedia")
 async def upload_issue_media(files: list[UploadFile] = File()):
-    """Upload a media file and attach it to a specific issue."""
+    """Upload an issue media file."""
 
     filename = None
     for file in files:
@@ -836,12 +774,12 @@ async def delete_maintenance_record(data: dict[str, Any]):
     """Delete the specified maintenance record."""
 
     if "id" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'id' field."}
-    else:
-        file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
-        with c_config.maintenanceLock:
-            response = c_tools.delete_file(file_path)
+        return {"success": False, "reason": "Request missing 'id' field."}
+
+    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
+    with c_config.maintenanceLock:
+        response = c_tools.delete_file(file_path)
+    c_config.last_update_time = time.time()
     return response
 
 
@@ -877,7 +815,7 @@ async def get_maintenance_status(data: dict[str, Any]):
 
 @app.post("/maintenance/updateStatus")
 async def update_maintenance_status(data: dict[str, Any]):
-    """Poll the projector for an update and return it"""
+    """Update the given maintenance status."""
 
     if "id" not in data or "status" not in data or "notes" not in data:
         response = {"success": False,
@@ -894,6 +832,7 @@ async def update_maintenance_status(data: dict[str, Any]):
                 f.write(json.dumps(record) + "\n")
             success = True
             reason = ""
+            c_config.last_update_time = time.time()
         except FileNotFoundError:
             success = False
             reason = f"File path {file_path} does not exist"
@@ -901,23 +840,6 @@ async def update_maintenance_status(data: dict[str, Any]):
             success = False
             reason = f"You do not have write permission for the file {file_path}"
     return {"success": success, "reason": reason}
-
-
-# Projector actions
-
-# @app.post("/projector/getUpdate")
-# async def get_projector_update(projector: ExhibitComponent = Body(embed=True)):
-#     """Poll the projector for an update and return it"""
-#
-#     proj = c_proj.get_projector(projector.id)
-#     if proj is not None:
-#         response_dict = {"success": True,
-#                          "state": proj.state}
-#     else:
-#         response_dict = {"success": False,
-#                          "reason": f"Projector {projector.id} does not exist",
-#                          "status": "DELETE"}
-#     return response_dict
 
 
 @app.post("/projector/queueCommand")
@@ -941,6 +863,7 @@ async def convert_schedule(
         shutil.copy(c_tools.get_path(["schedules", convert_from.lower() + ".json"], user_file=True),
                     c_tools.get_path(["schedules", date + ".json"], user_file=True))
 
+    c_config.last_update_time = time.time()
     # Reload the schedule from disk
     c_sched.retrieve_json_schedule()
 
@@ -978,6 +901,7 @@ async def delete_schedule(name: str = Body(description="The name of the schedule
     with c_config.scheduleLock:
         json_schedule_path = c_tools.get_path(["schedules", name + ".json"], user_file=True)
         os.remove(json_schedule_path)
+    c_config.last_update_time = time.time()
 
     # Reload the schedule from disk
     c_sched.retrieve_json_schedule()
@@ -1140,7 +1064,7 @@ async def handle_ping(data: dict[str, Any], request: Request):
 
     this_id = data['id']
     c_exhibit.update_exhibit_component_status(data, request.client.host)
-
+    print(c_exhibit.get_exhibit_component(this_id).config)
     dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()
     if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
         # Clear the command list now that we are sending
@@ -1150,8 +1074,8 @@ async def handle_ping(data: dict[str, Any], request: Request):
 
 @app.post("/system/{target}/updateConfiguration")
 async def update_configuration(target: str, configuration=Body(
-        description="A JSON object specifying the configuration.",
-        embed=True)):
+    description="A JSON object specifying the configuration.",
+    embed=True)):
     """Write the given object to the matching JSON file as the configuration."""
 
     if target == "system":
@@ -1172,7 +1096,34 @@ async def update_configuration(target: str, configuration=Body(
         elif target == "static":
             c_exhibit.read_static_components_configuration()
 
+    c_config.last_update_time = time.time()
     return {"success": True}
+
+
+@app.get('/system/updateStream')
+async def send_update_stream(request: Request):
+    """Create a server-side event stream to send updates to the client."""
+
+    async def event_generator():
+        last_update_time = None
+        while True:
+            # If client closes connection, stop sending events
+            if await request.is_disconnected():
+                break
+
+            # Checks for new updates and return them to client
+            if c_config.last_update_time != last_update_time:
+                last_update_time = c_config.last_update_time
+
+                yield {
+                        "event": "update",
+                        "id": str(last_update_time),
+                        "retry": 15000,  # milliseconds
+                        "data": json.dumps(send_webpage_update(), default=str)
+                      }
+            await asyncio.sleep(0.5)  # seconds
+
+    return EventSourceResponse(event_generator())
 
 
 @app.post("/")

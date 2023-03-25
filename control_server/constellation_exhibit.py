@@ -1,5 +1,4 @@
 # Standard imports
-import configparser
 import datetime
 import logging
 import shutil
@@ -14,6 +13,7 @@ import requests
 import wakeonlan
 
 # Constellation imports
+import component_helpers
 import config
 import constellation_tools as c_tools
 import projector_control
@@ -39,10 +39,11 @@ class BaseComponent:
 
         self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
 
-        self.config = {"commands": [],
-                       "allowed_actions": [],
+        self.config = {"allowed_actions": [],
+                       "app_name": "",
+                       "commands": [],
                        "description": config.componentDescriptions.get(id_, ""),
-                       "app_name": ""}
+                       }
 
     def __repr__(self):
         return repr(f"[BaseComponent ID: {self.id} Group: {self.group}]")
@@ -76,6 +77,7 @@ class BaseComponent:
     def update_last_contact_datetime(self):
 
         self.last_contact_datetime = datetime.datetime.now()
+        config.last_update_time = time.time()
 
     def poll_latency(self):
         """If we have an IP address, ping the host to measure its latency."""
@@ -117,7 +119,10 @@ class ExhibitComponent(BaseComponent):
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
-        self.lastInteractionDateTime: datetime.datetime = datetime.datetime(2020, 1, 1)
+        self.config["content"] = []
+        self.config["definition"] = ""
+
+        self.status_manager = component_helpers.ComponentStatusManager(category)
 
         if category != "static":
             self.update_configuration()
@@ -139,6 +144,11 @@ class ExhibitComponent(BaseComponent):
     def __repr__(self):
         return repr(f"[ExhibitComponent ID: {self.id} Group: {self.group}]")
 
+    def update_last_contact_datetime(self, interaction: bool = False):
+
+        super().update_last_contact_datetime()
+        self.status_manager.update_last_contact_datetime(interaction=interaction)
+
     def set_helper_address(self, address: str):
         """Set the helper IP address, modifying it first, if necessary"""
 
@@ -150,40 +160,13 @@ class ExhibitComponent(BaseComponent):
 
         self.helperAddress = address
 
-    def seconds_since_last_interaction(self) -> float:
-        """The number of seconds since an interaction was recorded."""
-
-        diff = datetime.datetime.now() - self.lastInteractionDateTime
-        return diff.total_seconds()
-
-    def update_last_interaction_datetime(self):
-
-        self.lastInteractionDateTime = datetime.datetime.now()
-
     def current_status(self) -> str:
         """Return the current status of the component
 
         Options: [OFFLINE, SYSTEM ON, ONLINE, ACTIVE, WAITING, STATIC]
         """
 
-        if self.category == "static":
-            return "STATIC"
-
-        if self.seconds_since_last_contact() < 30:
-            if self.seconds_since_last_interaction() < 10:
-                status = "ACTIVE"
-            else:
-                status = "ONLINE"
-        elif self.seconds_since_last_contact() < 60:
-            status = "WAITING"
-        else:
-            # If we have a measurable latency, the device must be on and connected to the network
-            if self.latency is not None:
-                status = "SYSTEM ON"
-            else:
-                status = "OFFLINE"
-
-        return status
+        return self.status_manager.status
 
     def update_configuration(self):
         """Update the component's configuration based on current exhibit configuration."""
@@ -191,18 +174,28 @@ class ExhibitComponent(BaseComponent):
         if config.exhibit_configuration is None or self.category == 'static':
             return
 
+        update_made = False
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
 
-            if "content" in component_config:
+            if "content" in component_config and self.config["content"] != component_config["content"]:
                 self.config["content"] = component_config["content"]
-            if "app_name" in component_config:
+                update_made = True
+            if "definition" in component_config and self.config["definition"] != component_config["definition"]:
+                self.config["definition"] = component_config["definition"]
+                update_made = True
+            if "app_name" in component_config and self.config["app_name"] != component_config["app_name"]:
                 self.config["app_name"] = component_config["app_name"]
+                update_made = True
         except IndexError:
             # This component is not specified in the current exhibit configuration
             self.config["content"] = []
+            self.config["definition"] = ""
 
         self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]
+
+        if update_made:
+            config.last_update_time = time.time()
 
     def queue_command(self, command: str):
         """Queue a command to be sent to the component on the next ping"""
@@ -289,11 +282,14 @@ class WakeOnLANDevice(BaseComponent):
         if self.ip_address is not None:
             try:
                 ping = icmplib.ping(self.ip_address, privileged=False, count=1)
+                prior_status = self.state["status"]
                 if ping.is_alive:
                     self.state["status"] = "SYSTEM ON"
                     self.last_contact_datetime = datetime.datetime.now()
                 elif self.seconds_since_last_contact() > 60:
                     self.state["status"] = "OFFLINE"
+                if prior_status != self.state["status"]:
+                    config.last_update_time = time.time()
             except icmplib.exceptions.SocketPermissionError:
                 if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
@@ -308,7 +304,13 @@ class WakeOnLANDevice(BaseComponent):
 class Projector(BaseComponent):
     """Holds basic data about a projector."""
 
-    def __init__(self, id_: str, group: str, ip_address: str, connection_type: str, mac_address: str = None, make: str = None,
+    def __init__(self,
+                 id_: str,
+                 group: str,
+                 ip_address: str,
+                 connection_type: str,
+                 mac_address: str = None,
+                 make: str = None,
                  password: str = None):
 
         super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
@@ -357,6 +359,7 @@ class Projector(BaseComponent):
             # print(e)
             error = True
 
+        prior_status = self.state["status"]
         if error and (self.seconds_since_last_contact() > 60):
             self.state = {"status": "OFFLINE"}
         else:
@@ -364,21 +367,23 @@ class Projector(BaseComponent):
                 self.state["status"] = "ONLINE"
             else:
                 self.state["status"] = "STANDBY"
+        if prior_status != self.state["status"]:
+            config.last_update_time = time.time()
 
     def queue_command(self, cmd: str):
-
         """Function to spawn a thread that sends a command to the projector.
 
         Named "queue_command" to match what is used for exhibitComponents
         """
 
         print(f"Queuing command {cmd} for {self.id}")
-        thread_ = threading.Thread(target=self.send_command, args=[cmd], name=f"CommandProjector_{self.id}_{str(time.time())}")
+        thread_ = threading.Thread(target=self.send_command,
+                                   args=[cmd],
+                                   name=f"CommandProjector_{self.id}_{str(time.time())}")
         thread_.daemon = True
         thread_.start()
 
     def send_command(self, cmd: str):
-
         """Connect to a PJLink projector and send a command"""
 
         # Translate commands for projector_control
@@ -411,6 +416,7 @@ def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -
 
     component = ExhibitComponent(this_id, group, category)
     config.componentList.append(component)
+    config.last_update_time = time.time()
 
     return component
 
@@ -469,6 +475,7 @@ def create_new_exhibit(name: str, clone: Union[str, None]):
         # Make a new file
         c_tools.write_json([], new_file)
 
+    config.last_update_time = time.time()
     check_available_exhibits()
 
 
@@ -487,6 +494,7 @@ def delete_exhibit(name: str):
         except FileNotFoundError:
             print(f"Error: Unable to delete exhibit {file_to_delete}. File not found!")
 
+    config.last_update_time = time.time()
     check_available_exhibits()
 
 
@@ -526,30 +534,6 @@ def poll_wake_on_LAN_devices():
     config.polling_thread_dict["poll_wake_on_LAN_devices"].start()
 
 
-def convert_exhibits_ini_to_json(name: str):
-    """Take a legacy INI exhibits file and convert it to JSON"""
-
-    config_parser = configparser.ConfigParser()
-    config_parser.read(name)
-
-    new_config = []
-    for key in config_parser.sections():
-        section = config_parser[key]
-        new_entry = {"id": key.strip()}
-        content = section.get("content", "")
-        new_entry["content"] = [x.strip() for x in content.split(",")]
-        if "app_name" in section:
-            new_entry["app_name"] = section.get("app_name")
-
-        new_config.append(new_entry)
-
-    # Rename the legacy file to save it
-    shutil.move(name, name + '.old')
-
-    # Write the new file
-    c_tools.write_json(new_config, os.path.splitext(name)[0] + '.json')
-
-
 def read_exhibit_configuration(name: str):
     # We want the format of name to be "XXXX.json", but it might be
     # "exhibits/XXXX.json"
@@ -574,12 +558,9 @@ def read_exhibit_configuration(name: str):
         return
 
     exhibit_path = c_tools.get_path(["exhibits", name + ".json"], user_file=True)
-    if os.path.splitext(name)[1].lower() == '.ini':
-        # We have a legacy exhibit file, so convert first
-        convert_exhibits_ini_to_json(exhibit_path)
-
     config.current_exhibit = os.path.splitext(name)[0]
     config.exhibit_configuration = c_tools.load_json(exhibit_path)
+    config.last_update_time = time.time()
 
 
 def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_name: str = ""):
@@ -594,7 +575,7 @@ def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_n
     match_found = False
     for index, component in enumerate(exhibit_config):
         if component["id"] == this_id:
-            exhibit_config[index] |= update  # Use new dict merge operator
+            exhibit_config[index] |= update
             match_found = True
     if not match_found:
         exhibit_config.append({"id": this_id} | update)
@@ -642,7 +623,7 @@ def update_synchronization_list(this_id: str, other_ids: list[str]):
             config.synchronizationList.pop(match_index)
 
 
-def update_exhibit_component_status(data, ip: str):
+def update_exhibit_component_status(data: dict[str, Any], ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
     this_id = data["id"]
@@ -659,17 +640,14 @@ def update_exhibit_component_status(data, ip: str):
     if "helperAddress" in data:
         component.set_helper_address(data["helperAddress"])
 
-    component.update_last_contact_datetime()
+    component.update_last_contact_datetime(interaction=data.get("currentInteraction", False))
+
     if "AnyDeskID" in data:
         component.config["AnyDeskID"] = data["AnyDeskID"]
     if "autoplay_audio" in data:
         component.config["autoplay_audio"] = data["autoplay_audio"]
     if "imageDuration" in data:
         component.config["image_duration"] = data["imageDuration"]
-    if "currentInteraction" in data:
-        if data["currentInteraction"] is True or \
-                (isinstance(data["currentInteraction"], str) and data["currentInteraction"].lower() == "true"):
-            component.update_last_interaction_datetime()
     if "allowed_actions" in data:
         allowed_actions = data["allowed_actions"]
         for key in allowed_actions:
@@ -690,80 +668,6 @@ def update_exhibit_component_status(data, ip: str):
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])
-
-
-def convert_descriptions_config_to_json(old_config: dict[str: str]):
-    """Take a dictionary from the legacy INI format of specifying component descriptions and convert it to JSON."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "descriptions.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-        if key in [entry['id'] for entry in new_config]:
-            # Assume the new config is more up to date than this legacy file
-            continue
-
-        new_entry = {"id": key,
-                     "description": old_config[key]}
-        new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
-
-
-def convert_static_config_to_json(old_config: dict[str: str]):
-    """Take a dictionary from the legacy INI method of specifying static components and convert it to JSON."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "static.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-
-        # Components are specified in the form 'GROUP = ID1, ID2, ID3'
-        split = old_config[key].split(',')
-        for entry in split:
-            new_entry = {"id": entry.strip(),
-                         "group": key.strip()}
-            new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
-
-
-def convert_wake_on_LAN_to_json(old_config: dict[str: str]):
-    """Take a configparser object from reading galleryConfiguration.ini and use it to create a JSON config file."""
-
-    # Try to load the existing configuration
-    config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
-    new_config = c_tools.load_json(config_path)
-    if new_config is None:
-        new_config = []
-
-    for key in old_config:
-        if key in [entry['id'] for entry in new_config]:
-            # Assume the new config is more up to date than this legacy file
-            continue
-
-        new_entry = {'id': key.strip()}
-        split = old_config[key].split(",")
-        error = False
-        if len(split) == 1:
-            new_entry["mac_address"] = old_config[key].strip()
-        elif len(split) == 2:
-            new_entry["mac_address"] = split[0].strip()
-            new_entry["ip_address"] = split[1].strip()
-        else:
-            error = True
-            print(f"constellation_exhibit.convert_wake_on_LAN_to_json: error parsing line {key} = {old_config[key]}")
-
-        if not error:
-            new_config.append(new_entry)
-
-    c_tools.write_json(new_config, config_path)
 
 
 def read_descriptions_configuration():
@@ -826,5 +730,3 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.DEBUG)
-
-

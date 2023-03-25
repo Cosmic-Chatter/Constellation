@@ -33,9 +33,11 @@ software_update: dict[str, Any] = {
     "current_version": str(HELPER_SOFTWARE_VERSION),
     "available_version": str(HELPER_SOFTWARE_VERSION)
 }
+debug: bool = True
 # If we are serving the HTML file from over the network, this will be set
 # to True. If the HTML file has been loaded locally, it will stay False
 HELPING_REMOTE_CLIENT: bool = False
+
 # Threading resources
 defaults_file_lock: threading.Lock = threading.Lock()
 content_file_lock: threading.Lock = threading.Lock()

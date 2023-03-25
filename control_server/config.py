@@ -1,7 +1,6 @@
 """Defines configuration variables that can be shared across classes, etc."""
 
 # Standard imports
-import configparser
 import datetime
 import threading
 from typing import Any, Union
@@ -15,6 +14,7 @@ debug: bool = False  # True means print various debug info
 gallery_name: str = "Constellation"
 port: int = 8000
 ip_address: str = "localhost"
+last_update_time: float = 0  # Will hold time.time() of last change to the server
 
 software_version: float = 3.0
 software_update_available: bool = False
@@ -57,7 +57,7 @@ serverRebootTime = None
 rebooting: bool = False  # This will be set to True from a background thread when it is time to reboot
 
 # Exhibit stuff
-current_exhibit: Union[str, None] = None  # The INI file defining the current exhibit "name.exhibit"
-exhibit_configuration: Union[list[dict[str, Any]], None] = None  # The configParser object holding the current config
+current_exhibit: Union[str, None] = None  # The JSON file defining the current exhibit "name.json"
+exhibit_configuration: Union[list[dict[str, Any]], None] = None
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []

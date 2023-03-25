@@ -216,7 +216,10 @@
                   <!-- Tab buttons -->
                   <ul class="nav nav-tabs" id="componentInfoModalTabList" role="tablist">
                     <li class="nav-item">
-                      <a class="nav-link active px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="true">Content</a>
+                      <a class="nav-link active px-3 px-sm-4" id="componentInfoModalDefinitionsTabButton" data-toggle="tab" href="#componentInfoModalDefinitionsTab" role="tab" aria-controls="Definitions" aria-selected="true">Definitions</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="false">Content</a>
                     </li>
                     <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
@@ -231,7 +234,17 @@
 
                   <div class="tab-content" id="componentInfoModalTabContainer">
                     <!-- Content pane -->
-                    <div class="tab-pane fade show active" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
+                    <div class="tab-pane fade show active" id="componentInfoModalDefinitionsTab" role="tabpanel" aria-labelledby="componentInfoModalDefinitionsTabButton">
+                      <div id="componentInfoModalDefinitionList" class="row mx-1">
+                      </div>
+                      <div class="row mx-1 mt-2">
+                        <div class="col-12 px-2">
+                          <button id='componentInfoModalDefinitionSaveButton' class='btn btn-primary'>Save changes</button>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Content pane -->
+                    <div class="tab-pane fade" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
                       <div class="row mt-3" id="componentInfoConnectingNotice">
                         <div class='col-8 offset-2'>
                           <center>
@@ -374,6 +387,7 @@
                             <option value="media_browser">Media Browser</option>
                             <option value="media_player">Media Player</option>
                             <option value="timelapse_viewer">Timelapse Viewer</option>
+                            <option value="timeline_explorer">Timeline Explorer</option>
                             <option value="voting_kiosk">Voting Kiosk</option>
                             <option value="word_cloud_input">Word Cloud Input</option>
                             <option value="word_cloud_viewer">Word Cloud Viewer</option>

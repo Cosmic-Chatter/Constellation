@@ -1,6 +1,7 @@
 # Standard imports
 import datetime
 import json
+import time
 from typing import Union
 
 import dateutil
@@ -20,7 +21,6 @@ def retrieve_json_schedule():
     with config.scheduleLock:
         config.scheduleUpdateTime = (datetime.datetime.now() - datetime.datetime.utcfromtimestamp(0)).total_seconds()
         config.json_schedule_list = []
-        # config.scheduleList = []  # Each entry is a dict for a day, in calendar order
 
         today = datetime.datetime.today().date()
         upcoming_days = [today + datetime.timedelta(days=x) for x in range(21)]
@@ -78,7 +78,7 @@ def write_json_schedule(schedule_name: str, schedule: dict) -> bool:
     with config.scheduleLock:
         try:
             with open(schedule_path, "w", encoding="UTF-8") as f:
-                json.dump(schedule, f)
+                json.dump(schedule, f, indent=2, sort_keys=True)
             return True
         except PermissionError:
             print(f"update_json_schedule: cannot open file {schedule_path} for writing. Do you have write permission?")
@@ -108,6 +108,7 @@ def update_json_schedule(schedule_name: str, updates: dict) -> dict:
         schedule[key] = update
 
     write_json_schedule(schedule_name, schedule)
+    config.last_update_time = time.time()
     return schedule
 
 
@@ -118,6 +119,7 @@ def delete_json_schedule_event(schedule_name: str, schedule_id: str) -> dict:
 
     if schedule_id in schedule:
         del schedule[schedule_id]
+        config.last_update_time = time.time()
 
     write_json_schedule(schedule_name, schedule)
     return schedule
@@ -143,7 +145,9 @@ def queue_json_schedule(schedule: dict) -> None:
                 config.json_next_event.append(event)
 
             # print("scheduling timer: ", event)
-            timer = threading.Timer(seconds_from_now, execute_scheduled_action, args=(event["action"], event["target"], event["value"]))
+            timer = threading.Timer(seconds_from_now,
+                                    execute_scheduled_action,
+                                    args=(event["action"], event["target"], event["value"]))
             timer.daemon = True
             timer.start()
             new_timers.append(timer)
@@ -175,6 +179,7 @@ def queue_json_schedule(schedule: dict) -> None:
 def execute_scheduled_action(action: str, target: Union[str, None], value: Union[list, str, None]):
     """Dispatch the appropriate action when called by a schedule timer"""
 
+    config.last_update_time = time.time()
     if action == 'set_app' and target is not None and value is not None:
         if isinstance(value, str):
             value = [value]

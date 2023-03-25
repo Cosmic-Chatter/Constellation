@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from typing import Any
+import uuid
 
 # Third-party modules
 import aiofiles
@@ -29,7 +30,6 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.INFO)
-
 
 const_config.exec_path = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
@@ -63,6 +63,9 @@ app.mount("/media_player",
 app.mount("/timelapse_viewer",
           StaticFiles(directory=helper_files.get_path(["timelapse_viewer"])),
           name="timelapse_viewer")
+app.mount("/timeline_explorer",
+          StaticFiles(directory=helper_files.get_path(["timeline_explorer"])),
+          name="timeline_explorer")
 app.mount("/voting_kiosk",
           StaticFiles(directory=helper_files.get_path(["voting_kiosk"])),
           name="voting_kiosk")
@@ -120,7 +123,7 @@ async def root():
 @app.get("/{file_name}.html", response_class=HTMLResponse)
 async def serve_html(file_name):
     # First try a local file and then a Constellation file
-    file_path = helper_files.get_path([file_name+".html"], user_file=True)
+    file_path = helper_files.get_path([file_name + ".html"], user_file=True)
     if not os.path.isfile(file_path):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
     with open(file_path, "r", encoding='UTF-8') as f:
@@ -146,12 +149,41 @@ async def get_available_content(config: const_config = Depends(get_config)):
     else:
         active_content = ""
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
+                "definitions": helper_files.get_available_definitions(),
                 "thumbnails": helper_files.get_directory_contents("thumbnails"),
                 "active_content": active_content,
                 "system_stats": helper_utilities.get_system_stats(),
                 "multiple_file_upload": True}
 
     return response
+
+
+@app.get("/definitions/{app_id}/getAvailable")
+async def get_available_definitions(app_id: str):
+    """Return a list of all the definitions for the given app."""
+
+    return {"success": True, "definitions": helper_files.get_available_definitions(app_id)}
+
+
+@app.get("/definitions/{this_uuid}/delete")
+async def delete_definition(this_uuid: str):
+    """Delete the given definition."""
+
+    path = helper_files.get_path(["definitions", helper_files.with_extension(this_uuid, "json")], user_file=True)
+    helper_files.delete_file(path)
+
+    return {"success": True}
+
+
+@app.get("/definitions/{this_uuid}/load")
+async def load_definition(this_uuid: str):
+    """Load the given definition and return the JSON."""
+
+    path = helper_files.get_path(["definitions", helper_files.with_extension(this_uuid, "json")], user_file=True)
+    definition = helper_files.load_json(path)
+    if definition is None:
+        return {"success": False, "reason": f"The definition {this_uuid} does not exist."}
+    return {"success": True, "definition": definition}
 
 
 @app.get("/getClipList")
@@ -170,7 +202,6 @@ async def send_clip_list(config: const_config = Depends(get_config)):
 
 @app.get("/getDefaults")
 async def send_defaults(config: const_config = Depends(get_config)):
-
     config_to_send = config.defaults_dict.copy()
     if "allow_restart" not in config_to_send:
         config_to_send["allow_restart"] = "true"
@@ -201,6 +232,13 @@ async def send_defaults(config: const_config = Depends(get_config)):
     return config_to_send
 
 
+@app.get('/uuid/new')
+async def get_new_uuid():
+    """Return a new uuid."""
+
+    return {"success": True, "uuid": str(uuid.uuid4())}
+
+
 @app.get("/getUpdate")
 async def send_update(config: const_config = Depends(get_config)):
     """Get some key info for updating the component and web console."""
@@ -213,7 +251,7 @@ async def send_update(config: const_config = Depends(get_config)):
         "anydesk_id": config.defaults_dict.get("anydesk_id", ""),
         "autoplay_audio": config.defaults_dict.get("autoplay_audio", "false"),
         "commands": config.commandList,
-        "image_duration":  config.defaults_dict.get("image_duration", "10"),
+        "image_duration": config.defaults_dict.get("image_duration", "10"),
         "missingContentWarnings": config.missingContentWarningList
     }
     return response_dict
@@ -221,27 +259,23 @@ async def send_update(config: const_config = Depends(get_config)):
 
 @app.get("/restart")
 async def do_restart():
-
     helper_system.reboot()
 
 
 @app.get("/sleepDisplay")
 async def do_sleep():
-
     helper_system.sleep_display()
 
 
 @app.get("/shutdown")
 @app.get("/powerOff")
 async def do_shutdown():
-
     helper_system.shutdown()
 
 
 @app.get("/powerOn")
 @app.get("/wakeDisplay")
 async def do_wake():
-
     helper_system.wake_display()
 
 
@@ -253,6 +287,20 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
         raise HTTPException(status_code=400, detail="Must include field 'action'")
     else:
         print("Legacy Constellation command received: ", data)
+
+
+@app.post("/definitions/write")
+async def write_definition(definition: dict[str, Any] = Body(description="The JSON dictionary to write.", embed=True)):
+    """Save the given JSON data to a definition file in the content directory."""
+
+    if "uuid" not in definition or definition["uuid"] == "":
+        # Add a unique identifier
+        definition["uuid"] = str(uuid.uuid4())
+    path = helper_files.get_path(["definitions",
+                                 helper_files.with_extension(definition["uuid"], ".json")],
+                                 user_file=True)
+    helper_files.write_json(definition, path)
+    return {"success": True, "uuid": definition["uuid"]}
 
 
 @app.post("/deleteFile")
@@ -328,7 +376,8 @@ async def upload_content(files: list[UploadFile] = File(),
                 await out_file.write(content)  # async write
         mimetype = mimetypes.guess_type(file_path, strict=False)[0]
         if mimetype is not None:
-            th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]), daemon=True)
+            th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]),
+                                  daemon=True)
             th.start()
     return {"success": True}
 
@@ -356,6 +405,7 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
 
     return {"success": True}
 
+
 if __name__ == "__main__":
     # Check for missing content thumbnails and create them
     helper_files.create_missing_thumbnails()
@@ -366,7 +416,8 @@ if __name__ == "__main__":
     # Activate Smart Restart
     helper_system.smart_restart_check()
 
-    print(f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
+    print(
+        f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
