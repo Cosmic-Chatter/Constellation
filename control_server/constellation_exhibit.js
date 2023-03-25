@@ -848,7 +848,7 @@ function populateProjectorInfo (id) {
   }
 }
 
-function convertAppIDtoDisplayName (appName) {
+export function convertAppIDtoDisplayName (appName) {
   // Convert app names to their display text
 
   let displayName = 'Unknown Component'

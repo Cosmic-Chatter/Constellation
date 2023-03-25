@@ -578,15 +578,15 @@
                   </button>
                 </div>
                 <div class="modal-body">
-                  <div id="scheduleEditScopeAlert" class="alert bg-info text-light">This change will affect all Wednesdays</div>
+                  <div id="scheduleEditScopeAlert" class="alert bg-info text-dark">This change will affect all Wednesdays</div>
                   <form id="scheduleEditForm" onsubmit="event.preventDefault();">
                     <div class="form-group">
                       <div class="row">
-                        <div class="col-4">
+                        <div class="col-6 col-md-4">
                           <label for="scheduleActionTimeInput">Time</label>
                           <input type="text" class="form-control" id="scheduleActionTimeInput" placeholder="e.g., 9:30 AM">
                         </div>
-                        <div class="col-4">
+                        <div class="col-6 col-md-4">
                           <label for="scheduleActionSelector">Action</label>
                           <select class="form-control" id="scheduleActionSelector">
                             <option value="power_on">Power on</option>
@@ -595,15 +595,16 @@
                             <option value="restart">Restart components</option>
                             <option value="set_app">Set app</option>
                             <option value="set_content">Set content</option>
+                            <option value="set_definition">Set defintion</option>
                             <option value="set_exhibit">Set exhibit</option>
                           </select>
                         </div>
-                        <div class="col-4">
+                        <div class="col-6 col-md-4">
                           <label id="scheduleTargetSelectorLabel" for="scheduleTargetSelector">Target</label>
                           <select class="form-control" id="scheduleTargetSelector">
                           </select>
                         </div>
-                        <div class="col-4">
+                        <div class="col-6">
                           <label id="scheduleValueSelectorLabel" for="scheduleValueSelector">Value</label>
                           <select multiple class="form-control" id="scheduleValueSelector">
                           </select>
