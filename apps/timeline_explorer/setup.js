@@ -64,6 +64,7 @@ function clearDefinitionInput (full = true) {
   $('#definitionNameInput').val('')
   $('#languageNav').empty()
   $('#languageNavContent').empty()
+  document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Reset style options
   const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
@@ -584,6 +585,68 @@ function onSpreadsheetFileChange () {
     })
 }
 
+function checkContentExists () {
+  // Cross-check content from the spreadsheet with files in the content directory.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+  const imageKeys = []
+
+  const checkContentButton = document.getElementById('checkContentButton')
+  checkContentButton.setAttribute('disabled', true)
+  checkContentButton.innerHTML = 'Checking...'
+
+  // Loop through the defintion and collect any unique image keys
+  Object.keys(workingDefinition.languages).forEach((lang) => {
+    if (imageKeys.includes(workingDefinition.languages[lang].image_key) === false) {
+      imageKeys.push(workingDefinition.languages[lang].image_key)
+    }
+  })
+
+  // Get a list of available content
+  let availableContent
+  const missingContent = []
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  })
+    .then((result) => {
+      console.log(result)
+      availableContent = result.all_exhibits
+      // Retrieve the spreadsheet and check the content for each image key against the available content
+      constCommon.makeHelperRequest({
+        method: 'GET',
+        endpoint: '/content/' + workingDefinition.spreadsheet,
+        rawResponse: true
+      })
+        .then((raw) => {
+          const spreadsheet = constCommon.csvToJSON(raw)
+          spreadsheet.forEach((row) => {
+            imageKeys.forEach((key) => {
+              if (row[key].trim() === '') return
+              if (availableContent.includes(row[key]) === false) missingContent.push(row[key])
+            })
+          })
+          const missingContentField = document.getElementById('missingContentWarningField')
+          if (missingContent.length === 0) {
+            missingContentField.classList.add('text-success')
+            missingContentField.classList.remove('text-danger')
+            missingContentField.innerHTML = 'No missing content!'
+          } else {
+            missingContentField.classList.add('text-danger')
+            missingContentField.classList.remove('text-success')
+            let html = '<b>Missing content found:</b><ul>'
+            missingContent.forEach((file) => {
+              html += '<li>' + file + '</li>'
+            })
+            html += '</ul>'
+            missingContentField.innerHTML = html
+          }
+          checkContentButton.removeAttribute('disabled')
+          checkContentButton.innerHTML = 'Check content'
+        })
+    })
+}
+
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
@@ -766,10 +829,13 @@ $('#previewRefreshButton').click(() => {
   previewDefinition()
 })
 document.getElementById('previewRotateButton').addEventListener('click', () => {
-  console.log('here')
   rotatePreview()
 })
 $('#languageAddButton').click(addLanguage)
+document.getElementById('manageContentButton').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ manage: true })
+})
+document.getElementById('checkContentButton').addEventListener('click', checkContentExists)
 
 // Definition delete popover button
 const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
@@ -835,10 +901,16 @@ $('.font-select').change(function () {
   previewDefinition(true)
 })
 
+// Set color mode
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelector('html').setAttribute('data-bs-theme', 'dark')
+} else {
+  document.querySelector('html').setAttribute('data-bs-theme', 'light')
+}
+
 // Preview frame
 window.addEventListener('load', resizePreview)
 window.addEventListener('resize', resizePreview)
 
-// populateSpreadsheetSelect()
 populateFontSelects()
 clearDefinitionInput()

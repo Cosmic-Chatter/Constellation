@@ -6,6 +6,7 @@ export function createFileSelectionModal (userOptions) {
 
   let options = {
     filetypes: [], // List of file types to allow ([] for all)
+    manage: false, // Allow uploading, deleting, and renaming, but not selecting
     multiple: true // Select multiple files?
   }
 
@@ -37,7 +38,7 @@ export function createFileSelectionModal (userOptions) {
               </div>
             </div>
             <div class="row flex-column-reverse flex-lg-row">
-            <div class="col-12 col-lg-8" style="height: 55vh; overflow-y: auto;">
+            <div class="col-12 col-lg-8" style="max-height: 55vh; overflow-y: auto;">
               <div id="constFileSelectModalFileList"  class='row'></div>
             </div>
             <div id="constFileSelectModalFilePreview" class="col-12 col-lg-4 mb-3">
@@ -78,19 +79,19 @@ export function createFileSelectionModal (userOptions) {
           </div>
           <div class="modal-footer">
             <div class='row w-100 px-0'>
-              <div class='col-9 ps-0'>
+              <div class='col-12 col-lg-9 ps-0'>
                 <div id="constFileSelectModalUploadInterface" class="form-group">
                   <div class="row align-middle d-flex">
-                    <div class="col-4">
+                    <div class="col-6 col-md-4">
                       <label class="btn btn-outline-secondary w-100">
                         <span id="constFileSelectModalUploadfilename" style="overflow-wrap: break-word!important;">Upload new</span>
                         <input hidden type="file" class="form-control-file" id="constFileSelectModalUpload" multiple>
                       </label>
                     </div>
-                    <div id="constFileSelectModalUploadSubmitCol" class="col-2">
+                    <div id="constFileSelectModalUploadSubmitCol" class="col-6 col-md-3 col-lg-2">
                       <button id="constFileSelectModalUploadSubmitButton" class='btn w-100 btn-outline-primary'>Upload</button>
                     </div>
-                    <div class='col-8 my-auto' id='constFileSelectModalUploadProgressBarContainer'>
+                    <div class='col-12 col-md-5 col-lg-6 my-auto' id='constFileSelectModalUploadProgressBarContainer'>
                       <div class="progress" style="height: 25px;">
                         <div id='constFileSelectModalUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                       </div>
@@ -99,7 +100,7 @@ export function createFileSelectionModal (userOptions) {
                   </div>
                 </div>
               </div>
-              <div class='col-3 justify-content-end d-flex pe-0'>
+              <div class='col-12 col-lg-3 justify-content-end d-flex pe-0'>
                 <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">Close</button>
                 <button id="constFileSelectModalChooseButton" type="button" class="btn btn-primary">Choose</button>
               </div>
@@ -126,6 +127,16 @@ export function createFileSelectionModal (userOptions) {
     document.getElementById('constFileSelectModalUploadSubmitButton').addEventListener('click', () => {
       uploadFile(options)
     })
+    if (options.filetypes.length > 0) {
+      // Need to configure the accept= property to limit which file types can be uploaded.
+
+      let acceptStr = ''
+      options.filetypes.forEach((type) => {
+        if (type === 'image' || type === 'video') acceptStr += type + '/*, '
+        else acceptStr += '.' + type + ', '
+      })
+      document.getElementById('constFileSelectModalUpload').setAttribute('accept', acceptStr)
+    }
 
     // File rename
     document.getElementById('constFileSelectModalFilePreviewEditContainer').style.display = 'none'
@@ -167,9 +178,13 @@ export function createFileSelectionModal (userOptions) {
     { once: true })
 
     const title = document.getElementById('constFileSelectModalTitle')
-    if (options.multiple) {
+    if (options.manage === true) {
+      title.innerHTML = 'Manage files'
+    } else if (options.multiple === true) {
       title.innerHTML = 'Select files'
-    } else title.innerHTML = 'Select file'
+    } else if (options.multiple === false) {
+      title.innerHTML = 'Select file'
+    }
 
     // File upload
     document.getElementById('constFileSelectModalUploadSubmitCol').style.display = 'none'
@@ -178,6 +193,13 @@ export function createFileSelectionModal (userOptions) {
 
     populateComponentContent(options)
       .then(() => {
+        // Configure manage vs select
+        if (options.manage === true) {
+          document.getElementById('constFileSelectModalChooseButton').style.display = 'none'
+          Array.from(document.querySelectorAll('.const-file-select-col')).forEach((el) => {
+            el.style.display = 'none'
+          })
+        }
         new bootstrap.Modal(modal).show()
       })
   })
@@ -229,15 +251,21 @@ function _populateComponentContent (fileDict, options) {
     const entry = document.createElement('div')
     entry.classList = 'col-12 row py-2 ps-4 const-file-entry'
     entry.innerHTML = `
-      <div class='col-1 my-auto px-0' style="cursor: pointer;">
+      <div class='col-1 my-auto px-0 const-file-select-col' style="cursor: pointer;">
         <center>
-          <div class='border border-light text-center const-file-select-box' style="width: 30px; height: 30px;"></div>
+          <div class='border text-center const-file-select-box' style="width: 30px; height: 30px;"></div>
         </center>
       </div>
       <div class='col-3 ps-1 const-file-thumb-container'></div>
       <div class='col-8 my-auto const-file-name'></div>
     `
     fileRow.appendChild(entry)
+
+    // Set color based on whether dark mode is enabled
+    const mode = document.querySelector('html').getAttribute('data-bs-theme')
+    const box = entry.querySelector('.const-file-select-box')
+    if (mode === 'dark') box.classList.add('border-light')
+    else box.classList.add('border-dark')
 
     entry.setAttribute('data-filename', file)
 
@@ -278,7 +306,7 @@ function _populateComponentContent (fileDict, options) {
     } else {
       // Not an image or video, or we don't have a thumbnail
       thumb = document.createElement('img')
-      thumb.src = constCommon.config.helperAddress + '/_static/icons/document_white.svg'
+      thumb.src = constCommon.config.helperAddress + getDefaultDocumentImage()
     }
     thumbContainer.appendChild(thumb)
     thumb.style.width = '100%'
@@ -326,8 +354,16 @@ function previewFile (file, thumbnailList) {
     // We have something other than an image or video, or we are missing a thumbnail
     img.style.display = 'block'
     vid.style.display = 'none'
-    img.src = constCommon.config.helperAddress + '/_static/icons/document_white.svg'
+    img.src = constCommon.config.helperAddress + getDefaultDocumentImage()
   }
+}
+
+function getDefaultDocumentImage () {
+  // Return the approriate thumbnail based on whether dark mode is enabled.
+
+  const mode = document.querySelector('html').getAttribute('data-bs-theme')
+  if (mode === 'dark') return '/_static/icons/document_white.svg'
+  else if (mode === 'light') return '/_static/icons/document_black.svg'
 }
 
 function selectFile (event, allowMultiple) {

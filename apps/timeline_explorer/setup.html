@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
@@ -132,9 +132,16 @@
 
             <div class="col-12 mt-2">
               <h3>Content</h3>
-              <i>For each language you suppot, you need to match columns in your spreadsheet to properties of the timeline.</i>
-              <div class="row">
-                <H5>Add a langauge</H5>
+              <div class="row gy-2 align-items-center">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <button id="manageContentButton" class="btn btn-primary w-100">Manage content</button>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <button id="checkContentButton" class="btn btn-info w-100">Check content</button>
+                </div>
+                <div id="missingContentWarningField" class="col-12"></div>
+                <H5 class="mt-2">Add a langauge</H5>
+                <i>For each language you suppot, you need to match columns in your spreadsheet to properties of the timeline.</i>
                 <div class="col-12 col-md-6 col-lg-4">
                   <label for="languageNameInput" class="form-label">Display name</label>
                   <input type="text" placeholder="English" class="form-control" id="languageNameInput">

@@ -296,7 +296,6 @@ async def write_definition(definition: dict[str, Any] = Body(description="The JS
     if "uuid" not in definition or definition["uuid"] == "":
         # Add a unique identifier
         definition["uuid"] = str(uuid.uuid4())
-    print(definition)
     path = helper_files.get_path(["definitions",
                                  helper_files.with_extension(definition["uuid"], ".json")],
                                  user_file=True)

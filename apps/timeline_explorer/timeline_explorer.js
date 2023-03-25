@@ -334,4 +334,4 @@ if (searchParams.has('standalone')) {
 adjustFontSize(-100) // Make sure the font modifier is at 1 to start
 hideAttractor()
 // Hide the cursor
-// document.body.style.cursor = 'none'
+document.body.style.cursor = 'none'
