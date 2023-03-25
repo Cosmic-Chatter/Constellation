@@ -17,7 +17,7 @@ export const config = {
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 3.0,
+  softwareVersion: 3.1,
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
