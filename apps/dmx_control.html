@@ -185,7 +185,7 @@
                       <p>Each fixture may be in multiple groups. Once you have a group, you can create a <i>scene</i>, which stores a set of values to be used at a later time.</p>
                   </span>
                     <center>
-                      <button class="btn btn-primary">Create group</button>
+                      <button id="createNewGroupFromWarningButton" class="btn btn-primary">Create group</button>
                     </center>
                   </div>
                 </div>
@@ -201,6 +201,13 @@
                   <h4 id="editGroupModalTitle" class="modal-title">Edit Group</h4>
                 </div>
                 <div class="modal-body">
+                  <div class="row">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" for="editGroupNameInput">Group name</label>
+                      <input type="text" id="editGroupNameInput" class="form-control">
+                    </div>
+                  </div>
+                  <label class="form-label mt-2">Fixtures to include</label>
                   <div id="editGroupFixtureRow" class="row"></div>
                 </div>
                 <div class="modal-footer">

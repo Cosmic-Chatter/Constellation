@@ -429,7 +429,7 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
 async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
     """Remove the given DMX fixture from its universe and any groups"""
 
-    helper_dmx.get_fixture(uuid=fixture_uuid).delete()
+    helper_dmx.get_fixture(fixture_uuid).delete()
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}
@@ -442,7 +442,7 @@ async def set_dmx_fixture_to_brightness(fixture_uuid: str,
                                                          default=0)):
     """Set the given fixture to the specified brightness."""
 
-    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_brightness(value, duration)
     return {"success": True, "configuration": fixture.get_dict()}
 
@@ -457,7 +457,7 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
                                                    default=0)):
     """Set the given channel of the given fixture to the given value."""
 
-    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_channel(channel_name, value)
     return {"success": True, "configuration": fixture.get_dict()}
 
@@ -470,33 +470,90 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
                                                     default=0)):
     """Set the given fixture to the specified color."""
 
-    fixture = helper_dmx.get_fixture(uuid=fixture_uuid)
+    fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_color(color, duration)
     return {"success": True, "configuration": fixture.get_dict()}
 
 
-@app.post("/DMX/group/{group_name}/createScene")
-async def create_dmx_scene(group_name: str,
+@app.post("/DMX/group/create")
+async def create_dmx_group(name: str = Body(description="The name of the group to create."),
+                           fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
+    
+    new_group = helper_dmx.create_group(name)
+
+    fixtures = []
+    for uuid in fixture_list:
+        fixtures.append(helper_dmx.get_fixture(uuid))
+    new_group.add_fixtures(fixtures)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "uuid": new_group.uuid}
+
+
+@app.post("/DMX/group/{group_uuid}/edit")
+async def edit_dmx_group(group_uuid: str,
+                         name: str = Body(description="The new name for the group", default=""),
+                         fixture_list: list[str] = Body(description="A list of UUIDs for fixtures that should be included.", default=[])):
+    
+    group = helper_dmx.get_group(group_uuid)
+    
+    if group is None:
+        return {"success": False, "reason": f"Group {group_uuid} does not exist."}
+    
+    if name != "":
+        group.name = name
+    
+    if len(fixture_list) > 0:
+        # First, remove any fixtures that are in the group, but not in fixture_list
+        for uuid in group.fixtures.copy():
+            if uuid not in fixture_list:
+                group.remove_fixture(uuid)
+        
+        # Then, loop through fixture_list and add any that are not included in the group
+        fixtures_to_add = []
+        for uuid in fixture_list:
+            if uuid not in group.fixtures:
+                fixture = helper_dmx.get_fixture(uuid)
+                if fixture is not None:
+                    fixtures_to_add.append(fixture)
+
+        if len(fixtures_to_add) > 0:
+            group.add_fixtures(fixtures_to_add)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True}
+
+
+@app.get("/DMX/group/{group_uuid}/delete")
+async def delete_dmx_group(group_uuid: str):
+
+    helper_dmx.get_group(group_uuid).delete()
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
+@app.post("/DMX/group/{group_uuid}/createScene")
+async def create_dmx_scene(group_uuid: str,
                      name: str = Body(description="The name of the scene."),
                      values: dict = Body(description="A dictionary of values for the scene."),
                      duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Create the given scene for the specified group."""
 
-    group = helper_dmx.get_group(group_name)
+    group = helper_dmx.get_group(group_uuid)
     uuid_str = group.create_scene(name, values, duration=duration)
     helper_dmx.write_dmx_configuration()
     return {"success": True, "uuid": uuid_str}
 
 
-@app.post("/DMX/group/{group_name}/editScene")
-async def create_dmx_scene(group_name: str,
+@app.post("/DMX/group/{group_uuid}/editScene")
+async def create_dmx_scene(group_uuid: str,
                      uuid: str = Body(description="The UUID of the scene to edit."),
                      name: str = Body(description="The name of the scene."),
                      values: dict = Body(description="A dictionary of values for the scene."),
                      duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Edit the given scene for the specified group."""
 
-    group = helper_dmx.get_group(group_name)
+    group = helper_dmx.get_group(group_uuid)
     
     scene = group.get_scene(uuid_str=uuid)
 
@@ -508,60 +565,55 @@ async def create_dmx_scene(group_name: str,
     return {"success": True}
 
 
-@app.post("/DMX/group/{group_name}/deleteScene")
-async def create_dmx_scene(group_name: str,
+@app.post("/DMX/group/{group_uuid}/deleteScene")
+async def create_dmx_scene(group_uuid: str,
                      uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
     """Delete the given scene for the specified group."""
 
-    group = helper_dmx.get_group(group_name)
+    group = helper_dmx.get_group(group_uuid)
     group.delete_scene(uuid)
 
     helper_dmx.write_dmx_configuration()
     return {"success": True}
 
 
-@app.post("/DMX/group/{group_name}/setBrightness")
-async def set_dmx_fixture_to_brightness(group_name: str,
+@app.post("/DMX/group/{group_uuid}/setBrightness")
+async def set_dmx_fixture_to_brightness(group_uuid: str,
                                   value: int = Body(
                                       description="The brightness to be set."),
                                   duration: float = Body(description="How long the brightness transition should take.",
                                                          default=0)):
     """Set the given group to the specified brightness."""
 
-    group = helper_dmx.get_group(group_name)
+    group = helper_dmx.get_group(group_uuid)
     group.set_brightness(value, duration)
     return {"success": True, "configuration": group.get_dict()}
 
 
-@app.post("/DMX/group/{group_name}/setColor")
-async def set_dmx_group_to_color(group_name: str,
+@app.post("/DMX/group/{group_uuid}/setColor")
+async def set_dmx_group_to_color(group_uuid: str,
                            color: list = Body(
                                description="The color to be set."),
                            duration: float = Body(description="How long the color transition should take.",
                                                   default=0)):
     """Set the given group to the specified color."""
 
-    group = helper_dmx.get_group(group_name)
+    group = helper_dmx.get_group(group_uuid)
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
 
 
-@app.post("/DMX/group/{group_name}/showScene")
-async def set_dmx_group_scene(group_name: str,
-                        name: str = Body(
-                            description="The name of the scene to be run.",
-                            default=""),
-                        uuid: str = Body(
-                            description="The UUID of the scene to be run.",
-                            default="")
-                        ):
+@app.post("/DMX/group/{group_uuid}/showScene")
+async def set_dmx_group_scene(group_uuid: str,
+                              uuid: str = Body(
+                                  description="The UUID of the scene to be run.",
+                                  default="",
+                                  embed=True)
+                              ):
     """Run a scene for the given group."""
 
-    if name == "" and uuid == "":
-        return {"success": False, "reason": "Must pass a value for either uuid or name."}
-
-    group = helper_dmx.get_group(group_name)
-    group.show_scene(name=name, uuid_str=uuid)
+    group = helper_dmx.get_group(group_uuid)
+    group.show_scene(uuid)
 
     return {"success": True, "configuration": group.get_dict()}
 

@@ -125,10 +125,10 @@ class DMXFixture(Fixture):
         self.groups: set[str] = set()
 
     def __repr__(self, *args, **kwargs):
-        return f"[DMXFixture: '{self.name}' in universe '{get_universe(uuid_str=self.universe).name}' with channels {self.channel_usage}]"
+        return f"[DMXFixture: '{self.name}' in universe '{get_universe(self.universe).name}' with channels {self.channel_usage}]"
 
     def __str__(self, *args, **kwargs):
-        return f"[DMXFixture: '{self.name}' in universe '{get_universe(uuid_str=self.universe).name}' with channels {self.channel_usage}]"
+        return f"[DMXFixture: '{self.name}' in universe '{get_universe(self.universe).name}' with channels {self.channel_usage}]"
 
     def delete(self):
         """Remove the fixture from all its groups, then its universe."""
@@ -141,7 +141,7 @@ class DMXFixture(Fixture):
             group = get_group(group_name)
             group.remove_fixture(self.name)
 
-        get_universe(uuid_str=self.universe).remove_fixture(self.name)
+        get_universe(self.universe).remove_fixture(self.name)
 
     def get_all_channel_values(self) -> dict[str, int]:
         """Return a dict with the current value of every channel."""
@@ -178,33 +178,45 @@ class DMXFixture(Fixture):
 class DMXFixtureGroup:
     """Hold a collection of DMXFixtures."""
 
-    def __init__(self, name):
+    def __init__(self, name, uuid_str: str = ""):
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
         self.scenes: list[DMXScene] = []
 
+        if uuid_str == "":
+            self.uuid = str(uuid.uuid4())  # A unique ID
+        else:
+            self.uuid = uuid_str
+
+    def delete(self):
+        """Remove the group."""
+
+        # Remove from config
+        config.dmx_groups = [x for x in config.dmx_groups if x.uuid != self.uuid]
+
+        # Remove self reference from each child fixture
+        for key in self.fixtures:
+            fixture = self.fixtures[key]
+            fixture.groups.remove(self.uuid)
+    
     def add_fixtures(self, fixture_list: list[DMXFixture]):
         """Add one or more DMXFixtures to the group."""
 
         for fixture in fixture_list:
-            if fixture.name in self.fixtures:
-                # Remove (same name may not be same object)
-                self.fixtures[fixture.name].groups.delete(self.name)
+            self.fixtures[fixture.uuid] = fixture
+            fixture.groups.add(self.uuid)
 
-            self.fixtures[fixture.name] = fixture
-            fixture.groups.add(self.name)
-
-    def remove_fixture(self, name: str):
+    def remove_fixture(self, uuid_str: str):
         """Remove the specified fixture."""
 
-        fixture = self.get_fixture(name)
-        fixture.groups.remove(self.name)
-        del self.fixtures[name]
+        fixture = self.get_fixture(uuid_str)
+        fixture.groups.remove(self.uuid)
+        del self.fixtures[uuid_str]
 
-    def get_fixture(self, name: str) -> Union[DMXFixture, None]:
+    def get_fixture(self, uuid_str: str) -> Union[DMXFixture, None]:
 
-        if name in self.fixtures:
-            return self.fixtures[name]
+        if uuid_str in self.fixtures:
+            return self.fixtures[uuid_str]
 
     def set_brightness(self, value, duration=0, *args, **kwargs):
         """Set the brightness of all fixtures."""
@@ -232,24 +244,17 @@ class DMXFixtureGroup:
 
         self.scenes = [scene for scene in self.scenes if scene.uuid != uuid_str]
     
-    def get_scene(self, name: str = "", uuid_str: str = "") -> Union['DMXScene', None]:
-
-        if name == "" and uuid_str == "":
-            raise ValueError("Must set either name= or uuid_str=")
+    def get_scene(self, uuid_str: str) -> Union['DMXScene', None]:
 
         for scene in self.scenes:
-            if uuid_str != "":
-                if scene.uuid == uuid_str:
-                    return scene
-            elif name != "":
-                if scene.name == name:
-                    return scene
+            if scene.uuid == uuid_str:
+                return scene
             
 
-    def show_scene(self, name: str = "", uuid_str: str = ""):
+    def show_scene(self, uuid_str: str):
         """Find the given scene and set it."""
 
-        scene = self.get_scene(name=name, uuid_str=uuid_str)
+        scene = self.get_scene(uuid_str)
         if scene is None:
             raise ValueError("A scene with the given identifier does not exist.")
 
@@ -276,16 +281,13 @@ class DMXFixtureGroup:
             scene_list.append(scene.get_dict())
 
         fixture_list = []
-        for name in self.fixtures:
-            fixture = self.fixtures[name]
-            fixture_list.append({
-                "name": name,
-                "uuid": fixture.uuid,
-                "universe": fixture.universe
-            })
+        for fixture_uuid in self.fixtures:
+            fixture_list.append(fixture_uuid)
+
 
         the_dict = {
             "name": self.name,
+            "uuid": self.uuid,
             "fixtures": fixture_list,
             "scenes": scene_list
         }
@@ -327,11 +329,11 @@ class DMXScene:
         return the_dict
 
 
-def create_group(name: str) -> DMXFixtureGroup:
+def create_group(name: str, uuid_str: str = '') -> DMXFixtureGroup:
     """Create a new DMXFixtureGroup and add it to config.dmx_groups."""
 
-    new_group = DMXFixtureGroup(name)
-    config.dmx_groups[name] = new_group
+    new_group = DMXFixtureGroup(name, uuid_str=uuid_str)
+    config.dmx_groups.append(new_group)
 
     return new_group
 
@@ -354,46 +356,29 @@ def create_universe(name: str,
     return new_universe
 
 
-def get_fixture(name: str = "",
-                group: str = "",
-                universe: str = "",
-                uuid: Union[uuid.UUID, str] = "") -> Union[DMXFixture, None]:
-    """Return the matched fixture from the appropriate location, if it exists."""
+def get_fixture(uuid_str: str) -> Union[DMXFixture, None]:
+    """Return the matched DMXFixture, if it exists."""
 
-    if group == "" and universe == "" and uuid == "":
-        raise ValueError("You must specify one of group=, universe=, uuid=")
-    if (group != "" or universe != "") and name == "":
-        raise ValueError(
-            "You must specify name= if you use group= or universe=")
-
-    if uuid != "":
-        search = [x for x in config.dmx_fixtures if x.uuid == uuid]
-        if len(search) > 0:
-            return search[0]
-        return None
-    if group != "":
-        return get_group(group).get_fixture(name)
-    elif universe != "":
-        return get_universe(name=universe).get_fixture(name)
+    search = [x for x in config.dmx_fixtures if x.uuid == uuid_str]
+    if len(search) > 0:
+        return search[0]
+    return None
 
 
-def get_group(name: str) -> Union[DMXFixtureGroup, None]:
+def get_group(uuid_str: str) -> Union[DMXFixtureGroup, None]:
     """Return the matching DMXFixtureGroupo."""
 
-    if name in config.dmx_groups:
-        return config.dmx_groups[name]
+    for group in config.dmx_groups:
+       if group.uuid == uuid_str:
+           return group 
 
 
-def get_universe(name: str = "", uuid_str: str = "") -> Union[DMXUniverse, None]:
+def get_universe(uuid_str: str) -> Union[DMXUniverse, None]:
     """Return the matching DMXUniverse."""
 
     for universe in config.dmx_universes:
-        if uuid_str != "":
-            if universe.uuid == uuid_str:
-                return universe
-        if name != "":
-            if universe.name == name:
-                return universe
+        if universe.uuid == uuid_str:
+            return universe
 
 
 def write_dmx_configuration() -> None:
@@ -406,8 +391,7 @@ def write_dmx_configuration() -> None:
     for universe in config.dmx_universes:
         universe_list.append(universe.get_dict())
 
-    for name in config.dmx_groups:
-        group = config.dmx_groups[name]
+    for group in config.dmx_groups:
         group_list.append(group.get_dict())
 
     config_dict = {
@@ -448,12 +432,12 @@ def read_dmx_configuration() -> bool:
             uni.create_fixture(
                 fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
     # Then, create any groups
-    config.dmx_groups = {}
+    config.dmx_groups = []
     group_config = config_dict["groups"]
     for entry in group_config:
-        group = create_group(entry["name"])
-        for subentry in entry["fixtures"]:
-            fixture = get_fixture(uuid=subentry["uuid"])
+        group = create_group(entry["name"], uuid_str=entry["uuid"])
+        for fixture_uuid in entry["fixtures"]:
+            fixture = get_fixture(fixture_uuid)
             group.add_fixtures([fixture])
         for scene in entry["scenes"]:
             group.create_scene(scene["name"], scene["values"], duration=scene["duration"], uuid_str=scene["uuid"])
