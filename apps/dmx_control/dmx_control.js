@@ -11,6 +11,7 @@ class DMXUniverse {
     this.safeName = name.replaceAll(' ', '_').replaceAll('.', '_').replaceAll('#', '_')
     this.controller = controller
     this.fixtures = {}
+    this.channelMap = new Array(513).fill(false) // true means that channel is ocupied
   }
 
   addFixture(definition) {
@@ -20,7 +21,22 @@ class DMXUniverse {
     newFixture.universe = this.uuid
     this.fixtures[definition.name] = newFixture
 
+    // Mark these channels on the channelMap
+    for (let i=definition.start_channel; i<definition.start_channel + definition.channels.length; i++) {
+      this.channelMap[i] = true
+    }
     return newFixture
+  }
+
+  checkIfChannelsFree(startChannel, numChannels) {
+    // Check if the given changes are available in the channelMap
+
+    let channelTaken = false
+    for (let i=startChannel; i < startChannel + numChannels; i++) {
+      if (this.channelMap[i] === true) channelTaken = true
+    }
+
+    return !channelTaken
   }
 
   getFixtureByName(name) {
@@ -725,15 +741,49 @@ function updateUniverseFromModal() {
 function showAddFixtureModal(universeName, universeUUID) {
   // Prepare the addFixtureModal and then show it.
 
+  const universe = getUniverseByUUID(universeUUID)
+
   $('#addFixtureModal').data('universeName', universeName)
   $('#addFixtureModal').data('universeUUID', universeUUID)
 
   $('#addFixtureName').val('')
-  $('#addFixtureStartingChannel').val('')
   $('#addFixtureChannelList').empty()
   $('#addFixtureFromModalButton').hide()
+  document.getElementById('addFixtureChannelsOccupiedWarning').style.display = 'none'
+
+  // Find the next free channel
+  const searchFunc = (el) => el === false
+  const nextChannel = universe.channelMap.slice(1).findIndex(searchFunc) + 1
+  $('#addFixtureStartingChannel').val(nextChannel)
+
+  // Populate the available clone options
+  document.getElementById('cloneFixtureGroup').style.display = 'block'
+  const cloneFixtureList = document.getElementById('cloneFixtureList')
+  cloneFixtureList.innerHTML = ''
+  Object.keys(universe.fixtures).forEach((key) => {
+    const fixture = universe.fixtures[key]
+    const option = document.createElement('option')
+    option.value = fixture.uuid
+    option.innerHTML = fixture.name
+    cloneFixtureList.appendChild(option)
+  })
+
 
   $('#addFixtureModal').modal('show')
+}
+
+function cloneFixture() {
+  // Use an existing fixture to populate the addFixtureModal
+
+  const universe = getUniverseByUUID($('#addFixtureModal').data('universeUUID'))
+  const fixtureToClone = universe.getFixtureByUUID(document.getElementById('cloneFixtureList').value) 
+  const addFixtureChannelList = document.getElementById('addFixtureChannelList')
+
+  fixtureToClone.channelList.forEach((channel) => {
+    addChannelToModal()
+    Array.from(addFixtureChannelList.querySelectorAll('.channel-select')).slice(-1)[0].value = channel
+  })
+
 }
 
 function showEditGroupModal(groupUUID) {
@@ -803,7 +853,6 @@ function editGroupFromModal() {
   }
   group.addFixtures(fixturesToAdd)
   rebuildGroupsInterface()
-  console.log(group.name, fixturesToAddUUID)
   constCommon.makeHelperRequest({
     method: 'POST',
     endpoint,
@@ -983,7 +1032,7 @@ function addChannelToModal() {
   row.appendChild(selectCol)
 
   const select = document.createElement('select')
-  select.classList = 'form-control'
+  select.classList = 'form-control channel-select'
   selectCol.appendChild(select)
 
   const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Dimmer', 'dimmer'], ['Color mode', 'color_mode'], ['Mode', 'mode'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Pan speed', 'pan_speed'], ['Strobe', 'strobe'], ['Strobe speed', 'strobe_speed'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Tilt speed', 'tilt_speed'], ['Other', 'other']]
@@ -1014,8 +1063,12 @@ function addChannelToModal() {
   })
   deleteCol.appendChild(deleteButton)
 
-  $('#addFixtureChannelList').append(col)
+  const channelList = document.getElementById('addFixtureChannelList')
+  channelList.appendChild(col)
+  channelList.scrollTop = channelList.scrollHeight
+
   $('#addFixtureFromModalButton').show()
+  document.getElementById('cloneFixtureGroup').style.display = 'none'
 }
 
 function addFixtureFromModal() {
@@ -1023,12 +1076,20 @@ function addFixtureFromModal() {
 
   const channelList = []
   $('#addFixtureChannelList').children().each(function () { channelList.push($(this).find('select').val()) })
+  const startChannel = parseInt($('#addFixtureStartingChannel').val())
+  const universeUUID = $('#addFixtureModal').data('universeUUID')
 
   const definition = {
     name: $('#addFixtureName').val(),
-    start_channel: parseInt($('#addFixtureStartingChannel').val()),
+    start_channel: startChannel,
     channels: channelList,
-    universe: $('#addFixtureModal').data('universeUUID')
+    universe: universeUUID
+  }
+
+  const channelsFree = getUniverseByUUID(universeUUID).checkIfChannelsFree(startChannel, channelList.length)
+  if (channelsFree === false) {
+    document.getElementById('addFixtureChannelsOccupiedWarning').style.display = 'block'
+    return
   }
   
   constCommon.makeHelperRequest({
@@ -1315,6 +1376,7 @@ $('#addFixtureAddChannelButton').click(addChannelToModal)
 $('#addFixtureFromModalButton').click(addFixtureFromModal)
 $('#addUniverseFromModalButton').click(addUniverseFromModal)
 $('#editUniverseModalSaveButton').click(updateUniverseFromModal)
+document.getElementById('cloneFixtureButton').addEventListener('click', cloneFixture)
 
 // Group tab
 $('#createNewGroupFromWarningButton').click(() => {

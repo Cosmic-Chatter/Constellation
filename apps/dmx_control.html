@@ -148,11 +148,27 @@
                         <input type="number" min="1" max="512" class="form-control" id="addFixtureStartingChannel">
                       </div>
 
+                      <div id="cloneFixtureGroup" class="col-12 mt-2">
+                        <label for="cloneFixtureList" class="form-label">Clone existing fixture</label>
+                        <div class="row">
+                          <div class="col-8">
+                            <select id="cloneFixtureList" class="form-select"></select>
+                          </div>
+                          <div class="col-4">
+                            <button id="cloneFixtureButton" class="btn btn-primary">Clone</button>
+                          </div>
+                        </div>
+
+                      </div>
+
                       <div class="col-12 mt-2">
-                        <label  class="form-label">Channel</label>
+                        <label  class="form-label">Channels</label>
                         <div id="addFixtureChannelList" class="row" style="max-height: 25vh; overflow-y: auto;"></div>
                         <button id="addFixtureAddChannelButton" class="btn btn-primary btn-sm mt-2">Add channel</button>
                       </div>
+                    </div>
+                    <div id="addFixtureChannelsOccupiedWarning" class="col-12 text-danger mt-2">
+                      A fixture with these channels already exists!
                     </div>
                   </div>
                   <div class="modal-footer">
