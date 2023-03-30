@@ -1,4 +1,4 @@
-/* global Coloris */
+/* global Coloris, bootstrap */
 
 import * as constCommon from '../js/constellation_app_common.js'
 
@@ -357,7 +357,7 @@ class DMXFixtureGroup {
     // Create the HTML representation for this group.
 
     const col = document.createElement('div')
-    col.classList = 'col-12'
+    col.classList = 'col-12 mt-2'
 
     const row1 = document.createElement('div')
     row1.classList = 'row bg-secondary mx-0 rounded-top'
@@ -1166,16 +1166,6 @@ function updateFunc(update) {
   }
 }
 
-function getUniverseByName(name) {
-  let matchedUniverse = null
-  universeList.forEach((universe) => {
-    if (universe.name === name) {
-      matchedUniverse = universe
-    }
-  })
-  return matchedUniverse
-}
-
 function getUniverseByUUID(uuid) {
   let matchedUniverse = null
   universeList.forEach(universe => {
@@ -1377,14 +1367,33 @@ $('#addFixtureFromModalButton').click(addFixtureFromModal)
 $('#addUniverseFromModalButton').click(addUniverseFromModal)
 $('#editUniverseModalSaveButton').click(updateUniverseFromModal)
 document.getElementById('cloneFixtureButton').addEventListener('click', cloneFixture)
+document.getElementById('createNewUniverseButton').addEventListener('click', showAddUniverseMOdal)
 
 // Group tab
 $('#createNewGroupFromWarningButton').click(() => {
   showEditGroupModal('')
 })
+$('#createNewGroupButton').click(() => {
+  showEditGroupModal('')
+})
 $('#editGroupModalSaveButton').click(editGroupFromModal)
 $("#editSceneModalSaveButton").click(editSceneFromModal)
 $("#editSceneModalDeleteButton").click(deleteSceneFromModal)
+// document.getElementById('groupDeletePopover').addEventListener('click', deleteGroupFromModal)
+
+
+// Place the popover trigger after all the event listeners
+document.addEventListener('click', (event) => {
+  switch (event.target.getAttribute('id')) {
+    case 'groupDeletePopover':
+      console.log('here')
+  }
+})
+
+const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+popoverTriggerList.map(function (popoverTriggerEl) {
+  return new bootstrap.Popover(popoverTriggerEl)
+})
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'

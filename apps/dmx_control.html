@@ -181,6 +181,9 @@
 
             <!-- Universe row -->
             <div class="col-12">
+              <button id="createNewUniverseButton" class="btn btn-primary">Create universe</button>
+            </div>
+            <div class="col-12 mt-2">
               <div id='universeRow' class="row"></div>
             </div>
           </div>
@@ -227,6 +230,7 @@
                   <div id="editGroupFixtureRow" class="row"></div>
                 </div>
                 <div class="modal-footer">
+                  <button type="button" class="btn btn-danger me-auto" id="editGroupModalDeleteButton" data-bs-toggle="popover" title="Are you sure?" data-bs-content='<a id="groupDeletePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger="focus" data-bs-html="true">Delete</button>
                   <button type="button" class="btn btn-primary" id="editGroupModalSaveButton">Save</button>
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
@@ -270,6 +274,9 @@
 
           <!-- Groups row -->
           <div class="col-12">
+            <button id="createNewGroupButton" class="btn btn-primary">Create group</button>
+          </div>
+          <div class="col-12 mt-2">
             <div id='groupsRow' class="row"></div>
           </div>
         </div>
