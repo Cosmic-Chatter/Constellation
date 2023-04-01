@@ -512,3 +512,12 @@ export function guessMimetype (filename) {
     return 'image'
   }
 }
+
+export function loadDefinition (defName) {
+  // Ask the helper for the given definition and return a promise containing it.
+
+  return makeHelperRequest({
+    method: 'GET',
+    endpoint: '/definitions/' + defName + '/load'
+  })
+}

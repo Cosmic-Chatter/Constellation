@@ -7,25 +7,28 @@ function updateFunc (update) {
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    loadDefinition(currentDefintion)
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function loadDefinition (defName) {
-  // Use the given definition to set up the interface.
+// function loadDefinition (defName) {
+//   // Use the given definition to set up the interface.
 
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/definitions/' + defName + '/load'
-  })
-    .then((response) => {
-      if ('success' in response && response.success === true) {
-        _loadDefinition(response.definition)
-      }
-    })
-}
+//   constCommon.makeHelperRequest({
+//     method: 'GET',
+//     endpoint: '/definitions/' + defName + '/load'
+//   })
+//     .then((response) => {
+//       if ('success' in response && response.success === true) {
+//         _loadDefinition(response.definition)
+//       }
+//     })
+// }
 
-function _loadDefinition (def) {
+function loadDefinition (def) {
   // Helper function to manage setting up the interface.
 
   // Tag the document with the defintion for later reference
@@ -320,7 +323,10 @@ const searchParams = constCommon.parseQueryString()
 if (searchParams.has('standalone')) {
   // We are displaying this inside of a setup iframe
   if (searchParams.has('definition')) {
-    loadDefinition(searchParams.get('definition'))
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 } else {
   // We are displaying this for real
@@ -330,8 +336,8 @@ if (searchParams.has('standalone')) {
 
       setInterval(constCommon.sendPing, 5000)
     })
+  // Hide the cursor
+  document.body.style.cursor = 'none'
 }
 adjustFontSize(-100) // Make sure the font modifier is at 1 to start
 hideAttractor()
-// Hide the cursor
-document.body.style.cursor = 'none'

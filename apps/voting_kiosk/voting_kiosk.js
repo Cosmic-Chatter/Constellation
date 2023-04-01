@@ -7,7 +7,7 @@ function buildLayout (definition) {
   // Clear the exisiting layout
   $('#cardRow').empty()
 
-  const buttons = Object.keys(definition)
+  const buttons = definition.option_order
   let buttonClasses
   if (buttons.length - 1 < 6) {
     buttonClasses = 'col button-col mx-0 px-1'
@@ -18,11 +18,8 @@ function buildLayout (definition) {
   // Iterate through the buttons and build their HTML
   let numText = 0 // Number of buttons that include text
   buttons.forEach((item) => {
-    if (item === 'SETTINGS') {
-      return
-    }
     voteCounts[item] = 0
-    const buttonDef = definition[item]
+    const buttonDef = definition.options[item]
 
     const div = document.createElement('div')
     div.classList = buttonClasses
@@ -33,9 +30,14 @@ function buildLayout (definition) {
     card.classList = 'card card-inactive mb-0'
     div.appendChild(card)
 
-    if ('icon' in buttonDef) {
+    if ('icon' in buttonDef && buttonDef.icon.trim() !== '') {
       const img = document.createElement('img')
-      img.src = getIcon(buttonDef.icon)
+      if (buttonDef.icon === 'user') {
+        img.src = getIcon(buttonDef.icon_user_file)
+      } else {
+        // The user has selected one of the provided icons
+        img.src = getIcon(buttonDef.icon)
+      }
       img.classList = 'card-img-top card-img-full'
       card.appendChild(img)
     }
@@ -46,9 +48,9 @@ function buildLayout (definition) {
 
     const title = document.createElement('div')
     title.classList = 'card-title my-0 noselect'
-    if ('title' in buttonDef) {
+    if ('label' in buttonDef && buttonDef.label.trim() !== '') {
       numText += 1
-      title.innerHTML = buttonDef.title
+      title.innerHTML = buttonDef.label
     }
     text.append(title)
   })
@@ -76,7 +78,7 @@ function getIcon (name) {
   } else if (['thumbs-down_black', 'thumbs-down_red', 'thumbs-down_white', 'thumbs-up_black', 'thumbs-up_green', 'thumbs-up_white'].includes(name)) {
     return 'voting_kiosk/icons/' + name + '.svg'
   } else {
-    return name
+    return 'content/' + name
   }
 }
 
@@ -135,111 +137,105 @@ function checkConnection () {
 function updateFunc (update) {
   // Read updates for voting kiosk-specific actions and act on them
 
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      constCommon.makeHelperRequest(
-        {
-          method: 'GET',
-          endpoint: '/content/' + definition,
-          rawResponse: true
-        })
-        .then((response) => {
-          updateContent(definition, constCommon.parseINIString(response))
-        })
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function updateContent (name, definition) {
+function loadDefinition (definition) {
   // Clean up the old survey, then create the new one.
 
   // If there are votes left for the old survey, make sure they are recorded
   sendData()
 
-  // Update the configuration name
-  if (name.toLowerCase().endsWith('.ini')) {
-    configurationName = name.slice(0, -4)
-  } else {
-    configurationName = name
-  }
-
+  configurationName = definition.name
+  console.log(definition)
   // Clear the vote categories
   voteCounts = {}
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
-
   // Parse the settings and make the appropriate changes
-  if ('header' in definition.SETTINGS) {
-    document.getElementById('header').innerHTML = definition.SETTINGS.header
+
+  // Text settings
+  if ('header' in definition.text && definition.text.header.trim() !== '') {
+    document.getElementById('header').innerHTML = definition.text.header
     document.getElementById('headerCol').style.display = 'block'
   } else {
     document.getElementById('header').innerHTML = ''
     document.getElementById('headerCol').style.display = 'none'
   }
-  if ('subheader' in definition.SETTINGS) {
-    document.getElementById('subheader').innerHTML = definition.SETTINGS.subheader
+  if ('subheader' in definition.text && definition.text.subheader.trim() !== '') {
+    document.getElementById('subheader').innerHTML = definition.text.subheader
     document.getElementById('subheaderCol').style.display = 'block'
   } else {
     document.getElementById('subheader').innerHTML = ''
     document.getElementById('subheaderCol').style.display = 'none'
   }
-  if ('footer' in definition.SETTINGS) {
-    document.getElementById('footer').innerHTML = definition.SETTINGS.footer
+  if ('footer' in definition.text && definition.text.footer.trim() !== '') {
+    document.getElementById('footer').innerHTML = definition.text.footer
     document.getElementById('footerCol').style.display = 'block'
   } else {
     document.getElementById('footer').innerHTML = ''
     document.getElementById('footerCol').style.display = 'none'
   }
-  if ('subfooter' in definition.SETTINGS) {
-    document.getElementById('subfooter').innerHTML = definition.SETTINGS.subfooter
+  if ('subfooter' in definition.text && definition.text.subfooter.trim() !== '') {
+    document.getElementById('subfooter').innerHTML = definition.text.subfooter
     document.getElementById('subfooterCol').style.display = 'block'
   } else {
     document.getElementById('subfooter').innerHTML = ''
     document.getElementById('subfooterCol').style.display = 'none'
   }
-  if ('success' in definition.SETTINGS) {
-    document.getElementById('successMessageBody').innerHTML = definition.SETTINGS.success
-  }
-  if ('top_height' in definition.SETTINGS) {
-    document.getElementById('topRow').style.height = definition.SETTINGS.top_height + 'vh'
-  } else {
-    document.getElementById('topRow').style.height = null
-  }
-  if ('button_height' in definition.SETTINGS) {
-    document.getElementById('cardRow').style.height = definition.SETTINGS.button_height + 'vh'
-  } else {
-    document.getElementById('cardRow').style.height = null
-  }
-  if ('bottom_height' in definition.SETTINGS) {
-    document.getElementById('bottomRow').style.height = definition.SETTINGS.bottom_height + 'vh'
-  } else {
-    document.getElementById('bottomRow').style.height = null
-  }
-  if ('recording_interval' in definition.SETTINGS) {
-    clearInterval(voteCounter)
-    recordingInterval = parseFloat(definition.SETTINGS.recording_interval)
-    voteCounter = setInterval(sendData, recordingInterval * 1000)
-  } else {
-    clearInterval(voteCounter)
-    recordingInterval = 60
-    voteCounter = setInterval(sendData, recordingInterval * 1000)
-  }
-  if ('touch_cooldown' in definition.SETTINGS) {
-    touchCooldown = parseFloat(definition.SETTINGS.touch_cooldown)
-  } else {
-    touchCooldown = 2
+  if ('success_message' in definition.text && definition.text.success_message.trim() !== '') {
+    document.getElementById('successMessageBody').innerHTML = definition.text.success_message
   }
 
-  buildLayout(definition)
+  // Color settings
+  const root = document.querySelector(':root')
+  Object.keys(definition.style.color).forEach((key) => {
+    const value = definition.style.color[key]
+    root.style.setProperty('--' + key, value)
+  })
+
+  // Font settings
+  Object.keys(definition.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(definition.style.font[key]) + ')')
+    document.fonts.add(font)
+  })
+
+  // if ('top_height' in definition.SETTINGS) {
+  //   document.getElementById('topRow').style.height = definition.SETTINGS.top_height + 'vh'
+  // } else {
+  //   document.getElementById('topRow').style.height = null
+  // }
+  // if ('button_height' in definition.SETTINGS) {
+  //   document.getElementById('cardRow').style.height = definition.SETTINGS.button_height + 'vh'
+  // } else {
+  //   document.getElementById('cardRow').style.height = null
+  // }
+  // if ('bottom_height' in definition.SETTINGS) {
+  //   document.getElementById('bottomRow').style.height = definition.SETTINGS.bottom_height + 'vh'
+  // } else {
+  //   document.getElementById('bottomRow').style.height = null
+  // }
+  // if ('recording_interval' in definition.SETTINGS) {
+  //   clearInterval(voteCounter)
+  //   recordingInterval = parseFloat(definition.SETTINGS.recording_interval)
+  //   voteCounter = setInterval(sendData, recordingInterval * 1000)
+  // } else {
+  //   clearInterval(voteCounter)
+  //   recordingInterval = 60
+  //   voteCounter = setInterval(sendData, recordingInterval * 1000)
+  // }
+  // if ('touch_cooldown' in definition.SETTINGS) {
+  //   touchCooldown = parseFloat(definition.SETTINGS.touch_cooldown)
+  // } else {
+  //   touchCooldown = 2
+  // }
+
+  { buildLayout(definition) }
 }
 
 function sendData () {
@@ -318,23 +314,38 @@ constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
 
 let badConnection = true
+let standalone = false
 
 let configurationName = 'default'
-let currentContent = []
+let currentDefintion = ''
 let voteCounts = {}
-let recordingInterval = 60 // Send votes every this many minutes
-let voteCounter = setInterval(sendData, recordingInterval * 1000)
+const recordingInterval = 60 // Send votes every this many minutes
+const voteCounter = setInterval(sendData, recordingInterval * 1000)
 let blockTouches = false
 let touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
-let touchCooldown = 2 // seconds before blockTouches is reset
+const touchCooldown = 2 // seconds before blockTouches is reset
 
-constCommon.askForDefaults()
-constCommon.sendPing()
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+  standalone = true
+  if (searchParams.has('definition')) {
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
 
-setInterval(constCommon.sendPing, 5000)
+      setInterval(constCommon.sendPing, 5000)
+      setInterval(checkConnection, 500)
+    })
+  // Hide the cursor
+  document.body.style.cursor = 'none'
+}
+
 setInterval(constCommon.checkForHelperUpdates, 1000)
-
-setInterval(checkConnection, 500)
-
-// Hide the cursor
-document.body.style.cursor = 'none'

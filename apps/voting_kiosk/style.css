@@ -8,19 +8,30 @@
     --footer-color: white;
     --subfooter-color: white;
     --button-text-color: white;
-    --header-font: 'OpenSans-Bold';
-    --subheader-font: "OpenSans-Regular";
-    --footer-font: 'OpenSans-Bold';
-    --subfooter-font: "OpenSans-Regular";
-    --button-font: "OpenSans-Regular";
-  }
-
-@font-face {
-    font-family: OpenSans-Bold;
-    src: url(../_fonts/OpenSans-Bold.ttf);
+    --header-font: 'header';
+    --subheader-font: "subheader";
+    --footer-font: 'footer';
+    --subfooter-font: "subfooter";
+    --button-font: "button";
 }
 
 @font-face {
-    font-family: OpenSans-Regular;
-    src: url(../_fonts/OpenSans-Regular.ttf);
+    font-family: "header";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+@font-face {
+    font-family: "subheader";
+    src: url("../_fonts/OpenSans-Regular.ttf");
+}
+@font-face {
+    font-family: "footer";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+@font-face {
+    font-family: "subfooter";
+    src: url("../_fonts/OpenSans-Regular.ttf");
+}
+@font-face {
+    font-family: "button";
+    src: url("../_fonts/OpenSans-Bold.ttf");
 }

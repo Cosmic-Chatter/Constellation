@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="../_static/favicon.ico">
+
+    <link rel="stylesheet" href="../css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/coloris.min.css">
+
+    <style>
+      /* Style for the color pickers */
+      .clr-field {
+        width: 100%;
+      }
+      .clr-field button, .clr-field input {
+        width: 100%;
+        border-radius: 5px;
+        border: var(--bs-border-color);
+        border-width: 1px;
+        border-style: solid;
+      }
+      #previewContainer {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      #previewFrame {
+        /* transform: scale(0.1); */
+        /* transform: scale(calc(var(--previewHeight)) ); */
+        transform-origin: 0 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: white;
+        border-width: 1px;
+        border-style: solid;
+      }
+      .preview-landscape {
+        --previewHeight: 1080px;
+        width: 1920px;
+        height: var(--previewHeight);
+      }
+      .preview-portrait {
+        --previewHeight: 1920px;
+        width: 1080px;
+        height: var(--previewHeight);
+      }
+    </style>
+
+    <title>Voting Kiosk Setup</title>
+
+  </head>
+
+  <body>
+    <div id="mainContainer" class="container mt-2 mb-5">
+      <H2>Voting Kiosk Setup</H2>
+      Use this utility to create and edit voting kiosk configurations.
+      <div class="row my-1 gx-2 gy-2">
+        <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+          <button id="newDefinitionButton" class="btn btn-primary w-100">Create new</button>
+        </div>
+        <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+          <button id="editDefinitionButton" class="btn btn-primary w-100">Edit existing</button>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3 col-xl-2">
+          <select id="availableDefinitionSelect" class="form-select w-100">Edit existing</select>
+        </div>
+        <div class="col-6 col-sm-2 col-md-2 col-lg-1">
+          <button id="deleteDefinitionButton" class="btn btn-danger w-100">Delete</button>
+        </div>
+        <!-- Top toolbar -->
+        <div class="col-12 col-lg-12">
+          <div class="row mt-3 pb-2 gx-2 gy-2 border-top border-bottom">
+            <div class="col-sm-4 col-md-3 col-lg-2 col-xl-1">
+              <button id="definitionSaveButton" class="btn btn-success w-100">Save</button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+              <button id="previewRefreshButton" class="btn btn-info w-100">Refresh preview</button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+              <button id="previewRotateButton" class="btn btn-info w-100">Rotate preview</button>
+            </div>
+            <div class="col-6 col-sm-4 offset-sm-8 offset-md-0 col-md-3 col-xl-2 d-flex align-items-center">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" value="" id="refreshOnChangeCheckbox" checked>
+                <label class="form-check-label small" for="refreshOnChangeCheckbox">
+                  Refresh on change
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row align-items-start">
+        <div id='editPane' class="col-6 col-lg-7">
+          <div class="row gy-2">
+            <div class="col-12 col-md-6">
+              <label for="definitionNameInput" class="form-label">Definition name</label>
+              <input type="text" class="form-control" id="definitionNameInput">
+            </div>
+
+            <div class="col-12 mt-2">
+              <h3>Content</h3>
+              <h4>Text</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6">
+                  <label for="headerInput" class="form-label">Header</label>
+                  <input data-def-key="header" type="text" class="form-control definition-text-input" id="headerInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="subheaderInput" class="form-label">Subheader</label>
+                  <input data-def-key="subheader" type="text" class="form-control definition-text-input" id="subheaderInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="footerInput" class="form-label">Footer</label>
+                  <input data-def-key="footer" type="text" class="form-control definition-text-input" id="footerInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="subfooterInput" class="form-label">Subfooter</label>
+                  <input data-def-key="subfooter" type="text" class="form-control definition-text-input" id="subfooterInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="success_messageInput" class="form-label">Success message</label>
+                  <input data-def-key="success_message" type="text" class="form-control definition-text-input" id="success_messageInput">
+                </div>
+              </div>
+
+              <H4 class="mt-2">Options</H4>
+              <div class="fst-italic">Add a button for each option in your survey.</div>
+              <button id="addOptionButton" class="btn btn-primary mt-2">Add option</button>
+              <div class="row">
+                <div class="col-6">
+                  <div id="optionRow" class="row gy-2 gx-2 mt-2"></div>
+                </div>
+                <div class="col-6">
+                  <div id="optionEditor" class="row border-start border-end py-2 gy-2">
+                    <div class="col-12">
+                      <label for="optionInput_label" class="form-label">Label</label>
+                      <input type="text" class="form-control option-input" id="optionInput_label" data-field="label">
+                    </div>
+                    <div class="col-12">
+                      <label for="optionInput_value" class="form-label">Value</label>
+                      <input type="text" class="form-control option-input" data-field="value" id="optionInput_value">
+                    </div>
+                    <div class="col-12">
+                      <label for="optionInput_icon" class="form-label">Icon</label>
+                      <select class="form-select option-input" id="optionInput_icon" data-field="icon">
+                        <option value="">No icon</option>
+                        <option value="user">User-provided</option>
+                        <option disabled>Built-in</option>
+                        <option value="1-star_black">1 star (black)</option>
+                        <option value="1-star_white">1 star (white)</option>
+                        <option value="2-star_black">2 star (black)</option>
+                        <option value="2-star_white">2 star (white)</option>
+                        <option value="3-star_black">3 star (black)</option>
+                        <option value="3-star_white">3 star (white)</option>
+                        <option value="4-star_black">4 star (black)</option>
+                        <option value="4-star_white">4 star (white)</option>
+                        <option value="5-star_black">5 star (black)</option>
+                        <option value="5-star_white">5 star (white)</option>
+                        <option value="thumbs-down_black">Thumbs down (black)</option>
+                        <option value="thumbs-down_red">Thumbs down (red)</option>
+                        <option value="thumbs-down_white">Thumbs down (white)</option>
+                        <option value="thumbs-up_black">Thumbs up (black)</option>
+                        <option value="thumbs-up_red">Thumbs up (red)</option>
+                        <option value="thumbs-up_white">Thumbs up (white)</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <button id="optionInput_icon_user_file" class='btn btn-outline-primary w-100' data-field="icon_user_file">Select file</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h3 class="mt-2">Appearance</h3>
+              <h4>Colors</h4>
+              <div class="row gy-2 mb-3">
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_background-color" class="form-label">Background</label>
+                  <div>
+                    <input id="colorPicker_background-color" type="text" class="coloris form-control" value="#22222E" data-property="background-color" data-default="#22222E">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-color" class="form-label">Buttons</label>
+                  <div>
+                    <input id="colorPicker_button-color" type="text" class="coloris form-control" value="#393A5A" data-property="button-color" data-default="#393A5A">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-touched-color" class="form-label">Buttons (touched)</label>
+                  <div>
+                    <input id="colorPicker_button-touched-color" type="text" class="coloris form-control" value="#706F8E" data-property="button-touched-color" data-default="#706F8E">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_success-message-color" class="form-label">Success message</label>
+                  <div>
+                    <input id="colorPicker_success-message-color" type="text" class="coloris form-control" value="#528e54" data-property="success-message-color" data-default="#528e54">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_header-color" class="form-label">Header text</label>
+                  <div>
+                    <input id="colorPicker_header-color" type="text" class="coloris form-control" value="#fff" data-property="header-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_subheader-color" class="form-label">Subheader text</label>
+                  <div>
+                    <input id="colorPicker_subheader-color" type="text" class="coloris form-control" value="#fff" data-property="subheader-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_footer-color" class="form-label">Footer text</label>
+                  <div>
+                    <input id="colorPicker_footer-color" type="text" class="coloris form-control" value="#fff" data-property="footer-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_subfooter-color" class="form-label">Subfooter text</label>
+                  <div>
+                    <input id="colorPicker_subfooter-color" type="text" class="coloris form-control" value="#fff" data-property="subfooter-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-text-color" class="form-label">Button text</label>
+                  <div>
+                    <input id="colorPicker_button-text-color" type="text" class="coloris form-control" value="#fff" data-property="button-text-color" data-default="#fff">
+                  </div>
+                </div>
+              </div>
+
+              <h4>Fonts</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-lg-3">
+                  <label class="btn btn-outline-primary w-100">
+                    <span id="uploadFontName" class="w-100">Upload</span>
+                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
+                  </label>
+                </div>
+                <div class="col-0 col-lg-9"></div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_header" class="form-label">Header</label>
+                  <select id="fontSelect_header" class="form-select font-select" data-property="header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_subheader" class="form-label">Subheader</label>
+                  <select id="fontSelect_subheader" class="form-select font-select" data-property="subheader" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_footer" class="form-label">Footer</label>
+                  <select id="fontSelect_footer" class="form-select font-select" data-property="footer" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_subfooter" class="form-label">Subfooter</label>
+                  <select id="fontSelect_subfooter" class="form-select font-select" data-property="subfooter" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_button" class="form-label">Buttons</label>
+                  <select id="fontSelect_button" class="form-select font-select" data-property="button" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id='previewPane' class="col-6 col-lg-5 sticky-top">
+          <div id="previewContainer" class="">
+            <iframe id="previewFrame" class="mt-3 preview-landscape" src="../voting_kiosk.html?standalone=true"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script type="text/javascript" src="../js/jquery-3.6.1.min.js"></script>
+  <script type="text/javascript" src="../js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="../js/showdown.min.js"></script>
+  <script type="text/javascript" src="../js/platform.js"></script>
+  <script type="text/javascript" src="../js/coloris.min.js"></script>
+  <script type="module" src="setup.js"></script>
+
+  </body>
+
+</html>
