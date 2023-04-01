@@ -207,7 +207,7 @@ function createSurveyOption (userDetails) {
   col.classList = 'col col-12 mt-2'
 
   const container = document.createElement('div')
-  container.classList = 'mx-1'
+  container.classList = 'mx-3'
   col.appendChild(container)
 
   const topRow = document.createElement('div')
@@ -229,12 +229,12 @@ function createSurveyOption (userDetails) {
   container.appendChild(bottomRow)
 
   const editCol = document.createElement('div')
-  editCol.classList = 'col-6 mx-0 px-0'
+  editCol.classList = 'col-12 col-sm-6 col-lg-3 mx-0 px-0'
   bottomRow.appendChild(editCol)
 
-  const editButton = document.createElement('div')
-  editButton.classList = 'text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
-  editButton.style.borderBottomLeftRadius = '0.25rem'
+  const editButton = document.createElement('button')
+  editButton.classList = 'btn btn-sm rounded-0 text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
+  // editButton.style.borderBottomLeftRadius = '0.25rem'
   editButton.style.cursor = 'pointer'
   editButton.innerHTML = 'Edit'
   editButton.addEventListener('click', () => {
@@ -242,12 +242,31 @@ function createSurveyOption (userDetails) {
   })
   editCol.appendChild(editButton)
 
+  const deleteCol = document.createElement('div')
+  deleteCol.classList = 'col-12 col-sm-6 col-lg-3 mx-0 px-0'
+  bottomRow.appendChild(deleteCol)
+
+  const deleteButton = document.createElement('button')
+  deleteButton.classList = 'btn btn-sm rounded-0 text-light bg-danger w-100 h-100 justify-content-center d-flex pl-1'
+  deleteButton.style.cursor = 'pointer'
+  deleteButton.innerHTML = 'Delete'
+  deleteButton.setAttribute('data-bs-toggle', 'popover')
+  deleteButton.setAttribute('title', 'Are you sure?')
+  deleteButton.setAttribute('data-bs-content', `<a id="DeleteOptionPopover_${details.uuid}" class="btn btn-danger w-100">Confirm</a>`)
+  deleteButton.setAttribute('data-bs-trigger', 'focus')
+  deleteButton.setAttribute('data-bs-html', 'true')
+  $(document).on('click', '#DeleteOptionPopover_' + details.uuid, function () {
+    deleteOption(details.uuid)
+  })
+  deleteButton.addEventListener('click', function () { deleteButton.focus() })
+  deleteCol.appendChild(deleteButton)
+
   const leftArrowCol = document.createElement('div')
-  leftArrowCol.classList = 'col-3 mx-0 px-0'
+  leftArrowCol.classList = 'col-6 col-lg-3 mx-0 px-0'
   bottomRow.appendChild(leftArrowCol)
 
-  const leftArrowButton = document.createElement('div')
-  leftArrowButton.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex'
+  const leftArrowButton = document.createElement('button')
+  leftArrowButton.classList = 'btn btn-sm rounded-0 text-light bg-primary w-100 h-100 justify-content-center d-flex'
   leftArrowButton.style.cursor = 'pointer'
   leftArrowButton.innerHTML = '◀'
   leftArrowButton.addEventListener('click', () => {
@@ -256,12 +275,11 @@ function createSurveyOption (userDetails) {
   leftArrowCol.appendChild(leftArrowButton)
 
   const RightArrowCol = document.createElement('div')
-  RightArrowCol.classList = 'col-3 mx-0 px-0'
+  RightArrowCol.classList = 'col-6 col-lg-3 mx-0 px-0'
   bottomRow.appendChild(RightArrowCol)
 
-  const rightArrowButton = document.createElement('div')
-  rightArrowButton.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex'
-  rightArrowButton.style.borderBottomRightRadius = '0.25rem'
+  const rightArrowButton = document.createElement('button')
+  rightArrowButton.classList = 'btn btn-sm rounded-0 text-light bg-primary w-100 h-100 justify-content-center d-flex'
   rightArrowButton.style.cursor = 'pointer'
   rightArrowButton.innerHTML = '▶'
   rightArrowButton.addEventListener('click', () => {
@@ -270,6 +288,36 @@ function createSurveyOption (userDetails) {
   RightArrowCol.appendChild(rightArrowButton)
 
   document.getElementById('optionRow').appendChild(col)
+
+  // Activate the popover
+  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+  popoverTriggerList.map(function (popoverTriggerEl) {
+    return new bootstrap.Popover(popoverTriggerEl)
+  })
+}
+
+function deleteOption (uuid) {
+  // Delete an option and rebuild the GUI
+
+  const def = $('#definitionSaveButton').data('workingDefinition')
+
+  // Delete from the options dictionary
+  delete def.options[uuid]
+
+  // Delete from option order array
+  const searchFunc = (el) => el === uuid
+  const index = def.option_order.findIndex(searchFunc)
+  if (index > -1) { // only splice array when item is found
+    def.option_order.splice(index, 1)
+  }
+
+  // Rebuild the optionList GUI
+  document.getElementById('optionRow').innerHTML = ''
+  def.option_order.forEach((optionUUID) => {
+    const option = def.options[optionUUID]
+    createSurveyOption(option)
+  })
+  previewDefinition(true)
 }
 
 function changeOptionOrder (uuid, direction) {
