@@ -100,13 +100,30 @@
       <div class="row align-items-start">
         <div id='editPane' class="col-6 col-lg-7">
           <div class="row gy-2">
-            <div class="col-12 col-md-6">
-              <label for="definitionNameInput" class="form-label">Definition name</label>
-              <input type="text" class="form-control" id="definitionNameInput">
-            </div>
-
             <div class="col-12 mt-2">
-              <h3>Content</h3>
+
+              <h3>Settings</h3>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="definitionNameInput" class="form-label">Definition name</label>
+                  <input type="text" class="form-control" id="definitionNameInput">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="behaviorInput_recording_interval" class="form-label">
+                    Recording interval
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The interval in seconds that votes are batched and sent to Control Server." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="number" min="5" value="60" class="form-control behavior-input" data-property="recording_interval" id="behaviorInput_recording_interval">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="behaviorInput_touch_cooldown" class="form-label">
+                    Touch cooldown
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The interval in seconds to wait before accepting another vote (helps to default spamming)." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="number" min="0" value="2" class="form-control behavior-input" id="behaviorInput_touch_cooldown" data-property="touch_cooldown">
+                </div>
+              </div>
+              <h3 class="mt-2">Content</h3>
               <h4>Text</h4>
               <div class="row gy-2">
                 <div class="col-12 col-md-6">
@@ -126,7 +143,10 @@
                   <input data-def-key="subfooter" type="text" class="form-control definition-text-input" id="subfooterInput">
                 </div>
                 <div class="col-12 col-md-6">
-                  <label for="success_messageInput" class="form-label">Success message</label>
+                  <label for="success_messageInput" class="form-label">
+                    Success message
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The success message appears after a button is pressed." style="font-size: 0.55em;">?</span>
+                  </label>
                   <input data-def-key="success_message" type="text" class="form-control definition-text-input" id="success_messageInput">
                 </div>
               </div>
@@ -145,7 +165,10 @@
                       <input type="text" class="form-control option-input" id="optionInput_label" data-field="label">
                     </div>
                     <div class="col-12">
-                      <label for="optionInput_value" class="form-label">Value</label>
+                      <label for="optionInput_value" class="form-label">
+                        Value
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Value will be the name of the column in the voting data spreadsheet." style="font-size: 0.55em;">?</span>
+                      </label>
                       <input type="text" class="form-control option-input" data-field="value" id="optionInput_value">
                     </div>
                     <div class="col-12">

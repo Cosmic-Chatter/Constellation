@@ -39,7 +39,8 @@ function clearDefinitionInput (full = true) {
           style: {
             color: {},
             font: {}
-          }
+          },
+          behavior: {}
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
@@ -49,7 +50,8 @@ function clearDefinitionInput (full = true) {
           style: {
             color: {},
             font: {}
-          }
+          },
+          behavior: {}
         })
       })
   }
@@ -101,6 +103,11 @@ function editDefinition (uuid = '') {
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
   $('#definitionNameInput').val(def.name)
+
+  // Set the appropriate values for the behavior fields
+  Object.keys(def.behavior).forEach((key) => {
+    document.getElementById('behaviorInput_' + key).value = def.behavior[key]
+  })
 
   // Set the appropriate values for the text fields
   Object.keys(def.text).forEach((key) => {
@@ -315,7 +322,6 @@ function updateWorkingDefinition (property, value) {
   // for definition.style.color.headerColor
 
   constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
-  console.log($('#definitionSaveButton').data('workingDefinition'))
 }
 
 function getDefinitionByUUID (uuid = '') {
@@ -386,18 +392,6 @@ function resizePreview () {
   const transformRatio = paneWidth / frameWidth
 
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
-}
-
-function onAttractorFileChange () {
-  // Called when a new image or video is selected.
-
-  const file = document.getElementById('attractorSelect').getAttribute('data-filename')
-  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-
-  workingDefinition.attractor = file
-  $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
-
-  previewDefinition(true)
 }
 
 function populateFontSelects () {
@@ -528,6 +522,15 @@ deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionB
 const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
 popoverTriggerList.map(function (popoverTriggerEl) {
   return new bootstrap.Popover(popoverTriggerEl)
+})
+
+// Behavior fields
+Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
+  el.addEventListener('change', (event) => {
+    const key = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['behavior', key], event.target.value)
+    previewDefinition(true)
+  })
 })
 
 // Definition fields

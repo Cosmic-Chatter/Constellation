@@ -205,6 +205,22 @@ function loadDefinition (definition) {
     document.fonts.add(font)
   })
 
+  // Behavior settings
+  if ('recording_interval' in definition.behavior) {
+    clearInterval(voteCounter)
+    recordingInterval = parseFloat(definition.behavior.recording_interval)
+    voteCounter = setInterval(sendData, recordingInterval * 1000)
+  } else {
+    clearInterval(voteCounter)
+    recordingInterval = 60
+    voteCounter = setInterval(sendData, recordingInterval * 1000)
+  }
+  if ('touch_cooldown' in definition.behavior) {
+    touchCooldown = parseFloat(definition.behavior.touch_cooldown)
+  } else {
+    touchCooldown = 2
+  }
+
   // if ('top_height' in definition.SETTINGS) {
   //   document.getElementById('topRow').style.height = definition.SETTINGS.top_height + 'vh'
   // } else {
@@ -220,22 +236,8 @@ function loadDefinition (definition) {
   // } else {
   //   document.getElementById('bottomRow').style.height = null
   // }
-  // if ('recording_interval' in definition.SETTINGS) {
-  //   clearInterval(voteCounter)
-  //   recordingInterval = parseFloat(definition.SETTINGS.recording_interval)
-  //   voteCounter = setInterval(sendData, recordingInterval * 1000)
-  // } else {
-  //   clearInterval(voteCounter)
-  //   recordingInterval = 60
-  //   voteCounter = setInterval(sendData, recordingInterval * 1000)
-  // }
-  // if ('touch_cooldown' in definition.SETTINGS) {
-  //   touchCooldown = parseFloat(definition.SETTINGS.touch_cooldown)
-  // } else {
-  //   touchCooldown = 2
-  // }
 
-  { buildLayout(definition) }
+  buildLayout(definition)
 }
 
 function sendData () {
@@ -319,11 +321,11 @@ let standalone = false
 let configurationName = 'default'
 let currentDefintion = ''
 let voteCounts = {}
-const recordingInterval = 60 // Send votes every this many minutes
-const voteCounter = setInterval(sendData, recordingInterval * 1000)
+let recordingInterval = 60 // Send votes every this many minutes
+let voteCounter = setInterval(sendData, recordingInterval * 1000)
 let blockTouches = false
 let touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
-const touchCooldown = 2 // seconds before blockTouches is reset
+let touchCooldown = 2 // seconds before blockTouches is reset
 
 const searchParams = constCommon.parseQueryString()
 if (searchParams.has('standalone')) {
