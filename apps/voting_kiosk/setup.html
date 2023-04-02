@@ -191,7 +191,7 @@
                         <option value="thumbs-down_red">Thumbs down (red)</option>
                         <option value="thumbs-down_white">Thumbs down (white)</option>
                         <option value="thumbs-up_black">Thumbs up (black)</option>
-                        <option value="thumbs-up_red">Thumbs up (red)</option>
+                        <option value="thumbs-up_green">Thumbs up (green)</option>
                         <option value="thumbs-up_white">Thumbs up (white)</option>
                       </select>
                     </div>
@@ -290,10 +290,26 @@
                   <select id="fontSelect_button" class="form-select font-select" data-property="button" data-default="../_fonts/OpenSans-Regular.ttf"></select>
                 </div>
               </div>
+
               <h4 class="mt-2">Layout</h4>
               <i>Fine-tune the height of the header, button, and footer areas.</i>
               <div class="row gy-2">
-                
+                <div class="col-12">
+                  <div class="row mt-2">
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="headerToButtonsSlider" class="form-label">Header height</label>
+                      <input id="headerToButtonsSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonsToFooterSlider" class="form-label">Footer height</label>
+                      <input id="buttonsToFooterSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonPaddingHeightSlider" class="form-label">Button padding</label>
+                      <input id="buttonPaddingHeightSlider" type="range" class="form-range" min="0", max="30" start="10" step="5">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

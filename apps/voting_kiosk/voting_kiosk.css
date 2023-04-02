@@ -24,8 +24,13 @@ body {
     background-color: var(--button-touched-color);
     transition: .1s ease-in-out all;
 }
-.card-body-full {
+.card-body-full-landscape {
     min-height: 15vh;
+    color: var(--button-text-color);
+}
+
+.card-body-full-portrait {
+    min-height: 10vh;
     color: var(--button-text-color);
 }
 
@@ -34,7 +39,7 @@ body {
 }
 
 .card-img-full {
-    height: 35vh;
+    /* height: 35vh; */
 }
 
 .card-img-empty {
@@ -42,7 +47,7 @@ body {
 }
 
 .card-img-top {
-    max-height: 50vh;
+    /* max-height: 50vh; */
     width: 100%;
     object-fit: contain;
     padding: 5%;

@@ -38,7 +38,8 @@ function clearDefinitionInput (full = true) {
           text: {},
           style: {
             color: {},
-            font: {}
+            font: {},
+            layout: {}
           },
           behavior: {}
         })
@@ -49,7 +50,8 @@ function clearDefinitionInput (full = true) {
           text: {},
           style: {
             color: {},
-            font: {}
+            font: {},
+            layout: {}
           },
           behavior: {}
         })
@@ -131,6 +133,19 @@ function editDefinition (uuid = '') {
   Object.keys(def.style.font).forEach((key) => {
     $('#fontSelect_' + key).val(def.style.font[key])
   })
+
+  // Set the appropriate values for the layout options
+  if ('top_height' in def.style.layout) {
+    document.getElementById('headerToButtonsSlider').value = def.style.layout.top_height
+  }
+  if ('bottom_height' in def.style.layout) {
+    document.getElementById('buttonsToFooterSlider').value = 50 - def.style.layout.bottom_height
+  }
+  if ('button_padding' in def.style.layout) {
+    document.getElementById('buttonPaddingHeightSlider').value = def.style.layout.button_padding
+  } else {
+    document.getElementById('buttonPaddingHeightSlider').value = 10
+  }
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../voting_kiosk.html?standalone=true&definition=' + def.uuid
@@ -502,6 +517,7 @@ function rotatePreview () {
 
   document.getElementById('previewFrame').classList.toggle('preview-landscape')
   document.getElementById('previewFrame').classList.toggle('preview-portrait')
+  previewDefinition(false)
 }
 
 // All the available definitions
@@ -627,6 +643,24 @@ $('#uploadFontInput').change(onFontUploadChange)
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
+  previewDefinition(true)
+})
+
+// Layout fields
+Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
+  el.addEventListener('change', () => {
+    const headerHeight = parseInt(document.getElementById('headerToButtonsSlider').value)
+    const footerHeight = 50 - parseInt(document.getElementById('buttonsToFooterSlider').value)
+    const buttonHeight = 100 - headerHeight - footerHeight
+    updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
+    updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
+    updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
+    console.log(headerHeight, buttonHeight, footerHeight)
+    previewDefinition(true)
+  })
+})
+document.getElementById('buttonPaddingHeightSlider').addEventListener('change', (event) => {
+  updateWorkingDefinition(['style', 'layout', 'button_padding'], parseInt(event.target.value))
   previewDefinition(true)
 })
 

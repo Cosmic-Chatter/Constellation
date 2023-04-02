@@ -4,16 +4,38 @@ function buildLayout (definition) {
   // Take a layout defition in the form of a dictionary of dictionaries and
   // create cards for each element
 
-  // Clear the exisiting layout
-  $('#cardRow').empty()
-
   const buttons = definition.option_order
-  let buttonClasses
-  if (buttons.length - 1 < 6) {
-    buttonClasses = 'col button-col mx-0 px-1'
+  const cardRow = document.getElementById('cardRow')
+
+  // Clear the exisiting layout
+  cardRow.innerHTML = ''
+
+  // Pick the button width class based on the number of options and the orientation of the screen.
+  const buttonClasses = 'button-col mx-0 px-1 col'
+  let orientation
+  let nRows
+  let rowClass = 'row-cols-'
+
+  if (window.innerHeight <= window.innerWidth) {
+    orientation = 'landscape'
+    if (buttons.length <= 6) {
+      nRows = 1
+      rowClass += String(buttons.length)
+    } else {
+      nRows = Math.ceil(buttons.length / 4)
+      rowClass += '4'
+    }
   } else {
-    buttonClasses = 'col-3 button-col mx-0 px-1'
+    orientation = 'portrait'
+    if (buttons.length <= 6) {
+      nRows = buttons.length
+      rowClass += '1'
+    } else {
+      nRows = Math.ceil(buttons.length / 2)
+      rowClass += '2'
+    }
   }
+  cardRow.classList.add(rowClass)
 
   // Iterate through the buttons and build their HTML
   let numText = 0 // Number of buttons that include text
@@ -24,10 +46,10 @@ function buildLayout (definition) {
     const div = document.createElement('div')
     div.classList = buttonClasses
     div.addEventListener('click', function () { buttonTouched(div, item) })
-    document.getElementById('cardRow').appendChild(div)
+    cardRow.appendChild(div)
 
     const card = document.createElement('div')
-    card.classList = 'card card-inactive mb-0'
+    card.classList = 'card card-inactive mb-0 h-100'
     div.appendChild(card)
 
     if ('icon' in buttonDef && buttonDef.icon.trim() !== '') {
@@ -38,12 +60,12 @@ function buildLayout (definition) {
         // The user has selected one of the provided icons
         img.src = getIcon(buttonDef.icon)
       }
-      img.classList = 'card-img-top card-img-full'
+      img.classList = 'card-img-top card-img-full h-100'
       card.appendChild(img)
     }
 
     const text = document.createElement('div')
-    text.classList = 'card-body card-body-full d-flex align-items-center justify-content-center'
+    text.classList = `card-body card-body-full-${orientation} d-flex align-items-center justify-content-center`
     card.appendChild(text)
 
     const title = document.createElement('div')
@@ -60,12 +82,9 @@ function buildLayout (definition) {
   }
 
   // Make sure all the buttons are the same height
-  const heights = $('.card-body').map(function () {
-    return $(this).height()
-  }).get()
-  const maxHeight = Math.max.apply(null, heights)
-  $('.card-body').each(function () {
-    $(this).height(maxHeight)
+  const height = Math.floor((100 - nRows) / nRows)
+  $('.button-col').each(function () {
+    $(this).height(String(height) + '%')
   })
 }
 
@@ -221,21 +240,28 @@ function loadDefinition (definition) {
     touchCooldown = 2
   }
 
-  // if ('top_height' in definition.SETTINGS) {
-  //   document.getElementById('topRow').style.height = definition.SETTINGS.top_height + 'vh'
-  // } else {
-  //   document.getElementById('topRow').style.height = null
-  // }
-  // if ('button_height' in definition.SETTINGS) {
-  //   document.getElementById('cardRow').style.height = definition.SETTINGS.button_height + 'vh'
-  // } else {
-  //   document.getElementById('cardRow').style.height = null
-  // }
-  // if ('bottom_height' in definition.SETTINGS) {
-  //   document.getElementById('bottomRow').style.height = definition.SETTINGS.bottom_height + 'vh'
-  // } else {
-  //   document.getElementById('bottomRow').style.height = null
-  // }
+  if ('top_height' in definition.style.layout) {
+    document.getElementById('topRow').style.height = definition.style.layout.top_height + 'vh'
+  } else {
+    document.getElementById('topRow').style.height = '20vh'
+  }
+  if ('button_height' in definition.style.layout) {
+    document.getElementById('cardRow').style.height = definition.style.layout.button_height + 'vh'
+  } else {
+    document.getElementById('cardRow').style.height = '60vh'
+  }
+  if ('button_padding' in definition.style.layout) {
+    document.getElementById('cardRow').style.paddingTop = definition.style.layout.button_padding / 2 + 'vh'
+    document.getElementById('cardRow').style.paddingBottom = definition.style.layout.button_padding / 2 + 'vh'
+  } else {
+    document.getElementById('cardRow').style.paddingTop = '5vh'
+    document.getElementById('cardRow').style.paddingBottom = '5vh'
+  }
+  if ('bottom_height' in definition.style.layout) {
+    document.getElementById('bottomRow').style.height = definition.style.layout.bottom_height + 'vh'
+  } else {
+    document.getElementById('bottomRow').style.height = '20vh'
+  }
 
   buildLayout(definition)
 }
