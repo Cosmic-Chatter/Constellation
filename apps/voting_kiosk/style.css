@@ -13,6 +13,11 @@
     --footer-font: 'footer';
     --subfooter-font: "subfooter";
     --button-font: "button";
+    --header-font-adjust: 0;
+    --subheader-font-adjust: 0;
+    --footer-font-adjust: 0;
+    --subfooter-font-adjust: 0;
+    --button-font-adjust: 0;
 }
 
 @font-face {

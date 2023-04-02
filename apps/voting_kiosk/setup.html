@@ -291,22 +291,69 @@
                 </div>
               </div>
 
+              <h4 class="mt-2">Text size</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="headerTextSizeSlider" class="form-label">Header</label>
+                  <input id="headerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="header" min="-2", max="4" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="subheaderTextSizeSlider" class="form-label">Subheader</label>
+                  <input id="subheaderTextSizeSlider" type="range" class="form-range text-size-slider" data-property="subheader" min="-1", max="2" start="0" step="0.25">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="footerTextSizeSlider" class="form-label">Footer</label>
+                  <input id="footerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="footer" min="-1", max="3" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="subfooterTextSizeSlider" class="form-label">Subfooter</label>
+                  <input id="subfooterTextSizeSlider" type="range" class="form-range text-size-slider" data-property="subfooter" min="-1", max="2" start="0" step="0.25">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="buttonTextSizeSlider" class="form-label">Buttons</label>
+                  <input id="buttonTextSizeSlider" type="range" class="form-range text-size-slider" data-property="button" min="-2", max="3" start="0" step="0.5">
+                </div>
+              </div>
+
               <h4 class="mt-2">Layout</h4>
               <i>Fine-tune the height of the header, button, and footer areas.</i>
               <div class="row gy-2">
                 <div class="col-12">
                   <div class="row mt-2">
                     <div class="col-12 col-md-6 col-lg-4">
-                      <label for="headerToButtonsSlider" class="form-label">Header height</label>
+                      <label for="headerToButtonsSlider" class="form-label">
+                        Header height
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of space allocated to the header and subheader." style="font-size: 0.55em;">?</span>
+                      </label>
                       <input id="headerToButtonsSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
                     </div>
                     <div class="col-12 col-md-6 col-lg-4">
-                      <label for="buttonsToFooterSlider" class="form-label">Footer height</label>
+                      <label for="headerPaddingHeightSlider" class="form-label">
+                        Header padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding from the top of the display." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="headerPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="header_padding" min="0", max="15" start="5" step="5" value="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonsToFooterSlider" class="form-label">
+                        Footer height
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of space allocated to the footer and subfooter." style="font-size: 0.55em;">?</span>
+                      </label>
                       <input id="buttonsToFooterSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
                     </div>
                     <div class="col-12 col-md-6 col-lg-4">
-                      <label for="buttonPaddingHeightSlider" class="form-label">Button padding</label>
-                      <input id="buttonPaddingHeightSlider" type="range" class="form-range" min="0", max="30" start="10" step="5">
+                      <label for="footerPaddingHeightSlider" class="form-label">
+                        Footer padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding from the bottom of the display." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="footerPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="footer_padding" min="0", max="15" start="5" step="5" value="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonPaddingHeightSlider" class="form-label">
+                        Button padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding above and below the buttons." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="buttonPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="button_padding" min="0", max="30" start="10" step="5">
                     </div>
                   </div>
                 </div>

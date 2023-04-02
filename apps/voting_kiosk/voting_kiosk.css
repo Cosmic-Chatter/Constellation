@@ -54,11 +54,11 @@ body {
 }
 
 .card-text {
-    font-size: 2vw;
+    font-size: 2vmax;
 }
 
 .card-title {
-    font-size: 3vw;
+    font-size: calc(3vmax + var(--button-font-adjust)*1vmax);
     text-align: center;
 }
 
@@ -83,7 +83,7 @@ body {
 #footer {
     text-align: center;
     width: 100%;
-    font-size: 3vw;
+    font-size: calc(3vmax + var(--footer-font-adjust)*1vmax);
     font-weight: bold;
     color: var(--footer-color);
     font-family: var(--footer-font);
@@ -92,7 +92,7 @@ body {
 #header {
     text-align: center;
     width: 100%;
-    font-size: 5vw;
+    font-size: calc(5vmax + var(--header-font-adjust)*1vmax);
     font-weight: bold;
     color: var(--header-color);
     font-family: var(--header-font);
@@ -101,7 +101,7 @@ body {
 #subfooter {
     text-align: center;
     width: 100%;
-    font-size: 2vw;
+    font-size: calc(2vmax + var(--subfooter-font-adjust)*1vmax);
     font-weight: lighter;
     color: var(--subfooter-color);
     font-family: var(--subfooter-font);
@@ -110,14 +110,14 @@ body {
 #subheader {
     text-align: center;
     width: 100%;
-    font-size: 2vw;
+    font-size: calc(2vmax + var(--subheader-font-adjust)*1vmax);
     font-weight: lighter;
     color: var(--subheader-color);
     font-family: var(--subheader-font);
 }
 
 #successMessageBody {
-    font-size: 3vw!important;
+    font-size: 3vmax!important;
     font-family: var(--button-font);
     background-color: var(--success-message-color);
 }

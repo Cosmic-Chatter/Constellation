@@ -224,6 +224,12 @@ function loadDefinition (definition) {
     document.fonts.add(font)
   })
 
+  // Text size settings
+  Object.keys(definition.style.text_size).forEach((key) => {
+    const value = definition.style.text_size[key]
+    root.style.setProperty('--' + key + '-font-adjust', value)
+  })
+
   // Behavior settings
   if ('recording_interval' in definition.behavior) {
     clearInterval(voteCounter)
@@ -245,6 +251,11 @@ function loadDefinition (definition) {
   } else {
     document.getElementById('topRow').style.height = '20vh'
   }
+  if ('header_padding' in definition.style.layout) {
+    document.getElementById('topRow').style.paddingTop = definition.style.layout.header_padding + 'vh'
+  } else {
+    document.getElementById('topRow').style.top_padding = '5vh'
+  }
   if ('button_height' in definition.style.layout) {
     document.getElementById('cardRow').style.height = definition.style.layout.button_height + 'vh'
   } else {
@@ -261,6 +272,11 @@ function loadDefinition (definition) {
     document.getElementById('bottomRow').style.height = definition.style.layout.bottom_height + 'vh'
   } else {
     document.getElementById('bottomRow').style.height = '20vh'
+  }
+  if ('footer_padding' in definition.style.layout) {
+    document.getElementById('bottomRow').style.paddingBottom = definition.style.layout.footer_padding + 'vh'
+  } else {
+    document.getElementById('bottomRow').style.paddingBottom = '5vh'
   }
 
   buildLayout(definition)

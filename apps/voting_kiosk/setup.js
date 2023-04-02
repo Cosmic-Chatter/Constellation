@@ -39,7 +39,8 @@ function clearDefinitionInput (full = true) {
           style: {
             color: {},
             font: {},
-            layout: {}
+            layout: {},
+            text_size: {}
           },
           behavior: {}
         })
@@ -51,7 +52,8 @@ function clearDefinitionInput (full = true) {
           style: {
             color: {},
             font: {},
-            layout: {}
+            layout: {},
+            text_size: {}
           },
           behavior: {}
         })
@@ -134,12 +136,32 @@ function editDefinition (uuid = '') {
     $('#fontSelect_' + key).val(def.style.font[key])
   })
 
+  // Set the appropriate values for the text size sliders
+  Object.keys(def.style.text_size).forEach((key) => {
+    console.log(key + 'TextSizeSlider')
+    document.getElementById(key + 'TextSizeSlider').value = def.style.text_size[key]
+  })
+
   // Set the appropriate values for the layout options
   if ('top_height' in def.style.layout) {
     document.getElementById('headerToButtonsSlider').value = def.style.layout.top_height
+  } else {
+    document.getElementById('headerToButtonsSlider').value = 20
+  }
+  if ('header_padding' in def.style.layout) {
+    document.getElementById('headerPaddingHeightSlider').value = def.style.layout.header_padding
+  } else {
+    document.getElementById('headerPaddingHeightSlider').value = 5
   }
   if ('bottom_height' in def.style.layout) {
-    document.getElementById('buttonsToFooterSlider').value = 50 - def.style.layout.bottom_height
+    document.getElementById('buttonsToFooterSlider').value = def.style.layout.bottom_height
+  } else {
+    document.getElementById('buttonsToFooterSlider').value = 20
+  }
+  if ('footer_padding' in def.style.layout) {
+    document.getElementById('footerPaddingHeightSlider').value = def.style.layout.footer_padding
+  } else {
+    document.getElementById('footerPaddingHeightSlider').value = 5
   }
   if ('button_padding' in def.style.layout) {
     document.getElementById('buttonPaddingHeightSlider').value = def.style.layout.button_padding
@@ -646,11 +668,20 @@ $('.font-select').change(function () {
   previewDefinition(true)
 })
 
+// Text size fields
+Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    previewDefinition(true)
+  })
+})
+
 // Layout fields
 Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
-  el.addEventListener('change', () => {
+  el.addEventListener('input', () => {
     const headerHeight = parseInt(document.getElementById('headerToButtonsSlider').value)
-    const footerHeight = 50 - parseInt(document.getElementById('buttonsToFooterSlider').value)
+    const footerHeight = parseInt(document.getElementById('buttonsToFooterSlider').value)
     const buttonHeight = 100 - headerHeight - footerHeight
     updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
     updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
@@ -659,9 +690,12 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
     previewDefinition(true)
   })
 })
-document.getElementById('buttonPaddingHeightSlider').addEventListener('change', (event) => {
-  updateWorkingDefinition(['style', 'layout', 'button_padding'], parseInt(event.target.value))
-  previewDefinition(true)
+Array.from(document.querySelectorAll('.padding-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
+    previewDefinition(true)
+  })
 })
 
 // Set color mode
