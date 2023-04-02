@@ -57,19 +57,57 @@ function clearDefinitionInput (full = true) {
           },
           behavior: {}
         })
+        previewDefinition(false)
       })
   }
 
   // Definition details
   $('#definitionNameInput').val('')
+  document.getElementById('behaviorInput_recording_interval').value = 60
+  document.getElementById('behaviorInput_touch_cooldown').value = 2
 
-  // Reset style options
+  // Reset text inputs
+  document.getElementById('headerInput').value = ''
+  document.getElementById('subheaderInput').value = ''
+  document.getElementById('footerInput').value = ''
+  document.getElementById('subfooterInput').value = ''
+  document.getElementById('success_messageInput').value = ''
+
+  // Reset option edit fields
+  document.getElementById('optionRow').innerHTML = ''
+  document.getElementById('optionInput_label').value = ''
+  document.getElementById('optionInput_value').value = ''
+  document.getElementById('optionInput_icon').value = ''
+  setIconUserFile('')
+
+  // Reset color options
   const colorInputs = ['background-color', 'button-color', 'button-touched-color', 'success-message-color', 'header-color', 'subheader-color', 'footer-color', 'subfooter-color', 'button-text-color']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
+
+  // Reset font face options
+  const fontInputs = ['header', 'subheader', 'footer', 'subfooter', 'button']
+  fontInputs.forEach((input) => {
+    const el = $('#fontSelect_' + input)
+    el.val(el.data('default'))
+  })
+
+  // Reset text size options
+  document.getElementById('headerTextSizeSlider').value = 0
+  document.getElementById('subheaderTextSizeSlider').value = 0
+  document.getElementById('footerTextSizeSlider').value = 0
+  document.getElementById('subfooterTextSizeSlider').value = 0
+  document.getElementById('buttonTextSizeSlider').value = 0
+
+  // Reset layout options
+  document.getElementById('headerToButtonsSlider').value = 20
+  document.getElementById('headerPaddingHeightSlider').value = 5
+  document.getElementById('buttonsToFooterSlider').value = 20
+  document.getElementById('footerPaddingHeightSlider').value = 5
+  document.getElementById('buttonPaddingHeightSlider').value = 10
 }
 
 function createNewDefinition () {
@@ -145,28 +183,18 @@ function editDefinition (uuid = '') {
   // Set the appropriate values for the layout options
   if ('top_height' in def.style.layout) {
     document.getElementById('headerToButtonsSlider').value = def.style.layout.top_height
-  } else {
-    document.getElementById('headerToButtonsSlider').value = 20
   }
   if ('header_padding' in def.style.layout) {
     document.getElementById('headerPaddingHeightSlider').value = def.style.layout.header_padding
-  } else {
-    document.getElementById('headerPaddingHeightSlider').value = 5
   }
   if ('bottom_height' in def.style.layout) {
     document.getElementById('buttonsToFooterSlider').value = def.style.layout.bottom_height
-  } else {
-    document.getElementById('buttonsToFooterSlider').value = 20
   }
   if ('footer_padding' in def.style.layout) {
     document.getElementById('footerPaddingHeightSlider').value = def.style.layout.footer_padding
-  } else {
-    document.getElementById('footerPaddingHeightSlider').value = 5
   }
   if ('button_padding' in def.style.layout) {
     document.getElementById('buttonPaddingHeightSlider').value = def.style.layout.button_padding
-  } else {
-    document.getElementById('buttonPaddingHeightSlider').value = 10
   }
 
   // Configure the preview frame
@@ -394,10 +422,19 @@ function populateOptionEditor (id) {
   document.getElementById('optionInput_label').value = details.label
   document.getElementById('optionInput_value').value = details.value
   document.getElementById('optionInput_icon').value = details.icon
-  if (details.icon_user_file !== '') {
-    document.getElementById('optionInput_icon_user_file').innerHTML = details.icon_user_file
+  setIconUserFile(details.icon_user_file)
+}
+
+function setIconUserFile (file = '') {
+  // Set the icon_user_file style option and format the GUI to match.
+  if (file !== '') {
+    document.getElementById('optionInput_icon_user_file').innerHTML = file
+    document.getElementById('optionInput_icon_user_file_DeleteButtonCol').style.display = 'block'
+    document.getElementById('optionInput_icon_user_file_Col').classList.add('col-lg-9')
   } else {
     document.getElementById('optionInput_icon_user_file').innerHTML = 'Select file'
+    document.getElementById('optionInput_icon_user_file_DeleteButtonCol').style.display = 'none'
+    document.getElementById('optionInput_icon_user_file_Col').classList.remove('col-lg-9')
   }
 }
 
@@ -638,10 +675,16 @@ document.getElementById('optionInput_icon_user_file').addEventListener('click', 
       if (result != null && result.length > 0) {
         const id = document.getElementById('optionEditor').getAttribute('data-option-id')
         updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
-        event.target.innerHTML = result[0]
+        setIconUserFile(result[0])
         previewDefinition(true)
       }
     })
+})
+document.getElementById('optionInput_icon_user_file_DeleteButton').addEventListener('click', () => {
+  const id = document.getElementById('optionEditor').getAttribute('data-option-id')
+  updateWorkingDefinition(['options', id, 'icon_user_file'], '')
+  setIconUserFile('')
+  previewDefinition(true)
 })
 Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
   el.addEventListener('change', (event) => {

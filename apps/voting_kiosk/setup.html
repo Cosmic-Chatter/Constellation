@@ -123,7 +123,9 @@
                   <input type="number" min="0" value="2" class="form-control behavior-input" id="behaviorInput_touch_cooldown" data-property="touch_cooldown">
                 </div>
               </div>
+
               <h3 class="mt-2">Content</h3>
+
               <h4>Text</h4>
               <div class="row gy-2">
                 <div class="col-12 col-md-6">
@@ -147,7 +149,7 @@
                     Success message
                     <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The success message appears after a button is pressed." style="font-size: 0.55em;">?</span>
                   </label>
-                  <input data-def-key="success_message" type="text" class="form-control definition-text-input" id="success_messageInput">
+                  <input data-def-key="success_message" type="text" class="form-control definition-text-input" placeholder="Thank you!" id="success_messageInput">
                 </div>
               </div>
 
@@ -196,7 +198,15 @@
                       </select>
                     </div>
                     <div class="col-12">
-                      <button id="optionInput_icon_user_file" class='btn btn-outline-primary w-100' data-field="icon_user_file">Select file</button>
+                      <div class="row">
+                        <div id="optionInput_icon_user_file_Col" class="col-12">
+                          <button id="optionInput_icon_user_file" class='btn btn-outline-primary w-100 text-break' data-field="icon_user_file">Select file</button>
+                        </div>
+                        <div id="optionInput_icon_user_file_DeleteButtonCol" class="col-12 col-lg-3 ps-lg-0 mt-2 mt-lg-0" style="display: none;">
+                          <button id="optionInput_icon_user_file_DeleteButton" class="btn btn-danger w-100 h-100"><span class='d-block d-lg-none'>Clear file</span><span class='d-none d-lg-block'>✕</span></button>
+                        </div>
+                      </div>
+                      
                     </div>
                   </div>
                 </div>
