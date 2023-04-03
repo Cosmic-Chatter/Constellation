@@ -18,6 +18,7 @@
     --footer-font-adjust: 0;
     --subfooter-font-adjust: 0;
     --button-font-adjust: 0;
+    --image-height: 90;
 }
 
 @font-face {

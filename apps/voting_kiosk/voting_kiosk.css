@@ -38,17 +38,13 @@ body {
     height: 0vh;
 }
 
-.card-img-full {
-    /* height: 35vh; */
-}
-
 .card-img-empty {
     height: 0vh;
 }
 
 .card-img-top {
-    /* max-height: 50vh; */
     width: 100%;
+    max-height: calc(var(--image-height) * 1%);
     object-fit: contain;
     padding: 5%;
 }

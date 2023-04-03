@@ -38,7 +38,6 @@ function buildLayout (definition) {
   cardRow.classList.add(rowClass)
 
   // Iterate through the buttons and build their HTML
-  let numText = 0 // Number of buttons that include text
   buttons.forEach((item) => {
     voteCounts[item] = 0
     const buttonDef = definition.options[item]
@@ -49,7 +48,7 @@ function buildLayout (definition) {
     cardRow.appendChild(div)
 
     const card = document.createElement('div')
-    card.classList = 'card card-inactive mb-0 h-100'
+    card.classList = 'card card-inactive mb-0 h-100 justify-content-center'
     div.appendChild(card)
 
     if ('icon' in buttonDef && buttonDef.icon.trim() !== '') {
@@ -60,26 +59,22 @@ function buildLayout (definition) {
         // The user has selected one of the provided icons
         img.src = getIcon(buttonDef.icon)
       }
-      img.classList = 'card-img-top card-img-full h-100'
+      img.classList = 'card-img-top'
       card.appendChild(img)
     }
 
-    const text = document.createElement('div')
-    text.classList = `card-body card-body-full-${orientation} d-flex align-items-center justify-content-center`
-    card.appendChild(text)
-
-    const title = document.createElement('div')
-    title.classList = 'card-title my-0 noselect'
     if ('label' in buttonDef && buttonDef.label.trim() !== '') {
-      numText += 1
-      title.innerHTML = buttonDef.label
-    }
-    text.append(title)
-  })
+      const text = document.createElement('div')
+      text.classList = 'd-flex align-items-center justify-content-center'
+      card.appendChild(text)
 
-  if (numText === 0) {
-    $('.card-body').remove()
-  }
+      const title = document.createElement('div')
+      title.classList = 'card-title my-0 noselect'
+
+      title.innerHTML = buttonDef.label
+      text.append(title)
+    }
+  })
 
   // Make sure all the buttons are the same height
   const height = Math.floor((100 - nRows) / nRows)
@@ -277,6 +272,12 @@ function loadDefinition (definition) {
     document.getElementById('bottomRow').style.paddingBottom = definition.style.layout.footer_padding + 'vh'
   } else {
     document.getElementById('bottomRow').style.paddingBottom = '5vh'
+  }
+  if ('image_height' in definition.style.layout) {
+    const value = definition.style.layout.image_height
+    root.style.setProperty('--image-height', value)
+  } else {
+    root.style.setProperty('--image-height', '90')
   }
 
   buildLayout(definition)

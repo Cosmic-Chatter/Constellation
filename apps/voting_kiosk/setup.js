@@ -108,6 +108,7 @@ function clearDefinitionInput (full = true) {
   document.getElementById('buttonsToFooterSlider').value = 20
   document.getElementById('footerPaddingHeightSlider').value = 5
   document.getElementById('buttonPaddingHeightSlider').value = 10
+  document.getElementById('imageHeightSlider').value = 90
 }
 
 function createNewDefinition () {
@@ -196,6 +197,9 @@ function editDefinition (uuid = '') {
   if ('button_padding' in def.style.layout) {
     document.getElementById('buttonPaddingHeightSlider').value = def.style.layout.button_padding
   }
+  if ('image_height' in def.style.layout) {
+    document.getElementById('imageHeightSlider').value = def.style.layout.image_height
+  }
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../voting_kiosk.html?standalone=true&definition=' + def.uuid
@@ -245,7 +249,7 @@ function formatOptionHeader (details) {
   return ''
 }
 
-function createSurveyOption (userDetails) {
+function createSurveyOption (userDetails, populateEditor = false) {
   // Create the HTML representation of a survey question and add it to the row.
 
   const optionOrder = $('#definitionSaveButton').data('workingDefinition').option_order
@@ -353,6 +357,10 @@ function createSurveyOption (userDetails) {
   RightArrowCol.appendChild(rightArrowButton)
 
   document.getElementById('optionRow').appendChild(col)
+
+  if (populateEditor === true) {
+    populateOptionEditor(details.uuid)
+  }
 
   // Activate the popover
   const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
@@ -495,13 +503,13 @@ function saveDefintion () {
   constCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
-        console.log('Saved!')
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
         constCommon.getAvailableDefinitions('voting_kiosk')
           .then((response) => {
             if ('success' in response && response.success === true) {
               populateAvailableDefinitions(response.definitions)
+              document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
       }
@@ -667,7 +675,7 @@ Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => 
 
 // Option fields
 document.getElementById('addOptionButton').addEventListener('click', () => {
-  createSurveyOption()
+  createSurveyOption(null, true)
 })
 document.getElementById('optionInput_icon_user_file').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
@@ -675,6 +683,8 @@ document.getElementById('optionInput_icon_user_file').addEventListener('click', 
       if (result != null && result.length > 0) {
         const id = document.getElementById('optionEditor').getAttribute('data-option-id')
         updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
+        document.getElementById('optionInput_icon').value = 'user'
+        updateWorkingDefinition(['options', id, 'icon'], 'user')
         setIconUserFile(result[0])
         previewDefinition(true)
       }
@@ -684,6 +694,8 @@ document.getElementById('optionInput_icon_user_file_DeleteButton').addEventListe
   const id = document.getElementById('optionEditor').getAttribute('data-option-id')
   updateWorkingDefinition(['options', id, 'icon_user_file'], '')
   setIconUserFile('')
+  document.getElementById('optionInput_icon').value = ''
+  updateWorkingDefinition(['options', id, 'icon'], '')
   previewDefinition(true)
 })
 Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
