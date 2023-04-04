@@ -28,13 +28,19 @@ export function createFileSelectionModal (userOptions) {
           </div>
           <div class="modal-body">
             <div class="row mb-2">
-              <div class='col-2'>
+              <div class='col-4'>
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" value="" id="constFileSelectModalThumbnailCheckbox" checked>
                   <label class="form-check-label" for="constFileSelectModalThumbnailCheckbox">
                     Thumbnails
                   </label>
                 </div>
+              </div>
+              <div class="offset-2 col-6 offset-lg-4 col-lg-4">
+              <div class="input-group input-group-sm">
+                <input id="constFileSelectModalSearchField" type="text" placeholder="Search" class="form-control" aria-label="Search">
+              </div>
+                
               </div>
             </div>
             <div class="row flex-column-reverse flex-lg-row">
@@ -122,6 +128,11 @@ export function createFileSelectionModal (userOptions) {
       })
     })
 
+    // Search field
+    document.getElementById('constFileSelectModalSearchField').addEventListener('input', (event) => {
+      filterComponentContent(event.target.value)
+    })
+
     // File upload
     document.getElementById('constFileSelectModalUpload').addEventListener('change', onUploadContentChange)
     document.getElementById('constFileSelectModalUploadSubmitButton').addEventListener('click', () => {
@@ -202,6 +213,19 @@ export function createFileSelectionModal (userOptions) {
         }
         new bootstrap.Modal(modal).show()
       })
+  })
+}
+
+function filterComponentContent (strToMatch) {
+  // Use CSS to hide any files that don't include the given string.
+
+  Array.from(document.getElementById('constFileSelectModalFileList').children).forEach((el) => {
+    const filename = el.getAttribute('data-filename')
+    if (filename.toLowerCase().includes(strToMatch.toLowerCase())) {
+      el.style.display = 'flex'
+    } else {
+      el.style.display = 'none'
+    }
   })
 }
 
