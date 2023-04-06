@@ -283,6 +283,7 @@ function showAppHelpMOdal (app) {
     media_browser: '/media_browser/',
     media_player: '/media_player/',
     timelapse_viewer: '/timelapse_viewer/',
+    timeline_explorer: '/timeline_explorer/',
     voting_kiosk: '/voting_kiosk/',
     word_cloud: '/word_cloud/'
   }
@@ -302,6 +303,7 @@ function showAppHelpMOdal (app) {
         const src = img.src.split('/').slice(3).join('/')
         // Rebuild the correct path
         img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
+        img.style.maxWidth = '100%'
       })
       $('#helpTextDiv').parent().parent().scrollTop(0)
     })
@@ -392,6 +394,9 @@ $('#timelapseViewerHelpButton').click(function () {
 })
 $('#votingKioskHelpButton').click(function () {
   showAppHelpMOdal('voting_kiosk')
+})
+$('#timelineExplorerHelpButton').click(function () {
+  showAppHelpMOdal('timeline_explorer')
 })
 $('#wordCloudHelpButton').click(function () {
   showAppHelpMOdal('word_cloud')

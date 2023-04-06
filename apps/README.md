@@ -1,5 +1,5 @@
 # Constellation Apps
-A collection of visitor-facing apps to enable you to create rich digital experiences, connected by **_Constellation_**.
+A collection of visitor-facing apps to help you create rich digital experiences, connected by **_Constellation_**.
 
 ## Philosophy
 Constellation Apps is focused around flexibility. To that end, it uses the web browser to display its visitor-facing content. That means any device that can display a website can turn into a digital exhibit component.

@@ -243,10 +243,10 @@ function formatOptionHeader (details) {
   if (details.label !== '') return details.label
   if (details.value !== '') return details.value
   if (details.icon !== '') {
-    if (details.icon === 'user' && details.icon_user_file != '') return details.icon_user_file
+    if (details.icon === 'user' && details.icon_user_file !== '') return details.icon_user_file
     return details.icon
   }
-  return ''
+  return 'New Option'
 }
 
 function createSurveyOption (userDetails, populateEditor = false) {
@@ -267,12 +267,13 @@ function createSurveyOption (userDetails, populateEditor = false) {
   if (optionOrder.includes(details.uuid) === false) {
     optionOrder.push(details.uuid)
     updateWorkingDefinition(['option_order', optionOrder])
-    updateWorkingDefinition(['options', details.uuid, 'uuid'], details.uuid)
+    Object.keys(defaults).forEach((key) => {
+      updateWorkingDefinition(['options', details.uuid, key], details[key])
+    })
   }
 
   const col = document.createElement('div')
   col.setAttribute('id', 'Option_' + details.uuid)
-  col.setAttribute('data-details', JSON.stringify(details))
   col.classList = 'col col-12 mt-2'
 
   const container = document.createElement('div')
@@ -303,7 +304,6 @@ function createSurveyOption (userDetails, populateEditor = false) {
 
   const editButton = document.createElement('button')
   editButton.classList = 'btn btn-sm rounded-0 text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
-  // editButton.style.borderBottomLeftRadius = '0.25rem'
   editButton.style.cursor = 'pointer'
   editButton.innerHTML = 'Edit'
   editButton.addEventListener('click', () => {
@@ -423,7 +423,8 @@ function changeOptionOrder (uuid, direction) {
 function populateOptionEditor (id) {
   // Take the details from an option and fill in the editor GUI
 
-  const details = JSON.parse(document.getElementById('Option_' + id).getAttribute('data-details'))
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+  const details = workingDefinition.options[id]
   document.getElementById('optionEditor').setAttribute('data-option-id', id)
 
   // Fill in the input fields
