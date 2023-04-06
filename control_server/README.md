@@ -13,6 +13,7 @@ Control Server coordinates communication between **_Constellation_** components 
 * `exhibit`: The particular configuration of a `gallery`, including the inclusion or exclusion of specific components and the content displayed by each component.
 * `component`: A single display element within a `gallery`. This could be a projector, a screen, an iPad, or a hands-on mechanical interactive.
 * `content`: The information being used by a `component`, such as text, images, video, and local configurations. Content specifies the file(s) on the component machine that should be used.
+* `definition`: The specific configuration of a given `component`.
 * `id`: A unique identifier for a given `component`. No two components can have the same `id`.
 * `group`: A user-defined grouping of components. For example, if you have multiple screens each displaying similar information, you might assign them all the group of "INFO_SCREEN". Groups allow you to send the same command to multiple devices. Every component must have a group.
 
@@ -121,7 +122,13 @@ The system status area, located at the top, provides a summary of the performanc
 
 Note that CPU usage is not properly reported for PCs running Windows.
 
+#### Definitions pane
+_Note: The definitions pane is only shown when an app that supports the new definition model is loaded._
+
+The definition pane allows you to select the app definition that you want to display. A given `component` can have only one active definition. If the definition you selected belongs to an app other than the one that is currently active, the app will be changed before the new definition is applied.
+
 #### Content pane
+_Note: The content pane is only shown for apps that have not yet been upgraded to the new definition model._
 
 ##### Content management
 
