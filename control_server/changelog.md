@@ -5,12 +5,15 @@ __*Constellation*__ 3.1 introduces a new app, Timeline Explorer. Turn a spreadsh
 - Timeline Explorer is the fastest way to build a fully-interactive timeline.
   - Display your timeline in portrait or landscape orientation to best fit your needs.
 - The all-new setup experience enables you to control every aspect of Timeline Explorer with the graphical interface—editing `INI` files is a thing of the past!
-  - This powerful new configuration experience is coming to the rest of __*Constellation*__ Apps through the 3.X release series.
+  - This powerful new configuration experience is also coming to Voting Kiosk in 3.1, and the rest of __*Constellation*__ Apps through the 3.X release series.
 
 ## <ins>Updated features</ins>
-- Switch timelines seamlessly with the new Definitions Tab in the component info panel.
+- Switch timelines and voting surveys seamlessly with the new Definitions Tab in the component info panel.
   - Selecting a new definition doesn't just change the content, it switches automatically to the correct app so that everything always looks right for guests.
-- The Control Server web console now updates in real-time—no more delay between a serer update and the web console's display.
+- Voting Kiosk is now configured entirely through the user interface.
+- Voting Kiosk now supports portrait orientations.
+- Voting Kiosk now supports adjusting style options, such as color and font.
+- The Control Server web console now updates in real-time—no more delay between a server update and the web console's display.
 
 # **Constellation 3.0**
 __*Constellation*__ 3.0 makes managing your system easier than ever! Every aspect of Control Server is now managed via the web console. Want to update the settings for one of your apps? You can do that from anywhere. Need to tweak how a projector is handled? That's easy, too!

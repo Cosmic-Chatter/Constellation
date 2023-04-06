@@ -711,7 +711,7 @@ export function showExhibitComponentInfo (id) {
   // Show the approriate panes depending on the type and constellationAppID
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
-    if (['timeline_explorer'].includes(obj.constellationAppId) === false) {
+    if (['timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
     } else {
@@ -1417,7 +1417,7 @@ function getAllowableContentTypes (appID) {
     sos_screen_player: ['ini'],
     timelapse_viewer: ['ini'],
     timeline_explorer: ['const'],
-    voting_kiosk: ['ini'],
+    voting_kiosk: ['const'],
     word_cloud_input: ['ini'],
     word_cloud_viewer: ['ini']
   }
@@ -1492,7 +1492,7 @@ export function submitComponentSettingsChange () {
     updateComponentInfoModalFromHelper(obj.id)
 
     // If we have a modern definition-based app, hide the content tab
-    if (['timeline_explorer'].includes(app) === true) {
+    if (['timeline_explorer', 'voting_kiosk'].includes(app) === true) {
       $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalContentTabButton').show()

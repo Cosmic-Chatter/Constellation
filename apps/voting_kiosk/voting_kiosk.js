@@ -12,12 +12,10 @@ function buildLayout (definition) {
 
   // Pick the button width class based on the number of options and the orientation of the screen.
   const buttonClasses = 'button-col mx-0 px-1 col'
-  let orientation
   let nRows
   let rowClass = 'row-cols-'
 
   if (window.innerHeight <= window.innerWidth) {
-    orientation = 'landscape'
     if (buttons.length <= 6) {
       nRows = 1
       rowClass += String(buttons.length)
@@ -26,7 +24,6 @@ function buildLayout (definition) {
       rowClass += '4'
     }
   } else {
-    orientation = 'portrait'
     if (buttons.length <= 6) {
       nRows = buttons.length
       rowClass += '1'
@@ -35,6 +32,8 @@ function buildLayout (definition) {
       rowClass += '2'
     }
   }
+  // Clear any old row layout and then add the new one
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((i) => { cardRow.classList.remove('row-cols-' + String(i)) })
   cardRow.classList.add(rowClass)
 
   // Iterate through the buttons and build their HTML
@@ -204,22 +203,56 @@ function loadDefinition (definition) {
   }
   if ('success_message' in definition.text && definition.text.success_message.trim() !== '') {
     document.getElementById('successMessageBody').innerHTML = definition.text.success_message
+  } else {
+    document.getElementById('successMessageBody').innerHTML = 'Thank you!'
   }
 
   // Color settings
   const root = document.querySelector(':root')
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--background-color', '#22222E')
+  root.style.setProperty('--button-color', '#393A5A')
+  root.style.setProperty('--button-touched-color', '#706F8E')
+  root.style.setProperty('--success-message-color', '#528e54')
+  root.style.setProperty('--header-color', 'white')
+  root.style.setProperty('--subheader-color', 'white')
+  root.style.setProperty('--footer-color', 'white')
+  root.style.setProperty('--subfooter-color', 'white')
+  root.style.setProperty('--button-text-color', 'white')
+
+  // Then, apply the definition settings
   Object.keys(definition.style.color).forEach((key) => {
     const value = definition.style.color[key]
     root.style.setProperty('--' + key, value)
   })
 
   // Font settings
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--header-font', 'header-default')
+  root.style.setProperty('--subheader-font', 'subheader-default')
+  root.style.setProperty('--footer-font', 'footer-default')
+  root.style.setProperty('--subfooter-font', 'subfooter-default')
+  root.style.setProperty('--button-font', 'button-default')
+
+  // Then, apply the definition settings
   Object.keys(definition.style.font).forEach((key) => {
     const font = new FontFace(key, 'url(' + encodeURI(definition.style.font[key]) + ')')
     document.fonts.add(font)
+    root.style.setProperty('--' + key + '-font', key)
   })
 
   // Text size settings
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--header-font-adjust', 0)
+  root.style.setProperty('--subheader-font-adjust', 0)
+  root.style.setProperty('--footer-font-adjust', 0)
+  root.style.setProperty('--subfooter-font-adjust', 0)
+  root.style.setProperty('--button-font-adjust', 0)
+
+  // Then, apply the definition settings
   Object.keys(definition.style.text_size).forEach((key) => {
     const value = definition.style.text_size[key]
     root.style.setProperty('--' + key + '-font-adjust', value)
