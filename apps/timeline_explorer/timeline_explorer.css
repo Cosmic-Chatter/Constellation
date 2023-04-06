@@ -16,29 +16,36 @@
   --textColor: white;
   --toolbarButtonColor: #393A5A;
 
+  /* Font faces */
+  --Header-font: 'Header-default';
+  --Title-font: "Title-default";
+  --Time-font: "Time-default";
+  --Body-font: "Body-default";
+
+
   /* Font modifiers */
   --fontModifier: '1.0';
 }
 
 /* Font definitions */
 @font-face {
-  font-family: "Header";
+  font-family: "Header-default";
   src: url("../_fonts/OpenSans-Bold.ttf");
 }
 
 @font-face {
-  font-family: "Title";
+  font-family: "Title-default";
   src: url("../_fonts/OpenSans-Bold.ttf");
 }
 
 @font-face {
-  font-family: "Time";
+  font-family: "Time-default";
   src: url("../_fonts/OpenSans-Regular.ttf");
 }
 
 
 @font-face {
-  font-family: "Body";
+  font-family: "Body-default";
   src: url("../_fonts/OpenSans-Regular.ttf");
 }
 
@@ -48,7 +55,7 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
   /* padding-bottom: 50px; */
-  font-family: "Body";
+  font-family: var(--Body-font);
 }
 
 button:active {
@@ -152,12 +159,12 @@ __________________________________________________*/
 time {
   display: block;
   font-weight: bold;
-  font-family: "Time";
+  font-family: var(--Time-font);
 }
 
 .timeline-item-header {
   font-weight: bold;
-  font-family: "Title";
+  font-family: var(--Title-font);
 }
 
 #langToggleButton {
@@ -198,7 +205,7 @@ time {
 
 #header-pane {
     background-color: var(--headerColor);
-    font-family: 'Header';
+    font-family: var(--Header-font);
 }
 #tools-pane {
     background-color: var(--footerColor);

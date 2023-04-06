@@ -34,20 +34,40 @@ function loadDefinition (def) {
   // Tag the document with the defintion for later reference
   $(document).data('timelineDefinition', def)
 
+  const root = document.querySelector(':root')
+
   // Modify the style
-  if ('style' in def) {
-    if ('color' in def.style) {
-      Object.keys(def.style.color).forEach((key) => {
-        document.documentElement.style.setProperty('--' + key, def.style.color[key])
-      })
-    }
-    if ('font' in def.style) {
-      Object.keys(def.style.font).forEach((key) => {
-        const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
-        document.fonts.add(font)
-      })
-    }
-  }
+
+  // Color
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--backgroundColor', '#719abf')
+  root.style.setProperty('--headerColor', '#22222E')
+  root.style.setProperty('--footerColor', '#22222E')
+  root.style.setProperty('--itemColor', '#393A5A')
+  root.style.setProperty('--lineColor', 'white')
+  root.style.setProperty('--textColor', 'white')
+  root.style.setProperty('--toolbarButtonColor', '#393A5A')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.color).forEach((key) => {
+    document.documentElement.style.setProperty('--' + key, def.style.color[key])
+  })
+
+  // Font
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--Header-font', 'Header-default')
+  root.style.setProperty('--Title-font', 'Title-default')
+  root.style.setProperty('--Time-font', 'Time-default')
+  root.style.setProperty('--Body-font', 'Body-default')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
+    document.fonts.add(font)
+    root.style.setProperty('--' + key + '-font', key)
+  })
 
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
