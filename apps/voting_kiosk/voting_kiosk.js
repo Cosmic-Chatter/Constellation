@@ -38,12 +38,20 @@ function buildLayout (definition) {
 
   // Iterate through the buttons and build their HTML
   buttons.forEach((item) => {
-    voteCounts[item] = 0
     const buttonDef = definition.options[item]
+    let value
+    if (buttonDef.value != null && buttonDef.value.trim() !== '') {
+      value = buttonDef.value
+    } else if (buttonDef.label != null && buttonDef.label.trim() !== '') {
+      value = buttonDef.label
+    } else {
+      value = item
+    }
+    voteCounts[value] = 0
 
     const div = document.createElement('div')
     div.classList = buttonClasses
-    div.addEventListener('click', function () { buttonTouched(div, item) })
+    div.addEventListener('click', function () { buttonTouched(div, value) })
     cardRow.appendChild(div)
 
     const card = document.createElement('div')
@@ -166,7 +174,7 @@ function loadDefinition (definition) {
   sendData()
 
   configurationName = definition.name
-  console.log(definition)
+
   // Clear the vote categories
   voteCounts = {}
 
