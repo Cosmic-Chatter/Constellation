@@ -711,12 +711,13 @@ export function showExhibitComponentInfo (id) {
   // Show the approriate panes depending on the type and constellationAppID
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
+    $('#componentInfoModalDefinitionsTabButton').show()
     if (['timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
     } else {
       $('#componentInfoModalContentTabButton').hide()
-      $('#componentInfoModalDefinitionTabButton').tab('show')
+      $('#componentInfoModalDefinitionsTabButton').tab('show')
     }
 
     // This component may be accessible over the network.
@@ -724,6 +725,7 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalContentTabButton').hide()
+    $('#componentInfoModalDefinitionsTabButton').hide()
 
     // This static component will defintely have no content.
     $('#componentInfoConnectionStatusFailed').show()
