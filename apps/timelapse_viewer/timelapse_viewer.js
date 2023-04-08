@@ -3,42 +3,29 @@ import * as constCommon from '../js/constellation_app_common.js'
 function updateFunc (update) {
   // Function to parse timelapse-specific updates
 
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      const xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
-        }
-      }
-      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
-      xhr.send(null)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function loadContentFromINI (definition) {
+function loadDefinition (definition) {
   // Receive a definition in the form of an object and set up the viewer appropriately.
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
+  if ('files' in definition) {
+    updateSourceList(definition.files)
   }
-  if ('files' in definition.SETTINGS) {
-    updateSourceList(definition.SETTINGS.files)
-  }
-  if ('animation_length' in definition.SETTINGS) {
-    animationCustomDuration = parseFloat(definition.SETTINGS.animation_length)
+  if ('animation_duration' in definition.behavior) {
+    animationCustomDuration = parseFloat(definition.behavior.animation_duration)
+    console.log(animationCustomDuration)
   } else {
     animationCustomDuration = null
   }
-  if ('attractor_timeout' in definition.SETTINGS) {
-    attractorTimeout = parseFloat(definition.SETTINGS.attractor_timeout * 1000)
+  if ('attractor_timeout' in definition.behavior) {
+    attractorTimeout = parseFloat(definition.behavior.attractor_timeout * 1000)
   }
 }
 
@@ -361,6 +348,7 @@ let lastTouchX = null // X cordinate of the last touchmove event
 let currentClick = false
 let stopInput = false
 
+let currentDefintion = ''
 let continueAnimating = true // true when we are animating for the attractor
 let animationFramerate = 30
 let animationStepSize = 1
@@ -370,7 +358,7 @@ let animationCustomDuration = null
 let attractorTimer = null // Will be replaced with index of setTimeout
 let attractorTimeout = 30000 // ms
 
-let currentContent = []
+const currentContent = []
 let sourceList = []
 let sourceListLength = 0
 let activeSourceIndex = 0 // Index of the file from the source list currently showing
@@ -380,12 +368,29 @@ const enableAnalytics = false
 
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
+let standalone = false
 
-constCommon.askForDefaults()
-constCommon.sendPing()
-setInterval(constCommon.sendPing, 5000)
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+  standalone = true
+  if (searchParams.has('definition')) {
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
 
-document.body.style.cursor = 'none' // Hide the cursor
+      setInterval(constCommon.sendPing, 5000)
+    })
+  // Hide the cursor
+  document.body.style.cursor = 'none'
+}
 
 // Create event listeners
 $('body')

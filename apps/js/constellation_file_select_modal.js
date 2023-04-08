@@ -162,10 +162,15 @@ export function createFileSelectionModal (userOptions) {
     popoverTriggerList.map(function (popoverTriggerEl) {
       return new bootstrap.Popover(popoverTriggerEl)
     })
-    document.addEventListener('click', (event) => {
-      if (event.target.getAttribute('id') !== 'fileDeletePopover') return
-      deleteFile()
-    })
+
+    if (document.body.getAttribute('data-fileDeletePopoverEventAdded') !== 'true') {
+      // Only add this listener the first time we create a file select modal
+      document.addEventListener('click', (event) => {
+        if (event.target.getAttribute('id') !== 'fileDeletePopover') return
+        deleteFile()
+      })
+      document.body.setAttribute('data-fileDeletePopoverEventAdded', 'true')
+    }
 
     document.getElementById('constFileSelectModalChooseButton').addEventListener('click', () => {
       modal.querySelectorAll('.const-file-selected').forEach((el) => {
@@ -500,7 +505,7 @@ function deleteFile () {
   // Delete the current file in the preview pane
 
   const file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
-
+  console.log('Deleting file:', file)
   constCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/deleteFile',
