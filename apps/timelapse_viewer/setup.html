@@ -59,6 +59,67 @@
 
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
+
+      <div class="modal" tabindex="-1" id="patternGeneratorModal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Generate a filename pattern</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <i>Select the first and last images in your sequence to generate the wildcard pattern. If this pattern matches images other than the ones you want, delete then from the content directory.</i>
+              <div class="row mt-3">
+                <div class="col-6">
+                  <button id="selectFirstImageButton" class='btn btn-outline-primary w-100 text-break filename-select'>Select first image</button>
+                </div>
+                <div class="col-6">
+                  <button id="selectLastImageButton" class='btn btn-outline-primary w-100 text-break filename-select'>Select last image</button>
+                </div>
+                <div id="patternGeneratorModalMissingFilenameWarning" class="col-12 text-danger mt-2">You must select two images to generate the wildcard pattern.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="patternGeneratorModalSubmitButton" type="button" class="btn btn-primary">Generate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" tabindex="-1" id="videoConversionModal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Convert a video</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row mt-2">
+                <div class="col-6">
+                  <div class="row">
+                    <div class="col-12">
+                      <button id="selectConversionVideoButton" class='btn btn-outline-primary w-100 text-break'>Select video</button>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <label for="outputFileCountField" class="form-label">Estimated file count</label>
+                      <input id="outputFileCountField" type="number" class="form-control" disabled>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <video class="h-100" id="fileConversionVideoPreview" loop autoplay disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; object-fit: contain;"></video>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="videoConversionModalSubmitButton" type="button" class="btn btn-primary">Convert</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <H2>Timelapse Viewer Setup</H2>
       Use this utility to create and edit Timelapse Viewer configurations.
       <div class="row my-1 gx-2 gy-2">
@@ -122,6 +183,15 @@
                   </label>
                   <input type="number" min="5" value="30" class="form-control behavior-input" id="behaviorInput_attractor_timeout" data-property="attractor_timeout">
                 </div>
+
+                <div class="col-12 col-md-6">
+                  <div class="form-check mb-0 mt-2">
+                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
+                    <label class="form-check-label" for="showFingerAnimationCheck">
+                      Show finger animation
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <h3 class="mt-2">Content</h3>
@@ -130,12 +200,24 @@
                 <div class="col-12 col-lg-4">
                   <button id="showConvertVideoModal" class='btn btn-info w-100'>Convert video</button>
                 </div>
-                <div class="col-12 col-lg-4">
-                  <button id="selectFirstImageButton" class='btn btn-outline-primary w-100 text-break'>Select first image</button>
+              </div>
+              <div class="row mt-2">
+                <div class="col-12 col-lg-4 mt-auto">
+                  <button id="showPatternGeneratorModal" class='btn btn-primary w-100'>Pattern generator</button>
                 </div>
                 <div class="col-12 col-lg-4">
-                  <button id="selectLastImageButton" class='btn btn-outline-primary w-100 text-break'>Select last image</button>
+                  <label for="filePatternInput" class="form-label">
+                    Filename pattern
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="A wildcard (*) search pattern that will select the files that should be part of the timelapse. If you don't know what this is, use the automatic generator." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="text" id="filePatternInput" class='form-control'>
                 </div>
+                <div class="col-12 col-lg-4">
+                  <label for="filenamePatternMatches" class="form-label">
+                    Number of files
+                  </label>
+                  <input disabled type="number" id="filenamePatternMatches" class='form-control'>
+                </div>             
               </div>
               
               <!-- <h4>Text</h4>

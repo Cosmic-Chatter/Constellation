@@ -48,6 +48,10 @@ function clearDefinitionInput (full = true) {
   document.getElementById('behaviorInput_animation_duration').value = 15
   document.getElementById('behaviorInput_attractor_timeout').value = 30
 
+  // Content details
+  document.getElementById('filePatternInput').value = ''
+  document.getElementById('filenamePatternMatches').value = null
+
   // Reset text inputs
   // document.getElementById('headerInput').value = ''
   // document.getElementById('subheaderInput').value = ''
@@ -128,6 +132,8 @@ function editDefinition (uuid = '') {
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
   $('#definitionNameInput').val(def.name)
+  document.getElementById('filePatternInput').value = def.files
+  retrieveMatchingFilesCount()
 
   // Set the appropriate values for the behavior fields
   Object.keys(def.behavior).forEach((key) => {
@@ -135,9 +141,9 @@ function editDefinition (uuid = '') {
   })
 
   // Set the appropriate values for the text fields
-  Object.keys(def.text).forEach((key) => {
-    document.getElementById(key + 'Input').value = def.text[key]
-  })
+  // Object.keys(def.text).forEach((key) => {
+  //   document.getElementById(key + 'Input').value = def.text[key]
+  // })
 
   // Create any existing options
   document.getElementById('optionRow').innerHTML = ''
@@ -585,17 +591,28 @@ function guessFilenamePattern () {
       prefix += firstNoExt[i]
     } else break
   }
+  const pattern = prefix + '*.' + firstExt
+  updateWorkingDefinition(['files'], pattern)
+  document.getElementById('filePatternInput').value = pattern
 
-  updateWorkingDefinition(['files'], prefix + '*.' + firstExt)
+  retrieveMatchingFilesCount()
+}
+
+function retrieveMatchingFilesCount () {
+  // Check the number of files in content that match the given filename wildcard pattern.
+
+  const pattern = document.getElementById('filePatternInput').value
+  const split = pattern.split('*.')
+
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   }).then((result) => {
     const content = result.all_exhibits
     const matchedFiles = content.filter((item) => {
-      return item.startsWith(prefix) && item.endsWith(firstExt)
+      return item.startsWith(split[0]) && item.endsWith(split[1])
     })
-    console.log('Number of files:', matchedFiles.length)
+    document.getElementById('filenamePatternMatches').value = matchedFiles.length
   })
 }
 
@@ -684,16 +701,84 @@ Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   })
 })
 
-// Content fields
+// Video conversion
+const videoConversionModal = new bootstrap.Modal('#videoConversionModal')
+document.getElementById('showConvertVideoModal').addEventListener('click', (event) => {
+  const convertButton = document.getElementById('videoConversionModalSubmitButton')
+  document.getElementById('selectConversionVideoButton').innerHTML = 'Select video'
+  document.getElementById('selectConversionVideoButton').setAttribute('data-filename', null)
+  document.getElementById('fileConversionVideoPreview').src = null
+  document.getElementById('outputFileCountField').value = null
+
+  convertButton.innerHTML = 'Convert'
+  convertButton.classList.remove('btn-info')
+  convertButton.classList.add('btn-primary')
+
+  videoConversionModal.show()
+})
+document.getElementById('selectConversionVideoButton').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['video'] })
+    .then((result) => {
+      if (result != null && result.length > 0) {
+        event.target.setAttribute('data-filename', result[0])
+        event.target.innerHTML = result[0]
+        document.getElementById('fileConversionVideoPreview').src = constCommon.config.helperAddress + '/thumbnails/' + result[0].replace(/\.[^/.]+$/, '') + '.mp4'
+
+        constCommon.makeHelperRequest({
+          method: 'POST',
+          endpoint: '/files/getVideoDetails',
+          params: {
+            filename: result[0]
+          }
+        })
+          .then((response) => {
+            if ('success' in response && response.success === true) {
+              const frames = Math.round(response.details.duration * response.details.fps)
+              document.getElementById('outputFileCountField').value = frames
+            }
+          })
+      }
+    })
+})
+
+document.getElementById('videoConversionModalSubmitButton').addEventListener('click', (event) => {
+  const filename = document.getElementById('selectConversionVideoButton').getAttribute('data-filename')
+  if (filename == null || filename.trim() === '') {
+    return
+  }
+  const button = document.getElementById('videoConversionModalSubmitButton')
+  button.innerHTML = 'Working...'
+  button.classList.add('btn-info')
+  button.classList.remove('btn-primary')
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/files/convertVideoToFrames',
+    params: {
+      filename,
+      file_type: 'jpg'
+    },
+    timeout: 3.6e6 // 1 hr
+  })
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        videoConversionModal.hide()
+      }
+    })
+})
+
+// Pattern generation
+document.getElementById('filePatternInput').addEventListener('change', (event) => {
+  updateWorkingDefinition(['files'], event.target.value)
+  retrieveMatchingFilesCount()
+  previewDefinition(true)
+})
 document.getElementById('selectFirstImageButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
     .then((result) => {
       if (result != null && result.length > 0) {
-        // updateWorkingDefinition(['files'], result)
         event.target.setAttribute('data-filename', result[0])
         event.target.innerHTML = result[0]
-        guessFilenamePattern()
-        previewDefinition(true)
       }
     })
 })
@@ -701,15 +786,32 @@ document.getElementById('selectLastImageButton').addEventListener('click', (even
   constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
     .then((result) => {
       if (result != null && result.length > 0) {
-        // updateWorkingDefinition(['files'], result)
         event.target.setAttribute('data-filename', result[0])
         event.target.innerHTML = result[0]
-        guessFilenamePattern()
-        previewDefinition(true)
       }
     })
 })
+const PatternGeneratorModal = new bootstrap.Modal('#patternGeneratorModal')
+document.getElementById('showPatternGeneratorModal').addEventListener('click', (event) => {
+  document.getElementById('patternGeneratorModalMissingFilenameWarning').style.display = 'none'
+  document.getElementById('selectFirstImageButton').innerHTML = 'Select file'
+  document.getElementById('selectFirstImageButton').setAttribute('data-filename', null)
+  document.getElementById('selectLastImageButton').innerHTML = 'Select file'
+  document.getElementById('selectLastImageButton').setAttribute('data-filename', null)
+  PatternGeneratorModal.show()
+})
+document.getElementById('patternGeneratorModalSubmitButton').addEventListener('click', (event) => {
+  const first = document.getElementById('selectFirstImageButton').getAttribute('data-filename')
+  const last = document.getElementById('selectLastImageButton').getAttribute('data-filename')
 
+  if (first == null || last == null) {
+    document.getElementById('patternGeneratorModalMissingFilenameWarning').style.display = 'block'
+  } else {
+    guessFilenamePattern()
+    PatternGeneratorModal.hide()
+    previewDefinition(true)
+  }
+})
 // Definition fields
 // Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => {
 //   el.addEventListener('change', (event) => {

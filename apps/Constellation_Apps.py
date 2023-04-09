@@ -158,6 +158,24 @@ async def get_available_content(config: const_config = Depends(get_config)):
     return response
 
 
+@app.post('/files/getVideoDetails')
+async def get_video_details(filename: str = Body(description='The filename of the file.', embed=True)):
+    """Return a dictionary of useful information about a video file in the content directory."""
+
+    success, details = helper_files.get_video_file_details(filename)
+    return {"success": success, "details": details}
+
+
+@app.post('/files/convertVideoToFrames')
+async def convert_video_to_frames(filename: str = Body(description='The filename of the file.'),
+                                  file_type: str = Body(description='The output filetype to use.', default='jpg')):
+    """Convert the given file to a set of frames."""
+
+    success = helper_files.convert_video_to_frames(filename, file_type)
+
+    return {"success": success}
+
+
 @app.get("/definitions/{app_id}/getAvailable")
 async def get_available_definitions(app_id: str):
     """Return a list of all the definitions for the given app."""

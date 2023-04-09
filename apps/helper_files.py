@@ -162,7 +162,8 @@ def create_thumbnail(filename: str, mimetype: str):
                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
         elif mimetype == "video":
             # First, find the length of the video
-            duration_sec = round(get_video_file_details(filename)["duration"])
+            _, video_details = get_video_file_details(filename)
+            duration_sec = round(video_details["duration"])
             file_path = get_path(['content', filename], user_file=True)
             subprocess.Popen([ff.get_ffmpeg_bin(), "-y",
                               "-i", file_path,
@@ -180,6 +181,7 @@ def get_video_file_details(filename: str) -> dict[str, Any]:
     """Use FFmpeg to probe the given video file and return useful information."""
 
     details = {}
+    success = True
 
     try:
         ff = pyffmpeg.FFmpeg()
@@ -205,27 +207,38 @@ def get_video_file_details(filename: str) -> dict[str, Any]:
                 num_space += 1
             search_index -= 1
 
-        fps_str = ffmpeg_text[search_index+1: fps_index].strip()
+        fps_str = ffmpeg_text[search_index + 1: fps_index].strip()
         details['fps'] = float(fps_str)
 
     except OSError as e:
         print("get_video_file_details: error:", e)
+        success = False
     except ImportError as e:
         print("get_video_file_details: error loading FFmpeg: ", e)
+        success = False
 
-    return details
+    return success, details
 
 
 def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
     """Use FFmpeg to convert the given video file to a set of frames in the specified image format."""
 
     success = True
+
+    if file_type not in ['jpg', 'png', 'webp']:
+        raise ValueError('file_type must be one of "jpg", "png", "webp"')
     try:
         ff = pyffmpeg.FFmpeg()
         input_path = get_path(['content', filename], user_file=True)
         output_path = '.'.join(input_path.split('.')[0:-1]) + '_%06d.' + file_type
-        process = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", input_path, output_path],
-                                   stderr=subprocess.PIPE, encoding="UTF-8")
+        if file_type == 'jpg':
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-qscale:v", "4", output_path]
+        elif file_type == 'png':
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, output_path]
+        else:
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-quality", "90", output_path]
+
+        process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="UTF-8")
         process.communicate(timeout=3600)
         if process.returncode != 0:
             success = False
