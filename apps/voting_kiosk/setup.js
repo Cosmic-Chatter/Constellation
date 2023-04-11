@@ -588,6 +588,10 @@ function rotatePreview () {
   previewDefinition(false)
 }
 
+// Set helper address for use with constCommon.makeHelperRequest
+constCommon.config.helperAddress = window.location.origin
+
+
 // All the available definitions
 let availableDefinitions = {}
 

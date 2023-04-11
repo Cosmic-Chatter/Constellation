@@ -740,6 +740,9 @@ function rotatePreview () {
   document.getElementById('previewFrame').classList.toggle('preview-portrait')
 }
 
+// Set helper address for use with constCommon.makeHelperRequest
+constCommon.config.helperAddress = window.location.origin
+
 // All the available definitions
 let availableDefinitions = {}
 
@@ -911,6 +914,9 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 // Preview frame
 window.addEventListener('load', resizePreview)
 window.addEventListener('resize', resizePreview)
+
+// Set helper address for use with constCommon.makeHelperRequest
+constCommon.config.helperAddress = window.location.origin
 
 populateFontSelects()
 clearDefinitionInput()
