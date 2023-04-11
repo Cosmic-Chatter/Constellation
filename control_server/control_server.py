@@ -1064,7 +1064,7 @@ async def handle_ping(data: dict[str, Any], request: Request):
 
     this_id = data['id']
     c_exhibit.update_exhibit_component_status(data, request.client.host)
-    print(c_exhibit.get_exhibit_component(this_id).config)
+
     dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()
     if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
         # Clear the command list now that we are sending
