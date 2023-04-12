@@ -176,22 +176,6 @@
                   </label>
                   <input type="number" min="5" value="15" class="form-control behavior-input" data-property="animation_duration" id="behaviorInput_animation_duration">
                 </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                  <label for="behaviorInput_attractor_timeout" class="form-label">
-                    Attractor timeout
-                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time in seconds before the attractor animation should start playing." style="font-size: 0.55em;">?</span>
-                  </label>
-                  <input type="number" min="5" value="30" class="form-control behavior-input" id="behaviorInput_attractor_timeout" data-property="attractor_timeout">
-                </div>
-
-                <div class="col-12 col-md-6">
-                  <div class="form-check mb-0 mt-2">
-                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
-                    <label class="form-check-label" for="showFingerAnimationCheck">
-                      Show finger animation
-                    </label>
-                  </div>
-                </div>
               </div>
 
               <h3 class="mt-2">Content</h3>
@@ -218,6 +202,76 @@
                   </label>
                   <input disabled type="number" id="filenamePatternMatches" class='form-control'>
                 </div>             
+              </div>
+
+              <h3 class="mt-2">Attractor</h3>
+              <div class="row">
+                <div class="col-12 col-lg-4">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
+                    <label class="form-check-label" for="showFingerAnimationCheck">
+                      Show attractor
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
+                    <label class="form-check-label" for="showFingerAnimationCheck">
+                      Show finger animation
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-2 gy-2">
+                <div class="col-12 col-md-6 col-lg-3">
+                  <label for="attractorInput_attractor_timeout" class="form-label">
+                    Timeout
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time in seconds before the attractor animation should start playing." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="number" min="5" value="30" class="form-control" id="attractorInput_attractor_timeout">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_font-adjust" class="form-label">Height</label>
+                  <input id="attractorInput_height" type="range" class="form-range text-size-slider" data-property="attractorInput_height" min="0", max="100" start="40" step="5">
+                </div>
+                <div class="col-12 col-lg-5">
+                  <label for="attractorInput_text" class="form-label">
+                    Text
+                  </label>
+                  <input type="text" class="form-control" id="attractorInput_text">
+                </div>
+              </div>
+              <div class="row mt-2 gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_font-adjust" class="form-label">Text size</label>
+                  <input id="attractorInput_font-adjust" type="range" class="form-range text-size-slider" data-property="attractor-font-adjust" min="-2", max="4" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="colorPicker_attractor-background" class="form-label">Background color</label>
+                  <div>
+                    <input id="colorPicker_attractor-background" type="text" class="coloris form-control" value="rgba(0, 0, 0, 0.2)" data-property="attractor-background" data-default="rgba(0, 0, 0, 0.2)f">
+                  </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="colorPicker_attractor-text-color" class="form-label">Text color</label>
+                  <div>
+                    <input id="colorPicker_attractor-text-color" type="text" class="coloris form-control" value="#fff" data-property="attractor-text-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                  <label for="fontSelect_header" class="form-label">
+                    Font
+                  </label>
+                  <div class="row">
+                    <div class="col-8 pe-1">
+                      <select id="fontSelect_header" class="form-select font-select" data-property="header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                    </div>
+                    <div class="col-4 ps-1">
+                      <button class="btn btn-primary w-100">Upload</button>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <!-- <h4>Text</h4>

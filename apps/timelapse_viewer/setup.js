@@ -644,6 +644,10 @@ function setUpColorPickers () {
     ]
   })
 }
+
+// Set helperAddress for calls to constCommon.makeHelperRequest
+constCommon.config.helperAddress = window.location.origin
+
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
 
