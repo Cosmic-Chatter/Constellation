@@ -35,7 +35,6 @@ class ComponentStatusManager:
             self.set_status("ONLINE")
 
     def set_status(self, status):
-
         if self.status != status:
             config.last_update_time = time.time()
 
@@ -54,8 +53,9 @@ class ComponentStatusManager:
         elif mode == "WAITING":
             self.set_status("OFFLINE")
 
-    def start_timer(self, mode):
+        return
 
+    def start_timer(self, mode):
         timer_durations = {
             "ACTIVE": 10,
             "ONLINE": 30,
@@ -65,5 +65,5 @@ class ComponentStatusManager:
             if self.timer_reference is not None and self.timer_reference.is_alive():
                 self.timer_reference.cancel()
             self.timer_reference = threading.Timer(timer_durations[mode], self.expire_timer, args=[mode])
-        else:
-            raise ValueError("mode must be in [ACTIVE, ONLINE, WAITING]")
+            self.timer_reference.start()
+
