@@ -15,17 +15,44 @@ function updateFunc (update) {
 function loadDefinition (definition) {
   // Receive a definition in the form of an object and set up the viewer appropriately.
 
+  const root = document.querySelector(':root')
+
   if ('files' in definition) {
     updateSourceList(definition.files)
   }
   if ('animation_duration' in definition.behavior) {
     animationCustomDuration = parseFloat(definition.behavior.animation_duration)
-    console.log(animationCustomDuration)
   } else {
     animationCustomDuration = null
   }
-  if ('attractor_timeout' in definition.behavior) {
-    attractorTimeout = parseFloat(definition.behavior.attractor_timeout * 1000)
+  if ('attractor_timeout' in definition.attractor) {
+    attractorTimeout = parseFloat(definition.attractor.attractor_timeout * 1000)
+  }
+
+  if ('attractor_background' in definition.attractor) {
+    root.style.setProperty('--attractor-background', definition.attractor.attractor_background)
+  } else {
+    root.style.setProperty('--attractor-background', 'rgba(0, 0, 0, 0.2)')
+  }
+  if ('attractor_height' in definition.attractor) {
+    root.style.setProperty('--attractor-height', parseFloat(definition.attractor.attractor_height))
+  } else {
+    root.style.setProperty('--attractor-height', 70)
+  }
+  if ('font_adjust' in definition.attractor) {
+    root.style.setProperty('--attractor-font-adjust', parseFloat(definition.attractor.font_adjust))
+  } else {
+    root.style.setProperty('--attractor-font-adjust', 0)
+  }
+  if ('text' in definition.attractor) {
+    document.getElementById('attractor').innerHTML = definition.attractor.text
+  } else {
+    document.getElementById('attractor').innerHTML = ''
+  }
+  if ('text_color' in definition.attractor) {
+    root.style.setProperty('--attractor-text-color', definition.attractor.text_color)
+  } else {
+    root.style.setProperty('--attractor-text-color', 'white')
   }
 }
 

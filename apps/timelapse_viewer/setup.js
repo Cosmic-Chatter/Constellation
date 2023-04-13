@@ -33,10 +33,12 @@ function clearDefinitionInput (full = true) {
       .then((response) => {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
+          attractor: {},
           behavior: {}
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
+          attractor: {},
           behavior: {}
         })
         previewDefinition(false)
@@ -46,7 +48,7 @@ function clearDefinitionInput (full = true) {
   // Definition details
   document.getElementById('definitionNameInput').value = ''
   document.getElementById('behaviorInput_animation_duration').value = 15
-  document.getElementById('behaviorInput_attractor_timeout').value = 30
+  document.getElementById('attractorInput_attractor_timeout').value = 30
 
   // Content details
   document.getElementById('filePatternInput').value = ''
@@ -140,54 +142,16 @@ function editDefinition (uuid = '') {
     document.getElementById('behaviorInput_' + key).value = def.behavior[key]
   })
 
-  // Set the appropriate values for the text fields
-  // Object.keys(def.text).forEach((key) => {
-  //   document.getElementById(key + 'Input').value = def.text[key]
-  // })
+  // Set the appropriate values for the attractor fields
+  Object.keys(def.attractor).forEach((key) => {
+    const el = document.getElementById('attractorInput_' + key)
+    el.value = def.attractor[key]
 
-  // Create any existing options
-  document.getElementById('optionRow').innerHTML = ''
-  def.option_order.forEach((optionUUID) => {
-    const option = def.options[optionUUID]
-    createSurveyOption(option)
+    if (['attractor_background', 'text_color'].includes(key)) {
+      // Send a special event to the color picker to trigger the change
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    }
   })
-
-  // Set the appropriate values for the color pickers
-  Object.keys(def.style.color).forEach((key) => {
-    $('#colorPicker_' + key).val(def.style.color[key])
-    document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
-  })
-
-  // Set the appropriate values for the font selects
-  Object.keys(def.style.font).forEach((key) => {
-    $('#fontSelect_' + key).val(def.style.font[key])
-  })
-
-  // Set the appropriate values for the text size sliders
-  Object.keys(def.style.text_size).forEach((key) => {
-    console.log(key + 'TextSizeSlider')
-    document.getElementById(key + 'TextSizeSlider').value = def.style.text_size[key]
-  })
-
-  // Set the appropriate values for the layout options
-  if ('top_height' in def.style.layout) {
-    document.getElementById('headerToButtonsSlider').value = def.style.layout.top_height
-  }
-  if ('header_padding' in def.style.layout) {
-    document.getElementById('headerPaddingHeightSlider').value = def.style.layout.header_padding
-  }
-  if ('bottom_height' in def.style.layout) {
-    document.getElementById('buttonsToFooterSlider').value = def.style.layout.bottom_height
-  }
-  if ('footer_padding' in def.style.layout) {
-    document.getElementById('footerPaddingHeightSlider').value = def.style.layout.footer_padding
-  }
-  if ('button_padding' in def.style.layout) {
-    document.getElementById('buttonPaddingHeightSlider').value = def.style.layout.button_padding
-  }
-  if ('image_height' in def.style.layout) {
-    document.getElementById('imageHeightSlider').value = def.style.layout.image_height
-  }
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=' + def.uuid
@@ -816,6 +780,16 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
     previewDefinition(true)
   }
 })
+
+// Attractor
+Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
+  el.addEventListener('change', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['attractor', property], event.target.value)
+    previewDefinition(true)
+  })
+})
+
 // Definition fields
 // Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => {
 //   el.addEventListener('change', (event) => {
@@ -862,14 +836,16 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
 //   previewDefinition(true)
 // })
 
+// Realtime-sliders should adjust as we drag them
+Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['attractor', property], event.target.value)
+    previewDefinition(true)
+  })
+})
+
 // // Text size fields
-// Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
-//   el.addEventListener('input', (event) => {
-//     const property = event.target.getAttribute('data-property')
-//     updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
-//     previewDefinition(true)
-//   })
-// })
 
 // Layout fields
 // Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
