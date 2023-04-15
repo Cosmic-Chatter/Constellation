@@ -27,8 +27,19 @@ function loadDefinition (definition) {
   }
   if ('attractor_timeout' in definition.attractor) {
     attractorTimeout = parseFloat(definition.attractor.attractor_timeout * 1000)
+  } else {
+    attractorTimeout = 30000
   }
-
+  if ('use_attractor' in definition.attractor) {
+    attractorAvailable = definition.attractor.use_attractor
+  } else {
+    attractorAvailable = false
+  }
+  if ('use_finger_animation' in definition.attractor) {
+    showFingerAnimation = definition.attractor.use_finger_animation
+  } else {
+    showFingerAnimation = true
+  }
   if ('attractor_background' in definition.attractor) {
     root.style.setProperty('--attractor-background', definition.attractor.attractor_background)
   } else {
@@ -44,6 +55,13 @@ function loadDefinition (definition) {
   } else {
     root.style.setProperty('--attractor-font-adjust', 0)
   }
+  if ('font' in definition.attractor) {
+    const font = new FontFace('attractor-font', 'url(' + encodeURI(definition.attractor.font) + ')')
+    document.fonts.add(font)
+    root.style.setProperty('--attractor-font', 'attractor-font')
+  } else {
+    root.style.setProperty('--attractor-font', 'attractor-default')
+  }
   if ('text' in definition.attractor) {
     document.getElementById('attractor').innerHTML = definition.attractor.text
   } else {
@@ -54,6 +72,7 @@ function loadDefinition (definition) {
   } else {
     root.style.setProperty('--attractor-text-color', 'white')
   }
+  showAttractor()
 }
 
 function updateSourceList (matchString) {
@@ -246,7 +265,6 @@ function loadImage (url) {
   // Use a promise to load the given image
 
   stopInput = true
-
   return new Promise(resolve => {
     const image = new Image()
 
@@ -259,6 +277,8 @@ function loadImage (url) {
 
 function displayImage (file) {
   // Handle switching the src on the appropriate image tag to `file`.
+
+  if (file == null) return
 
   if (activeViewerIndex === 0) {
     activeViewerIndex = 1
@@ -342,7 +362,18 @@ function showAttractor () {
   // Start animating the timelapse and show a moving hand icon to guide users
 
   animateTimelapse()
-  document.getElementById('handContainer').style.display = 'block'
+  if (showFingerAnimation === true) {
+    document.getElementById('handContainer').style.display = 'block'
+  } else {
+    document.getElementById('handContainer').style.display = 'none'
+  }
+
+  // Hide the attractor element
+  if (attractorAvailable === true) {
+    document.getElementById('attractor').style.display = 'flex'
+  } else {
+    document.getElementById('attractor').style.display = 'none'
+  }
 
   // Report analytics, if necessary
   if (enableAnalytics) {
@@ -353,6 +384,9 @@ function showAttractor () {
 function hideAttractor () {
   // Stop any animation
   continueAnimating = false
+
+  // Hide the attractor element
+  document.getElementById('attractor').style.display = 'none'
 
   // Hide the moving hand icon
   document.getElementById('handContainer').style.display = 'none'
@@ -384,8 +418,9 @@ let animationCustomDuration = null
 
 let attractorTimer = null // Will be replaced with index of setTimeout
 let attractorTimeout = 30000 // ms
+let attractorAvailable = false
+let showFingerAnimation = true
 
-const currentContent = []
 let sourceList = []
 let sourceListLength = 0
 let activeSourceIndex = 0 // Index of the file from the source list currently showing

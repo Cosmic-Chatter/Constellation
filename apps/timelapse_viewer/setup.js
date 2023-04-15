@@ -48,55 +48,24 @@ function clearDefinitionInput (full = true) {
   // Definition details
   document.getElementById('definitionNameInput').value = ''
   document.getElementById('behaviorInput_animation_duration').value = 15
-  document.getElementById('attractorInput_attractor_timeout').value = 30
 
   // Content details
   document.getElementById('filePatternInput').value = ''
   document.getElementById('filenamePatternMatches').value = null
 
-  // Reset text inputs
-  // document.getElementById('headerInput').value = ''
-  // document.getElementById('subheaderInput').value = ''
-  // document.getElementById('footerInput').value = ''
-  // document.getElementById('subfooterInput').value = ''
-  // document.getElementById('success_messageInput').value = ''
-
-  // Reset option edit fields
-  // document.getElementById('optionRow').innerHTML = ''
-  // document.getElementById('optionInput_label').value = ''
-  // document.getElementById('optionInput_value').value = ''
-  // document.getElementById('optionInput_icon').value = ''
-  // setIconUserFile('')
-
-  // Reset color options
-  // const colorInputs = ['background-color', 'button-color', 'button-touched-color', 'success-message-color', 'header-color', 'subheader-color', 'footer-color', 'subfooter-color', 'button-text-color']
-  // colorInputs.forEach((input) => {
-  //   const el = $('#colorPicker_' + input)
-  //   el.val(el.data('default'))
-  //   document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
-  // })
-
-  // Reset font face options
-  // const fontInputs = ['header', 'subheader', 'footer', 'subfooter', 'button']
-  // fontInputs.forEach((input) => {
-  //   const el = $('#fontSelect_' + input)
-  //   el.val(el.data('default'))
-  // })
-
-  // Reset text size options
-  // document.getElementById('headerTextSizeSlider').value = 0
-  // document.getElementById('subheaderTextSizeSlider').value = 0
-  // document.getElementById('footerTextSizeSlider').value = 0
-  // document.getElementById('subfooterTextSizeSlider').value = 0
-  // document.getElementById('buttonTextSizeSlider').value = 0
-
-  // Reset layout options
-  // document.getElementById('headerToButtonsSlider').value = 20
-  // document.getElementById('headerPaddingHeightSlider').value = 5
-  // document.getElementById('buttonsToFooterSlider').value = 20
-  // document.getElementById('footerPaddingHeightSlider').value = 5
-  // document.getElementById('buttonPaddingHeightSlider').value = 10
-  // document.getElementById('imageHeightSlider').value = 90
+  // Attractor details
+  document.getElementById('attractorInput_attractor_timeout').value = 30
+  document.getElementById('attractorCheck_use_attractor').checked = false
+  disableAttractorOptions(true)
+  document.getElementById('attractorCheck_use_finger_animation').checked = true
+  document.getElementById('attractorInput_attractor_height').value = 40
+  document.getElementById('attractorInput_text').value = ''
+  document.getElementById('attractorInput_font_adjust').value = 0
+  document.getElementById('attractorInput_attractor_background').value = 'rgba(0, 0, 0, 0.2)'
+  document.querySelector('#attractorInput_attractor_background').dispatchEvent(new Event('input', { bubbles: true }))
+  document.getElementById('attractorInput_text_color').value = '#fff'
+  document.querySelector('#attractorInput_text_color').dispatchEvent(new Event('input', { bubbles: true }))
+  document.getElementById('attractorInput_font').value = '../_fonts/OpenSans-Bold.ttf'
 }
 
 function createNewDefinition () {
@@ -129,7 +98,6 @@ function editDefinition (uuid = '') {
 
   clearDefinitionInput(false)
   const def = getDefinitionByUUID(uuid)
-  console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -144,8 +112,23 @@ function editDefinition (uuid = '') {
 
   // Set the appropriate values for the attractor fields
   Object.keys(def.attractor).forEach((key) => {
-    const el = document.getElementById('attractorInput_' + key)
-    el.value = def.attractor[key]
+    let el
+    if (['use_attractor', 'use_finger_animation'].includes(key)) {
+      el = document.getElementById('attractorCheck_' + key)
+      el.checked = def.attractor[key]
+
+      // If this is the Show Attractor checkbox, set the approprate state for the rest of the options
+      if (key === 'use_attractor') {
+        if (def.attractor[key] === true) {
+          disableAttractorOptions(false)
+        } else {
+          disableAttractorOptions(true)
+        }
+      }
+    } else {
+      el = document.getElementById('attractorInput_' + key)
+      el.value = def.attractor[key]
+    }
 
     if (['attractor_background', 'text_color'].includes(key)) {
       // Send a special event to the color picker to trigger the change
@@ -180,7 +163,7 @@ function onFontUploadChange () {
       const response = JSON.parse(this.responseText)
 
       if ('success' in response) {
-        $('#uploadFontName').html('Upload new')
+        $('#uploadFontName').html('Upload')
         populateFontSelects()
       }
     } else if (this.status === 422) {
@@ -188,6 +171,19 @@ function onFontUploadChange () {
     }
   }
   xhr.send(formData)
+}
+
+function disableAttractorOptions (disable) {
+  // Set the disabled property for the attractor options
+  if (disable) {
+    Array.from(document.getElementsByClassName('attractor-input')).forEach((match) => {
+      match.disabled = true
+    })
+  } else {
+    Array.from(document.getElementsByClassName('attractor-input')).forEach((match) => {
+      match.disabled = false
+    })
+  }
 }
 
 function formatOptionHeader (details) {
@@ -480,7 +476,7 @@ function resizePreview () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const types = ['header', 'subheader', 'footer', 'subfooter', 'button']
+  const selects = ['attractorInput_font']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
@@ -489,25 +485,26 @@ function populateFontSelects () {
     endpoint: '/getAvailableContent'
   })
     .then((result) => {
-      types.forEach((type) => {
+      selects.forEach((id) => {
+        const el = document.getElementById(id)
         // First, add the default
         const defaultFont = document.createElement('option')
-        defaultFont.value = $('#fontSelect_' + type).data('default')
+        defaultFont.value = el.getAttribute('data-default')
         defaultFont.innerHTML = 'Default'
-        $('#fontSelect_' + type).append(defaultFont)
+        el.appendChild(defaultFont)
 
         const header = document.createElement('option')
         header.value = 'User-provided'
         header.innerHTML = 'User-provided'
         header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
+        el.appendChild(header)
 
         result.all_exhibits.forEach((item) => {
           if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
             const option = document.createElement('option')
             option.value = '../content/' + item
             option.innerHTML = item
-            $('#fontSelect_' + type).append(option)
+            el.appendChild(option)
           }
         })
       })
@@ -515,18 +512,19 @@ function populateFontSelects () {
       // Then, add the defaults
       const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
 
-      types.forEach((type) => {
+      selects.forEach((id) => {
+        const el = document.getElementById(id)
         const header = document.createElement('option')
         header.value = 'Built-in'
         header.innerHTML = 'Built-in'
         header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
+        el.appendChild(header)
 
         defaultFonts.forEach((font) => {
           const option = document.createElement('option')
           option.value = '../_fonts/' + font
           option.innerHTML = font
-          $('#fontSelect_' + type).append(option)
+          el.appendChild(option)
         })
       })
     })
@@ -790,51 +788,24 @@ Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
   })
 })
 
-// Definition fields
-// Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => {
-//   el.addEventListener('change', (event) => {
-//     const key = event.target.getAttribute('data-def-key')
-//     updateWorkingDefinition(['text', key], event.target.value)
-//     previewDefinition(true)
-//   })
-// })
+Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
+  el.addEventListener('change', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['attractor', property], event.target.checked)
+    // If we aren't using the attractor, disable the options
+    if (event.target.getAttribute('id') === 'attractorCheck_use_attractor') {
+      if (event.target.checked) {
+        disableAttractorOptions(false)
+      } else {
+        disableAttractorOptions(true)
+      }
+    }
+    previewDefinition(true)
+  })
+})
 
-// Option fields
-// document.getElementById('addOptionButton').addEventListener('click', () => {
-//   createSurveyOption(null, true)
-// })
-// document.getElementById('optionInput_icon_user_file_DeleteButton').addEventListener('click', () => {
-//   const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-//   updateWorkingDefinition(['options', id, 'icon_user_file'], '')
-//   setIconUserFile('')
-//   document.getElementById('optionInput_icon').value = ''
-//   updateWorkingDefinition(['options', id, 'icon'], '')
-//   previewDefinition(true)
-// })
-// Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
-//   el.addEventListener('change', (event) => {
-//     const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-//     const field = event.target.getAttribute('data-field')
-//     if (id == null) return
-//     updateWorkingDefinition(['options', id, field], event.target.value)
-//     document.getElementById('OptionHeaderText_' + id).innerHTML = formatOptionHeader($('#definitionSaveButton').data('workingDefinition').options[id])
-//     previewDefinition(true)
-//   })
-// })
-
-// Style fields
-// $('.coloris').change(function () {
-//   const value = $(this).val().trim()
-//   updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-//   previewDefinition(true)
-// })
-// $('#uploadFontInput').change(onFontUploadChange)
-
-// $('.font-select').change(function () {
-//   const value = $(this).val().trim()
-//   updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
-//   previewDefinition(true)
-// })
+// Font upload
+document.getElementById('uploadFontInput').addEventListener('change', onFontUploadChange)
 
 // Realtime-sliders should adjust as we drag them
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {

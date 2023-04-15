@@ -208,16 +208,16 @@
               <div class="row">
                 <div class="col-12 col-lg-4">
                   <div class="form-check mb-0">
-                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
-                    <label class="form-check-label" for="showFingerAnimationCheck">
+                    <input class="form-check-input attractor-check" type="checkbox" value="" id="attractorCheck_use_attractor" checked data-property="use_attractor">
+                    <label class="form-check-label" for="attractorCheck_use_attractor">
                       Show attractor
                     </label>
                   </div>
                 </div>
                 <div class="col-12 col-lg-5">
                   <div class="form-check mb-0">
-                    <input class="form-check-input" type="checkbox" value="" id="showFingerAnimationCheck" checked>
-                    <label class="form-check-label" for="showFingerAnimationCheck">
+                    <input class="form-check-input attractor-check" type="checkbox" value="" id="attractorCheck_use_finger_animation" checked data-property="use_finger_animation">
+                    <label class="form-check-label" for="attractorCheck_use_finger_animation">
                       Show finger animation
                     </label>
                   </div>
@@ -263,10 +263,13 @@
                   </label>
                   <div class="row">
                     <div class="col-8 pe-1">
-                      <select id="attractorInput_font" class="form-select attractor-input" data-property="font" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                      <select id="attractorInput_font" class="form-select attractor-input font-select" data-property="font" data-default="../_fonts/OpenSans-Bold.ttf"></select>
                     </div>
                     <div class="col-4 ps-1">
-                      <button class="btn btn-primary w-100">Upload</button>
+                      <label class="btn btn-outline-primary w-100">
+                        <span id="uploadFontName" class="w-100">Upload</span>
+                        <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
+                      </label>
                     </div>
                   </div>
                 </div>

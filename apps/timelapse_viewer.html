@@ -6,6 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="description" content="">
     <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="../_static/favicon.ico">
 
     <title>Constellation Time-Lapse Viewer</title>
 
@@ -38,6 +39,7 @@
       }
       #attractor {
         position: fixed;
+        display: none;
         height: calc(var(--attractor-height) * 1vh);
         width: 100%;
         top: calc((100vh - var(--attractor-height)* 1vh ) /2);
@@ -56,6 +58,7 @@
       }
       #handContainer {
         position: absolute;
+        display: none;
         left: 45vw;
         top: 80vh;
         width: 10vw;
@@ -90,7 +93,7 @@
       </div>
     </div>
 
-    <div id="attractor" class="d-flex align-items-center justify-content-center">
+    <div id="attractor" class="align-items-center justify-content-center">
       Attractor Text
     </div>
 

@@ -228,7 +228,7 @@ function onFontUploadChange () {
       const response = JSON.parse(this.responseText)
 
       if ('success' in response) {
-        $('#uploadFontName').html('Upload new')
+        $('#uploadFontName').html('Upload')
         populateFontSelects()
       }
     } else if (this.status === 422) {
