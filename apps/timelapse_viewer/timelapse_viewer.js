@@ -3,43 +3,76 @@ import * as constCommon from '../js/constellation_app_common.js'
 function updateFunc (update) {
   // Function to parse timelapse-specific updates
 
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      const xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
-        }
-      }
-      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
-      xhr.send(null)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function loadContentFromINI (definition) {
+function loadDefinition (definition) {
   // Receive a definition in the form of an object and set up the viewer appropriately.
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
+  const root = document.querySelector(':root')
+
+  if ('files' in definition) {
+    updateSourceList(definition.files)
   }
-  if ('files' in definition.SETTINGS) {
-    updateSourceList(definition.SETTINGS.files)
-  }
-  if ('animation_length' in definition.SETTINGS) {
-    animationCustomDuration = parseFloat(definition.SETTINGS.animation_length)
+  if ('animation_duration' in definition.behavior) {
+    animationCustomDuration = parseFloat(definition.behavior.animation_duration)
   } else {
     animationCustomDuration = null
   }
-  if ('attractor_timeout' in definition.SETTINGS) {
-    attractorTimeout = parseFloat(definition.SETTINGS.attractor_timeout * 1000)
+  if ('attractor_timeout' in definition.attractor) {
+    attractorTimeout = parseFloat(definition.attractor.attractor_timeout * 1000)
+  } else {
+    attractorTimeout = 30000
   }
+  if ('use_attractor' in definition.attractor) {
+    attractorAvailable = definition.attractor.use_attractor
+  } else {
+    attractorAvailable = false
+  }
+  if ('use_finger_animation' in definition.attractor) {
+    showFingerAnimation = definition.attractor.use_finger_animation
+  } else {
+    showFingerAnimation = true
+  }
+  if ('attractor_background' in definition.attractor) {
+    root.style.setProperty('--attractor-background', definition.attractor.attractor_background)
+  } else {
+    root.style.setProperty('--attractor-background', 'rgba(0, 0, 0, 0.2)')
+  }
+  if ('attractor_height' in definition.attractor) {
+    root.style.setProperty('--attractor-height', parseFloat(definition.attractor.attractor_height))
+  } else {
+    root.style.setProperty('--attractor-height', 70)
+  }
+  if ('font_adjust' in definition.attractor) {
+    root.style.setProperty('--attractor-font-adjust', parseFloat(definition.attractor.font_adjust))
+  } else {
+    root.style.setProperty('--attractor-font-adjust', 0)
+  }
+  if ('font' in definition.attractor) {
+    const font = new FontFace('attractor-font', 'url(' + encodeURI(definition.attractor.font) + ')')
+    document.fonts.add(font)
+    root.style.setProperty('--attractor-font', 'attractor-font')
+  } else {
+    root.style.setProperty('--attractor-font', 'attractor-default')
+  }
+  if ('text' in definition.attractor) {
+    document.getElementById('attractor').innerHTML = definition.attractor.text
+  } else {
+    document.getElementById('attractor').innerHTML = ''
+  }
+  if ('text_color' in definition.attractor) {
+    root.style.setProperty('--attractor-text-color', definition.attractor.text_color)
+  } else {
+    root.style.setProperty('--attractor-text-color', 'white')
+  }
+  showAttractor()
 }
 
 function updateSourceList (matchString) {
@@ -232,7 +265,6 @@ function loadImage (url) {
   // Use a promise to load the given image
 
   stopInput = true
-
   return new Promise(resolve => {
     const image = new Image()
 
@@ -245,6 +277,8 @@ function loadImage (url) {
 
 function displayImage (file) {
   // Handle switching the src on the appropriate image tag to `file`.
+
+  if (file == null) return
 
   if (activeViewerIndex === 0) {
     activeViewerIndex = 1
@@ -328,7 +362,18 @@ function showAttractor () {
   // Start animating the timelapse and show a moving hand icon to guide users
 
   animateTimelapse()
-  document.getElementById('handContainer').style.display = 'block'
+  if (showFingerAnimation === true) {
+    document.getElementById('handContainer').style.display = 'block'
+  } else {
+    document.getElementById('handContainer').style.display = 'none'
+  }
+
+  // Hide the attractor element
+  if (attractorAvailable === true) {
+    document.getElementById('attractor').style.display = 'flex'
+  } else {
+    document.getElementById('attractor').style.display = 'none'
+  }
 
   // Report analytics, if necessary
   if (enableAnalytics) {
@@ -339,6 +384,9 @@ function showAttractor () {
 function hideAttractor () {
   // Stop any animation
   continueAnimating = false
+
+  // Hide the attractor element
+  document.getElementById('attractor').style.display = 'none'
 
   // Hide the moving hand icon
   document.getElementById('handContainer').style.display = 'none'
@@ -361,6 +409,7 @@ let lastTouchX = null // X cordinate of the last touchmove event
 let currentClick = false
 let stopInput = false
 
+let currentDefintion = ''
 let continueAnimating = true // true when we are animating for the attractor
 let animationFramerate = 30
 let animationStepSize = 1
@@ -369,8 +418,9 @@ let animationCustomDuration = null
 
 let attractorTimer = null // Will be replaced with index of setTimeout
 let attractorTimeout = 30000 // ms
+let attractorAvailable = false
+let showFingerAnimation = true
 
-let currentContent = []
 let sourceList = []
 let sourceListLength = 0
 let activeSourceIndex = 0 // Index of the file from the source list currently showing
@@ -380,12 +430,29 @@ const enableAnalytics = false
 
 constCommon.config.debug = true
 constCommon.config.helperAddress = window.location.origin
+let standalone = false
 
-constCommon.askForDefaults()
-constCommon.sendPing()
-setInterval(constCommon.sendPing, 5000)
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+  standalone = true
+  if (searchParams.has('definition')) {
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
 
-document.body.style.cursor = 'none' // Hide the cursor
+      setInterval(constCommon.sendPing, 5000)
+    })
+  // Hide the cursor
+  document.body.style.cursor = 'none'
+}
 
 // Create event listeners
 $('body')

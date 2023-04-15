@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <meta name="description" content="">
+    <meta name="author" content="Morgan Rehnberg">
+    <link rel="icon" type="image/x-icon" href="../_static/favicon.ico">
+
+    <link rel="stylesheet" href="../css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/coloris.min.css">
+
+    <style>
+      /* Style for the color pickers */
+      .clr-field {
+        width: 100%;
+      }
+      .clr-field button, .clr-field input {
+        width: 100%;
+        border-radius: 5px;
+        border: var(--bs-border-color);
+        border-width: 1px;
+        border-style: solid;
+      }
+      #previewContainer {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      #previewFrame {
+        /* transform: scale(0.1); */
+        /* transform: scale(calc(var(--previewHeight)) ); */
+        transform-origin: 0 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: white;
+        border-width: 1px;
+        border-style: solid;
+      }
+      .preview-landscape {
+        --previewHeight: 1080px;
+        width: 1920px;
+        height: var(--previewHeight);
+      }
+      .preview-portrait {
+        --previewHeight: 1920px;
+        width: 1080px;
+        height: var(--previewHeight);
+      }
+    </style>
+
+    <title>Timelapse Viewer Setup</title>
+
+  </head>
+
+  <body>
+    <div id="mainContainer" class="container mt-2 mb-5">
+
+      <div class="modal" tabindex="-1" id="patternGeneratorModal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Generate a filename pattern</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <i>Select the first and last images in your sequence to generate the wildcard pattern. If this pattern matches images other than the ones you want, delete then from the content directory.</i>
+              <div class="row mt-3">
+                <div class="col-6">
+                  <button id="selectFirstImageButton" class='btn btn-outline-primary w-100 text-break filename-select'>Select first image</button>
+                </div>
+                <div class="col-6">
+                  <button id="selectLastImageButton" class='btn btn-outline-primary w-100 text-break filename-select'>Select last image</button>
+                </div>
+                <div id="patternGeneratorModalMissingFilenameWarning" class="col-12 text-danger mt-2">You must select two images to generate the wildcard pattern.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="patternGeneratorModalSubmitButton" type="button" class="btn btn-primary">Generate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" tabindex="-1" id="videoConversionModal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Convert a video</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row mt-2">
+                <div class="col-6">
+                  <div class="row">
+                    <div class="col-12">
+                      <button id="selectConversionVideoButton" class='btn btn-outline-primary w-100 text-break'>Select video</button>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <label for="outputFileCountField" class="form-label">Estimated file count</label>
+                      <input id="outputFileCountField" type="number" class="form-control" disabled>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <video class="h-100" id="fileConversionVideoPreview" loop autoplay disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; object-fit: contain;"></video>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="videoConversionModalSubmitButton" type="button" class="btn btn-primary">Convert</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <H2>Timelapse Viewer Setup</H2>
+      Use this utility to create and edit Timelapse Viewer configurations.
+      <div class="row my-1 gx-2 gy-2">
+        <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+          <button id="newDefinitionButton" class="btn btn-primary w-100">Create new</button>
+        </div>
+        <div class="col-6 col-sm-3 col-md-3 col-lg-2">
+          <button id="editDefinitionButton" class="btn btn-primary w-100">Edit existing</button>
+        </div>
+        <div class="col-6 col-sm-4 col-lg-3 col-xl-2">
+          <select id="availableDefinitionSelect" class="form-select w-100">Edit existing</select>
+        </div>
+        <div class="col-6 col-sm-2 col-md-2 col-lg-1">
+          <button id="deleteDefinitionButton" class="btn btn-danger w-100">Delete</button>
+        </div>
+        <!-- Top toolbar -->
+        <div class="col-12 col-lg-12">
+          <div class="row mt-3 pb-2 gx-2 gy-2 border-top border-bottom">
+            <div class="col-sm-4 col-md-3 col-lg-2 col-xl-1">
+              <button id="definitionSaveButton" class="btn btn-success w-100">Save</button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+              <button id="previewRefreshButton" class="btn btn-info w-100">Refresh preview</button>
+            </div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+              <button id="previewRotateButton" class="btn btn-info w-100">Rotate preview</button>
+            </div>
+            <div class="col-6 col-sm-4 offset-sm-8 offset-md-0 col-md-3 col-xl-2 d-flex align-items-center">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" value="" id="refreshOnChangeCheckbox" checked>
+                <label class="form-check-label small" for="refreshOnChangeCheckbox">
+                  Refresh on change
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row align-items-start">
+        <div id='editPane' class="col-6 col-lg-7">
+          <div class="row gy-2">
+            <div class="col-12 mt-2">
+
+              <h3>Settings</h3>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="definitionNameInput" class="form-label">Definition name</label>
+                  <input type="text" class="form-control" id="definitionNameInput">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="behaviorInput_animation_duration" class="form-label">
+                    Animation duration
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The duration in seconds of the attractor animation." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="number" min="5" value="15" class="form-control behavior-input" data-property="animation_duration" id="behaviorInput_animation_duration">
+                </div>
+              </div>
+
+              <h3 class="mt-2">Content</h3>
+              <i>The timelapse must be in the form of a sequence of image files. If you have a video, Timelapse Viewer can convert it for you.</i>
+              <div class="row mt-2">
+                <div class="col-12 col-lg-4">
+                  <button id="showConvertVideoModal" class='btn btn-info w-100'>Convert video</button>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-12 col-lg-4 mt-auto">
+                  <button id="showPatternGeneratorModal" class='btn btn-primary w-100'>Pattern generator</button>
+                </div>
+                <div class="col-12 col-lg-4">
+                  <label for="filePatternInput" class="form-label">
+                    Filename pattern
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="A wildcard (*) search pattern that will select the files that should be part of the timelapse. If you don't know what this is, use the automatic generator." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="text" id="filePatternInput" class='form-control'>
+                </div>
+                <div class="col-12 col-lg-4">
+                  <label for="filenamePatternMatches" class="form-label">
+                    Number of files
+                  </label>
+                  <input disabled type="number" id="filenamePatternMatches" class='form-control'>
+                </div>             
+              </div>
+
+              <h3 class="mt-2">Attractor</h3>
+              <div class="row">
+                <div class="col-12 col-lg-4">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input attractor-check" type="checkbox" value="" id="attractorCheck_use_attractor" checked data-property="use_attractor">
+                    <label class="form-check-label" for="attractorCheck_use_attractor">
+                      Show attractor
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input attractor-check" type="checkbox" value="" id="attractorCheck_use_finger_animation" checked data-property="use_finger_animation">
+                    <label class="form-check-label" for="attractorCheck_use_finger_animation">
+                      Show finger animation
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-2 gy-2">
+                <div class="col-12 col-md-6 col-lg-3">
+                  <label for="attractorInput_attractor_timeout" class="form-label">
+                    Timeout
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time in seconds before the attractor animation should start playing." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input type="number" min="5" value="30" class="form-control attractor-input" id="attractorInput_attractor_timeout" data-property="attractor_timeout">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_attractor_height" class="form-label">Height</label>
+                  <input id="attractorInput_attractor_height" type="range" class="form-range attractor-input realtime-slider" data-property="attractor_height" min="0", max="100" start="40" step="5">
+                </div>
+                <div class="col-12 col-lg-5">
+                  <label for="attractorInput_text" class="form-label">Text</label>
+                  <input type="text" class="form-control attractor-input" id="attractorInput_text" data-property="text">
+                </div>
+              </div>
+              <div class="row mt-2 gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_font_adjust" class="form-label">Text size</label>
+                  <input id="attractorInput_font_adjust" type="range" class="form-range attractor-input realtime-slider" data-property="font_adjust" min="-2", max="4" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_attractor_background" class="form-label">Background color</label>
+                  <div>
+                    <input id="attractorInput_attractor_background" type="text" class="coloris form-control attractor-input" value="rgba(0, 0, 0, 0.2)" data-property="attractor_background" data-default="rgba(0, 0, 0, 0.2)">
+                  </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="attractorInput_text_color" class="form-label">Text color</label>
+                  <div>
+                    <input id="attractorInput_text_color" type="text" class="coloris form-control attractor-input" value="#fff" data-property="text_color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                  <label for="attractorInput_font" class="form-label">
+                    Font
+                  </label>
+                  <div class="row">
+                    <div class="col-8 pe-1">
+                      <select id="attractorInput_font" class="form-select attractor-input font-select" data-property="font" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                    </div>
+                    <div class="col-4 ps-1">
+                      <label class="btn btn-outline-primary w-100">
+                        <span id="uploadFontName" class="w-100">Upload</span>
+                        <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- <h4>Text</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6">
+                  <label for="headerInput" class="form-label">Header</label>
+                  <input data-def-key="header" type="text" class="form-control definition-text-input" id="headerInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="subheaderInput" class="form-label">Subheader</label>
+                  <input data-def-key="subheader" type="text" class="form-control definition-text-input" id="subheaderInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="footerInput" class="form-label">Footer</label>
+                  <input data-def-key="footer" type="text" class="form-control definition-text-input" id="footerInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="subfooterInput" class="form-label">Subfooter</label>
+                  <input data-def-key="subfooter" type="text" class="form-control definition-text-input" id="subfooterInput">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="success_messageInput" class="form-label">
+                    Success message
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The success message appears after a button is pressed." style="font-size: 0.55em;">?</span>
+                  </label>
+                  <input data-def-key="success_message" type="text" class="form-control definition-text-input" placeholder="Thank you!" id="success_messageInput">
+                </div>
+              </div> -->
+
+              <!-- <H4 class="mt-2">Options</H4>
+              <div class="fst-italic">Add a button for each option in the survey.</div>
+              <button id="addOptionButton" class="btn btn-primary mt-2">Add option</button>
+              <div class="row">
+                <div class="col-6">
+                  <div id="optionRow" class="row gy-2 gx-2 mt-2"></div>
+                </div>
+                <div class="col-6">
+                  <div id="optionEditor" class="row border-start border-end py-2 gy-2">
+                    <div class="col-12">
+                      <label for="optionInput_label" class="form-label">Label</label>
+                      <input type="text" class="form-control option-input" id="optionInput_label" data-field="label">
+                    </div>
+                    <div class="col-12">
+                      <label for="optionInput_value" class="form-label">
+                        Value
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Value will be the name of the column in the voting data spreadsheet." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input type="text" class="form-control option-input" data-field="value" id="optionInput_value">
+                    </div>
+                    <div class="col-12">
+                      <label for="optionInput_icon" class="form-label">Icon</label>
+                      <select class="form-select option-input" id="optionInput_icon" data-field="icon">
+                        <option value="">No icon</option>
+                        <option value="user">User-provided</option>
+                        <option disabled>Built-in</option>
+                        <option value="1-star_black">1 star (black)</option>
+                        <option value="1-star_white">1 star (white)</option>
+                        <option value="2-star_black">2 star (black)</option>
+                        <option value="2-star_white">2 star (white)</option>
+                        <option value="3-star_black">3 star (black)</option>
+                        <option value="3-star_white">3 star (white)</option>
+                        <option value="4-star_black">4 star (black)</option>
+                        <option value="4-star_white">4 star (white)</option>
+                        <option value="5-star_black">5 star (black)</option>
+                        <option value="5-star_white">5 star (white)</option>
+                        <option value="thumbs-down_black">Thumbs down (black)</option>
+                        <option value="thumbs-down_red">Thumbs down (red)</option>
+                        <option value="thumbs-down_white">Thumbs down (white)</option>
+                        <option value="thumbs-up_black">Thumbs up (black)</option>
+                        <option value="thumbs-up_green">Thumbs up (green)</option>
+                        <option value="thumbs-up_white">Thumbs up (white)</option>
+                      </select>
+                    </div>
+                    <div class="col-12">
+                      <div class="row">
+                        <div id="optionInput_icon_user_file_Col" class="col-12">
+                          <button id="optionInput_icon_user_file" class='btn btn-outline-primary w-100 text-break' data-field="icon_user_file">Select file</button>
+                        </div>
+                        <div id="optionInput_icon_user_file_DeleteButtonCol" class="col-12 col-lg-3 ps-lg-0 mt-2 mt-lg-0" style="display: none;">
+                          <button id="optionInput_icon_user_file_DeleteButton" class="btn btn-danger w-100 h-100"><span class='d-block d-lg-none'>Clear file</span><span class='d-none d-lg-block'>✕</span></button>
+                        </div>
+                      </div>
+                      
+                    </div>
+                  </div>
+                </div>
+              </div> -->
+
+              <!-- <h3 class="mt-2">Appearance</h3>
+
+              <h4>Colors</h4>
+              <div class="row gy-2 mb-3">
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_background-color" class="form-label">Background</label>
+                  <div>
+                    <input id="colorPicker_background-color" type="text" class="coloris form-control" value="#22222E" data-property="background-color" data-default="#22222E">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-color" class="form-label">Buttons</label>
+                  <div>
+                    <input id="colorPicker_button-color" type="text" class="coloris form-control" value="#393A5A" data-property="button-color" data-default="#393A5A">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-touched-color" class="form-label">Buttons (touched)</label>
+                  <div>
+                    <input id="colorPicker_button-touched-color" type="text" class="coloris form-control" value="#706F8E" data-property="button-touched-color" data-default="#706F8E">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_success-message-color" class="form-label">Success message</label>
+                  <div>
+                    <input id="colorPicker_success-message-color" type="text" class="coloris form-control" value="#528e54" data-property="success-message-color" data-default="#528e54">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_header-color" class="form-label">Header text</label>
+                  <div>
+                    <input id="colorPicker_header-color" type="text" class="coloris form-control" value="#fff" data-property="header-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_subheader-color" class="form-label">Subheader text</label>
+                  <div>
+                    <input id="colorPicker_subheader-color" type="text" class="coloris form-control" value="#fff" data-property="subheader-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_footer-color" class="form-label">Footer text</label>
+                  <div>
+                    <input id="colorPicker_footer-color" type="text" class="coloris form-control" value="#fff" data-property="footer-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_subfooter-color" class="form-label">Subfooter text</label>
+                  <div>
+                    <input id="colorPicker_subfooter-color" type="text" class="coloris form-control" value="#fff" data-property="subfooter-color" data-default="#fff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_button-text-color" class="form-label">Button text</label>
+                  <div>
+                    <input id="colorPicker_button-text-color" type="text" class="coloris form-control" value="#fff" data-property="button-text-color" data-default="#fff">
+                  </div>
+                </div>
+              </div> -->
+
+              <!-- <h4>Fonts</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-lg-3">
+                  <label class="btn btn-outline-primary w-100">
+                    <span id="uploadFontName" class="w-100">Upload</span>
+                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
+                  </label>
+                </div>
+                <div class="col-0 col-lg-9"></div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_header" class="form-label">Header</label>
+                  <select id="fontSelect_header" class="form-select font-select" data-property="header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_subheader" class="form-label">Subheader</label>
+                  <select id="fontSelect_subheader" class="form-select font-select" data-property="subheader" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_footer" class="form-label">Footer</label>
+                  <select id="fontSelect_footer" class="form-select font-select" data-property="footer" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_subfooter" class="form-label">Subfooter</label>
+                  <select id="fontSelect_subfooter" class="form-select font-select" data-property="subfooter" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_button" class="form-label">Buttons</label>
+                  <select id="fontSelect_button" class="form-select font-select" data-property="button" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+              </div> -->
+
+              <!-- <h4 class="mt-2">Text size</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="headerTextSizeSlider" class="form-label">Header</label>
+                  <input id="headerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="header" min="-2", max="4" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="subheaderTextSizeSlider" class="form-label">Subheader</label>
+                  <input id="subheaderTextSizeSlider" type="range" class="form-range text-size-slider" data-property="subheader" min="-1", max="2" start="0" step="0.25">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="footerTextSizeSlider" class="form-label">Footer</label>
+                  <input id="footerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="footer" min="-1", max="3" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="subfooterTextSizeSlider" class="form-label">Subfooter</label>
+                  <input id="subfooterTextSizeSlider" type="range" class="form-range text-size-slider" data-property="subfooter" min="-1", max="2" start="0" step="0.25">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="buttonTextSizeSlider" class="form-label">Buttons</label>
+                  <input id="buttonTextSizeSlider" type="range" class="form-range text-size-slider" data-property="button" min="-2", max="3" start="0" step="0.5">
+                </div>
+              </div> -->
+
+              <!-- <h4 class="mt-2">Layout</h4>
+              <i>Fine-tune the height of the header, button, and footer areas.</i>
+              <div class="row gy-2">
+                <div class="col-12">
+                  <div class="row mt-2">
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="headerToButtonsSlider" class="form-label">
+                        Header height
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of space allocated to the header and subheader." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="headerToButtonsSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="headerPaddingHeightSlider" class="form-label">
+                        Header padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding from the top of the display." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="headerPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="header_padding" min="0", max="15" start="5" step="5" value="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonsToFooterSlider" class="form-label">
+                        Footer height
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The amount of space allocated to the footer and subfooter." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="buttonsToFooterSlider" type="range" class="form-range height-slider" min="0", max="50" start="20" step="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="footerPaddingHeightSlider" class="form-label">
+                        Footer padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding from the bottom of the display." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="footerPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="footer_padding" min="0", max="15" start="5" step="5" value="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="buttonPaddingHeightSlider" class="form-label">
+                        Button padding
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Padding above and below the buttons." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="buttonPaddingHeightSlider" type="range" class="form-range padding-slider" data-property="button_padding" min="0", max="30" start="10" step="5">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4">
+                      <label for="imageHeightSlider" class="form-label">
+                        Image size
+                        <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The maximum height allowed for images." style="font-size: 0.55em;">?</span>
+                      </label>
+                      <input id="imageHeightSlider" type="range" class="form-range padding-slider" data-property="image_height" min="10", max="100" start="90" step="5">
+                    </div>
+                  </div>
+                </div>
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div id='previewPane' class="col-6 col-lg-5 sticky-top">
+          <div id="previewContainer" class="">
+            <iframe id="previewFrame" class="mt-3 preview-landscape" src="../timelapse_viewer.html?standalone=true"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script type="text/javascript" src="../js/jquery-3.6.1.min.js"></script>
+  <script type="text/javascript" src="../js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="../js/showdown.min.js"></script>
+  <script type="text/javascript" src="../js/platform.js"></script>
+  <script type="text/javascript" src="../js/coloris.min.js"></script>
+  <script type="module" src="setup.js"></script>
+
+  </body>
+
+</html>

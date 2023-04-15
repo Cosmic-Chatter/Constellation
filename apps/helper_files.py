@@ -162,14 +162,9 @@ def create_thumbnail(filename: str, mimetype: str):
                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
         elif mimetype == "video":
             # First, find the length of the video
+            _, video_details = get_video_file_details(filename)
+            duration_sec = round(video_details["duration"])
             file_path = get_path(['content', filename], user_file=True)
-            pipe = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
-            ffmpeg_text = pipe.stderr.read()
-            duration_index = ffmpeg_text.find("Duration")
-            duration_str = ffmpeg_text[duration_index + 10: duration_index + 21]  # Format: HH:MM:SS.SS
-            duration_split = duration_str.split(":")
-            duration_sec = int(duration_split[0]) * 3600 + int(duration_split[1]) * 60 + round(
-                float(duration_split[2]))
             subprocess.Popen([ff.get_ffmpeg_bin(), "-y",
                               "-i", file_path,
                               "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
@@ -180,6 +175,86 @@ def create_thumbnail(filename: str, mimetype: str):
         print("create_thumbnail: error:", e)
     except ImportError as e:
         print("create_thumbnail: error loading FFmpeg: ", e)
+
+
+def get_video_file_details(filename: str) -> dict[str, Any]:
+    """Use FFmpeg to probe the given video file and return useful information."""
+
+    details = {}
+    success = True
+
+    try:
+        ff = pyffmpeg.FFmpeg()
+        file_path = get_path(['content', filename], user_file=True)
+        pipe = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
+        ffmpeg_text = pipe.stderr.read()
+
+        # Duration
+        duration_index = ffmpeg_text.find("Duration")
+        duration_str = ffmpeg_text[duration_index + 10: duration_index + 21]  # Format: HH:MM:SS.SS
+        duration_split = duration_str.split(":")
+        duration_sec = int(duration_split[0]) * 3600 + int(duration_split[1]) * 60 + float(duration_split[2])
+        details['duration'] = duration_sec
+        details['duration_str'] = duration_str
+
+        # FPS
+        fps_index = ffmpeg_text.find("fps")
+        # Search backwards for a string of the form ' NN.NN '
+        num_space = 0
+        search_index = fps_index - 1
+        while num_space < 2:
+            if ffmpeg_text[search_index] == ' ':
+                num_space += 1
+            search_index -= 1
+
+        fps_str = ffmpeg_text[search_index + 1: fps_index].strip()
+        details['fps'] = float(fps_str)
+
+    except OSError as e:
+        print("get_video_file_details: error:", e)
+        success = False
+    except ImportError as e:
+        print("get_video_file_details: error loading FFmpeg: ", e)
+        success = False
+
+    return success, details
+
+
+def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
+    """Use FFmpeg to convert the given video file to a set of frames in the specified image format."""
+
+    success = True
+
+    if file_type not in ['jpg', 'png', 'webp']:
+        raise ValueError('file_type must be one of "jpg", "png", "webp"')
+    try:
+        ff = pyffmpeg.FFmpeg()
+        input_path = get_path(['content', filename], user_file=True)
+        output_path = '.'.join(input_path.split('.')[0:-1]) + '_%06d.' + file_type
+        if file_type == 'jpg':
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-qscale:v", "4", output_path]
+        elif file_type == 'png':
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, output_path]
+        else:
+            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-quality", "90", output_path]
+
+        process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="UTF-8")
+        process.communicate(timeout=3600)
+        if process.returncode != 0:
+            success = False
+    except OSError as e:
+        print("convert_video_to_frame: error:", e)
+        success = False
+    except ImportError as e:
+        print("convert_video_to_frame: error loading FFmpeg: ", e)
+        success = False
+    except subprocess.TimeoutExpired as e:
+        print("convert_video_to_frame: conversion timed out: ", e)
+        success = False
+
+    create_missing_thumbnails()
+
+    return success
 
 
 def get_thumbnail_name(filename: str) -> str:
