@@ -73,6 +73,8 @@ function loadDefinition (definition) {
     root.style.setProperty('--attractor-text-color', 'white')
   }
   showAttractor()
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 function updateSourceList (matchString) {

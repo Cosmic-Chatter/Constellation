@@ -14,20 +14,6 @@ function updateFunc (update) {
   }
 }
 
-// function loadDefinition (defName) {
-//   // Use the given definition to set up the interface.
-
-//   constCommon.makeHelperRequest({
-//     method: 'GET',
-//     endpoint: '/definitions/' + defName + '/load'
-//   })
-//     .then((response) => {
-//       if ('success' in response && response.success === true) {
-//         _loadDefinition(response.definition)
-//       }
-//     })
-// }
-
 function loadDefinition (def) {
   // Helper function to manage setting up the interface.
 
@@ -98,6 +84,9 @@ function loadDefinition (def) {
   } else {
     setAttractor('', '')
   }
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
 }
 
 function adjustFontSize (increment) {

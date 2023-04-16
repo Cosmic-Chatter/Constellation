@@ -177,7 +177,32 @@ def create_thumbnail(filename: str, mimetype: str):
         print("create_thumbnail: error loading FFmpeg: ", e)
 
 
-def get_video_file_details(filename: str) -> dict[str, Any]:
+def create_thumbnail_video_from_frames(frames: list, filename: str, duration: float = 5) -> bool:
+    """Take a list of image filenames and use FFmpeg to turn it into a video thumbnail."""
+
+    output_path = get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)
+    sec_per_frame = duration/len(frames)
+    try:
+        ff = pyffmpeg.FFmpeg()
+        # Loop through the frames and build a temp file
+        temp_path = get_path(["temp.txt"])
+        with config.content_file_lock:
+            with open(temp_path, 'w', encoding='UTF-8') as f:
+                for frame in frames:
+                    f.write("file '" + os.path.relpath(get_path(["content", frame], user_file=True)) + "'\n")
+                    f.write('duration ' + str(sec_per_frame) + '\n')
+            process = subprocess.Popen([ff.get_ffmpeg_bin(), "-y", "-f", "concat", "-i",
+                                        temp_path, '-filter:v', 'scale=400:-2', '-an', '-c:v', 'libx264', output_path])
+            process.communicate()
+            os.remove(temp_path)
+
+    except ImportError as e:
+        print("create_thumbnail: error loading FFmpeg: ", e)
+        return False
+    return True
+
+
+def get_video_file_details(filename: str) -> tuple[bool, dict[str, Any]]:
     """Use FFmpeg to probe the given video file and return useful information."""
 
     details = {}

@@ -1,4 +1,4 @@
-/* global platform */
+/* global platform, html2canvas */
 
 export const config = {
   allowedActionsDict: { refresh: 'true' },
@@ -519,5 +519,25 @@ export function loadDefinition (defName) {
   return makeHelperRequest({
     method: 'GET',
     endpoint: '/definitions/' + defName + '/load'
+  })
+}
+
+export function saveScreenshotAsThumbnail (filename) {
+  // Use html2canvas to get an approximate screenshoot to use as a thumbnail.
+
+  html2canvas(document.body, {
+    allowTaint: true
+  }).then((canvas) => {
+    canvas.toBlob((img) => {
+      const formData = new FormData()
+      formData.append('files', img, filename)
+      fetch('/files/uploadThumbnail', {
+        method: 'POST',
+        body: formData
+      })
+        .catch(error => {
+          console.error(error)
+        })
+    })
   })
 }

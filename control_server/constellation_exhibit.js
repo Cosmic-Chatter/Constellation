@@ -712,7 +712,7 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
-    if (['timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
+    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
     } else {
@@ -959,7 +959,7 @@ export function removeExhibitComponentFromModal () {
     })
 }
 
-function populateComponentDefinitionList (definitions) {
+function populateComponentDefinitionList (definitions, thumbnails) {
   // Take a dictionary of definitions and convert it to GUI elements.
 
   const component = getExhibitComponent($('#componentInfoModal').data('id'))
@@ -1001,8 +1001,21 @@ function populateComponentDefinitionList (definitions) {
     selectedBadge.innerHTML = '✓'
     name.append(selectedBadge)
 
+    if (thumbnails.includes(uuid + '.jpg')) {
+      const thumbCol = document.createElement('div')
+      thumbCol.classList = 'col-12 bg-info pt-2'
+      row.append(thumbCol)
+
+      const thumb = document.createElement('img')
+      thumb.style.height = '100px'
+      thumb.style.width = '100%'
+      thumb.style.objectFit = 'contain'
+      thumb.src = component.getHelperURL() + '/thumbnails/' + uuid + '.jpg'
+      thumbCol.appendChild(thumb)
+    }
+
     const app = document.createElement('div')
-    app.classList = 'col-12 bg-info rounded-bottom py-1'
+    app.classList = 'col-12 bg-info rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
     row.appendChild(app)
@@ -1072,7 +1085,7 @@ function updateComponentInfoModalFromHelper (id) {
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
-        populateComponentDefinitionList(availableContent.definitions)
+        populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails)
       }
 
       // If available, configure for multiple file upload
@@ -1417,7 +1430,7 @@ function getAllowableContentTypes (appID) {
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
-    timelapse_viewer: ['ini'],
+    timelapse_viewer: ['const'],
     timeline_explorer: ['const'],
     voting_kiosk: ['const'],
     word_cloud_input: ['ini'],
@@ -1494,7 +1507,7 @@ export function submitComponentSettingsChange () {
     updateComponentInfoModalFromHelper(obj.id)
 
     // If we have a modern definition-based app, hide the content tab
-    if (['timeline_explorer', 'voting_kiosk'].includes(app) === true) {
+    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
       $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalContentTabButton').show()

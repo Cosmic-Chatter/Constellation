@@ -571,7 +571,7 @@ function retrieveMatchingFilesCount () {
     endpoint: '/getAvailableContent'
   }).then((result) => {
     const content = result.all_exhibits
-    const matchedFiles = content.filter((item) => {
+    matchedFiles = content.filter((item) => {
       return item.startsWith(split[0]) && item.endsWith(split[1])
     })
     document.getElementById('filenamePatternMatches').value = matchedFiles.length
@@ -609,6 +609,8 @@ function setUpColorPickers () {
 
 // Set helperAddress for calls to constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
+
+let matchedFiles = []
 
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
@@ -815,29 +817,6 @@ Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
     previewDefinition(true)
   })
 })
-
-// // Text size fields
-
-// Layout fields
-// Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
-//   el.addEventListener('input', () => {
-//     const headerHeight = parseInt(document.getElementById('headerToButtonsSlider').value)
-//     const footerHeight = parseInt(document.getElementById('buttonsToFooterSlider').value)
-//     const buttonHeight = 100 - headerHeight - footerHeight
-//     updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
-//     updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
-//     updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
-//     console.log(headerHeight, buttonHeight, footerHeight)
-//     previewDefinition(true)
-//   })
-// })
-// Array.from(document.querySelectorAll('.padding-slider')).forEach((el) => {
-//   el.addEventListener('input', (event) => {
-//     const property = event.target.getAttribute('data-property')
-//     updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
-//     previewDefinition(true)
-//   })
-// })
 
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {

@@ -11,7 +11,7 @@ import uuid
 
 # Third-party modules
 import aiofiles
-from fastapi import FastAPI, Body, Depends, File, HTTPException, UploadFile
+from fastapi import FastAPI, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -176,6 +176,36 @@ async def convert_video_to_frames(filename: str = Body(description='The filename
     return {"success": success}
 
 
+@app.post('/files/thumbnailVideoFromFrames')
+async def create_thumbnail_video_from_frames(
+        filename: str = Body(description='The name of the output file, without an extension.'),
+        frames: list[str] = Body(description='A list of the files to include'),
+        duration: float = Body(description='The length of the output video in seconds.', default=5)):
+    success = helper_files.create_thumbnail_video_from_frames(frames, filename, duration)
+    return {"success": success}
+
+
+@app.post('/files/uploadThumbnail')
+async def upload_thumbnail(files: list[UploadFile] = File(),
+                           config: const_config = Depends(get_config)):
+    """Save uploaded files as thumbnails, formatting them appropriately."""
+
+    for file in files:
+        filename = file.filename
+        temp_path = helper_files.get_path(["content", filename], user_file=True)
+        final_path = helper_files.get_path(["thumbnails", filename], user_file=True)
+        with config.content_file_lock:
+            # First write the file to content
+            async with aiofiles.open(temp_path, 'wb') as out_file:
+                content = await file.read()  # async read
+                await out_file.write(content)  # async write
+            # Next, generate a thumbnail
+            helper_files.create_thumbnail(filename, 'image')
+            # Finally, delete the source file
+            os.remove(temp_path)
+    return {"success": True}
+
+
 @app.get("/definitions/{app_id}/getAvailable")
 async def get_available_definitions(app_id: str):
     """Return a list of all the definitions for the given app."""
@@ -315,7 +345,7 @@ async def write_definition(definition: dict[str, Any] = Body(description="The JS
         # Add a unique identifier
         definition["uuid"] = str(uuid.uuid4())
     path = helper_files.get_path(["definitions",
-                                 helper_files.with_extension(definition["uuid"], ".json")],
+                                  helper_files.with_extension(definition["uuid"], ".json")],
                                  user_file=True)
     helper_files.write_json(definition, path)
     return {"success": True, "uuid": definition["uuid"]}

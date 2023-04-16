@@ -51,7 +51,7 @@ export function createFileSelectionModal (userOptions) {
               <div class="row justify-content-center">
                 <div class='col-6 col-lg-12'>
                   <img id="constFileSelectModalFilePreviewImage" style="width: 100%; height: 200px; object-fit: contain;"></img>
-                  <video id="constFileSelectModalFilePreviewVideo" loop autoplay disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; height: 200px; object-fit: contain;"></video>
+                  <video id="constFileSelectModalFilePreviewVideo" loop autoplay muted disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; height: 200px; object-fit: contain;"></video>
                 </div>
                 <div class='col-6 col-lg-12 mt-2 text-center h6' style="word-wrap: break-word">
                 <span id="constFileSelectModalFilePreviewFilename" ></span>

@@ -322,6 +322,9 @@ function loadDefinition (definition) {
   }
 
   buildLayout(definition)
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 function sendData () {
