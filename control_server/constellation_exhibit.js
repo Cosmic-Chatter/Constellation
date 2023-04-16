@@ -973,7 +973,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
     const col = document.createElement('div')
     col.setAttribute('id', 'definitionButton_' + uuid)
-    col.classList = 'col-4 mt-2 handCursor definition-entry'
+    col.classList = 'col-6 col-sm-4 mt-2 handCursor definition-entry'
     $(col).data('definition', definition)
     col.addEventListener('click', () => {
       handleDefinitionItemSelection(uuid)
