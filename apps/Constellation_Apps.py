@@ -419,7 +419,7 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
                        start_channel: int = Body(description="The first channel to allocate."),
                        universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
     """Create a new DMX fixture"""
-
+    
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
@@ -429,7 +429,11 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
 async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
     """Remove the given DMX fixture from its universe and any groups"""
 
-    helper_dmx.get_fixture(fixture_uuid).delete()
+    fixture = helper_dmx.get_fixture(fixture_uuid)
+    if fixture is None:
+        print(f"/DMX/fixture/remove: Cannot remove fixture {fixture_uuid}. It does not exist.")
+        return {"success": False, "reason": "Fixture does not exist."}
+    fixture.delete()
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}

@@ -781,7 +781,16 @@ function cloneFixture() {
 
   fixtureToClone.channelList.forEach((channel) => {
     addChannelToModal()
-    Array.from(addFixtureChannelList.querySelectorAll('.channel-select')).slice(-1)[0].value = channel
+    if (['a', 'b', 'g', 'r', 'uv', 'w', 'dimmer'].includes(channel)) {
+      Array.from(addFixtureChannelList.querySelectorAll('.channel-select')).slice(-1)[0].value = channel
+    } else {
+      const input = Array.from(addFixtureChannelList.querySelectorAll('.other-channel-input')).slice(-1)[0]
+      Array.from(addFixtureChannelList.querySelectorAll('.channel-select')).slice(-1)[0].value = 'other'
+      channel = channel.replaceAll('_', ' ')
+      input.value = channel[0].toUpperCase() + channel.slice(1)
+      console.log(channel)
+      input.parentNode.style.display = 'block'
+    }
   })
 
 }
@@ -1027,15 +1036,27 @@ function addChannelToModal() {
   row.classList = 'row'
   col.appendChild(row)
 
+  // This col counts the channels (the count will happen elsewhere)
+  const countCol = document.createElement('div')
+  countCol.classList = 'col-2 pe-0 my-auto channel-count'
+  row.appendChild(countCol)
+
   const selectCol = document.createElement('div')
-  selectCol.classList = 'col-10'
+  selectCol.classList = 'col'
   row.appendChild(selectCol)
 
   const select = document.createElement('select')
   select.classList = 'form-control channel-select'
+  select.addEventListener('change', (event) => {
+    if (event.target.value === 'other') {
+      event.target.parentNode.parentNode.querySelector('.other-channel-input').parentNode.style.display = 'block'
+    } else {
+      event.target.parentNode.parentNode.querySelector('.other-channel-input').parentNode.style.display = 'none'
+    }
+  })
   selectCol.appendChild(select)
 
-  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Dimmer', 'dimmer'], ['Color mode', 'color_mode'], ['Mode', 'mode'], ['Pan', 'pan'], ['Pan (fine)', 'pan_fine'], ['Pan speed', 'pan_speed'], ['Strobe', 'strobe'], ['Strobe speed', 'strobe_speed'], ['Tilt', 'tilt'], ['Tilt (fine)', 'tilt_fine'], ['Tilt speed', 'tilt_speed'], ['Other', 'other']]
+  const options = [['Colors', ''], ['Amber', 'a'], ['Blue', 'b'], ['Green', 'g'], ['Red', 'r'], ['Ultraviolet', 'uv'], ['White', 'w'], ['Properties', ''], ['Dimmer', 'dimmer'], ['Other', 'other']]
 
   options.forEach((entry) => {
     const option = document.createElement('option')
@@ -1048,13 +1069,25 @@ function addChannelToModal() {
     select.appendChild(option)
   })
 
+  const otherCol = document.createElement('div')
+  otherCol.classList = 'col-5'
+  otherCol.style.display = 'none'
+  row.appendChild(otherCol)
+
+  const otherNameInput = document.createElement('input')
+  otherNameInput.setAttribute('type', 'text')
+  otherNameInput.classList = 'form-control other-channel-input'
+  otherNameInput.setAttribute('placeholder', "Custom name")
+  otherCol.appendChild(otherNameInput)
+
   const deleteCol = document.createElement('div')
   deleteCol.classList = 'col-2 align-self-center'
   row.appendChild(deleteCol)
 
   const deleteButton = document.createElement('button')
-  deleteButton.classList = 'btn btn-danger btn-sm'
-  deleteButton.innerHTML = '\u2573'
+  deleteButton.classList = 'btn btn-danger btn-sm w-100'
+  deleteButton.innerHTML = '✕'
+  deleteButton.style.fontSize = '20px'
   deleteButton.addEventListener('click', () => {
     $(col).remove()
     if ($('#addFixtureChannelList').children().length === 0) {
@@ -1066,16 +1099,39 @@ function addChannelToModal() {
   const channelList = document.getElementById('addFixtureChannelList')
   channelList.appendChild(col)
   channelList.scrollTop = channelList.scrollHeight
+  updateModalChannelCounts()
 
   $('#addFixtureFromModalButton').show()
   document.getElementById('cloneFixtureGroup').style.display = 'none'
+}
+
+function updateModalChannelCounts() {
+  // Using the starting channel and number of channels, updte the labels for each channel
+
+  const channelList = document.getElementById('addFixtureChannelList')
+  const startingChannel = parseInt(document.getElementById('addFixtureStartingChannel').value)
+  
+  let i = 0
+  Array.from(channelList.querySelectorAll('.channel-count')).forEach((el) => {
+    el.innerHTML = String(i + 1) + ' (' + String(startingChannel + i) + ')'
+    i += 1
+  })
 }
 
 function addFixtureFromModal() {
   // Collect the necessary information from the addFixtureModal and ask the helper to add the fixture.
 
   const channelList = []
-  $('#addFixtureChannelList').children().each(function () { channelList.push($(this).find('select').val()) })
+  // $('#addFixtureChannelList').children().each(function () { channelList.push($(this).find('select').val()) })
+  document.getElementById('addFixtureChannelList').childNodes.forEach((el) => {
+    const select = el.querySelector('select')
+    if (select.value !== 'other') {
+      channelList.push(select.value)
+    } else {
+      const input = el.querySelector('.other-channel-input')
+      channelList.push(input.value.trim().replaceAll(' ', '_'))
+    }
+  })
   const startChannel = parseInt($('#addFixtureStartingChannel').val())
   const universeUUID = $('#addFixtureModal').data('universeUUID')
 
@@ -1131,24 +1187,12 @@ function channelNameToDisplayName(name) {
     r: 'Red',
     uv: 'UV',
     w: 'White',
-    color: 'Color',
-    color_mode: 'Color mode',
     dimmer: 'Dimmer',
-    mode: 'Mode',
-    pan: 'Pan',
-    pan_fine: 'Pan (fine)',
-    pan_speed: 'Pan speed',
-    speed: 'Speed',
-    strobe: "Strobe",
-    strobe_speed: 'Strobe speed',
-    tilt: 'Tilt',
-    tilt_fine: 'Tilt (fine)',
-    tilt_speed: 'Tilt speed'
   }
   if (name in nameDict) {
     return nameDict[name]
   }
-  return name
+  return (name[0].toUpperCase() + name.slice(1)).replaceAll('_', ' ')
 }
 
 function updateFunc(update) {
@@ -1363,6 +1407,7 @@ function addUniverseFromModal() {
 // Universe tab
 $("#showAddUniverseModalButton").click(showAddUniverseMOdal)
 $('#addFixtureAddChannelButton').click(addChannelToModal)
+document.getElementById('addFixtureStartingChannel').addEventListener('input', updateModalChannelCounts)
 $('#addFixtureFromModalButton').click(addFixtureFromModal)
 $('#addUniverseFromModalButton').click(addUniverseFromModal)
 $('#editUniverseModalSaveButton').click(updateUniverseFromModal)

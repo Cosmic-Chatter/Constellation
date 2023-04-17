@@ -57,25 +57,25 @@ class DMXUniverse:
 
         fixture = DMXFixture(name, start_channel, channel_list, uuid_str=uuid_str)
         fixture.universe = self.uuid
-        self.fixtures[name] = fixture
+        self.fixtures[fixture.uuid] = fixture
 
         self.controller.add_fixture(fixture)
         config.dmx_fixtures.append(fixture)
 
         return fixture
 
-    def remove_fixture(self, name: str):
+    def remove_fixture(self, uuid_str: str):
         """Remove the given fixture from the universe."""
-        fixture = self.get_fixture(name)
+        fixture = self.get_fixture(uuid_str)
 
         fixture.universe = ""
-        del self.fixtures[name]
+        del self.fixtures[uuid_str]
         self.controller.del_fixture(fixture.id)
 
-    def get_fixture(self, name: str) -> Union['DMXFixture', None]:
+    def get_fixture(self, uuid_str: str) -> Union['DMXFixture', None]:
 
-        if name in self.fixtures:
-            return self.fixtures[name]
+        if uuid_str in self.fixtures:
+            return self.fixtures[uuid_str]
 
     def get_dict(self) -> dict[str, Any]:
         """Return a dictionary with the information necessary to rebuild this universe."""
@@ -139,9 +139,9 @@ class DMXFixture(Fixture):
         # Remove from groups
         for group_name in self.groups.copy():
             group = get_group(group_name)
-            group.remove_fixture(self.name)
+            group.remove_fixture(self.uuid)
 
-        get_universe(self.universe).remove_fixture(self.name)
+        get_universe(self.universe).remove_fixture(self.uuid)
 
     def get_all_channel_values(self) -> dict[str, int]:
         """Return a dict with the current value of every channel."""
@@ -358,10 +358,14 @@ def create_universe(name: str,
 
 def get_fixture(uuid_str: str) -> Union[DMXFixture, None]:
     """Return the matched DMXFixture, if it exists."""
+    
+    for fixture in config.dmx_fixtures:
+        if fixture.uuid == uuid_str:
+            return fixture
 
-    search = [x for x in config.dmx_fixtures if x.uuid == uuid_str]
-    if len(search) > 0:
-        return search[0]
+    # search = [x for x in config.dmx_fixtures if x.uuid == uuid_str]
+    # if len(search) > 0:
+    #     return search[0]
     return None
 
 
