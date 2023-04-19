@@ -1,5 +1,6 @@
 aiofiles
 fastapi
+PIL
 psutil
 pyffmpeg
 pyserial

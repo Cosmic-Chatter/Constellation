@@ -1,6 +1,7 @@
 # Standard modules
 import shutil
 from functools import lru_cache
+import io
 import mimetypes
 import os
 import sys
@@ -13,7 +14,7 @@ import uuid
 import aiofiles
 from fastapi import FastAPI, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
 import uvicorn
@@ -204,6 +205,25 @@ async def upload_thumbnail(files: list[UploadFile] = File(),
             # Finally, delete the source file
             os.remove(temp_path)
     return {"success": True}
+
+
+@app.get('/system/getScreenshot', responses={200: {"content": {"image/png": {}}}}, response_class=Response)
+async def get_screenshot():
+    """Capture a screenshot and return it as a JPEG response."""
+
+    image = helper_utilities.capture_screenshot()
+    byte_array = io.BytesIO()
+    image.save(byte_array, format='JPEG', quality=85)
+    byte_array = byte_array.getvalue()
+    return Response(content=byte_array,
+                    media_type="image/jpeg",
+                    headers={
+                        "Pragma-directive": "no-cache",
+                        "Cache-directive": "no-cache",
+                        "Cache-control": "no-cache",
+                        "Pragma": "no-cache",
+                        "Expires": "0"
+                    })
 
 
 @app.get("/definitions/{app_id}/getAvailable")

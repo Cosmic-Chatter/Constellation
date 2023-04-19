@@ -1110,6 +1110,10 @@ $('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID
   $('#componentInfoModalSettingsSaveButton').show()
 })
 $('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
+document.getElementById('componentInfoModalViewScreenshot').addEventListener('click', () => {
+  const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
+  constTools.openMediaInNewTab(component.getHelperURL() + '/system/getScreenshot', 'image')
+})
 // Schedule tab
 // =========================
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
@@ -1121,7 +1125,7 @@ $('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector
 // Issues tab
 // =========================
 $('#issueMediaViewFromModal').click(function () {
-  constIssues.issueMediaView($('#issueMediaViewFromModal').data('filename'))
+  constTools.openMediaInNewTab('issues/media/' + $('#issueMediaViewFromModal').data('filename'))
 })
 $('#issueMediaDeleteButton').click(function () {
   constIssues.issueMediaDelete($('#issueMediaViewFromModal').data('filename'))

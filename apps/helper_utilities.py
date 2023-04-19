@@ -12,6 +12,9 @@ import threading
 from typing import Union
 import webbrowser
 
+# Non-standard modules
+from PIL import ImageGrab
+
 # Constellation modules
 import config
 import helper_files
@@ -145,6 +148,12 @@ def clear_terminal():
     """Clear the terminal"""
 
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def capture_screenshot():
+    """Capture a screenshot of the primary display."""
+
+    return ImageGrab.grab().convert("RGB")
 
 
 def handle_missing_defaults_file():

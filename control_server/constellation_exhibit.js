@@ -580,6 +580,8 @@ export function showExhibitComponentInfo (id) {
   ) {
     $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
     $('#componentInfoModalHelperIPAddressGroup').show()
+    // Cannot take screenshots of components with a remote helper
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
     $('#componentInfoModalHelperIPAddressGroup').hide()
   }
@@ -699,9 +701,11 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'projector') {
     populateProjectorInfo(obj.id)
     $('#componentInfoModaProejctorTabButton').show()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
     $('#componentInfoModaProejctorTabButton').hide()
     $('#componentInfoModalModelGroup').hide()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
   }
 
   // Must be after all the settings are configured
@@ -723,6 +727,7 @@ export function showExhibitComponentInfo (id) {
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
   } else {
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalContentTabButton').hide()
     $('#componentInfoModalDefinitionsTabButton').hide()
@@ -1063,6 +1068,7 @@ function updateComponentInfoModalFromHelper (id) {
     // We don't have enough information to contact the helper
     $('#componentInfoConnectionStatusFailed').show()
     $('#componentInfoConnectionStatusInPrograss').hide()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
 
     // Show the maintenance tab
     $('#componentInfoModalMaintenanceTabButton').tab('show')
@@ -1154,10 +1160,8 @@ function updateComponentInfoModalFromHelper (id) {
       // Attach an event handler to change the button's color when clicked
       $('.componentContentButton').on('click', function (e) {
         const id = $(this).attr('id')
-        // $('.componentContentButton').not($(this)).removeClass("btn-primary").addClass("btn-secondary");
         $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
 
-        // $('.componentContentDropdownButton').not($("#"+id+"Dropdown")).removeClass("btn-primary").addClass("btn-secondary");
         $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
 
         if ($('.componentContentButton.btn-primary').length === 0) {
