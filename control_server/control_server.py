@@ -377,7 +377,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -405,7 +405,7 @@ class ExhibitComponent(BaseModel):
 
 
 @app.post("/component/{component_id}/setApp")
-async def set_component_content(component_id: str,
+async def set_component_app(component_id: str,
                                 app_name: str = Body(description="The app to be set.", embed=True)):
     """Set the app for the component."""
 
