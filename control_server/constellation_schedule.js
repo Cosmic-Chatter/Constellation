@@ -144,69 +144,7 @@ export function populateSchedule (schedule) {
     const scheduleIDs = Object.keys(day.schedule)
 
     scheduleIDs.forEach((scheduleID) => {
-      const item = day.schedule[scheduleID]
-      let description = null
-      const action = item.action
-      const target = item.target
-      const value = item.value
-
-      // Create the plain-language description of the action
-      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition'].includes(action)) {
-        description = populateScheduleDescriptionHelper([item], false)
-      } else if (action === 'set_exhibit') {
-        description = `Set exhibit: ${target}`
-      }
-
-      if (description != null) {
-        const eventRow = document.createElement('div')
-        eventRow.classList = 'row mt-2 eventListing'
-        $(eventRow).data('time_in_seconds', item.time_in_seconds)
-        dayContainer.appendChild(eventRow)
-
-        const eventTimeCol = document.createElement('div')
-        eventTimeCol.classList = 'col-4 mr-0 pr-0'
-        eventRow.appendChild(eventTimeCol)
-
-        const eventTimeContainer = document.createElement('div')
-        eventTimeContainer.classList = 'rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1'
-        eventTimeCol.appendChild(eventTimeContainer)
-
-        const eventTime = document.createElement('div')
-        eventTime.classList = 'align-self-center justify-content-center'
-        eventTime.innerHTML = item.time
-        eventTimeContainer.appendChild(eventTime)
-
-        const eventDescriptionCol = document.createElement('div')
-        eventDescriptionCol.classList = 'col-5 mx-0 px-0'
-        eventRow.appendChild(eventDescriptionCol)
-
-        const eventDescriptionOuterContainer = document.createElement('div')
-        eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
-        eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
-
-        const eventDescriptionInnerContainer = document.createElement('div')
-        eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
-        eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
-
-        const eventDescription = document.createElement('center')
-        eventDescription.innerHTML = description
-        eventDescriptionOuterContainer.appendChild(eventDescription)
-
-        const eventEditButtonCol = document.createElement('div')
-        eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
-        eventRow.appendChild(eventEditButtonCol)
-
-        const eventEditButton = document.createElement('button')
-        eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
-        eventEditButton.setAttribute('type', 'button')
-        eventEditButton.style.borderStyle = 'solid'
-        eventEditButton.style.border = '0px'
-        eventEditButton.innerHTML = 'Edit'
-        eventEditButton.addEventListener('click', function () {
-          scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
-        })
-        eventEditButtonCol.appendChild(eventEditButton)
-      }
+      dayContainer.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, scheduleName, day.source))
     })
     // Sort the elements by time
     const events = $(dayContainer).children('.eventListing')
@@ -219,6 +157,73 @@ export function populateSchedule (schedule) {
   })
 
   $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
+}
+
+function createScheduleEntryHTML(item, scheduleID, scheduleName, scheduleType) {
+  // Date a dictionary of properties and build an HTML representation of the schedule entry.
+
+  let description = null
+  const action = item.action
+  const target = item.target
+  const value = item.value
+
+  // Create the plain-language description of the action
+  if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition'].includes(action)) {
+    description = populateScheduleDescriptionHelper([item], false)
+  } else if (action === 'set_exhibit') {
+    description = `Set exhibit: ${target}`
+  }
+
+  if (description != null) {
+    const eventRow = document.createElement('div')
+    eventRow.classList = 'row mt-2 eventListing'
+    $(eventRow).data('time_in_seconds', item.time_in_seconds)
+
+    const eventTimeCol = document.createElement('div')
+    eventTimeCol.classList = 'col-4 mr-0 pr-0'
+    eventRow.appendChild(eventTimeCol)
+
+    const eventTimeContainer = document.createElement('div')
+    eventTimeContainer.classList = 'rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1'
+    eventTimeCol.appendChild(eventTimeContainer)
+
+    const eventTime = document.createElement('div')
+    eventTime.classList = 'align-self-center justify-content-center'
+    eventTime.innerHTML = item.time
+    eventTimeContainer.appendChild(eventTime)
+
+    const eventDescriptionCol = document.createElement('div')
+    eventDescriptionCol.classList = 'col-5 mx-0 px-0'
+    eventRow.appendChild(eventDescriptionCol)
+
+    const eventDescriptionOuterContainer = document.createElement('div')
+    eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
+    eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
+
+    const eventDescriptionInnerContainer = document.createElement('div')
+    eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+    eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
+
+    const eventDescription = document.createElement('center')
+    eventDescription.innerHTML = description
+    eventDescriptionOuterContainer.appendChild(eventDescription)
+
+    const eventEditButtonCol = document.createElement('div')
+    eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
+    eventRow.appendChild(eventEditButtonCol)
+
+    const eventEditButton = document.createElement('button')
+    eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
+    eventEditButton.setAttribute('type', 'button')
+    eventEditButton.style.borderStyle = 'solid'
+    eventEditButton.style.border = '0px'
+    eventEditButton.innerHTML = 'Edit'
+    eventEditButton.addEventListener('click', function () {
+      scheduleConfigureEditModal(scheduleName, scheduleType, false, scheduleID, item.time, action, target, value)
+    })
+    eventEditButtonCol.appendChild(eventEditButton)
+    return eventRow
+  }
 }
 
 function populateScheduleDescriptionHelper (eventList, includeTime) {
@@ -597,31 +602,36 @@ export function scheduleDeleteActionFromModal () {
     })
 }
 
-export function askForScheduleRefresh () {
-  // Send a message to the control server asking it to reload the schedule
-  // from disk
-
-  $('#refreshScheduleButton').html('Refreshing...')
+export function showManageFutureDateModal() {
+  // Prepare the modal and show it.
 
   constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/schedule/refresh'
+    endpoint: '/schedule/availableDateSpecificSchedules'
   })
-    .then((update) => {
-      if (update.class === 'schedule') {
-        populateSchedule(update)
-      }
-      $('#refreshScheduleButton').html('Success!')
-      const temp = function () {
-        $('#refreshScheduleButton').html('Refresh schedule')
-      }
-      setTimeout(temp, 2000)
+  .then((result) => {
+    console.log(result)
+  })
+
+  $('#manageFutureDateModal').modal('show')
+}
+
+export function onFutureDateCalendarInput(event) {
+  // Called when the user selects a date on the manageFutureDateModal
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/schedule/' + event.target.value + '/get'
+  })
+  .then((day) => {
+    const scheduleList = document.getElementById('manageFutureDateEntryList')
+    scheduleList.innerHTML = ''
+
+    // Loop through the schedule elements and add a row for each
+    const scheduleIDs = Object.keys(day.schedule)
+
+    scheduleIDs.forEach((scheduleID) => {
+      scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, event.target.value, 'date-specific'))
     })
-    .catch(() => {
-      $('#refreshScheduleButton').html('Timed out!')
-      const temp = function () {
-        $('#refreshScheduleButton').html('Refresh schedule')
-      }
-      setTimeout(temp, 2000)
-    })
+  })
 }

@@ -406,7 +406,7 @@ class ExhibitComponent(BaseModel):
 
 @app.post("/component/{component_id}/setApp")
 async def set_component_app(component_id: str,
-                                app_name: str = Body(description="The app to be set.", embed=True)):
+                            app_name: str = Body(description="The app to be set.", embed=True)):
     """Set the app for the component."""
 
     c_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
@@ -932,6 +932,24 @@ async def refresh_schedule():
     return response_dict
 
 
+@app.get("/schedule/availableDateSpecificSchedules")
+async def get_date_specific_schedules():
+    """Retrieve a list of available date-specific schedules"""
+
+    return {"success": True, "schedules": c_sched.get_available_date_specific_schedules()}
+
+
+@app.get("/schedule/{schedule_name}/get")
+async def get_specific_schedule(schedule_name: str):
+    """Retrieve the given schedule and return it as a dictionary."""
+
+    if not schedule_name.endswith('.json'):
+        schedule_name += '.json'
+    schedule = c_sched.load_json_schedule(schedule_name)
+
+    return {"success": True, "schedule": schedule}
+
+
 @app.post("/schedule/update")
 async def update_schedule(name: str = Body(),
                           time_to_set: str = Body(
@@ -1023,7 +1041,7 @@ async def get_help_text():
     except PermissionError:
         # For some reason, Pyinstaller insists on placing the README in a directory of the same name on Windows.
         try:
-            readme_path = c_tools.get_path(["README.md","README.md"])
+            readme_path = c_tools.get_path(["README.md", "README.md"])
             with open(readme_path, 'r', encoding='UTF-8') as f:
                 text = f.read()
             response = {"success": True, "text": text}
@@ -1116,11 +1134,11 @@ async def send_update_stream(request: Request):
                 last_update_time = c_config.last_update_time
 
                 yield {
-                        "event": "update",
-                        "id": str(last_update_time),
-                        "retry": 15000,  # milliseconds
-                        "data": json.dumps(send_webpage_update(), default=str)
-                      }
+                    "event": "update",
+                    "id": str(last_update_time),
+                    "retry": 15000,  # milliseconds
+                    "data": json.dumps(send_webpage_update(), default=str)
+                }
             await asyncio.sleep(0.5)  # seconds
 
     return EventSourceResponse(event_generator())

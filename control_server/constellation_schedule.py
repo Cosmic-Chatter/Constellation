@@ -55,6 +55,20 @@ def retrieve_json_schedule():
     queue_json_schedule((config.json_schedule_list[0])["schedule"])
 
 
+def get_available_date_specific_schedules() -> list[str]:
+    """Search the schedule directory for a list of all available date-specific schedules and return their names."""
+
+    schedule_path = c_tools.get_path(["schedules"], user_file=True)
+    available_schedules = os.listdir(schedule_path)
+    schedules_to_return = []
+
+    for file in available_schedules:
+        if file not in ['monday.json', 'tuesday.json', 'wednesday.json',
+                        'thursday.json', 'friday.json', 'saturday.json', 'sunday.json']:
+            schedules_to_return.append(file[:-5])
+    return schedules_to_return
+
+
 def load_json_schedule(schedule_name: str) -> dict:
     """Load and parse the appropriate schedule file and return it"""
 
@@ -103,7 +117,8 @@ def update_json_schedule(schedule_name: str, updates: dict) -> dict:
 
         # Calculate the time from midnight for use when sorting, etc.
         time_dt = dateutil.parser.parse(update["time"])
-        update["time_in_seconds"] = (time_dt - time_dt.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+        update["time_in_seconds"] = (
+                    time_dt - time_dt.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
 
         schedule[key] = update
 

@@ -1112,9 +1112,10 @@ $('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID
 $('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
 // Schedule tab
 // =========================
+document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
+document.getElementById('manageFutureDateCalendarInput').addEventListener('change', constSchedule.onFutureDateCalendarInput)
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
-$('#refreshScheduleButton').click(constSchedule.askForScheduleRefresh)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
 $('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector)
 
