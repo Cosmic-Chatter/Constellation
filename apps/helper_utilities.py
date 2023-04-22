@@ -217,6 +217,9 @@ def handle_missing_defaults_file():
     config.defaults_object.read_dict({"CURRENT": settings_dict})
     update_defaults(settings_dict, force=True)
 
+    _ = input("Constellation Apps will now check for permission to capture screenshots (Press Enter to continue).")
+    _ = capture_screenshot()
+
 
 def str_to_bool(val: str) -> bool:
     """Take a string value like "false" and convert it to a bool"""
