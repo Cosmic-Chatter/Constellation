@@ -249,7 +249,6 @@ function populateScheduleDescriptionHelper (eventList, includeTime) {
   if (includeTime) {
     description += ' at ' + eventList[0].time
   }
-
   return description
 }
 
@@ -289,7 +288,7 @@ function scheduleTargetToDescription (target) {
     return target.slice(5)
   } else if (target.endsWith('.exhibit')) {
     return target.slice(0, -8)
-  }
+  } else return target
 }
 
 function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
