@@ -2,11 +2,12 @@
 __*Constellation*__ 3.1 introduces a new app, Timeline Explorer. Turn a spreadsheet into an interactive timeline, and control its look and feel like never before.
 
 ## <ins>New features</ins>
-- Timeline Explorer is the fastest way to build a fully-interactive timeline.
+- Timeline Explorer is the fastest way to build an interactive timeline.
   - Display your timeline in portrait or landscape orientation to best fit your needs.
 - The all-new setup experience enables you to control every aspect of Timeline Explorer with the graphical interface—editing `INI` files is a thing of the past!
   - This powerful new configuration experience is also coming to Voting Kiosk and Timelapse Viewer in 3.1, and the rest of __*Constellation*__ Apps through the 3.X release series.
 - From the component view on the web console, you can now view a screenshot of the component in most instances.
+- Manage a component's content from its configuration page.
 
 ## <ins>Updated features</ins>
 - Switch timelines, timelapses, and voting surveys seamlessly with the new Definitions Tab in the component info panel.
