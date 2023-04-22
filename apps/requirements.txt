@@ -1,6 +1,6 @@
 aiofiles
 fastapi
-PIL
+pillow
 psutil
 pyffmpeg
 pyserial
