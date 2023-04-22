@@ -393,6 +393,7 @@ function getDefaultDocumentImage () {
   const mode = document.querySelector('html').getAttribute('data-bs-theme')
   if (mode === 'dark') return '/_static/icons/document_white.svg'
   else if (mode === 'light') return '/_static/icons/document_black.svg'
+  else return '/_static/icons/document_black.svg'
 }
 
 function selectFile (event, allowMultiple) {

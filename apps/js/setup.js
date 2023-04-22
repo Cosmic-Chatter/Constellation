@@ -1,6 +1,7 @@
 /* global showdown */
 
 import * as constCommon from './constellation_app_common.js'
+import * as constFileSelectModal from './constellation_file_select_modal.js'
 
 function submitAddDefaultModal () {
   if (!$('.settingValueInputField.visible').val().includes('=')) {
@@ -110,10 +111,9 @@ function createDefaultCard (key, value) {
   col.setAttribute('data-key', key)
 
   const title = document.createElement('div')
-  title.classList.add('bg-secondary', 'w-100', 'px-1', 'py-1')
-  // Add a "required" badge, if appropriate
+  title.classList.add('bg-secondary', 'w-100', 'px-1', 'py-1', 'rounded-top')
   const name = document.createElement('span')
-  name.classList.add('h4', 'pr-2', 'align-middle')
+  name.classList.add('h4', 'pe-2', 'align-middle')
   name.innerHTML = key
   title.append(name)
   col.append(title)
@@ -132,11 +132,11 @@ function createDefaultCard (key, value) {
     input.setAttribute('type', keyInfo.type)
     input.setAttribute('value', value)
     resetFunction = function () { $(input).val(value) }
-    input.classList.add('defaultsValue', 'w-100', 'mt-3')
+    input.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-control')
     card.append(input)
   } else if (keyInfo.type === 'bool') {
     const select = document.createElement('select')
-    select.classList.add('defaultsValue', 'w-100', 'mt-3')
+    select.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-select')
     const optionTrue = document.createElement('option')
     optionTrue.value = 'true'
     optionTrue.text = 'True'
@@ -150,7 +150,7 @@ function createDefaultCard (key, value) {
     card.append(select)
   } else if (keyInfo.type === 'option') {
     const select = document.createElement('select')
-    select.classList.add('defaultsValue', 'w-100', 'mt-3')
+    select.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-select')
 
     keyInfo.options.forEach((option) => {
       const optionEl = document.createElement('option')
@@ -375,6 +375,9 @@ populateHelpTab()
 $('#submitAddDefaultFromModal').click(submitAddDefaultModal)
 $('#saveDefaultButton').click(updateDefaults)
 $('#addDefaultButton').click(showAddDefaultModal)
+document.getElementById('manageContentButton').addEventListener('click', (event) => {
+  constFileSelectModal.createFileSelectionModal({ manage: true })
+})
 $('#availableKeys').change(function () {
   populateDefaultFromOptionList()
 })
@@ -401,3 +404,10 @@ $('#timelineExplorerHelpButton').click(function () {
 $('#wordCloudHelpButton').click(function () {
   showAppHelpMOdal('word_cloud')
 })
+
+// Set color mode
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelector('html').setAttribute('data-bs-theme', 'dark')
+} else {
+  document.querySelector('html').setAttribute('data-bs-theme', 'light')
+}
