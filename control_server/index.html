@@ -84,6 +84,12 @@
         min-height: 15vh;
         overflow-y: auto;
       }
+      #exhibitNameField {
+        font-size: 30px;
+      }
+      #galleryNameField {
+        font-size: 20px;
+      }
       #issueMediaUploadFilename {
         overflow-wrap: break-word!important;
       }
@@ -111,22 +117,48 @@
 
     <main role="main" class="container mb-4 pt-1 pt-md-3 px-md-5">
 
-      <div class="row mt-2 mb-2">
-        <div class="col-auto">
-          <H4><div id="galleryNameField"></div></H4>
-          <H2><div id="exhibitNameField"></div></H2>
+      <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
+        <div class="col-12 col-sm-auto d-flex">
+          <div id="exhibitNameField" class="align-self-center"></div>
+        </div>
+        <div class="col-12 col-sm-auto d-flex ml-auto">
+          <div id="galleryNameField" class="align-self-center"></div>
         </div>
       </div>
 
-      <nav>
-        <div class="nav nav-tabs" id="nav-tab" role="tablist">
-          <a class="nav-item nav-link active" id="nav-components-tab" data-toggle="tab" href="#nav-components" role="tab" aria-controls="nav-components" aria-selected="true">Components</a>
-          <a class="nav-item nav-link" id="nav-schedule-tab" data-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
-          <a class="nav-item nav-link" id="nav-issues-tab" data-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Issues</a>
-          <a class="nav-item nav-link" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
-          <a class="nav-item nav-link" id="nav-help-tab" data-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
-        </div>
-      </nav>
+      <!-- Top navigation bar -->
+      <ul class="nav nav-tabs" id="nav-tab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="nav-components-tab" data-toggle="tab" href="#nav-components" role="tab" aria-controls="nav-components" aria-selected="true">Components</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-none d-sm-block" id="nav-schedule-tab" data-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-none d-sm-block" id="nav-issues-tab" data-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-none d-md-block" id="nav-analytics-tab" data-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-none d-lg-block" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-none d-lg-block" id="nav-help-tab" data-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
+        </li>
+        
+        <!-- Dropdown for overflow items -->
+        <li class="nav-item dropdown d-block d-lg-none">
+          <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">More</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item d-block d-sm-none" id="nav-schedule-tab" data-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
+            <a class="dropdown-item d-block d-sm-none" id="nav-issues-dropdown-tab" data-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
+            <a class="dropdown-item d-block d-md-none" id="nav-analytics-dropdown-tab" data-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+            <a class="dropdown-item" id="nav-settings-dropdown-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
+            <a class="dropdown-item" id="nav-help-dropdown-tab" data-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
+          </div>
+        </li>
+      </ul>
 
       <div class="tab-content" id="nav-tabContent">
 
@@ -646,6 +678,7 @@
 
         <div class="tab-pane fade" id="nav-issues" role="tabpanel" aria-labelledby="nav-issues-tab">
 
+          <!-- Issue edit modal -->
           <div class="modal" tabindex="-1" role="dialog" id="issueEditModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
@@ -720,11 +753,11 @@
           </div>
           </div>
 
-          <div id='issueTabButtons' class='row mt-4'>
-            <div class='col-12'>
-              <button id="createIssueButton" class='btn btn-primary'>Create issue</button>
+          <div id='issueTabButtons' class='row'>
+            <div class='col-12 col-sm-3 col-md-3 col-lg-2 mt-2 mt-sm-auto'>
+              <button id="createIssueButton" class='btn btn-primary w-100'>Create issue</button>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
+            <div class='col-6 col-sm-4 col-lg-3 col-xl-2 mt-3'>
               <label>Priority</label>
               <select id="issueListFilterPrioritySelect" class='form-control'>
                 <option value="all">All</option>
@@ -733,7 +766,7 @@
                 <option value="high">High</option>
               </select>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mt-3'>
+            <div class='col-6 col-sm-4 col-lg-3 col-xl-2 mt-3'>
               <label>Assigned to</label>
               <select id="issueListFilterAssignedToSelect" class='form-control'>
               </select>
@@ -778,79 +811,9 @@
           </div>
         </div>
 
-        <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
+        <div class="tab-pane fade" id="nav-analytics" role="tabpanel" aria-labelledby="nav-analytics-tab">
 
-          <div class="modal" tabindex="-1" role="dialog" id="changeExhibitModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
-                </div>
-                <div class="modal-body">
-                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly for up to a minute.
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="exhibitChangeConfirmationButton">Change exhibit</button>
-                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal" tabindex="-1" role="dialog" id="deleteExhibitModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
-                </div>
-                <div class="modal-body">
-                  Deleting an exhibit cannot be undone.
-                </div>
-                <div class="modal-footer">
-                  <button id="deleteExhibitButton" type="button" class="btn btn-danger">Delete exhibit</button>
-                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerDataModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
-                </div>
-                <div class="modal-body">
-                  Deleting the data cannot be undone. To continue, please retype the name of the data to be deleted:
-                  <center><div id='deleteTrackerDataModalDeletedName' class='h4 mt-1'>TEST</div></center>
-                  <center><input type="text" id='deleteTrackerDataModalDeletedInput'></input></center>
-                  <p id='deleteTrackerDataModalSpellingError' class='text-danger mt-2'>Your typed name does not match. Are you sure you want to delete these data?</p>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="deleteTrackerDataFromModalButton">Delete data</button>
-                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerTemplateModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
-                </div>
-                <div class="modal-body">
-                  Deleting a template cannot be undone.
-                </div>
-                <div class="modal-footer">
-                  <button id="deleteTrackerTemplateFromModalButton" type="button" class="btn btn-danger">Delete template</button>
-                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          <!-- Edit tracker template modal -->
           <div class="modal" tabindex="-1" role="dialog" id="editTrackerTemplateModal" >
             <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: min(95%, 1000px); width: min(95%, 1000px);">
               <div class="modal-content">
@@ -962,6 +925,132 @@
                 <div class="modal-footer">
                   <button id="editTrackerTemplateModalSubmitChangesButton" type="button" class="btn btn-primary">Save</button>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete tracker template modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerTemplateModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting a template cannot be undone.
+                </div>
+                <div class="modal-footer">
+                  <button id="deleteTrackerTemplateFromModalButton" type="button" class="btn btn-danger">Delete template</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete tracker data modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="deleteTrackerDataModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting the data cannot be undone. To continue, please retype the name of the data to be deleted:
+                  <center><div id='deleteTrackerDataModalDeletedName' class='h4 mt-1'>TEST</div></center>
+                  <center><input type="text" id='deleteTrackerDataModalDeletedInput'></input></center>
+                  <p id='deleteTrackerDataModalSpellingError' class='text-danger mt-2'>Your typed name does not match. Are you sure you want to delete these data?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" id="deleteTrackerDataFromModalButton">Delete data</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <H3 class='mt-2'>Flexible Tracker</H3>
+          <i>With Flexible Tracker, you can create custom interfaces for surveys and evaluations.</i>
+          <div class="row mt-3">
+            <div class='col-6 col-md-5 col-lg-4 col-xl-3'>
+              <input type="text" id='createTrackerTemplateName' class='form-control' placeholder="Enter template name"></input>
+            </div>
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
+              <button id="createTrackerTemplateButton" class='btn btn-primary w-100'>Create template</button>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12 mt-2">
+              <H4>Templates</H4>
+              <i>Templates define the layout of a Flexible Tracker data collection interface.</i>
+            </div>
+            <div class="col-6 col-md-2 mt-2">
+              <select id="trackerTemplateSelect" class="form-control"></select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="launchTrackerButton" class='btn btn-primary w-100'>Launch</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="showEditTrackerTemplateButton" class='btn btn-info w-100'>Edit</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="deleteTrackerTemplateButton" class='btn btn-danger w-100'>Delete</button>
+            </div>
+          </div>
+          <div class='row mt-3'>
+            <div class="col-12 mt-2">
+              <H4>Data</H4>
+              <i>Download data collected by Flexible Tracker or deposited by another Constellation-compatible app.</i>
+            </div>
+            <div class="col-6 col-md-2 mt-2">
+              <select id="trackerDataSelect" class="form-control"></select>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="getAvailableTrackerDataButton" class='btn btn-primary w-100'>Refresh</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="downloadTrackerDataButton" class='btn btn-info w-100'>Download</button>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
+              <button id="showDeleteTrackerDataModalButton" class='btn btn-danger w-100'>Delete</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
+
+          <!-- Change exhibits modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="changeExhibitModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly for up to a minute.
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" id="exhibitChangeConfirmationButton">Change exhibit</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete exhibit modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="deleteExhibitModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting an exhibit cannot be undone.
+                </div>
+                <div class="modal-footer">
+                  <button id="deleteExhibitButton" type="button" class="btn btn-danger">Delete exhibit</button>
+                  <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
                 </div>
               </div>
             </div>
@@ -1251,7 +1340,7 @@
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
             </div>
-            <div class="col-6 col-md-3 col-lg-2 mt-2">
+            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showStaticComponentsEditModalButton">Static Components</button>
             </div>
           </div>
@@ -1297,55 +1386,8 @@
               </div>
             </div>
           </div>
-          <hr>
-          <H3 class='mt-2'>Flexible Tracker</H3>
-          <i>With Flexible Tracker, you can create custom interfaces for surveys and evaluations.</i>
-          <div class="row mt-3">
-            <div class='col-6 col-md-5 col-lg-4 col-xl-3'>
-              <input type="text" id='createTrackerTemplateName' class='form-control' placeholder="Enter template name"></input>
-            </div>
-            <div class="col-6 col-md-3 col-lg-3 col-xl-2">
-              <button id="createTrackerTemplateButton" class='btn btn-primary w-100'>Create template</button>
-            </div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-12 mt-2">
-              <H4>Templates</H4>
-              <i>Templates define the layout of a Flexible Tracker data collection interface.</i>
-            </div>
-            <div class="col-6 col-md-2 mt-2">
-              <select id="trackerTemplateSelect" class="form-control"></select>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="launchTrackerButton" class='btn btn-primary w-100'>Launch</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="showEditTrackerTemplateButton" class='btn btn-info w-100'>Edit</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="deleteTrackerTemplateButton" class='btn btn-danger w-100'>Delete</button>
-            </div>
-          </div>
-          <div class='row mt-3'>
-            <div class="col-12 mt-2">
-              <H4>Data</H4>
-              <i>Download data collected by Flexible Tracker or deposited by another Constellation-compatible app.</i>
-            </div>
-            <div class="col-6 col-md-2 mt-2">
-              <select id="trackerDataSelect" class="form-control"></select>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="getAvailableTrackerDataButton" class='btn btn-primary w-100'>Refresh</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="downloadTrackerDataButton" class='btn btn-info w-100'>Download</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="showDeleteTrackerDataModalButton" class='btn btn-danger w-100'>Delete</button>
-            </div>
-          </div>
         </div>
-
+        
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
           <div class="row mt-4">
             <div id='helpTextDiv' class='col-auto'>

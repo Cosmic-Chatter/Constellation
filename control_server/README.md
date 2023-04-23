@@ -180,11 +180,11 @@ The _Schedule_ tab allows you to set recurring or one-off events within the gall
 
 Note that sending power off and power on commands may affect different components differently. For projectors, this will sleep or wake them. For Wake on LAN devices with shutdown permitted, the machine will be shutdown.
 
-### Issues tab
+### Maintenance tab
 
 <img src="images/issue_creation_modal.jpg" style="width: 50%; float: left; border: 2px solid gray; margin: 5px;"></img>
 
-The issues tab organizes information about the current state of the gallery and its components. It provides an easy interface for non-technical users to alert maintenance staff about a problem, as well as to see a summary of the overall gallery health.
+The Maintenance tab organizes information about the current state of the gallery and its components. It provides an easy interface for non-technical users to alert maintenance staff about a problem, as well as to see a summary of the overall gallery health.
 
 #### Issues
 
@@ -228,22 +228,20 @@ The Flexible Tracker enables the collection of a wide variety of quantitative an
 ### Collection types
 Flexible Tracker can collect a variety of data types. Each type provides a widget that makes inputting the data easy and reliable.
 
-| Type       | Description                                                                                                                              | Required keywords                           | Optional keywords                                                                                                                                                                  |
-|------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `counter`  | Count by whole numbers, like a traditional tally counter.                                                                                | -                                           | `label`: string                                                                                                                                                                    |
-| `dropdown` | Select one or more options from a list                                                                                                   | `options`: comma-separated list of strings. | `multiple`: true/false (default: false) `label`: string                                                                                                                            |
-| `number`   | Record a single number, including decimals                                                                                               | -                                           | `label`: string                                                                                                                                                                    |
-| `slider`   | Record a single number, bounded in a user-defined range. The value is selected using a slider.                                           | -                                           | `min`: number (default: 1) <br> `max`: number (default: 100) <br> `step`: number (default: 1) <br> `start`: Inital slider position (default: `(min + max)/2`) <br> `label`: string |
-| `text`     | A textbox for inputting any text                                                                                                         | -                                           | `lines`: The height of the box in lines (default: 5) <br> `label`: string                                                                                                          |
-| `timer`    | Records the number of seconds. Can be started and stopped by the user. "Exclusive" timers pause all other exclusive timers when started. | -                                           | `exclusive`: true/false (default: false) <br> `label`: string                                                                                                                      |
+| Type     | Description                                                                                                                              |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Counter  | Count by whole numbers, like a traditional tally counter.                                                                                |
+| Dropdown | Select one or more options from a list                                                                                                   |
+| Number   | Record a single number, including decimals                                                                                               |
+| Slider   | Record a single number, bounded in a user-defined range. The value is selected using a slider.                                           | -                                           |
+| Text     | A textbox for inputting any text                                                                                                         |
+| Timer    | Records the number of seconds. Can be started and stopped by the user. "Exclusive" timers pause all other exclusive timers when started. |
 
 ### Creating a template
 
 <img src="images/tracker_template_edit.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-A _template_ defines the collection types available for a given session. It allows you to customize Flexible Tracker for your specific needs. The recommended way to create a template is through the web console.
-
-#### Using the web console
+A _template_ defines the collection types available for a given session. It allows you to customize Flexible Tracker for your specific needs.
 
 To create a template, navigate to the settings tab. In the Flexible Tracker section, select the template you want to edit, first creating it if necessary. Then, click _Edit_ to pop up the template editor. The left column contains the possible collection type widgets. Click on one to add it to the current layout, and customize its parameters using the fields in the right column.
 
