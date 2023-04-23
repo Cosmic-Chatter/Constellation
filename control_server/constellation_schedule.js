@@ -415,6 +415,8 @@ export function setScheduleActionValueSelector () {
         }
         // In the case of editing an action, preselect any existing values
         valueSelector.val($('#scheduleEditModal').data('currentValue'))
+        valueSelector.show()
+        $('#scheduleValueSelectorLabel').show()
       })
   } else if (action === 'set_app') {
     const appDict = {
@@ -433,10 +435,12 @@ export function setScheduleActionValueSelector () {
     })
     // In the case of editing an action, preselect any existing values
     valueSelector.val($('#scheduleEditModal').data('currentValue'))
+    valueSelector.show()
+    $('#scheduleValueSelectorLabel').show()
+  } else {
+    valueSelector.hide()
+    $('#scheduleValueSelectorLabel').hide()
   }
-
-  valueSelector.show()
-  $('#scheduleValueSelectorLabel').show()
 }
 
 export function scheduleConfigureEditModal (scheduleName,
