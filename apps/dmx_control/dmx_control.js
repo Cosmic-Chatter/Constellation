@@ -785,7 +785,6 @@ function cloneFixture () {
       Array.from(addFixtureChannelList.querySelectorAll('.channel-select')).slice(-1)[0].value = 'other'
       channel = channel.replaceAll('_', ' ')
       input.value = channel[0].toUpperCase() + channel.slice(1)
-      console.log(channel)
       input.parentNode.style.display = 'block'
     }
   })
@@ -1449,18 +1448,35 @@ popoverTriggerList.map(function (popoverTriggerEl) {
 
 constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'dmx_control'
+constCommon.config.helperAddress = window.location.origin
 
 const universeList = []
 const groupList = []
 
 constCommon.config.debug = true
+let standalone = false
 
-constCommon.config.helperAddress = window.location.origin
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this because it was clicked from the web console DMX tab
+  standalone = true
+} else {
+  // We are displaying this as the main app
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
 
-constCommon.askForDefaults()
-constCommon.sendPing()
+      setInterval(constCommon.sendPing, 5000)
+    })
+}
 
-setInterval(constCommon.sendPing, 5000)
+// Set color mode
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelector('html').setAttribute('data-bs-theme', 'dark')
+} else {
+  document.querySelector('html').setAttribute('data-bs-theme', 'light')
+}
+
 setInterval(constCommon.checkForHelperUpdates, 5000)
 
 getDMXConfiguration()

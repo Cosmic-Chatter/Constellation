@@ -1,6 +1,7 @@
 import constConfig from './config.js'
-import * as constTools from './constellation_tools.js'
+import * as constDMX from './constellation_dmx.js'
 import * as constMaint from './constellation_maintenance.js'
+import * as constTools from './constellation_tools.js'
 
 class BaseComponent {
   // A basic Constellation component.
@@ -697,6 +698,21 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
   }
 
+  // Fetch any DMX lighting scenes and show the tab if necessary
+  constTools.makeRequest({
+    method: 'GET',
+    url: obj.getHelperURL(),
+    endpoint: '/DMX/getScenes'
+  })
+  .then((result) => {
+    console.log(result)
+    constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+    document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
+  })
+  .catch((error) => {
+    document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+  })
+
   // If this is a projector, populate the status pane
   if (obj.type === 'projector') {
     populateProjectorInfo(obj.id)
@@ -716,7 +732,7 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
-    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
+    if (['dmx_control', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
     } else {
@@ -861,6 +877,7 @@ export function convertAppIDtoDisplayName (appName) {
   let displayName = 'Unknown Component'
   if (appName !== '') {
     const constellationAppIdDisplayNames = {
+      dmx_control: 'DMX Control',
       heartbeat: 'Heartbeat',
       infostation: 'InfoStation',
       media_browser: 'Media Browser',

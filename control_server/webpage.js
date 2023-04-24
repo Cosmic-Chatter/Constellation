@@ -1114,6 +1114,10 @@ document.getElementById('componentInfoModalViewScreenshot').addEventListener('cl
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
   constTools.openMediaInNewTab(component.getHelperURL() + '/system/getScreenshot', 'image')
 })
+document.getElementById('componentInfoModalEditDMXButton').addEventListener('click', (event) => {
+  const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
+  window.open(component.getHelperURL() + '/dmx_control.html?standalone=true', '_blank').focus();
+})
 // Schedule tab
 // =========================
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)

@@ -464,7 +464,7 @@ def activate_dmx() -> bool:
 
     Returns True is DMX has been successfully activated (already or just now) and False otherwise.
     """
-
+    reason = ""
     if not config.dmx_active:
         config.dmx_active, reason = read_dmx_configuration()
 
