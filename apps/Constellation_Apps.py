@@ -17,10 +17,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
+import pyftdi
 import uvicorn
 
 # Constellation modules
 import config as const_config
+import helper_dmx
 import helper_files
 import helper_system
 import helper_utilities
@@ -52,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/dmx_control",
+          StaticFiles(directory=helper_files.get_path(["dmx_control"])),
+          name="dmx_control")
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
@@ -79,35 +84,47 @@ app.mount("/js",
 app.mount("/css",
           StaticFiles(directory=helper_files.get_path(["css"])),
           name="css")
+app.mount("/configuration",
+          StaticFiles(directory=helper_files.get_path(
+              ["configuration"], user_file=True)),
+          name="configuration")
 app.mount("/content",
-          StaticFiles(directory=helper_files.get_path(["content"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["content"], user_file=True)),
           name="content")
 app.mount("/_fonts",
           StaticFiles(directory=helper_files.get_path(["_fonts"])),
           name="_fonts")
 app.mount("/images",
-          StaticFiles(directory=helper_files.get_path(["images"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["images"], user_file=True)),
           name="images")
 app.mount("/_static",
           StaticFiles(directory=helper_files.get_path(["_static"])),
           name="_static")
 app.mount("/static",
-          StaticFiles(directory=helper_files.get_path(["static"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["static"], user_file=True)),
           name="static")
 app.mount("/style",
-          StaticFiles(directory=helper_files.get_path(["style"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["style"], user_file=True)),
           name="style")
 app.mount("/text",
-          StaticFiles(directory=helper_files.get_path(["text"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["text"], user_file=True)),
           name="thumbs")
 app.mount("/thumbs",
-          StaticFiles(directory=helper_files.get_path(["thumbs"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["thumbs"], user_file=True)),
           name="thumbs")
 app.mount("/thumbnails",
-          StaticFiles(directory=helper_files.get_path(["thumbnails"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["thumbnails"], user_file=True)),
           name="thumbnails")
 app.mount("/videos",
-          StaticFiles(directory=helper_files.get_path(["videos"], user_file=True)),
+          StaticFiles(directory=helper_files.get_path(
+              ["videos"], user_file=True)),
           name="videos")
 
 
@@ -146,7 +163,8 @@ async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
 
     if "content" in config.defaults_dict:
-        active_content = [s.strip() for s in config.defaults_dict["content"].split(",")]
+        active_content = [s.strip()
+                          for s in config.defaults_dict["content"].split(",")]
     else:
         active_content = ""
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
@@ -352,7 +370,8 @@ async def do_post(data: dict[str, Any], config: const_config = Depends(get_confi
     """POST requests to / are Constellation 1 legacy calls kept for compatibility with the web console"""
 
     if "action" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'action'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'action'")
     else:
         print("Legacy Constellation command received: ", data)
 
@@ -436,7 +455,8 @@ async def upload_content(files: list[UploadFile] = File(),
 
     for file in files:
         filename = file.filename
-        file_path = helper_files.get_path(["content", filename], user_file=True)
+        file_path = helper_files.get_path(
+            ["content", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
         with config.content_file_lock:
             async with aiofiles.open(file_path, 'wb') as out_file:
@@ -455,7 +475,8 @@ async def set_defaults(data: dict, force: bool = False, config: const_config = D
     """Update the given defaults with the specified values"""
 
     if "defaults" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'defaults'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'defaults'")
 
     helper_utilities.update_defaults(data["defaults"], force=True)
 
@@ -467,9 +488,336 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
     """Replace all defaults with only the given values."""
 
     if "defaults" not in data:
-        raise HTTPException(status_code=400, detail="Must include field 'defaults'")
+        raise HTTPException(
+            status_code=400, detail="Must include field 'defaults'")
 
     helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
+
+    return {"success": True}
+
+
+# DMX actions
+
+@app.get("/DMX/getAvailableControllers")
+async def get_dmx_controllers():
+    """Return a list of connected DMX controllers."""
+
+    return {"success": True, "controllers": helper_dmx.get_available_controllers()}
+
+
+@app.get("/DMX/getConfiguration")
+async def get_dmx_configuration():
+    """Return the JSON DMX configuration file."""
+
+    success, reason = helper_dmx.activate_dmx()
+    config_dict = {
+        "universes": [],
+        "groups": []
+    }
+    if success is True:
+        config_path = helper_files.get_path(
+            ["configuration", "dmx.json"], user_file=True)
+        config_dict = helper_files.load_json(config_path)
+
+    return {"success": success, "reason": reason, "configuration": config_dict}
+
+
+@app.get("/DMX/getStatus")
+async def get_dmx_status():
+    """Return a dictionary with the current channel value for every channel in every fixture."""
+
+    result = {}
+
+    for fixture in const_config.dmx_fixtures:
+        result[fixture.uuid] = fixture.get_all_channel_values()
+
+    return {"success": True, "status": result}
+
+
+@app.post("/DMX/fixture/create")
+async def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
+                       channels: list[str] = Body(description="A list of channel names."),
+                       start_channel: int = Body(description="The first channel to allocate."),
+                       universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
+    """Create a new DMX fixture"""
+
+    new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "fixture": new_fixture.get_dict()}
+
+@app.post("/DMX/fixture/remove")
+async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
+    """Remove the given DMX fixture from its universe and any groups"""
+
+    fixture = helper_dmx.get_fixture(fixture_uuid)
+    if fixture is None:
+        print(f"/DMX/fixture/remove: Cannot remove fixture {fixture_uuid}. It does not exist.")
+        return {"success": False, "reason": "Fixture does not exist."}
+    fixture.delete()
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True}
+
+@app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
+async def set_dmx_fixture_to_brightness(fixture_uuid: str,
+                                  value: int = Body(
+                                      description="The brightness to be set."),
+                                  duration: float = Body(description="How long the brightness transition should take.",
+                                                         default=0)):
+    """Set the given fixture to the specified brightness."""
+
+    fixture = helper_dmx.get_fixture(fixture_uuid)
+    fixture.set_brightness(value, duration)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
+@app.post("/DMX/fixture/{fixture_uuid}/setChannel")
+async def set_dmx_fixture_channel(fixture_uuid: str,
+                            channel_name: str = Body(
+                                "The name of the chanel to set."),
+                            value: int = Body(
+                                description="The value to be set."),
+                            duration: float = Body(description="How long the transition should take.",
+                                                   default=0)):
+    """Set the given channel of the given fixture to the given value."""
+
+    fixture = helper_dmx.get_fixture(fixture_uuid)
+    fixture.set_channel(channel_name, value)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
+@app.post("/DMX/fixture/{fixture_uuid}/setColor")
+async def set_dmx_fixture_to_color(fixture_uuid: str,
+                             color: list = Body(
+                                 description="The color to be set."),
+                             duration: float = Body(description="How long the color transition should take.",
+                                                    default=0)):
+    """Set the given fixture to the specified color."""
+
+    fixture = helper_dmx.get_fixture(fixture_uuid)
+    fixture.set_color(color, duration)
+    return {"success": True, "configuration": fixture.get_dict()}
+
+
+@app.post("/DMX/group/create")
+async def create_dmx_group(name: str = Body(description="The name of the group to create."),
+                           fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
+
+    new_group = helper_dmx.create_group(name)
+
+    fixtures = []
+    for uuid in fixture_list:
+        fixtures.append(helper_dmx.get_fixture(uuid))
+    new_group.add_fixtures(fixtures)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "uuid": new_group.uuid}
+
+
+@app.post("/DMX/group/{group_uuid}/edit")
+async def edit_dmx_group(group_uuid: str,
+                         name: str = Body(description="The new name for the group", default=""),
+                         fixture_list: list[str] = Body(description="A list of UUIDs for fixtures that should be included.", default=[])):
+
+    group = helper_dmx.get_group(group_uuid)
+
+    if group is None:
+        return {"success": False, "reason": f"Group {group_uuid} does not exist."}
+
+    if name != "":
+        group.name = name
+
+    if len(fixture_list) > 0:
+        # First, remove any fixtures that are in the group, but not in fixture_list
+        for uuid in group.fixtures.copy():
+            if uuid not in fixture_list:
+                group.remove_fixture(uuid)
+
+        # Then, loop through fixture_list and add any that are not included in the group
+        fixtures_to_add = []
+        for uuid in fixture_list:
+            if uuid not in group.fixtures:
+                fixture = helper_dmx.get_fixture(uuid)
+                if fixture is not None:
+                    fixtures_to_add.append(fixture)
+
+        if len(fixtures_to_add) > 0:
+            group.add_fixtures(fixtures_to_add)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True}
+
+
+@app.get("/DMX/group/{group_uuid}/delete")
+async def delete_dmx_group(group_uuid: str):
+
+    helper_dmx.get_group(group_uuid).delete()
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
+@app.post("/DMX/group/{group_uuid}/createScene")
+async def create_dmx_scene(group_uuid: str,
+                     name: str = Body(description="The name of the scene."),
+                     values: dict = Body(description="A dictionary of values for the scene."),
+                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
+    """Create the given scene for the specified group."""
+
+    group = helper_dmx.get_group(group_uuid)
+    uuid_str = group.create_scene(name, values, duration=duration)
+    helper_dmx.write_dmx_configuration()
+    return {"success": True, "uuid": uuid_str}
+
+
+@app.post("/DMX/group/{group_uuid}/editScene")
+async def create_dmx_scene(group_uuid: str,
+                     uuid: str = Body(description="The UUID of the scene to edit."),
+                     name: str = Body(description="The name of the scene."),
+                     values: dict = Body(description="A dictionary of values for the scene."),
+                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
+    """Edit the given scene for the specified group."""
+
+    group = helper_dmx.get_group(group_uuid)
+
+    scene = group.get_scene(uuid_str=uuid)
+
+    scene.name = name
+    scene.duration = duration
+    scene.set_values(values)
+
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
+@app.post("/DMX/group/{group_uuid}/deleteScene")
+async def create_dmx_scene(group_uuid: str,
+                     uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
+    """Delete the given scene for the specified group."""
+
+    group = helper_dmx.get_group(group_uuid)
+    group.delete_scene(uuid)
+
+    helper_dmx.write_dmx_configuration()
+    return {"success": True}
+
+
+@app.post("/DMX/group/{group_uuid}/setBrightness")
+async def set_dmx_fixture_to_brightness(group_uuid: str,
+                                  value: int = Body(
+                                      description="The brightness to be set."),
+                                  duration: float = Body(description="How long the brightness transition should take.",
+                                                         default=0)):
+    """Set the given group to the specified brightness."""
+
+    group = helper_dmx.get_group(group_uuid)
+    group.set_brightness(value, duration)
+    return {"success": True, "configuration": group.get_dict()}
+
+
+@app.post("/DMX/group/{group_uuid}/setColor")
+async def set_dmx_group_to_color(group_uuid: str,
+                           color: list = Body(
+                               description="The color to be set."),
+                           duration: float = Body(description="How long the color transition should take.",
+                                                  default=0)):
+    """Set the given group to the specified color."""
+
+    group = helper_dmx.get_group(group_uuid)
+    group.set_color(color, duration)
+    return {"success": True, "configuration": group.get_dict()}
+
+@app.get("/DMX/group/{group_uuid}/getScenes")
+async def get_dmx_group_scenes(group_uuid: str):
+    """Return a list of the available scenes for the given group."""
+
+    response = {"success": True, "scenes": []}
+
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
+    if not os.path.exists(config_path):
+        response["success"] = False
+        response["reason"] = "no_config_file"
+        return response
+
+    config_dict = helper_files.load_json(config_path)
+    groups = config_dict["groups"]
+    matches = [group for group in groups if group.uuid == group_uuid]
+    if len(matches) == 0:
+        response["success"] = False
+        response["reason"] = "group_not_found"
+        return response
+    group = matches[0]
+    response["scenes"] = group["scenes"]
+    return response
+
+
+@app.get("/DMX/getScenes")
+async def get_dmx_scenes():
+    """Return a list of the available scenes across all groups."""
+
+    response = {"success": True, "groups": []}
+
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
+    if not os.path.exists(config_path):
+        response["success"] = False
+        response["reason"] = "no_config_file"
+        return response
+
+    config_dict = helper_files.load_json(config_path)
+    groups = config_dict["groups"]
+
+    for group_def in groups:
+        group = {}
+        group["uuid"] = group_def["uuid"]
+        group["name"] = group_def["name"]
+        scenes = []
+        for scene_def in group_def["scenes"]:
+            scene = {"uuid": scene_def["uuid"], "name": scene_def["name"]}
+            scenes.append(scene)
+        group["scenes"] = scenes
+        response["groups"].append(group)
+
+    return response
+
+
+@app.post("/DMX/group/{group_uuid}/showScene")
+async def set_dmx_group_scene(group_uuid: str,
+                              uuid: str = Body(
+                                  description="The UUID of the scene to be run.",
+                                  default="",
+                                  embed=True)
+                              ):
+    """Run a scene for the given group."""
+
+    helper_dmx.activate_dmx()
+    group = helper_dmx.get_group(group_uuid)
+    group.show_scene(uuid)
+
+    return {"success": True, "configuration": group.get_dict()}
+
+
+@app.post("/DMX/universe/create")
+async def create_dmx_universe(name: str = Body(description="The name of the universe."),
+                        controller: str = Body(description="The type of this controller (OpenBMX or uDMX)."),
+                        device_details: dict[str, Any] = Body(description="A dictionary of hardware details for the controller.")):
+    """Create a new DMXUniverse."""
+
+    new_universe = helper_dmx.create_universe(name,
+                                          controller=controller,
+                                          device_details=device_details)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "universe": new_universe.get_dict()}
+
+@app.post("/DMX/universe/rename")
+async def create_dmx_universe(uuid: str = Body(description="The UUID of the universe."),
+                              new_name: str = Body(description="The new name to set.")):
+    """Change the name for a universe."""
+
+    helper_dmx.get_universe(uuid_str=uuid).name = new_name
+    helper_dmx.write_dmx_configuration()
 
     return {"success": True}
 

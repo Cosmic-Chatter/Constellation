@@ -357,7 +357,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["content", "definitions", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
+    dir_list = ["configuration", "content", "definitions", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

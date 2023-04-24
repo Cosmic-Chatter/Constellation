@@ -18,6 +18,13 @@ missingContentWarningList: list[dict] = []  # Holds a list of warning about miss
 NEXT_EVENT: Union[tuple[datetime.time, list[str]], None] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
 HELPER_SOFTWARE_VERSION: float = 3.0
+debug: bool = True
+
+# DMX resources
+dmx_universes: list = []
+dmx_groups: dict = []
+dmx_fixtures = []
+dmx_active: bool = False
 
 smart_restart: dict[str: Any] = {
     "mode": "patient",  # off | aggressive | patient

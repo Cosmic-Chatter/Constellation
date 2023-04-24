@@ -447,6 +447,7 @@ export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
 
   const appLocations = {
+    dmx_control: '/dmx_control.html',
     infostation: '/infostation.html',
     media_browser: '/media_browser.html',
     media_player: '/media_player.html',

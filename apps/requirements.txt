@@ -2,7 +2,9 @@ aiofiles
 fastapi
 pillow
 psutil
+PyDMXControl
 pyffmpeg
+pyftdi
 pyserial
 python-dateutil
 python-multipart
