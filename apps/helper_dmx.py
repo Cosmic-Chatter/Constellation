@@ -342,16 +342,22 @@ def create_universe(name: str,
                     controller: str = "OpenDMX", 
                     device_details: dict[str, Any] = {}, 
                     dynamic_frame: bool = True,
-                    uuid_str: str = "") -> DMXUniverse:
+                    uuid_str: str = "") -> Union[DMXUniverse, None]:
     """Create a new DMXUniverse and add it to config.dmx_universes."""
 
-    new_universe = DMXUniverse(name, 
-                               controller = controller, 
-                               device_details = device_details,
-                               dynamic_frame = dynamic_frame,
-                               uuid_str=uuid_str)
+    try:
+        new_universe = DMXUniverse(name, 
+                                controller = controller, 
+                                device_details = device_details,
+                                dynamic_frame = dynamic_frame,
+                                uuid_str=uuid_str)
 
-    config.dmx_universes.append(new_universe)
+        config.dmx_universes.append(new_universe)
+    except IOError as e:
+        if e.args[0] == "No such device":
+            return None
+        else:
+            raise e
 
     return new_universe
 
@@ -408,13 +414,13 @@ def write_dmx_configuration() -> None:
     helper_files.write_json(config_dict, config_path)
 
 
-def read_dmx_configuration() -> bool:
+def read_dmx_configuration() -> tuple[bool, str]:
     """Read dmx.json and turn it into a set of universes, fixtures, and groups."""
 
     config_path = helper_files.get_path(
         ["configuration", "dmx.json"], user_file=True)
     if not os.path.exists(config_path):
-        return False
+        return False, "no_config_file"
 
     config_dict = helper_files.load_json(config_path)
 
@@ -432,9 +438,13 @@ def read_dmx_configuration() -> bool:
                               controller = entry["controller"], 
                               device_details = details,
                               uuid_str = entry["uuid"])
+        if uni is None:
+            return False, "device_not_found"
+        
         for fix in entry["fixtures"]:
             uni.create_fixture(
                 fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
+            
     # Then, create any groups
     config.dmx_groups = []
     group_config = config_dict["groups"]
@@ -446,7 +456,7 @@ def read_dmx_configuration() -> bool:
         for scene in entry["scenes"]:
             group.create_scene(scene["name"], scene["values"], duration=scene["duration"], uuid_str=scene["uuid"])
 
-    return True
+    return True, ""
 
 
 def activate_dmx() -> bool:
@@ -456,9 +466,9 @@ def activate_dmx() -> bool:
     """
 
     if not config.dmx_active:
-        config.dmx_active = read_dmx_configuration()
+        config.dmx_active, reason = read_dmx_configuration()
 
-    return config.dmx_active
+    return config.dmx_active, reason
 
 
 def get_available_controllers() -> tuple[bool, str, list[dict[str, Any]]]:

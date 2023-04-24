@@ -388,7 +388,7 @@ async def get_dmx_controllers():
 async def get_dmx_configuration():
     """Return the JSON DMX configuration file."""
 
-    success = helper_dmx.activate_dmx()
+    success, reason = helper_dmx.activate_dmx()
     config_dict = {
         "universes": [],
         "groups": []
@@ -398,7 +398,7 @@ async def get_dmx_configuration():
             ["configuration", "dmx.json"], user_file=True)
         config_dict = helper_files.load_json(config_path)
 
-    return {"success": success, "configuration": config_dict}
+    return {"success": success, "reason": reason, "configuration": config_dict}
 
 
 @app.get("/DMX/getStatus")
@@ -419,7 +419,7 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
                        start_channel: int = Body(description="The first channel to allocate."),
                        universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
     """Create a new DMX fixture"""
-    
+
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
@@ -606,6 +606,60 @@ async def set_dmx_group_to_color(group_uuid: str,
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
 
+@app.get("/DMX/group/{group_uuid}/getScenes")
+async def get_dmx_group_scenes(group_uuid: str):
+    """Return a list of the available scenes for the given group."""
+
+    response = {"success": True, "scenes": []}
+
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
+    if not os.path.exists(config_path):
+        response["success"] = False
+        response["reason"] = "no_config_file"
+        return response
+    
+    config_dict = helper_files.load_json(config_path)
+    groups = config_dict["groups"]
+    matches = [group for group in groups if group.uuid == group_uuid]
+    if len(matches) == 0:
+        response["success"] = False
+        response["reason"] = "group_not_found"
+        return response
+    group = matches[0]
+    response["scenes"] = group["scenes"]
+    return response
+
+
+@app.get("/DMX/getScenes")
+async def get_dmx_scenes():
+    """Return a list of the available scenes across all groups."""
+
+    response = {"success": True, "groups": []}
+
+    config_path = helper_files.get_path(
+        ["configuration", "dmx.json"], user_file=True)
+    if not os.path.exists(config_path):
+        response["success"] = False
+        response["reason"] = "no_config_file"
+        return response
+    
+    config_dict = helper_files.load_json(config_path)
+    groups = config_dict["groups"]
+    
+    for group_def in groups:
+        group = {}
+        group["uuid"] = group_def["uuid"]
+        group["name"] = group_def["name"]
+        scenes = []
+        for scene_def in group_def["scenes"]:
+            scene = {"uuid": scene_def["uuid"], "name": scene_def["name"]}
+            scenes.append(scene)
+        group["scenes"] = scenes
+        response["groups"].append(group)
+
+    return response
+
 
 @app.post("/DMX/group/{group_uuid}/showScene")
 async def set_dmx_group_scene(group_uuid: str,
@@ -616,6 +670,7 @@ async def set_dmx_group_scene(group_uuid: str,
                               ):
     """Run a scene for the given group."""
 
+    helper_dmx.activate_dmx()
     group = helper_dmx.get_group(group_uuid)
     group.show_scene(uuid)
 

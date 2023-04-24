@@ -55,8 +55,22 @@
         <div class="tab-pane fade show active" id="universes-tab-pane" role="tabpanel" aria-labelledby="universes-tab" tabindex="0">
           <div class="row mt-2">
 
+            <!-- Missing device warning -->
+            <div id="missingDeviceWarning" class="col-12 mt-2">
+              <div class="row">
+                <div class="col-6 offset-3">
+                  <div class="alert alert-warning">
+                    <H5 class="text-center">Missing device</H5>
+                    <span class="fw-italic text-center">
+                      <p>An expected DMX controller is not found. Is everything connected? If you connect a device, you may need to restart Constellation Apps.</p>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- No universes warning -->
-            <div id="noUniverseWarning" class="col-12 mt-4">
+            <div id="noUniverseWarning" class="col-12 mt-2">
               <div class="row">
                 <div class="col-6 offset-3">
                   <div class="alert alert-primary">
@@ -184,7 +198,7 @@
 
             <!-- Universe row -->
             <div class="col-12">
-              <button id="createNewUniverseButton" class="btn btn-primary">Create universe</button>
+              <button id="createNewUniverseButton" class="btn btn-primary" style="display: none;">Create universe</button>
             </div>
             <div class="col-12 mt-2">
               <div id='universeRow' class="row"></div>
@@ -277,7 +291,7 @@
 
           <!-- Groups row -->
           <div class="col-12">
-            <button id="createNewGroupButton" class="btn btn-primary">Create group</button>
+            <button id="createNewGroupButton" class="btn btn-primary" style="display: none;">Create group</button>
           </div>
           <div class="col-12 mt-2">
             <div id='groupsRow' class="row"></div>

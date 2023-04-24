@@ -1260,6 +1260,13 @@ function getDMXConfiguration () {
       universeList.length = 0
       groupList.length = 0
       configuration = response.configuration
+      
+      if (response.success === false && response.reason === 'device_not_found') {
+        document.getElementById('missingDeviceWarning').style.display = 'block'
+      } else {
+        document.getElementById('missingDeviceWarning').style.display = 'none'
+      }
+
       if (configuration.universes.length > 0) {
         configuration.universes.forEach((universeDef) => {
           // First, create the universe
@@ -1270,6 +1277,8 @@ function getDMXConfiguration () {
           })
         })
         rebuildUniverseInterface()
+        document.getElementById('noUniverseWarning').style.display = 'none'
+        document.getElementById('createNewUniverseButton').style.display = 'block'
       }
     })
     .then(() => {
@@ -1287,6 +1296,8 @@ function getDMXConfiguration () {
           })
         })
         rebuildGroupsInterface()
+        document.getElementById('noGroupsWarning').style.display = 'none'
+        document.getElementById('createNewGroupButton').style.display = 'block'
       }
     })
     .then(() => {
@@ -1296,7 +1307,8 @@ function getDMXConfiguration () {
 
 function rebuildUniverseInterface () {
   // Take the list of universes and add the HTML representation of each.
-  $('#noUniverseWarning').hide()
+
+  document.getElementById('noUniverseWarning').style.display = 'none'
   $('#universeRow').empty()
   universeList.forEach(universe => {
     $('#universeRow').append(universe.createHTML())
@@ -1318,7 +1330,7 @@ function rebuildUniverseInterface () {
 function rebuildGroupsInterface () {
   // Take the list of group and add the HTML representation of each.
 
-  $('#noGroupsWarning').hide()
+  document.getElementById('noGroupsWarning').style.display = 'none'
   $('#groupsRow').empty()
   groupList.forEach(group => {
     $('#groupsRow').append(group.createHTML())
