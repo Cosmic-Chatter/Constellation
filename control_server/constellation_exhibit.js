@@ -36,7 +36,7 @@ class BaseComponent {
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
     let classString
-    if (getExhibitComponentGroup(this.group).components.length > 7) {
+    if (getExhibitComponentGroup(this.group).components.length > 704) {
       classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
       classString = 'col-12 col-sm-4 col-md-6 mt-1'
@@ -698,21 +698,6 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
   }
 
-  // Fetch any DMX lighting scenes and show the tab if necessary
-  constTools.makeRequest({
-    method: 'GET',
-    url: obj.getHelperURL(),
-    endpoint: '/DMX/getScenes'
-  })
-  .then((result) => {
-    console.log(result)
-    constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
-    document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
-  })
-  .catch((error) => {
-    document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
-  })
-
   // If this is a projector, populate the status pane
   if (obj.type === 'projector') {
     populateProjectorInfo(obj.id)
@@ -735,6 +720,21 @@ export function showExhibitComponentInfo (id) {
     if (['dmx_control', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
+
+      // Fetch any DMX lighting scenes and show the tab if necessary
+      constTools.makeRequest({
+        method: 'GET',
+        url: obj.getHelperURL(),
+        endpoint: '/DMX/getScenes'
+      })
+      .then((result) => {
+        console.log(result)
+        constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
+      })
+      .catch((error) => {
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+      })
     } else {
       $('#componentInfoModalContentTabButton').hide()
       $('#componentInfoModalDefinitionsTabButton').tab('show')
