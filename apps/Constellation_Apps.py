@@ -715,6 +715,17 @@ async def set_dmx_fixture_to_brightness(group_uuid: str,
     return {"success": True, "configuration": group.get_dict()}
 
 
+@app.post("/DMX/group/{group_uuid}/setChannel")
+async def set_dmx_group_channel(group_uuid: str,
+                           channel: str = Body(description="The channel to set."),
+                           value: int = Body(description="The value to set.")):
+    """Set the given channel to the specified value for every fixture in the group."""
+
+    group = helper_dmx.get_group(group_uuid)
+    group.set_channel(channel, value)
+    return {"success": True, "configuration": group.get_dict()}
+
+
 @app.post("/DMX/group/{group_uuid}/setColor")
 async def set_dmx_group_to_color(group_uuid: str,
                            color: list = Body(

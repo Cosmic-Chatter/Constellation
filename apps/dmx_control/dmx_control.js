@@ -339,6 +339,149 @@ class DMXFixtureGroup {
     this.fixtures = {}
   }
 
+  createMetaFixtureHTML() {
+    // Create a widget that provides controls for any channels included in every fixture in the group.
+    
+    const thisUUID = this.uuid
+
+    // Cycle through the channels in the first fixture, comparing each to all the other fixtures
+    // to find channels that exist for all.
+    const matchingChannels = []
+    const fixtureKeys = Object.keys(this.fixtures)
+    this.fixtures[fixtureKeys[0]].channelList.forEach((channel) => {
+      let channelMatches = true
+      fixtureKeys.forEach((fixtureUUID) => {
+        const fixture = this.fixtures[fixtureUUID]
+        if (fixture.channelList.includes(channel) === false) channelMatches = false
+      })
+      if (channelMatches === true) matchingChannels.push(channel)
+    })
+
+    const col = document.createElement('div')
+    col.classList = 'col-12 col-sm-6 col-lg-4 mt-2'
+
+    const row = document.createElement('div')
+    row.classList = 'row mx-0'
+    col.appendChild(row)
+
+    const headerText = document.createElement('div')
+    headerText.classList = 'col-8 meta-header'
+    headerText.innerHTML = 'Control all'
+    row.appendChild(headerText)
+
+    const colorPickerCol = document.createElement('div')
+    colorPickerCol.classList = 'col-4 px-0 mx-0'
+    row.appendChild(colorPickerCol)
+
+    const colorPicker = document.createElement('input')
+    colorPicker.classList = 'coloris w-100'
+    colorPicker.setAttribute('id', 'meta_fixture_' + this.uuid + '_' + 'colorPicker')
+    colorPicker.setAttribute('type', 'text')
+    colorPicker.value = 'rgb(255,255,255)'
+    colorPicker.addEventListener('input', () => {
+      onColorChangeFromPicker('meta', thisUUID)
+    })
+    colorPickerCol.appendChild(colorPicker)
+
+    const expandMessage = document.createElement('div')
+    expandMessage.classList = 'col-12 text-center fst-italic small'
+    expandMessage.style.backgroundColor = '#28587B'
+    expandMessage.innerHTML = 'Tap to expand'
+    $(expandMessage).hide()
+    row.appendChild(expandMessage)
+
+    const row2 = document.createElement('div')
+    row2.classList = 'row mx-0'
+    col.appendChild(row2)
+
+    matchingChannels.forEach((channel) => {
+      const channelCol = document.createElement('div')
+      channelCol.classList = 'col-12 meta-entry py-1'
+      row2.appendChild(channelCol)
+
+      const channelRow = document.createElement('div')
+      channelRow.classList = 'row'
+      channelCol.appendChild(channelRow)
+
+      const channelHeader = document.createElement('div')
+      channelHeader.classList = 'col-12'
+      channelHeader.innerHTML = channelNameToDisplayName(channel)
+      channelRow.appendChild(channelHeader)
+
+      const channelSliderCol = document.createElement('div')
+      channelSliderCol.classList = 'col-8'
+      channelRow.appendChild(channelSliderCol)
+
+      const channelSlider = document.createElement('input')
+      channelSlider.classList = 'form-range h-100'
+      channelSlider.setAttribute('id','meta_fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
+      channelSlider.setAttribute('type', 'range')
+      channelSlider.setAttribute('min', 0)
+      channelSlider.setAttribute('max', 255)
+      channelSlider.setAttribute('step', 1)
+      channelSlider.value = 0
+      channelSlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value)
+
+        $('#' + 'meta_fixture_' + thisUUID + '_' + 'channelValue_' + channel).val(value)
+        updatecolorPicker('meta', thisUUID)
+
+        // Update the fixtures and send a change to the helper
+        fixtureKeys.forEach((fixtureUUID) => {
+          const fixture = this.getFixtureByUUID(fixtureUUID)
+          const valueToUpdate = {}
+          valueToUpdate[channel] = value
+          fixture.setChannelValues(valueToUpdate)
+        })
+        constCommon.makeHelperRequest({
+          method: "POST",
+          endpoint: '/DMX/group/' + thisUUID + '/setChannel',
+          params: {channel: channel, value: value}
+        })
+
+      })
+      channelSliderCol.appendChild(channelSlider)
+
+      const channelValueCol = document.createElement('div')
+      channelValueCol.classList = 'col-4 ps-0'
+      channelRow.appendChild(channelValueCol)
+
+      const channelValue = document.createElement('input')
+      channelValue.classList = 'form-control text-center'
+      channelValue.setAttribute('id', 'meta_fixture_' + this.uuid + '_' + 'channelValue_' + channel)
+      channelValue.setAttribute('type', 'number')
+      channelValue.setAttribute('min', 0)
+      channelValue.setAttribute('max', 255)
+      channelValue.value = 0
+      channelValue.addEventListener('input', e => {
+        const value = parseInt(e.target.value)
+
+        $('#' + 'meta_fixture_' + thisUUID + '_' + 'channelSlider_' + channel).val(value)
+        updatecolorPicker('meta', thisUUID)
+
+        // Update the fixtures and send a change to th  e helper
+        fixtureKeys.forEach((fixtureUUID) => {
+          const fixture = this.getFixtureByUUID(fixtureUUID)
+          const valueToUpdate = {}
+          valueToUpdate[channel] = value
+          fixture.setChannelValues(valueToUpdate)
+        })
+        constCommon.makeHelperRequest({
+          method: "POST",
+          endpoint: '/DMX/group/' + thisUUID + '/setChannel',
+          params: {channel: channel, value: value}
+        })
+      })
+      channelValueCol.appendChild(channelValue)
+    })
+
+    $([headerText, expandMessage]).click(() => {
+      $(row2).slideToggle({ duration: 300, complete: () => { $(expandMessage).slideToggle(100) } })
+    })
+
+    return col
+  }
+
   createScene (name, uuid, values, duration = 0) {
     // Create a new DMXScene and add it this this.scenes.
 
@@ -449,6 +592,9 @@ class DMXFixtureGroup {
     const fixtureRow = document.createElement('div')
     fixtureRow.classList = 'row'
     fixturePane.appendChild(fixtureRow)
+
+    // Add meta control widget
+    fixtureRow.appendChild(this.createMetaFixtureHTML())
 
     Object.keys(this.fixtures).forEach((key) => {
       const fixture = this.fixtures[key]
@@ -600,7 +746,7 @@ class DMXScene {
   }
 }
 
-function onColorChangeFromPicker (collectionName, uuid) {
+function onColorChangeFromPicker (collectionName, uuid, meta=true) {
   // When is a color is changed from the picker, update the interface to match.
 
   const newColor = $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val()
@@ -620,10 +766,19 @@ function onColorChangeFromPicker (collectionName, uuid) {
   $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_g').val(green)
   $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_b').val(blue)
 
-  // Update the fixture and send a color change to the helper
-  const fixture = getFixtureByUUID(uuid)
-  fixture.setChannelValues({ r: red, g: green, b: blue })
-  fixture.sendColorUpdate()
+  if (meta === true) {
+    // Send the update to the whole group
+    constCommon.makeHelperRequest({
+      method: "POST",
+      endpoint: '/DMX/group/' + uuid + '/setColor',
+      params: {color: [red, green, blue]}
+    })
+  } else {
+    // Update the fixture and send a color change to the helper
+    const fixture = getFixtureByUUID(uuid)
+    fixture.setChannelValues({ r: red, g: green, b: blue })
+    fixture.sendColorUpdate()
+  }
 }
 
 function onChannelSliderChange (collectionName, uuid, channel, value) {
@@ -642,7 +797,6 @@ function onChannelSliderChange (collectionName, uuid, channel, value) {
 function onChannelValueChange (collectionName, uuid, channel, value) {
   // When the number box is changed, update the slider.
   $('#' + collectionName + '_fixture_' + uuid + '_' + 'channelSlider_' + channel).val(value)
-  // updatecolorPicker(collectionName, uuid)
 
   const fixture = getFixtureByUUID(uuid)
   const valueToUpdate = {}
@@ -1344,6 +1498,14 @@ function rebuildGroupsInterface () {
         el: '#' + group.safeName + '_fixture_' + fixture.uuid + '_' + 'colorPicker',
         wrap: true
       })
+    })
+    Coloris({
+      alpha: false,
+      theme: 'pill',
+      themeMode: 'dark',
+      format: 'rgb',
+      el: '#' + 'meta_fixture_' + group.uuid + '_' + 'colorPicker',
+      wrap: true
     })
   })
 }

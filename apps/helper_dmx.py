@@ -225,6 +225,13 @@ class DMXFixtureGroup:
             fixture = self.fixtures[key]
             fixture.set_brightness(value, duration, *args, **kwargs)
 
+    def set_channel(self, channel: Union[str, int], value: int, *args, **kwargs):
+        """Set the given channel to the given value for all fixtures."""
+
+        for key in self.fixtures:
+            fixture = self.fixtures[key]
+            fixture.set_channel(channel, value)
+
     def set_color(self, color, duration=0, *args, **kwargs):
         """Set the color of all fixtures."""
 
