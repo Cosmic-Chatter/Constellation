@@ -460,10 +460,17 @@ def activate_dmx() -> bool:
 
     return config.dmx_active
 
-def get_available_controllers() -> list[dict[str, Any]]:
+
+def get_available_controllers() -> tuple[bool, str, list[dict[str, Any]]]:
     """Return a list of Ftdi devices."""
 
-    all_devices = Ftdi.list_devices()
+    try:
+        all_devices = Ftdi.list_devices()
+    except ValueError as e:
+        if e.args[0] == "No backend available":
+            return False, "No backend available", []
+        else:
+            raise ValueError(e)
 
     device_list = []
     for entry in all_devices:
@@ -479,4 +486,4 @@ def get_available_controllers() -> list[dict[str, Any]]:
             device_dict["model"] = "uDMX"
         device_list.append(device_dict)
     
-    return device_list
+    return True, "", device_list
