@@ -502,7 +502,9 @@ async def rewrite_defaults(data: dict, force: bool = False, config: const_config
 async def get_dmx_controllers():
     """Return a list of connected DMX controllers."""
 
-    return {"success": True, "controllers": helper_dmx.get_available_controllers()}
+    success, reason, controllers = helper_dmx.get_available_controllers()
+
+    return {"success": success, "reason": reason, "controllers": controllers}
 
 
 @app.get("/DMX/getConfiguration")
