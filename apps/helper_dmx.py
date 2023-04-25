@@ -466,7 +466,7 @@ def read_dmx_configuration() -> tuple[bool, str]:
     return True, ""
 
 
-def activate_dmx() -> bool:
+def activate_dmx() -> tuple[bool, str]:
     """Perform setup actions to get ready to use DMX in Constellation.
 
     Returns True is DMX has been successfully activated (already or just now) and False otherwise.
