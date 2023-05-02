@@ -34,3 +34,11 @@ Reboot your computer and the DMX controller should connect.
 macOS is not recommended for DMX Control, as it does not play very nicely with the necessary low-level drivers for FTDI devices. 
 
 #### Windows
+To install the correct driver, download [Zadig](https://zadig.akeo.ie/) and follow these steps:
+1. Ensure your DMX controller is plugged into a USB port
+2. Launch Zadig
+3. Click _Options_ > _List All Devices_
+4. From the list, select `FT232R USB UART` or whichever device appears most similar to that.
+5. From the box to the right of the green arrow, select the `libusbK` driver.
+6. Click the _Reinstall Driver_ button
+7. Once the installation is complete, restart your PC.

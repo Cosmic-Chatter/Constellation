@@ -1,6 +1,7 @@
 aiofiles
 fastapi
 flask==2.2.4
+libusb
 pillow
 psutil
 PyDMXControl
@@ -9,6 +10,7 @@ pyftdi
 pyserial
 python-dateutil
 python-multipart
+pyusb
 requests
 sockio
 uvicorn
