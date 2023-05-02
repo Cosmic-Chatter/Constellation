@@ -1,5 +1,6 @@
 aiofiles
 fastapi
+flask==2.2.4
 pillow
 psutil
 PyDMXControl
