@@ -7,7 +7,7 @@ function changePage (val) {
       break
     case 1:
       currentPage += 1
-      if (currentPage * cardsPerPage > data.length) {
+      if (currentPage * cardsPerPage > spreadsheet.length) {
         currentPage -= 1
       }
       break
@@ -150,9 +150,11 @@ function _populateResultsRow (currentKey) {
   // Filter on search terms
   const searchTerms = (input).split(' ')
   const searchedData = []
-  data.forEach((item, i) => {
+  spreadsheet.forEach((item, i) => {
+    console.log(item)
     let matchCount = 0
     searchTerms.forEach((term, i) => {
+      console.log(term, searchTerms)
       if (term !== '' || (term === '' && searchTerms.length === 1)) {
         // Strip out non-letters, since the keyboard doesn't allow them
         if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
@@ -210,7 +212,6 @@ function _populateResultsRow (currentKey) {
   displayedResults.forEach((item, i) => {
     createCard(item)
   })
-  // console.log("populateResultsRow runetime:", performance.now()-startTime)
   $('#resultsRow').fadeIn(200)
 }
 
@@ -245,94 +246,91 @@ function displayMedia (id) {
 
 function updateParser (update) {
   // Read updates specific to the media browser
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
 
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      const xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
-        }
-      }
-      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
-      xhr.send(null)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function loadContentFromINI (definition) {
+function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
+  // Tag the document with the defintion for later reference
+  $(document).data('browserDefinition', def)
 
-  if ('attractor' in definition.SETTINGS) {
-    $('#attractorVideo').attr('src', 'content/' + definition.SETTINGS.attractor)
+  const root = document.querySelector(':root')
+
+  const langs = Object.keys(def.languages)
+  if (langs.length === 0) return
+
+  // createLanguageSwitcher(def)
+  defaultLang = langs[0]
+
+  // Load the CSV file containing the timeline data and use it to build the timeline entries.
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/content/' + def.spreadsheet,
+    rawResponse: true
+  })
+    .then((response) => {
+      const csvAsJSON = constCommon.csvToJSON(response)
+      spreadsheet = csvAsJSON // Global property
+      localize(defaultLang)
+    })
+
+  // Configure the attractor
+  if ('attractor' in def && def.attractor.trim() !== '') {
+    $('#attractorVideo').attr('src', 'content/' + def.attractor)
     document.getElementById('attractorVideo').play()
     attractorAvailable = true
   } else {
     hideAttractor()
     attractorAvailable = false
   }
-  if ('media_key' in definition.SETTINGS) {
-    mediaKey = definition.SETTINGS.media_key
+
+  if ('search_keys' in def) {
+    searchKeys = def.search_keys
   } else {
-    mediaKey = 'Media'
+    searchKeys = []
   }
-  if ('thumbnail_key' in definition.SETTINGS) {
-    thumbnailKey = definition.SETTINGS.thumbnail_key
-  } else {
-    thumbnailKey = null
-  }
-  if ('search_keys' in definition.SETTINGS) {
-    // Split and trim the entries in a list
-    searchKeys = definition.SETTINGS.search_keys.split(',').map(function (item) {
-      return item.trim()
-    })
-  } else {
-    searchKeys = ['Title']
-  }
-  if ('title_key' in definition.SETTINGS) {
-    titleKey = definition.SETTINGS.title_key
-  } else {
-    titleKey = 'Title'
-  }
-  if ('caption_key' in definition.SETTINGS) {
-    captionKey = definition.SETTINGS.caption_key
-  } else {
-    captionKey = 'Caption'
-  }
-  if ('credit_key' in definition.SETTINGS) {
-    creditKey = definition.SETTINGS.credit_key
-  } else {
-    creditKey = 'Credit'
-  }
-  if ('filter_keys' in definition.SETTINGS) {
-    // Split and trim the entries in a list
-    filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
-      return item.trim()
-    })
-    $('#filterRegion').show()
-  } else {
-    filterKeys = []
-    $('#filterRegion').hide()
-  }
-  let filterTitles = null
-  if ('filter_titles' in definition.SETTINGS) {
-    // Split and trim the entries in a list
-    filterTitles = definition.SETTINGS.filter_titles.split(',').map(function (item) {
-      return item.trim()
-    })
-  }
-  if ('items_per_page' in definition.SETTINGS) {
-    cardsPerPage = parseInt(definition.SETTINGS.items_per_page)
+  // if ('title_key' in definition.SETTINGS) {
+  //   titleKey = definition.SETTINGS.title_key
+  // } else {
+  //   titleKey = 'Title'
+  // }
+  // if ('caption_key' in definition.SETTINGS) {
+  //   captionKey = definition.SETTINGS.caption_key
+  // } else {
+  //   captionKey = 'Caption'
+  // }
+  // if ('credit_key' in definition.SETTINGS) {
+  //   creditKey = definition.SETTINGS.credit_key
+  // } else {
+  //   creditKey = 'Credit'
+  // }
+  // if ('filter_keys' in definition.SETTINGS) {
+  //   // Split and trim the entries in a list
+  //   filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
+  //     return item.trim()
+  //   })
+  //   $('#filterRegion').show()
+  // } else {
+  //   filterKeys = []
+  //   $('#filterRegion').hide()
+  // }
+  // let filterTitles = null
+  // if ('filter_titles' in definition.SETTINGS) {
+  //   // Split and trim the entries in a list
+  //   filterTitles = definition.SETTINGS.filter_titles.split(',').map(function (item) {
+  //     return item.trim()
+  //   })
+  // }
+  if ('items_per_page' in def) {
+    cardsPerPage = parseInt(def.items_per_page)
     customCardsPerPage = true
   } else {
     cardsPerPage = null
@@ -340,27 +338,55 @@ function loadContentFromINI (definition) {
     setCardCount()
   }
 
-  // Send a GET request for the content and then build the tab
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      // Set the global data variable
-      data = constCommon.csvToJSON(xhr.responseText)
+  // // Send a GET request for the content and then build the tab
+  // const xhr = new XMLHttpRequest()
+  // xhr.onreadystatechange = function () {
+  //   if (xhr.readyState === 4 && xhr.status === 200) {
+  //     // Set the global data variable
+  //     data = constCommon.csvToJSON(xhr.responseText)
 
-      // Create a new property, searchData, for each data element that includes
-      // everything we can search against as a string.
-      data.forEach((item, i) => {
-        item.searchData = ''
-        searchKeys.forEach((key, j) => {
-          item.searchData += String(item[key]) + ' '
-        })
-      })
-      populateResultsRow()
-      populateFilterOptions(filterTitles)
-    }
+  //     // Create a new property, searchData, for each data element that includes
+  //     // everything we can search against as a string.
+  //     data.forEach((item, i) => {
+  //       item.searchData = ''
+  //       searchKeys.forEach((key, j) => {
+  //         item.searchData += String(item[key]) + ' '
+  //       })
+  //     })
+  //     populateResultsRow()
+  //     populateFilterOptions(filterTitles)
+  //   }
+  // }
+  // xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
+  // xhr.send(null)
+}
+
+function localize (lang) {
+  // Use the spreadsheet and defintion to set the content to the given language
+
+  const definition = $(document).data('browserDefinition')
+
+  if ('media_key' in definition[lang]) {
+    mediaKey = definition[lang].media_key
+  } else {
+    mediaKey = 'Media'
   }
-  xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
-  xhr.send(null)
+  if ('thumbnail_key' in definition[lang]) {
+    thumbnailKey = definition[lang].thumbnail_key
+  } else {
+    thumbnailKey = null
+  }
+
+  // Create a new property, searchData, for each data element that includes
+  // everything we can search against as a string.
+  spreadsheet.forEach((item, i) => {
+    item.searchData = ''
+    searchKeys.forEach((key, j) => {
+      item.searchData += String(item[key]) + ' '
+    })
+  })
+
+  populateResultsRow()
 }
 
 function showAttractor () {
@@ -503,24 +529,43 @@ const keyboard = new Keyboard({
   }
 })
 
-// These will be loaded when an INI file is parsed
-let data, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
-let currentContent = []
+let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
+const currentContent = []
 let currentPage = 0
 let cardsPerPage
 let customCardsPerPage = false
+let defaultLang
 
+// Constellation stuff
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'media_browser'
 constCommon.config.debug = true
+let currentDefintion = ''
 
 let inactivityTimer = null
 let attractorAvailable = false
 
-constCommon.askForDefaults()
-constCommon.sendPing()
-setInterval(constCommon.sendPing, 5000)
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+  if (searchParams.has('definition')) {
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
+
+      setInterval(constCommon.sendPing, 5000)
+    })
+  // Hide the cursor
+  document.body.style.cursor = 'none'
+}
 
 window.addEventListener('resize', setCardCount)
 document.getElementById('clearButton').addEventListener('click', clear)
