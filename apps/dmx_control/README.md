@@ -26,7 +26,7 @@ Then, create an udev rules file:
 
 and add the following line inside:
 
-`SUBSYSTEM==“usb”, MODE=“0666”, GROUP=“dialout"`
+`SUBSYSTEM=="usb", MODE="0666", GROUP="dialout"`
 
 Press `Ctrl-s` then `Ctrl-x` to save, reboot your computer, and the DMX controller should connect.
 
