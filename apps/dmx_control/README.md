@@ -28,7 +28,7 @@ and add the following line inside:
 
 `SUBSYSTEM==“usb”, MODE=“0666”, GROUP=“dialout"`
 
-Press `Ctrl-c`, then `Ctrl-s` to save, reboot your computer, and the DMX controller should connect.
+Press `Ctrl-s` then `Ctrl-x` to save, reboot your computer, and the DMX controller should connect.
 
 #### macOS
 macOS is not recommended for DMX Control, as it does not play very nicely with the necessary low-level drivers for FTDI devices. 
