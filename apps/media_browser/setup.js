@@ -66,6 +66,9 @@ function clearDefinitionInput (full = true) {
   $('#languageNavContent').empty()
   document.getElementById('missingContentWarningField').innerHTML = ''
 
+  // Rester layout options
+  document.getElementById('showSearchPaneCheckbox').checked = false
+
   // Reset style options
   const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
   colorInputs.forEach((input) => {
@@ -119,6 +122,11 @@ function editDefinition (uuid = '') {
   $('#attractorSelect').html(def.attractor)
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
   document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+
+  // Set the layout options
+  document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
+  document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
+  document.getElementById('numColsSelect').value = def.style.layout.num_columns
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {
@@ -754,25 +762,20 @@ const inputFields = {
     type: 'text',
     property: 'header_text'
   },
-  keyTimeSelect: {
-    name: 'Time key',
-    kind: 'select',
-    property: 'time_key'
-  },
   keyTitleSelect: {
     name: 'Title key',
     kind: 'select',
     property: 'title_key'
   },
-  keyLevelSelect: {
-    name: 'Level key',
+  keyCaptionSelect: {
+    name: 'Caption key',
     kind: 'select',
-    property: 'level_key'
+    property: 'caption_key'
   },
-  keyShortSelect: {
-    name: 'Short text key',
+  keyCreditSelect: {
+    name: 'Credit key',
     kind: 'select',
-    property: 'short_text_key'
+    property: 'credit_key'
   },
   keyMediaSelect: {
     name: 'Media key',
@@ -887,6 +890,20 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
   updateWorkingDefinition(['inactivity_timeout'], event.target.value)
+  previewDefinition(true)
+})
+
+// Layout fields
+document.getElementById('showSearchPaneCheckbox').addEventListener('change', (event) => {
+  updateWorkingDefinition(['style', 'layout', 'show_search_and_filter'], event.target.checked)
+  previewDefinition(true)
+})
+document.getElementById('itemsPerPageInput').addEventListener('change', (event) => {
+  updateWorkingDefinition(['style', 'layout', 'items_per_page'], parseInt(event.target.value))
+  previewDefinition(true)
+})
+document.getElementById('numColsSelect').addEventListener('change', (event) => {
+  updateWorkingDefinition(['style', 'layout', 'num_columns'], parseInt(event.target.value))
   previewDefinition(true)
 })
 

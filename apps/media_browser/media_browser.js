@@ -65,7 +65,8 @@ function createCard (obj) {
   }
 
   const col = document.createElement('div')
-  col.classList = 'cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'
+  // col.classList = 'cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'
+  col.classList = 'cardCol col align-items-center justify-content-top d-flex'
 
   const card = document.createElement('div')
   card.classList = 'resultCard row my-2 w-100'
@@ -81,6 +82,10 @@ function createCard (obj) {
   img.classList = 'resultImg'
   img.src = thumb
   img.setAttribute('id', 'Entry_' + id)
+
+  // Calculate the height of the image based on the number of rows,
+  // saving space for titles
+  img.style.height = String(Math.round((100 - (10 * numRows)) / numRows)) + 'vh'
   center.appendChild(img)
 
   const p = document.createElement('p')
@@ -151,10 +156,8 @@ function _populateResultsRow (currentKey) {
   const searchTerms = (input).split(' ')
   const searchedData = []
   spreadsheet.forEach((item, i) => {
-    console.log(item)
     let matchCount = 0
     searchTerms.forEach((term, i) => {
-      console.log(term, searchTerms)
       if (term !== '' || (term === '' && searchTerms.length === 1)) {
         // Strip out non-letters, since the keyboard doesn't allow them
         if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
@@ -224,7 +227,7 @@ function populateResultsRow (currentKey = '') {
 function displayMedia (id) {
   // Take the given id and display the media in the overlay.
 
-  const obj = data.filter(function (item) {
+  const obj = spreadsheet.filter(function (item) {
     return item.uniqueMediaBrowserID === id
   })[0]
 
@@ -270,18 +273,6 @@ function loadDefinition (def) {
   // createLanguageSwitcher(def)
   defaultLang = langs[0]
 
-  // Load the CSV file containing the timeline data and use it to build the timeline entries.
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/content/' + def.spreadsheet,
-    rawResponse: true
-  })
-    .then((response) => {
-      const csvAsJSON = constCommon.csvToJSON(response)
-      spreadsheet = csvAsJSON // Global property
-      localize(defaultLang)
-    })
-
   // Configure the attractor
   if ('attractor' in def && def.attractor.trim() !== '') {
     $('#attractorVideo').attr('src', 'content/' + def.attractor)
@@ -297,21 +288,7 @@ function loadDefinition (def) {
   } else {
     searchKeys = []
   }
-  // if ('title_key' in definition.SETTINGS) {
-  //   titleKey = definition.SETTINGS.title_key
-  // } else {
-  //   titleKey = 'Title'
-  // }
-  // if ('caption_key' in definition.SETTINGS) {
-  //   captionKey = definition.SETTINGS.caption_key
-  // } else {
-  //   captionKey = 'Caption'
-  // }
-  // if ('credit_key' in definition.SETTINGS) {
-  //   creditKey = definition.SETTINGS.credit_key
-  // } else {
-  //   creditKey = 'Credit'
-  // }
+
   // if ('filter_keys' in definition.SETTINGS) {
   //   // Split and trim the entries in a list
   //   filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
@@ -329,14 +306,30 @@ function loadDefinition (def) {
   //     return item.trim()
   //   })
   // }
-  if ('items_per_page' in def) {
-    cardsPerPage = parseInt(def.items_per_page)
-    customCardsPerPage = true
+
+  // Configure layout
+  if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
+    document.getElementById('seerchFilterPane').style.display = 'flex'
+    document.getElementById('displayPane').classList.remove('display-full')
+    document.getElementById('displayPane').classList.add('display-share')
   } else {
-    cardsPerPage = null
-    customCardsPerPage = false
-    setCardCount()
+    document.getElementById('seerchFilterPane').style.display = 'none'
+    document.getElementById('displayPane').classList.add('display-full')
+    document.getElementById('displayPane').classList.remove('display-share')
   }
+  if ('num_columns' in def.style.layout) {
+    document.getElementById('resultsRow').classList = 'h-100 row row-cols-' + String(def.style.layout.num_columns)
+    numCols = def.style.layout.num_columns
+  } else {
+    document.getElementById('resultsRow').classList = 'h-100 row row-cols-6'
+    numCols = 6
+  }
+  if ('items_per_page' in def.style.layout) {
+    cardsPerPage = parseInt(def.style.layout.items_per_page)
+  } else {
+    cardsPerPage = 12
+  }
+  numRows = Math.ceil(cardsPerPage / numCols)
 
   // // Send a GET request for the content and then build the tab
   // const xhr = new XMLHttpRequest()
@@ -359,6 +352,18 @@ function loadDefinition (def) {
   // }
   // xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
   // xhr.send(null)
+
+  // Load the CSV file containing the items ad build the results row
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/content/' + def.spreadsheet,
+    rawResponse: true
+  })
+    .then((response) => {
+      const csvAsJSON = constCommon.csvToJSON(response)
+      spreadsheet = csvAsJSON // Global property
+      localize(defaultLang)
+    })
 }
 
 function localize (lang) {
@@ -366,15 +371,30 @@ function localize (lang) {
 
   const definition = $(document).data('browserDefinition')
 
-  if ('media_key' in definition[lang]) {
-    mediaKey = definition[lang].media_key
+  if ('media_key' in definition.languages[lang]) {
+    mediaKey = definition.languages[lang].media_key
   } else {
     mediaKey = 'Media'
   }
-  if ('thumbnail_key' in definition[lang]) {
-    thumbnailKey = definition[lang].thumbnail_key
+  if ('thumbnail_key' in definition.languages[lang]) {
+    thumbnailKey = definition.languages[lang].thumbnail_key
   } else {
     thumbnailKey = null
+  }
+  if ('title_key' in definition.languages[lang]) {
+    titleKey = definition.languages[lang].title_key
+  } else {
+    titleKey = null
+  }
+  if ('caption_key' in definition.languages[lang]) {
+    captionKey = definition.languages[lang].caption_key
+  } else {
+    captionKey = null
+  }
+  if ('credit_key' in definition.languages[lang]) {
+    creditKey = definition.languages[lang].credit_key
+  } else {
+    creditKey = null
   }
 
   // Create a new property, searchData, for each data element that includes
@@ -423,41 +443,41 @@ function resetActivityTimer () {
   inactivityTimer = setTimeout(showAttractor, 30000)
 }
 
-function setCardCount () {
-  // Based on the window size and the Bootstrap grid, calculate the number of
-  // cards we will be showing per page.
+// function setCardCount () {
+//   // Based on the window size and the Bootstrap grid, calculate the number of
+//   // cards we will be showing per page.
 
-  if (customCardsPerPage === false) {
-    const windowWidth = window.innerWidth
-    if (window.innerWidth > window.innerHeight) {
-      if (windowWidth >= 1200) {
-        cardsPerPage = 12
-      } else if (windowWidth >= 992) {
-        cardsPerPage = 8
-      } else if (windowWidth >= 768) {
-        cardsPerPage = 6
-      } else if (windowWidth >= 576) {
-        cardsPerPage = 4
-      } else {
-        cardsPerPage = 2
-      }
-    } else {
-      if (windowWidth >= 1000) {
-        cardsPerPage = 16
-      } else if (windowWidth >= 992) {
-        cardsPerPage = 8
-      } else if (windowWidth >= 768) {
-        cardsPerPage = 9
-      } else if (windowWidth >= 576) {
-        cardsPerPage = 6
-      } else {
-        cardsPerPage = 3
-      }
-    }
-  }
+//   if (customCardsPerPage === false) {
+//     const windowWidth = window.innerWidth
+//     if (window.innerWidth > window.innerHeight) {
+//       if (windowWidth >= 1200) {
+//         cardsPerPage = 12
+//       } else if (windowWidth >= 992) {
+//         cardsPerPage = 8
+//       } else if (windowWidth >= 768) {
+//         cardsPerPage = 6
+//       } else if (windowWidth >= 576) {
+//         cardsPerPage = 4
+//       } else {
+//         cardsPerPage = 2
+//       }
+//     } else {
+//       if (windowWidth >= 1000) {
+//         cardsPerPage = 16
+//       } else if (windowWidth >= 992) {
+//         cardsPerPage = 8
+//       } else if (windowWidth >= 768) {
+//         cardsPerPage = 9
+//       } else if (windowWidth >= 576) {
+//         cardsPerPage = 6
+//       } else {
+//         cardsPerPage = 3
+//       }
+//     }
+//   }
 
-  populateResultsRow()
-}
+//   populateResultsRow()
+// }
 
 function showImageInLightBox (image, title = '', caption = '', credit = '') {
   // Set the img source to the provided image, set the caption, and reveal
@@ -532,8 +552,7 @@ const keyboard = new Keyboard({
 let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
 const currentContent = []
 let currentPage = 0
-let cardsPerPage
-let customCardsPerPage = false
+let cardsPerPage, numCols, numRows
 let defaultLang
 
 // Constellation stuff
@@ -567,7 +586,7 @@ if (searchParams.has('standalone')) {
   document.body.style.cursor = 'none'
 }
 
-window.addEventListener('resize', setCardCount)
+// window.addEventListener('resize', setCardCount)
 document.getElementById('clearButton').addEventListener('click', clear)
 
 // Attach event listeners

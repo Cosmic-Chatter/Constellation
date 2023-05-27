@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="Morgan Rehnberg">
 
-    <link rel="stylesheet" href="css/bootstrap_5_0/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
     <link rel="stylesheet" href="css/simple-keyboard.css">
 
     <style>
@@ -26,18 +26,18 @@
       .card-body {
       }
       .cardCol {
-        margin-y: 1.25vh;
-      }
-      .card-img-top {
-        width: 100%;
-        max-height: 50%;
-        object-fit: contain;
       }
       .cardTitle {
         margin-top: 15px;
       }
       .container-fluid {
         touch-action: manipulation;
+      }
+      .display-full {
+        height: 100vh;
+      }
+      .display-share {
+        height: 70vh;
       }
       .filterSelect {
         font-size: 20px;
@@ -62,8 +62,8 @@
       .resultCard {
       }
       .resultImg {
-        max-width: 100%;
-        max-height: 20vh;
+        width: 100%;
+        object-fit: contain;
       }
       .resultTitleSmall {
         font-size: 20px;
@@ -98,6 +98,9 @@
         left: 0;
         right: 0;
         bottom: 0;
+      }
+      #displayPane {
+        overflow: hidden;
       }
       #filterRegion {
         height: 100%;
@@ -186,7 +189,7 @@
   </head>
 
   <body>
-    <div class="container-fluid">
+    <div class="container-fluid px-0 mx-0">
 
       <div id="attractorOverlay">
         <video id="attractorVideo" muted autoplay loop></video>
@@ -218,12 +221,12 @@
         </div>
       </div>
 
-      <div class="row w-100 align-items-center justify-items-center" style="height:70vh; overflow: hidden;">
+      <div id="displayPane" class="row w-100 px-0 mx-0 align-items-center justify-items-center">
 
         <div class="col-2 col-lg-1 text-center">
           <button id="previousPageButton" class='pageButton btn btn-lg btn-secondary'>←</button>
         </div>
-        <div id="resultsPane" class="col-8 col-offset-2 col-offset-lg-0 col-lg-10">
+        <div id="resultsPane" class="col-8 col-offset-2 col-offset-lg-0 col-lg-10 h-100">
           <div id="resultsRow" class="row">
           </div>
         </div>
@@ -231,7 +234,7 @@
           <button id="nextPageButton" class='pageButton btn btn-lg btn-secondary'>→</button>
         </div>
       </div>
-      <div class="row" style="height:30vh;">
+      <div id="seerchFilterPane" class="row" style="height:30vh;">
           <div id="logoRegion" class="d-none d-xl-block col-3">
           </div>
           <div id="keyboardRegion" class="col-12 col-xl-6">
@@ -254,7 +257,7 @@
     </div>
 
   <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
-  <script type="text/javascript" src="js/bootstrap_5_0/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap_5_3/bootstrap.min.js"></script>
   <script type="text/javascript" src="js/simple-keyboard.js"></script>
   <script type="text/javascript" src="js/platform.js"></script>
 
