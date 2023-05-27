@@ -68,6 +68,9 @@ function clearDefinitionInput (full = true) {
 
   // Rester layout options
   document.getElementById('showSearchPaneCheckbox').checked = false
+  document.getElementById('itemsPerPageInput').value = 12
+  document.getElementById('numColsSelect').value = 6
+  document.getElementById('imageHeightSlider').value = 80
 
   // Reset style options
   const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
@@ -127,6 +130,7 @@ function editDefinition (uuid = '') {
   document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
   document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
   document.getElementById('numColsSelect').value = def.style.layout.num_columns
+  document.getElementById('imageHeightSlider').value = def.style.layout.image_height
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {
@@ -904,6 +908,10 @@ document.getElementById('itemsPerPageInput').addEventListener('change', (event) 
 })
 document.getElementById('numColsSelect').addEventListener('change', (event) => {
   updateWorkingDefinition(['style', 'layout', 'num_columns'], parseInt(event.target.value))
+  previewDefinition(true)
+})
+document.getElementById('imageHeightSlider').addEventListener('input', (event) => {
+  updateWorkingDefinition(['style', 'layout', 'image_height'], parseInt(event.target.value))
   previewDefinition(true)
 })
 

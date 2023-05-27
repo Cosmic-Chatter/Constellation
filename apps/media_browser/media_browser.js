@@ -34,6 +34,7 @@ function clear () {
 function createCard (obj) {
   // Take a JSON object and turn it into a card in the resultsRow
 
+  const def = $(document).data('browserDefinition')
   let thumb
 
   if (thumbnailKey != null && thumbnailKey !== '') {
@@ -65,33 +66,44 @@ function createCard (obj) {
   }
 
   const col = document.createElement('div')
-  // col.classList = 'cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'
-  col.classList = 'cardCol col align-items-center justify-content-top d-flex'
+  col.classList = 'cardCol col align-items-center justify-content-center d-flex'
+  // Calculate the height of the card based on the number of rows
+
+  if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
+    col.style.height = String(Math.round(60 / numRows)) + 'vh'
+  } else {
+    col.style.height = String(Math.round(95 / numRows)) + 'vh'
+  }
 
   const card = document.createElement('div')
-  card.classList = 'resultCard row my-2 w-100'
+  card.classList = 'resultCard row w-100'
   card.addEventListener('click', function () {
     displayMedia(id)
   })
   col.appendChild(card)
 
-  const center = document.createElement('center')
-  card.appendChild(center)
+  const imgCol = document.createElement('div')
+  imgCol.classList = 'col col-12'
+  imgCol.style.height = String(def.style.layout.image_height) + '%'
+  card.appendChild(imgCol)
 
   const img = document.createElement('img')
   img.classList = 'resultImg'
   img.src = thumb
   img.setAttribute('id', 'Entry_' + id)
 
-  // Calculate the height of the image based on the number of rows,
-  // saving space for titles
-  img.style.height = String(Math.round((100 - (10 * numRows)) / numRows)) + 'vh'
-  center.appendChild(img)
+  imgCol.appendChild(img)
 
-  const p = document.createElement('p')
-  p.classList = 'cardTitle ' + titleClass
-  p.innerHTML = title
-  center.appendChild(p)
+  if (def.style.layout.image_height < 100) {
+    const titleCol = document.createElement('div')
+    titleCol.classList = 'col col-12 text-center'
+    card.appendChild(titleCol)
+
+    const titleSpan = document.createElement('span')
+    titleSpan.classList = 'cardTitle ' + titleClass
+    titleSpan.innerHTML = title
+    titleCol.appendChild(titleSpan)
+  }
 
   $('#resultsRow').append(col)
 }
@@ -442,42 +454,6 @@ function resetActivityTimer () {
   clearTimeout(inactivityTimer)
   inactivityTimer = setTimeout(showAttractor, 30000)
 }
-
-// function setCardCount () {
-//   // Based on the window size and the Bootstrap grid, calculate the number of
-//   // cards we will be showing per page.
-
-//   if (customCardsPerPage === false) {
-//     const windowWidth = window.innerWidth
-//     if (window.innerWidth > window.innerHeight) {
-//       if (windowWidth >= 1200) {
-//         cardsPerPage = 12
-//       } else if (windowWidth >= 992) {
-//         cardsPerPage = 8
-//       } else if (windowWidth >= 768) {
-//         cardsPerPage = 6
-//       } else if (windowWidth >= 576) {
-//         cardsPerPage = 4
-//       } else {
-//         cardsPerPage = 2
-//       }
-//     } else {
-//       if (windowWidth >= 1000) {
-//         cardsPerPage = 16
-//       } else if (windowWidth >= 992) {
-//         cardsPerPage = 8
-//       } else if (windowWidth >= 768) {
-//         cardsPerPage = 9
-//       } else if (windowWidth >= 576) {
-//         cardsPerPage = 6
-//       } else {
-//         cardsPerPage = 3
-//       }
-//     }
-//   }
-
-//   populateResultsRow()
-// }
 
 function showImageInLightBox (image, title = '', caption = '', credit = '') {
   // Set the img source to the provided image, set the caption, and reveal
