@@ -36,7 +36,9 @@ function clearDefinitionInput (full = true) {
           languages: {},
           style: {
             color: {},
-            font: {}
+            font: {},
+            layout: {},
+            text_size: {}
           }
         })
         $('#definitionSaveButton').data('workingDefinition', {
@@ -44,7 +46,9 @@ function clearDefinitionInput (full = true) {
           languages: {},
           style: {
             color: {},
-            font: {}
+            font: {},
+            layout: {},
+            text_size: {}
           }
         })
       })
@@ -66,7 +70,7 @@ function clearDefinitionInput (full = true) {
   $('#languageNavContent').empty()
   document.getElementById('missingContentWarningField').innerHTML = ''
 
-  // Rester layout options
+  // Reset layout options
   document.getElementById('showSearchPaneCheckbox').checked = false
   document.getElementById('itemsPerPageInput').value = 12
   document.getElementById('numColsSelect').value = 6
@@ -79,6 +83,13 @@ function clearDefinitionInput (full = true) {
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
+
+  // Reset text size options
+  document.getElementById('HeaderTextSizeSlider').value = 0
+  document.getElementById('TitleTextSizeSlider').value = 0
+  document.getElementById('Lightbox_titleTextSizeSlider').value = 0
+  document.getElementById('Lightbox_captionTextSizeSlider').value = 0
+  document.getElementById('Lightbox_creditTextSizeSlider').value = 0
 }
 
 function createNewDefinition () {
@@ -310,6 +321,11 @@ function createLanguageTab (code, displayName) {
     label.classList = 'form-label'
     label.setAttribute('for', langKey)
     label.innerHTML = inputFields[key].name
+
+    if ('tooltip' in inputFields[key]) {
+      const tooltip = '\n<span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="' + inputFields[key].tooltip + '" style="font-size: 0.55em;">?</span>'
+      label.innerHTML += tooltip
+    }
     col.appendChild(label)
 
     let input
@@ -317,6 +333,9 @@ function createLanguageTab (code, displayName) {
     if (inputFields[key].kind === 'select') {
       input = document.createElement('select')
       input.classList = 'form-select'
+      if ('multiple' in inputFields[key] && inputFields[key].multiple === true) {
+        input.setAttribute('multiple', true)
+      }
     } else if (inputFields[key].kind === 'input') {
       input = document.createElement('input')
       input.setAttribute('type', inputFields[key].type)
@@ -324,11 +343,18 @@ function createLanguageTab (code, displayName) {
     }
     input.setAttribute('id', langKey)
     input.addEventListener('change', function () {
-      const value = $(this).val().trim()
+      let value = $(this).val()
+      if (typeof value === 'string') value = value.trim()
       updateWorkingDefinition(['languages', code, inputFields[key].property], value)
       previewDefinition(true)
     })
     col.appendChild(input)
+  })
+
+  // Activate tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
   })
 
   // If we have already loaded a spreadhseet, populate the key options
@@ -662,7 +688,7 @@ function checkContentExists () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const types = ['Header', 'Time', 'Title', 'Body']
+  const types = ['Header', 'Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
@@ -785,12 +811,26 @@ const inputFields = {
     name: 'Media key',
     kind: 'select',
     property: 'media_key'
-  }
+  },
   // keyThumbnailSelect: {
   //   name: 'Thumbnail key',
   //   kind: 'select',
   //   property: 'thumbnail_key'
   // }
+  keySearchSelect: {
+    name: 'Search keys',
+    kind: 'select',
+    property: 'search_keys',
+    multiple: true,
+    tooltip: 'If search is enabled, the text in the selected keys will be searchable.'
+  },
+  keyFilterSelect: {
+    name: 'Filter keys',
+    kind: 'select',
+    property: 'filter_keys',
+    multiple: true,
+    tooltip: 'If filtering is enabled, the values in these keys will be converted to dropdowns. The selected keys should have a set of defined values rather than arbitrary text.'
+  }
 }
 
 // Set up the color pickers
@@ -927,6 +967,15 @@ $('.font-select').change(function () {
   const value = $(this).val().trim()
   updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
   previewDefinition(true)
+})
+
+// Text size fields
+Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const property = event.target.getAttribute('data-property')
+    updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    previewDefinition(true)
+  })
 })
 
 // Set color mode

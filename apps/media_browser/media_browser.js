@@ -56,15 +56,6 @@ function createCard (obj) {
 
   obj.uniqueMediaBrowserID = id
 
-  let titleClass
-  if (title.length > 30) {
-    titleClass = 'resultTitleSmall'
-  } else if (title.length > 20) {
-    titleClass = 'resultTitleMedium'
-  } else {
-    titleClass = 'resultTitleLarge'
-  }
-
   const col = document.createElement('div')
   col.classList = 'cardCol col align-items-center justify-content-center d-flex'
   // Calculate the height of the card based on the number of rows
@@ -100,7 +91,7 @@ function createCard (obj) {
     card.appendChild(titleCol)
 
     const titleSpan = document.createElement('span')
-    titleSpan.classList = 'cardTitle ' + titleClass
+    titleSpan.classList = 'cardTitle'
     titleSpan.innerHTML = title
     titleCol.appendChild(titleSpan)
   }
@@ -143,7 +134,7 @@ function populateFilterOptions (titles) {
     newSelect.multiple = true
     newSelect.setAttribute('data-filterKey', key)
 
-    const uniqueValues = [...new Set(data.map(entry => entry[key]))].sort()
+    const uniqueValues = [...new Set(spreadsheet.map(entry => entry[key]))].sort()
     let newOption
     uniqueValues.forEach((value, j) => {
       newOption = document.createElement('option')
@@ -295,30 +286,6 @@ function loadDefinition (def) {
     attractorAvailable = false
   }
 
-  if ('search_keys' in def) {
-    searchKeys = def.search_keys
-  } else {
-    searchKeys = []
-  }
-
-  // if ('filter_keys' in definition.SETTINGS) {
-  //   // Split and trim the entries in a list
-  //   filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
-  //     return item.trim()
-  //   })
-  //   $('#filterRegion').show()
-  // } else {
-  //   filterKeys = []
-  //   $('#filterRegion').hide()
-  // }
-  // let filterTitles = null
-  // if ('filter_titles' in definition.SETTINGS) {
-  //   // Split and trim the entries in a list
-  //   filterTitles = definition.SETTINGS.filter_titles.split(',').map(function (item) {
-  //     return item.trim()
-  //   })
-  // }
-
   // Configure layout
   if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
     document.getElementById('seerchFilterPane').style.display = 'flex'
@@ -343,27 +310,48 @@ function loadDefinition (def) {
   }
   numRows = Math.ceil(cardsPerPage / numCols)
 
-  // // Send a GET request for the content and then build the tab
-  // const xhr = new XMLHttpRequest()
-  // xhr.onreadystatechange = function () {
-  //   if (xhr.readyState === 4 && xhr.status === 200) {
-  //     // Set the global data variable
-  //     data = constCommon.csvToJSON(xhr.responseText)
+  // Modify the style
 
-  //     // Create a new property, searchData, for each data element that includes
-  //     // everything we can search against as a string.
-  //     data.forEach((item, i) => {
-  //       item.searchData = ''
-  //       searchKeys.forEach((key, j) => {
-  //         item.searchData += String(item[key]) + ' '
-  //       })
-  //     })
-  //     populateResultsRow()
-  //     populateFilterOptions(filterTitles)
-  //   }
-  // }
-  // xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
-  // xhr.send(null)
+  // Color
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--backgroundColor', 'white')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.color).forEach((key) => {
+    document.documentElement.style.setProperty('--' + key, def.style.color[key])
+  })
+
+  // Font
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--Header-font', 'Header-default')
+  root.style.setProperty('--Title-font', 'Title-default')
+  root.style.setProperty('--Lightbox_title-font', 'Lightbox_title-default')
+  root.style.setProperty('--Lightbox_caption-font', 'Lightbox_caption-default')
+  root.style.setProperty('--Lightbox_credit-font', 'Lightbox_credit-default')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
+    document.fonts.add(font)
+    root.style.setProperty('--' + key + '-font', key)
+  })
+
+  // Text size settings
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--Header-font-adjust', 0)
+  root.style.setProperty('--Title-font-adjust', 0)
+  root.style.setProperty('--Lightbox_title-font-adjust', 0)
+  root.style.setProperty('--Lightbox_caption-font-adjust', 0)
+  root.style.setProperty('--Lightbox_credit-font-adjust', 0)
+
+  // Then, apply the definition settings
+  Object.keys(def.style.text_size).forEach((key) => {
+    const value = def.style.text_size[key]
+    root.style.setProperty('--' + key + '-font-adjust', value)
+  })
 
   // Load the CSV file containing the items ad build the results row
   constCommon.makeHelperRequest({
@@ -408,6 +396,31 @@ function localize (lang) {
   } else {
     creditKey = null
   }
+  if ('search_keys' in definition.languages[lang]) {
+    searchKeys = definition.languages[lang].search_keys
+  } else {
+    searchKeys = []
+  }
+
+  if ('filter_keys' in definition.languages[lang] & definition.languages[lang].filter_keys.length > 0) {
+    // Split and trim the entries in a list
+    filterKeys = definition.languages[lang].filter_keys.map(function (item) {
+      return item.trim()
+    })
+    $('#filterRegion').show()
+  } else {
+    filterKeys = []
+    $('#filterRegion').hide()
+  }
+  let filterTitles = null
+  if ('filter_titles' in definition.languages[lang]) {
+    // Split and trim the entries in a list
+    filterTitles = definition.languages[lang].map(function (item) {
+      return item.trim()
+    })
+  }
+
+  populateFilterOptions(filterTitles)
 
   // Create a new property, searchData, for each data element that includes
   // everything we can search against as a string.
