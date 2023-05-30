@@ -1,12 +1,10 @@
 # Standard modules
-import shutil
 from functools import lru_cache
 import io
 import mimetypes
 import os
 import sys
 import threading
-import time
 from typing import Any
 import uuid
 
@@ -17,8 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
-import pyftdi
 import uvicorn
+import webview
 
 # Constellation modules
 import config as const_config
@@ -538,15 +536,16 @@ async def get_dmx_status():
 
 @app.post("/DMX/fixture/create")
 async def create_dmx_fixture(name: str = Body(description="The name of the fixture."),
-                       channels: list[str] = Body(description="A list of channel names."),
-                       start_channel: int = Body(description="The first channel to allocate."),
-                       universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
+                             channels: list[str] = Body(description="A list of channel names."),
+                             start_channel: int = Body(description="The first channel to allocate."),
+                             universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
     """Create a new DMX fixture"""
 
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
     return {"success": True, "fixture": new_fixture.get_dict()}
+
 
 @app.post("/DMX/fixture/remove")
 async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
@@ -561,12 +560,14 @@ async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of t
 
     return {"success": True}
 
+
 @app.post("/DMX/fixture/{fixture_uuid}/setBrightness")
 async def set_dmx_fixture_to_brightness(fixture_uuid: str,
-                                  value: int = Body(
-                                      description="The brightness to be set."),
-                                  duration: float = Body(description="How long the brightness transition should take.",
-                                                         default=0)):
+                                        value: int = Body(
+                                            description="The brightness to be set."),
+                                        duration: float = Body(
+                                            description="How long the brightness transition should take.",
+                                            default=0)):
     """Set the given fixture to the specified brightness."""
 
     fixture = helper_dmx.get_fixture(fixture_uuid)
@@ -576,12 +577,12 @@ async def set_dmx_fixture_to_brightness(fixture_uuid: str,
 
 @app.post("/DMX/fixture/{fixture_uuid}/setChannel")
 async def set_dmx_fixture_channel(fixture_uuid: str,
-                            channel_name: str = Body(
-                                "The name of the chanel to set."),
-                            value: int = Body(
-                                description="The value to be set."),
-                            duration: float = Body(description="How long the transition should take.",
-                                                   default=0)):
+                                  channel_name: str = Body(
+                                      "The name of the chanel to set."),
+                                  value: int = Body(
+                                      description="The value to be set."),
+                                  duration: float = Body(description="How long the transition should take.",
+                                                         default=0)):
     """Set the given channel of the given fixture to the given value."""
 
     fixture = helper_dmx.get_fixture(fixture_uuid)
@@ -591,10 +592,10 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
 
 @app.post("/DMX/fixture/{fixture_uuid}/setColor")
 async def set_dmx_fixture_to_color(fixture_uuid: str,
-                             color: list = Body(
-                                 description="The color to be set."),
-                             duration: float = Body(description="How long the color transition should take.",
-                                                    default=0)):
+                                   color: list = Body(
+                                       description="The color to be set."),
+                                   duration: float = Body(description="How long the color transition should take.",
+                                                          default=0)):
     """Set the given fixture to the specified color."""
 
     fixture = helper_dmx.get_fixture(fixture_uuid)
@@ -605,7 +606,6 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
 @app.post("/DMX/group/create")
 async def create_dmx_group(name: str = Body(description="The name of the group to create."),
                            fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
-
     new_group = helper_dmx.create_group(name)
 
     fixtures = []
@@ -620,8 +620,8 @@ async def create_dmx_group(name: str = Body(description="The name of the group t
 @app.post("/DMX/group/{group_uuid}/edit")
 async def edit_dmx_group(group_uuid: str,
                          name: str = Body(description="The new name for the group", default=""),
-                         fixture_list: list[str] = Body(description="A list of UUIDs for fixtures that should be included.", default=[])):
-
+                         fixture_list: list[str] = Body(
+                             description="A list of UUIDs for fixtures that should be included.", default=[])):
     group = helper_dmx.get_group(group_uuid)
 
     if group is None:
@@ -653,7 +653,6 @@ async def edit_dmx_group(group_uuid: str,
 
 @app.get("/DMX/group/{group_uuid}/delete")
 async def delete_dmx_group(group_uuid: str):
-
     helper_dmx.get_group(group_uuid).delete()
     helper_dmx.write_dmx_configuration()
     return {"success": True}
@@ -661,9 +660,9 @@ async def delete_dmx_group(group_uuid: str):
 
 @app.post("/DMX/group/{group_uuid}/createScene")
 async def create_dmx_scene(group_uuid: str,
-                     name: str = Body(description="The name of the scene."),
-                     values: dict = Body(description="A dictionary of values for the scene."),
-                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
+                           name: str = Body(description="The name of the scene."),
+                           values: dict = Body(description="A dictionary of values for the scene."),
+                           duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Create the given scene for the specified group."""
 
     group = helper_dmx.get_group(group_uuid)
@@ -674,10 +673,10 @@ async def create_dmx_scene(group_uuid: str,
 
 @app.post("/DMX/group/{group_uuid}/editScene")
 async def create_dmx_scene(group_uuid: str,
-                     uuid: str = Body(description="The UUID of the scene to edit."),
-                     name: str = Body(description="The name of the scene."),
-                     values: dict = Body(description="A dictionary of values for the scene."),
-                     duration: float = Body(description="The transition length in milliseconds.", default=0)):
+                           uuid: str = Body(description="The UUID of the scene to edit."),
+                           name: str = Body(description="The name of the scene."),
+                           values: dict = Body(description="A dictionary of values for the scene."),
+                           duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Edit the given scene for the specified group."""
 
     group = helper_dmx.get_group(group_uuid)
@@ -694,7 +693,7 @@ async def create_dmx_scene(group_uuid: str,
 
 @app.post("/DMX/group/{group_uuid}/deleteScene")
 async def create_dmx_scene(group_uuid: str,
-                     uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
+                           uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
     """Delete the given scene for the specified group."""
 
     group = helper_dmx.get_group(group_uuid)
@@ -706,10 +705,11 @@ async def create_dmx_scene(group_uuid: str,
 
 @app.post("/DMX/group/{group_uuid}/setBrightness")
 async def set_dmx_fixture_to_brightness(group_uuid: str,
-                                  value: int = Body(
-                                      description="The brightness to be set."),
-                                  duration: float = Body(description="How long the brightness transition should take.",
-                                                         default=0)):
+                                        value: int = Body(
+                                            description="The brightness to be set."),
+                                        duration: float = Body(
+                                            description="How long the brightness transition should take.",
+                                            default=0)):
     """Set the given group to the specified brightness."""
 
     group = helper_dmx.get_group(group_uuid)
@@ -719,8 +719,8 @@ async def set_dmx_fixture_to_brightness(group_uuid: str,
 
 @app.post("/DMX/group/{group_uuid}/setChannel")
 async def set_dmx_group_channel(group_uuid: str,
-                           channel: str = Body(description="The channel to set."),
-                           value: int = Body(description="The value to set.")):
+                                channel: str = Body(description="The channel to set."),
+                                value: int = Body(description="The value to set.")):
     """Set the given channel to the specified value for every fixture in the group."""
 
     group = helper_dmx.get_group(group_uuid)
@@ -730,15 +730,16 @@ async def set_dmx_group_channel(group_uuid: str,
 
 @app.post("/DMX/group/{group_uuid}/setColor")
 async def set_dmx_group_to_color(group_uuid: str,
-                           color: list = Body(
-                               description="The color to be set."),
-                           duration: float = Body(description="How long the color transition should take.",
-                                                  default=0)):
+                                 color: list = Body(
+                                     description="The color to be set."),
+                                 duration: float = Body(description="How long the color transition should take.",
+                                                        default=0)):
     """Set the given group to the specified color."""
 
     group = helper_dmx.get_group(group_uuid)
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
+
 
 @app.get("/DMX/group/{group_uuid}/getScenes")
 async def get_dmx_group_scenes(group_uuid: str):
@@ -813,16 +814,18 @@ async def set_dmx_group_scene(group_uuid: str,
 
 @app.post("/DMX/universe/create")
 async def create_dmx_universe(name: str = Body(description="The name of the universe."),
-                        controller: str = Body(description="The type of this controller (OpenBMX or uDMX)."),
-                        device_details: dict[str, Any] = Body(description="A dictionary of hardware details for the controller.")):
+                              controller: str = Body(description="The type of this controller (OpenBMX or uDMX)."),
+                              device_details: dict[str, Any] = Body(
+                                  description="A dictionary of hardware details for the controller.")):
     """Create a new DMXUniverse."""
 
     new_universe = helper_dmx.create_universe(name,
-                                          controller=controller,
-                                          device_details=device_details)
+                                              controller=controller,
+                                              device_details=device_details)
     helper_dmx.write_dmx_configuration()
 
     return {"success": True, "universe": new_universe.get_dict()}
+
 
 @app.post("/DMX/universe/rename")
 async def create_dmx_universe(uuid: str = Body(description="The UUID of the universe."),
@@ -833,6 +836,14 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}
+
+
+def start_app():
+    # Must use only one worker, since we are relying on the config module being in global)
+    uvicorn.run(app,
+                host="0.0.0.0",
+                port=int(const_config.defaults_dict["helper_port"]),
+                reload=False, workers=1)
 
 
 if __name__ == "__main__":
@@ -848,8 +859,19 @@ if __name__ == "__main__":
     print(
         f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
-    # Must use only one worker, since we are relying on the config module being in global)
-    uvicorn.run(app,
-                host="0.0.0.0",
-                port=int(const_config.defaults_dict["helper_port"]),
-                reload=False, workers=1)
+    if const_config.defaults_dict["remote_display"] == "True":
+        # Start the server but don't create a GUI window
+        start_app()
+    else:
+        # Create a GUI window and then start the server
+        option_fullscreen = "fullscreen" in sys.argv
+
+        app_window = webview.create_window('Constellation Apps',
+                                           confirm_close=True,
+                                           fullscreen=option_fullscreen,
+                                           height=720,
+                                           width=1280,
+                                           min_size=(1280, 720),
+                                           url='http://localhost:' + str(
+                                               const_config.defaults_dict["helper_port"]) + '/media_player.html'),
+        webview.start(func=start_app)

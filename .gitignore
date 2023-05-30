@@ -7,3 +7,5 @@ media_player/good-times-rg.ttf
 media_player/Gotham-Bold.otf
 SOS_kiosk/good-times-rg.ttf
 media_player/Gotham-Book.otf
+apps/content/*
+.DS_Store

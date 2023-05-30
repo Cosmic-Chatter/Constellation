@@ -7,10 +7,12 @@ psutil
 PyDMXControl
 pyffmpeg
 pyftdi
+pyobjc; sys_platform == 'darwin'
 pyserial
 python-dateutil
 python-multipart
 pyusb
+pywebview
 requests
 sockio
 uvicorn

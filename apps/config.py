@@ -17,7 +17,7 @@ dictionary_object = None  # Optionally-loaded configparser object from dictionar
 missingContentWarningList: list[dict] = []  # Holds a list of warning about missing content
 NEXT_EVENT: Union[tuple[datetime.time, list[str]], None] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
-HELPER_SOFTWARE_VERSION: float = 3.0
+HELPER_SOFTWARE_VERSION: float = 3.2
 debug: bool = True
 
 # DMX resources

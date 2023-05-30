@@ -115,9 +115,9 @@ def read_default_configuration(check_directories: bool = True, dict_to_read: dic
         else:
             handle_missing_defaults_file()
             read_default_configuration(check_directories=check_directories, dict_to_read=dict_to_read)
-            timer = threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}"))
-            timer.daemon = True
-            timer.start()
+            # timer = threading.Timer(5, functools.partial(webbrowser.open, f"http://localhost:{config.defaults_dict['helper_port']}"))
+            # timer.daemon = True
+            # timer.start()
             return
 
     default = config.defaults_object["CURRENT"]
@@ -213,6 +213,19 @@ def handle_missing_defaults_file():
     if helper_port == "":
         helper_port = str(this_port)
     settings_dict["helper_port"] = helper_port
+
+    location = ""
+    while location.lower() != 'local' and location.lower() != 'remote':
+        location = input(
+            "Will the app be displayed on this local computer or on a remote device (such as an iPad)? [local | remote] (default: local): "
+        )
+        if location == "":
+            location = "local"
+
+    if location == 'local':
+        settings_dict["remote_display"] = False
+    else:
+        settings_dict["remote_display"] = True
 
     config.defaults_object.read_dict({"CURRENT": settings_dict})
     update_defaults(settings_dict, force=True)
