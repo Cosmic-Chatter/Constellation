@@ -24,6 +24,7 @@ import helper_dmx
 import helper_files
 import helper_system
 import helper_utilities
+import helper_webview
 
 # Set up log file
 log_path: str = helper_files.get_path(["apps.log"], user_file=True)
@@ -873,5 +874,16 @@ if __name__ == "__main__":
                                            width=1280,
                                            min_size=(1280, 720),
                                            url='http://localhost:' + str(
-                                               const_config.defaults_dict["helper_port"]) + '/media_player.html'),
+                                               const_config.defaults_dict["helper_port"]) + '/media_player.html')
+        # Subscribe to event listeners
+        app_window.events.closed += helper_webview.on_closed
+        app_window.events.closing += helper_webview.on_closing
+        app_window.events.shown += helper_webview.on_shown
+        app_window.events.loaded += helper_webview.on_loaded
+        app_window.events.minimized += helper_webview.on_minimized
+        app_window.events.maximized += helper_webview.on_maximized
+        app_window.events.restored += helper_webview.on_restored
+        app_window.events.resized += helper_webview.on_resized
+        app_window.events.moved += helper_webview.on_moved
+
         webview.start(func=start_app)
