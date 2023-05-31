@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 import logging
 import uvicorn
 import webview
+import webview.menu as webview_menu
 
 # Constellation modules
 import config as const_config
@@ -839,7 +840,18 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
     return {"success": True}
 
 
-def start_app():
+def start_app(with_webview: bool = True):
+    """Start the webserver.
+
+    If with_webview == True, start as a daemon thread so that when the webview closes, the app shuts down.
+    """
+
+    const_config.server_process = threading.Thread(target=_start_server, daemon=with_webview)
+    const_config.server_process.start()
+
+
+def _start_server():
+
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
                 host="0.0.0.0",
@@ -862,7 +874,7 @@ if __name__ == "__main__":
 
     if const_config.defaults_dict["remote_display"] == "True":
         # Start the server but don't create a GUI window
-        start_app()
+        start_app(with_webview=False)
     else:
         # Create a GUI window and then start the server
         option_fullscreen = "fullscreen" in sys.argv
@@ -886,4 +898,13 @@ if __name__ == "__main__":
         app_window.events.resized += helper_webview.on_resized
         app_window.events.moved += helper_webview.on_moved
 
-        webview.start(func=start_app)
+        menu_items = [
+            webview_menu.Menu(
+                'Settings',
+                [
+                    webview_menu.MenuAction('Show settings', helper_webview.show_webview_settings)
+                ]
+            )
+        ]
+
+        webview.start(func=start_app, menu=menu_items)

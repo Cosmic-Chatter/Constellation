@@ -9,6 +9,8 @@ application_path: str = ""
 # Path to the directory the code is actually running from (different from APP_PATH when using Pyinstaller)
 exec_path: str = ""
 
+server_process: threading.Thread
+
 clipList: dict = {}  # Dict of currently-loaded content. E.g., for the media player
 commandList: list[str] = []  # List of queued commands to send to the client
 defaults_dict: dict = {}  # Dictionary holding default parameters from defaults.ini
@@ -40,7 +42,6 @@ software_update: dict[str, Any] = {
     "current_version": str(HELPER_SOFTWARE_VERSION),
     "available_version": str(HELPER_SOFTWARE_VERSION)
 }
-debug: bool = True
 # If we are serving the HTML file from over the network, this will be set
 # to True. If the HTML file has been loaded locally, it will stay False
 HELPING_REMOTE_CLIENT: bool = False
