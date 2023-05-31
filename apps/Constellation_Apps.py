@@ -887,6 +887,7 @@ if __name__ == "__main__":
                                            min_size=(1280, 720),
                                            url='http://localhost:' + str(
                                                const_config.defaults_dict["helper_port"]) + '/media_player.html')
+
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed
         app_window.events.closing += helper_webview.on_closing
@@ -898,13 +899,16 @@ if __name__ == "__main__":
         app_window.events.resized += helper_webview.on_resized
         app_window.events.moved += helper_webview.on_moved
 
-        menu_items = [
-            webview_menu.Menu(
-                'Settings',
-                [
-                    webview_menu.MenuAction('Show settings', helper_webview.show_webview_settings)
-                ]
-            )
-        ]
+        # Add menu bar if we are not going into fullscreen
+        menu_items = None
+        if not option_fullscreen:
+            menu_items = [
+                webview_menu.Menu(
+                    'Settings',
+                    [
+                        webview_menu.MenuAction('Show settings', helper_webview.show_webview_settings)
+                    ]
+                )
+            ]
 
         webview.start(func=start_app, menu=menu_items)
