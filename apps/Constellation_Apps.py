@@ -880,7 +880,7 @@ if __name__ == "__main__":
         option_fullscreen = "fullscreen" in sys.argv
 
         app_window = webview.create_window('Constellation Apps',
-                                           confirm_close=True,
+                                           confirm_close=False,
                                            fullscreen=option_fullscreen,
                                            height=720,
                                            width=1280,

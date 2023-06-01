@@ -56,7 +56,7 @@ def show_webview_settings():
         settings_window_reference.show()
         return
 
-    settings_window_reference = webview.create_window('Constellation Component Configuration',
+    settings_window_reference = webview.create_window('Constellation Apps - Configuration',
                                                       height=600,
                                                       width=800,
                                                       url='http://localhost:' + str(
