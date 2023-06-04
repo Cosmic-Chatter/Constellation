@@ -872,7 +872,7 @@ if __name__ == "__main__":
     print(
         f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
 
-    if const_config.defaults_dict["remote_display"] == "True":
+    if const_config.defaults_dict.get("remote_display", "True") == "True":
         # Start the server but don't create a GUI window
         start_app(with_webview=False)
     else:

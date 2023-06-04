@@ -5,7 +5,7 @@ libusb
 pillow
 psutil
 PyDMXControl
-pyffmpeg
+pyffmpeg; platform_machine != 'armv7l' # We need to bundle ffmpeg sepaartely for Raspberry Pi
 pyftdi
 pyobjc; sys_platform == 'darwin'
 pyserial

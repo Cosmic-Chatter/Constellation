@@ -11,8 +11,14 @@ from typing import Any, Union
 
 # Non-standard imports
 import mimetypes
-# from PIL import Image, UnidentifiedImageError
-import pyffmpeg
+
+ffmpeg_path: str
+try:
+    import pyffmpeg
+    ffmpeg_path = pyffmpeg.FFmpeg().get_ffmpeg_bin()
+except ModuleNotFoundError:
+    ffmpeg_path = 'ffmpeg'
+
 
 # Constellation modules
 import config
@@ -154,9 +160,8 @@ def create_thumbnail(filename: str, mimetype: str):
     If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
 
     try:
-        ff = pyffmpeg.FFmpeg()
         if mimetype == "image":
-            subprocess.call([ff.get_ffmpeg_bin(), "-y",
+            subprocess.call([ffmpeg_path, "-y",
                              "-i", get_path(['content', filename], user_file=True),
                              "-vf", "scale=400:-1",
                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
@@ -183,7 +188,6 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
     output_path = get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)
     sec_per_frame = duration/len(frames)
     try:
-        ff = pyffmpeg.FFmpeg()
         # Loop through the frames and build a temp file
         temp_path = get_path(["temp.txt"])
         with config.content_file_lock:
@@ -191,7 +195,7 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
                 for frame in frames:
                     f.write("file '" + os.path.relpath(get_path(["content", frame], user_file=True)) + "'\n")
                     f.write('duration ' + str(sec_per_frame) + '\n')
-            process = subprocess.Popen([ff.get_ffmpeg_bin(), "-y", "-f", "concat", "-i",
+            process = subprocess.Popen([ffmpeg_path, "-y", "-f", "concat", "-i",
                                         temp_path, '-filter:v', 'scale=400:-2', '-an', '-c:v', 'libx264', output_path])
             process.communicate()
             os.remove(temp_path)
@@ -209,9 +213,8 @@ def get_video_file_details(filename: str) -> tuple[bool, dict[str, Any]]:
     success = True
 
     try:
-        ff = pyffmpeg.FFmpeg()
         file_path = get_path(['content', filename], user_file=True)
-        pipe = subprocess.Popen([ff.get_ffmpeg_bin(), "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
+        pipe = subprocess.Popen([ffmpeg_path, "-i", file_path], stderr=subprocess.PIPE, encoding="UTF-8")
         ffmpeg_text = pipe.stderr.read()
 
         # Duration
@@ -253,15 +256,14 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
     if file_type not in ['jpg', 'png', 'webp']:
         raise ValueError('file_type must be one of "jpg", "png", "webp"')
     try:
-        ff = pyffmpeg.FFmpeg()
         input_path = get_path(['content', filename], user_file=True)
         output_path = '.'.join(input_path.split('.')[0:-1]) + '_%06d.' + file_type
         if file_type == 'jpg':
-            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-qscale:v", "4", output_path]
+            args = [ffmpeg_path, "-i", input_path, "-qscale:v", "4", output_path]
         elif file_type == 'png':
-            args = [ff.get_ffmpeg_bin(), "-i", input_path, output_path]
+            args = [ffmpeg_path, "-i", input_path, output_path]
         else:
-            args = [ff.get_ffmpeg_bin(), "-i", input_path, "-quality", "90", output_path]
+            args = [ffmpeg_path, "-i", input_path, "-quality", "90", output_path]
 
         process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="UTF-8")
         process.communicate(timeout=3600)
