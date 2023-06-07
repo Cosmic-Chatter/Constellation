@@ -310,6 +310,27 @@ function loadDefinition (def) {
   }
   numRows = Math.ceil(cardsPerPage / numCols)
 
+  if ('lightbox_title_height' in def.style.layout) {
+    document.getElementById('imageLightboxTitle').style.height = String(def.style.layout.lightbox_title_height) + '%'
+  } else {
+    document.getElementById('imageLightboxTitle').style.height = '9%'
+  }
+  if ('lightbox_caption_height' in def.style.layout) {
+    document.getElementById('imageLightboxCaption').style.height = String(def.style.layout.lightbox_caption_height) + '%'
+  } else {
+    document.getElementById('imageLightboxCaption').style.height = '15%'
+  }
+  if ('lightbox_credit_height' in def.style.layout) {
+    document.getElementById('imageLightboxCredit').style.height = String(def.style.layout.lightbox_credit_height) + '%'
+  } else {
+    document.getElementById('imageLightboxCredit').style.height = '6%'
+  }
+  if ('lightbox_image_height' in def.style.layout) {
+    document.getElementById('imageLightboxImage').style.height = String(def.style.layout.lightbox_image_height) + '%'
+  } else {
+    document.getElementById('imageLightboxImage').style.height = '70%'
+  }
+
   // Modify the style
 
   // Color
@@ -350,6 +371,7 @@ function loadDefinition (def) {
   // Then, apply the definition settings
   Object.keys(def.style.text_size).forEach((key) => {
     const value = def.style.text_size[key]
+    console.log(key, value)
     root.style.setProperty('--' + key + '-font-adjust', value)
   })
 
@@ -486,14 +508,14 @@ function showImageInLightBox (image, title = '', caption = '', credit = '') {
 
   // Load the image with a callback to fade it in when it is loaded
   $('#imageLightboxImage').one('load', function () {
-    $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCredit').fadeIn()
-    if (caption === '') {
-      $('#imageLightboxImage').addClass('imageLightboxImageTall').removeClass('imageLightboxImageShort')
-      $('#imageLightboxCaption').hide()
-    } else {
-      $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
-      $('#imageLightboxCaption').fadeIn()
-    }
+    $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCredit, #imageLightboxCaption').fadeIn()
+    // if (caption === '') {
+    //   $('#imageLightboxImage').addClass('imageLightboxImageTall').removeClass('imageLightboxImageShort')
+    //   $('#imageLightboxCaption').hide()
+    // } else {
+    //   $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
+    //   $('#imageLightboxCaption').fadeIn()
+    // }
   }).attr('src', 'content/' + image)
 
   $('#imageLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)

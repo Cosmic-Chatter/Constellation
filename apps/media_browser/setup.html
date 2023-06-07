@@ -171,8 +171,10 @@
               </nav>
               <div class="tab-content" id="languageNavContent">
               </div>
+
               <h3>Appearance</h3>
-              <h4>Layout</h4>
+
+              <h4>Grid layout</h4>
               <div class="row gy-2 mb-3">
                 <div class="col-6 col-md-4">
                   <label for="itemsPerPageInput" class="form-label">Items per page</label>
@@ -195,6 +197,28 @@
                     <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="How much of each item's vertical space should be used by the image." style="font-size: 0.55em;">?</span>
                   </label>
                   <input id="imageHeightSlider" type="range" calss="form-range layout-property-int" data-property="image_height" min="10" max="100" step="5" value="80">
+                </div>
+              </div>
+
+              <h4>Lightbox layout</h4>
+              <div class="row gy-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="lightboxTitleHeightSlider" class="form-label">
+                    Title height
+                  </label>
+                  <input id="lightboxTitleHeightSlider" type="range" class="form-range height-slider" min="0", max="21" start="9" step="3">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="lightboxCaptionHeightSlider" class="form-label">
+                    Caption height
+                  </label>
+                  <input id="lightboxCaptionHeightSlider" type="range" class="form-range height-slider" min="0", max="25" start="15" step="5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="lightboxCreditHeightSlider" class="form-label">
+                    Credit height
+                  </label>
+                  <input id="lightboxCreditHeightSlider" type="range" class="form-range height-slider" min="0", max="15" start="6" step="3">
                 </div>
               </div>
 

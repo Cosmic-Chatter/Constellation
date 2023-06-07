@@ -142,6 +142,9 @@ function editDefinition (uuid = '') {
   document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
   document.getElementById('numColsSelect').value = def.style.layout.num_columns
   document.getElementById('imageHeightSlider').value = def.style.layout.image_height
+  document.getElementById('lightboxTitleHeightSlider').value = def.style.layout.lightbox_title_height
+  document.getElementById('lightboxCaptionHeightSlider').value = def.style.layout.lightbox_caption_height
+  document.getElementById('lightboxCreditHeightSlider').value = def.style.layout.lightbox_credit_height
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {
@@ -152,6 +155,11 @@ function editDefinition (uuid = '') {
   // Set the appropriate values for the font selects
   Object.keys(def.style.font).forEach((key) => {
     $('#fontSelect_' + key).val(def.style.font[key])
+  })
+
+  // Set the appropriate values for the text size selects
+  Object.keys(def.style.text_size).forEach((key) => {
+    document.getElementById(key + 'TextSizeSlider').value = def.style.text_size[key]
   })
 
   // Build out the key input interface
@@ -953,6 +961,19 @@ document.getElementById('numColsSelect').addEventListener('change', (event) => {
 document.getElementById('imageHeightSlider').addEventListener('input', (event) => {
   updateWorkingDefinition(['style', 'layout', 'image_height'], parseInt(event.target.value))
   previewDefinition(true)
+})
+Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
+  el.addEventListener('input', () => {
+    const titleHeight = parseInt(document.getElementById('lightboxTitleHeightSlider').value)
+    const captionHeight = parseInt(document.getElementById('lightboxCaptionHeightSlider').value)
+    const creditHeight = parseInt(document.getElementById('lightboxCreditHeightSlider').value)
+    const imageHeight = 100 - titleHeight - captionHeight - creditHeight
+    updateWorkingDefinition(['style', 'layout', 'lightbox_title_height'], titleHeight)
+    updateWorkingDefinition(['style', 'layout', 'lightbox_caption_height'], captionHeight)
+    updateWorkingDefinition(['style', 'layout', 'lightbox_credit_height'], creditHeight)
+    updateWorkingDefinition(['style', 'layout', 'lightbox_image_height'], imageHeight)
+    previewDefinition(true)
+  })
 })
 
 // Style fields
