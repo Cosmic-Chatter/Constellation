@@ -75,7 +75,12 @@ function createCard (obj) {
 
   const imgCol = document.createElement('div')
   imgCol.classList = 'col col-12'
-  imgCol.style.height = String(def.style.layout.image_height) + '%'
+
+  if ('image_height' in def.style.layout) {
+    imgCol.style.height = String(def.style.layout.image_height) + '%'
+  } else {
+    imgCol.style.height = '70%'
+  }
   card.appendChild(imgCol)
 
   const img = document.createElement('img')
@@ -85,7 +90,7 @@ function createCard (obj) {
 
   imgCol.appendChild(img)
 
-  if (def.style.layout.image_height < 100) {
+  if (('imageHeight' in def.style.layout && def.style.layout.image_height < 100) || !('imageHeight' in def.style.layout)) {
     const titleCol = document.createElement('div')
     titleCol.classList = 'col col-12 text-center'
     card.appendChild(titleCol)
@@ -273,7 +278,7 @@ function loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
-  // createLanguageSwitcher(def)
+  constCommon.createLanguageSwitcher(def, localize)
   defaultLang = langs[0]
 
   // Configure the attractor
@@ -424,7 +429,7 @@ function localize (lang) {
     searchKeys = []
   }
 
-  if ('filter_keys' in definition.languages[lang] & definition.languages[lang].filter_keys.length > 0) {
+  if ('filter_keys' in definition.languages[lang] && definition.languages[lang].filter_keys.length > 0) {
     // Split and trim the entries in a list
     filterKeys = definition.languages[lang].filter_keys.map(function (item) {
       return item.trim()

@@ -542,3 +542,54 @@ export function saveScreenshotAsThumbnail (filename) {
     })
   })
 }
+
+export function createLanguageSwitcher (def, localize) {
+  // Take a definition file and use the language entries to make an appropriate language switcher.
+  // localize= is the name of a function that handles implementing the change in language
+  // based on the provided language code.
+
+  const langs = Object.keys(def.languages)
+
+  if (langs.length === 1) {
+    // No switcher necessary
+    $('#langSwitchDropdown').hide()
+    return
+  }
+
+  $('#langSwitchDropdown').show()
+  // Cycle the languagse and build an entry for each
+  $('#langSwitchOptions').empty()
+  langs.forEach((code) => {
+    const name = def.languages[code].display_name
+
+    const li = document.createElement('li')
+
+    const button = document.createElement('button')
+    button.classList = 'dropdown-item langSwitch-entry'
+    button.addEventListener('click', function () {
+      localize(code)
+    })
+    li.appendChild(button)
+
+    const flag = document.createElement('img')
+    const customImg = def.languages[code].custom_flag
+    if (customImg != null) {
+      flag.src = '../content/' + customImg
+    } else {
+      flag.src = '../_static/flags/' + code + '.svg'
+    }
+    flag.style.width = '30%'
+    flag.addEventListener('error', function () {
+      this.src = '../_static/icons/translation-icon_black.svg'
+    })
+    button.appendChild(flag)
+
+    const span = document.createElement('span')
+    span.classList = 'ps-2'
+    span.style.verticalAlign = 'middle'
+    span.innerHTML = name
+    button.appendChild(span)
+
+    $('#langSwitchOptions').append(li)
+  })
+}

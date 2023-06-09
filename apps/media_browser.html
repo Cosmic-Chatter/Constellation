@@ -13,6 +13,7 @@
 
     <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
     <link rel="stylesheet" href="css/simple-keyboard.css">
+    <link rel="stylesheet" href="css/constellation-common.css">
     <link rel="stylesheet" href="media_browser/media_browser.css">
 
     <title>Media Browser</title>
@@ -62,6 +63,14 @@
         </div>
         <div class="col-2 col-lg-1 text-center">
           <button id="nextPageButton" class='pageButton btn btn-lg btn-secondary'>→</button>
+          
+          <div id="langSwitchDropdown" class="btn-group dropup text-center">
+            <button type="button" class="btn btn-link w-100 h-100 px-0 py-0" data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="_static/icons/translation-icon_black.svg">
+            </button>
+            <ul id="langSwitchOptions" class="dropdown-menu">
+            </ul>
+        </div>
         </div>
       </div>
       <div id="seerchFilterPane" class="row" style="height:30vh;">
@@ -87,7 +96,7 @@
     </div>
 
   <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
-  <script type="text/javascript" src="js/bootstrap_5_3/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
   <script type="text/javascript" src="js/simple-keyboard.js"></script>
   <script type="text/javascript" src="js/platform.js"></script>
 
