@@ -52,6 +52,9 @@ export function createFileSelectionModal (userOptions) {
                 <div class='col-6 col-lg-12'>
                   <img id="constFileSelectModalFilePreviewImage" style="width: 100%; height: 200px; object-fit: contain;"></img>
                   <video id="constFileSelectModalFilePreviewVideo" loop autoplay muted disablePictureInPicture="true" webkit-playsinline="true" playsinline="true" style="width: 100%; height: 200px; object-fit: contain;"></video>
+                  <div style="height: 200px; display: flex; justify-content: center; align-items: center;">
+                    <audio id="constFileSelectModalFilePreviewAudio" controls style="width: 100%;"></audio>
+                  </div>
                 </div>
                 <div class='col-6 col-lg-12 mt-2 text-center h6' style="word-wrap: break-word">
                 <span id="constFileSelectModalFilePreviewFilename" ></span>
@@ -143,7 +146,7 @@ export function createFileSelectionModal (userOptions) {
 
       let acceptStr = ''
       options.filetypes.forEach((type) => {
-        if (type === 'image' || type === 'video') acceptStr += type + '/*, '
+        if (type === 'audio' || type === 'image' || type === 'video') acceptStr += type + '/*, '
         else acceptStr += '.' + type + ', '
       })
       document.getElementById('constFileSelectModalUpload').setAttribute('accept', acceptStr)
@@ -332,6 +335,9 @@ function _populateComponentContent (fileDict, options) {
       thumb.setAttribute('webkit-playsinline', true)
       thumb.setAttribute('playsinline', true)
       thumb.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.mp4'
+    } else if (mimetype === 'audio') {
+      thumb = document.createElement('img')
+      thumb.src = constCommon.config.helperAddress + getDefaultAudioIcon()
     } else {
       // Not an image or video, or we don't have a thumbnail
       thumb = document.createElement('img')
@@ -364,6 +370,7 @@ function previewFile (file, thumbnailList) {
 
   const img = document.getElementById('constFileSelectModalFilePreviewImage')
   const vid = document.getElementById('constFileSelectModalFilePreviewVideo')
+  const aud = document.getElementById('constFileSelectModalFilePreviewAudio')
 
   document.getElementById('constFileSelectModalFilePreviewFilename').innerHTML = file
   document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', file)
@@ -374,15 +381,23 @@ function previewFile (file, thumbnailList) {
   if (mimetype === 'image' && thumbnailList.includes(thumbRoot + '.jpg')) {
     img.style.display = 'block'
     vid.style.display = 'none'
+    aud.parentElement.style.display = 'none'
     img.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.jpg'
   } else if (mimetype === 'video' && thumbnailList.includes(thumbRoot + '.mp4')) {
     img.style.display = 'none'
     vid.style.display = 'block'
+    aud.parentElement.style.display = 'none'
     vid.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.mp4'
+  } else if (mimetype === 'audio') {
+    img.style.display = 'none'
+    vid.style.display = 'none'
+    aud.parentElement.style.display = 'flex'
+    aud.src = constCommon.config.helperAddress + '/content/' + file
   } else {
     // We have something other than an image or video, or we are missing a thumbnail
     img.style.display = 'block'
     vid.style.display = 'none'
+    aud.parentElement.style.display = 'none'
     img.src = constCommon.config.helperAddress + getDefaultDocumentImage()
   }
 }
@@ -394,6 +409,15 @@ function getDefaultDocumentImage () {
   if (mode === 'dark') return '/_static/icons/document_white.svg'
   else if (mode === 'light') return '/_static/icons/document_black.svg'
   else return '/_static/icons/document_black.svg'
+}
+
+function getDefaultAudioIcon () {
+  // Return the approriate thumbnail based on whether dark mode is enabled.
+
+  const mode = document.querySelector('html').getAttribute('data-bs-theme')
+  if (mode === 'dark') return '/_static/icons/audio_white.svg'
+  else if (mode === 'light') return '/_static/icons/audio_black.svg'
+  else return '/_static/icons/audio_black.svg'
 }
 
 function selectFile (event, allowMultiple) {

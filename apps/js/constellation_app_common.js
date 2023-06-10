@@ -511,6 +511,8 @@ export function guessMimetype (filename) {
     return 'video'
   } else if (['jpeg', 'jpg', 'tiff', 'tif', 'png', 'bmp', 'gif', 'webp', 'eps', 'ps', 'svg'].includes(ext)) {
     return 'image'
+  } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'wav'].includes(ext)) {
+    return 'audio'
   }
 }
 
