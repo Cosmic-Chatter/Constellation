@@ -64,6 +64,12 @@ function clearDefinitionInput (full = true) {
   $('#languageAddEmptyFieldsWarning').hide()
   $('#languageAddExistsWarning').hide()
 
+  // Attractor
+  document.getElementById('inactivityTimeoutField').value = 30
+  const attractorSelect = document.getElementById('attractorSelect')
+  attractorSelect.innerHTML = 'Select file'
+  attractorSelect.setAttribute('data-filename', '')
+
   // Definition details
   $('#definitionNameInput').val('')
   $('#languageNav').empty()
@@ -71,13 +77,13 @@ function clearDefinitionInput (full = true) {
   document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Reset layout options
-  document.getElementById('showSearchPaneCheckbox').checked = false
+  // document.getElementById('showSearchPaneCheckbox').checked = false
   document.getElementById('itemsPerPageInput').value = 12
   document.getElementById('numColsSelect').value = 6
   document.getElementById('imageHeightSlider').value = 80
 
   // Reset style options
-  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
+  const colorInputs = ['backgroundColor', 'titleColor']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
@@ -85,7 +91,6 @@ function clearDefinitionInput (full = true) {
   })
 
   // Reset text size options
-  document.getElementById('HeaderTextSizeSlider').value = 0
   document.getElementById('TitleTextSizeSlider').value = 0
   document.getElementById('Lightbox_titleTextSizeSlider').value = 0
   document.getElementById('Lightbox_captionTextSizeSlider').value = 0
@@ -133,12 +138,16 @@ function editDefinition (uuid = '') {
   document.getElementById('spreadsheetSelect').setAttribute('data-filename', def.spreadsheet)
 
   // Attractor
-  $('#attractorSelect').html(def.attractor)
+  if (def.attractor.trim() !== '') {
+    $('#attractorSelect').html(def.attractor)
+  } else {
+    $('#attractorSelect').html('Select file')
+  }
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
   document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
 
   // Set the layout options
-  document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
+  // document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
   document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
   document.getElementById('numColsSelect').value = def.style.layout.num_columns
   document.getElementById('imageHeightSlider').value = def.style.layout.image_height
@@ -643,8 +652,8 @@ function checkContentExists () {
 
   // Loop through the defintion and collect any unique image keys
   Object.keys(workingDefinition.languages).forEach((lang) => {
-    if (imageKeys.includes(workingDefinition.languages[lang].image_key) === false) {
-      imageKeys.push(workingDefinition.languages[lang].image_key)
+    if (imageKeys.includes(workingDefinition.languages[lang].media_key) === false) {
+      imageKeys.push(workingDefinition.languages[lang].media_key)
     }
   })
 
@@ -696,7 +705,7 @@ function checkContentExists () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const types = ['Header', 'Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit']
+  const types = ['Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
@@ -794,12 +803,12 @@ let availableDefinitions = {}
 
 // The input fields to specifiy content for each langauge
 const inputFields = {
-  headerText: {
-    name: 'Header',
-    kind: 'input',
-    type: 'text',
-    property: 'header_text'
-  },
+  // headerText: {
+  //   name: 'Header',
+  //   kind: 'input',
+  //   type: 'text',
+  //   property: 'header_text'
+  // },
   keyTitleSelect: {
     name: 'Title key',
     kind: 'select',
@@ -819,26 +828,26 @@ const inputFields = {
     name: 'Media key',
     kind: 'select',
     property: 'media_key'
-  },
+  }
   // keyThumbnailSelect: {
   //   name: 'Thumbnail key',
   //   kind: 'select',
   //   property: 'thumbnail_key'
   // }
-  keySearchSelect: {
-    name: 'Search keys',
-    kind: 'select',
-    property: 'search_keys',
-    multiple: true,
-    tooltip: 'If search is enabled, the text in the selected keys will be searchable.'
-  },
-  keyFilterSelect: {
-    name: 'Filter keys',
-    kind: 'select',
-    property: 'filter_keys',
-    multiple: true,
-    tooltip: 'If filtering is enabled, the values in these keys will be converted to dropdowns. The selected keys should have a set of defined values rather than arbitrary text.'
-  }
+  // keySearchSelect: {
+  //   name: 'Search keys',
+  //   kind: 'select',
+  //   property: 'search_keys',
+  //   multiple: true,
+  //   tooltip: 'If search is enabled, the text in the selected keys will be searchable.'
+  // },
+  // keyFilterSelect: {
+  //   name: 'Filter keys',
+  //   kind: 'select',
+  //   property: 'filter_keys',
+  //   multiple: true,
+  //   tooltip: 'If filtering is enabled, the values in these keys will be converted to dropdowns. The selected keys should have a set of defined values rather than arbitrary text.'
+  // }
 }
 
 // Set up the color pickers
@@ -946,10 +955,10 @@ document.getElementById('inactivityTimeoutField').addEventListener('change', (ev
 })
 
 // Layout fields
-document.getElementById('showSearchPaneCheckbox').addEventListener('change', (event) => {
-  updateWorkingDefinition(['style', 'layout', 'show_search_and_filter'], event.target.checked)
-  previewDefinition(true)
-})
+// document.getElementById('showSearchPaneCheckbox').addEventListener('change', (event) => {
+//   updateWorkingDefinition(['style', 'layout', 'show_search_and_filter'], event.target.checked)
+//   previewDefinition(true)
+// })
 document.getElementById('itemsPerPageInput').addEventListener('change', (event) => {
   updateWorkingDefinition(['style', 'layout', 'items_per_page'], parseInt(event.target.value))
   previewDefinition(true)

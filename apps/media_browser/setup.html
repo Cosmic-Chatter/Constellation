@@ -127,14 +127,14 @@
               </label>
               <input type="number" class="form-control" min="10" value="30" id="inactivityTimeoutField">
             </div>
-            <div class="col-12 col-md-6">
+            <!-- <div class="col-12 col-md-6">
               <div class="form-check mb-0">
                 <input class="form-check-input" type="checkbox" value="" id="showSearchPaneCheckbox">
                 <label class="form-check-label small" for="showSearchPaneCheckbox">
                   Enable search and filter
                 </label>
               </div>
-            </div>
+            </div> -->
 
             <div class="col-12 mt-2">
               <h3>Content</h3>
@@ -230,36 +230,14 @@
                     <input id="colorPicker_backgroundColor" type="text" class="coloris form-control" value="#ffffff" data-property="backgroundColor" data-default="#ffffff">
                   </div>
                 </div>
+
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_textColor" class="form-label">Text</label>
+                  <label for="colorPicker_titleColor" class="form-label">Item title</label>
                   <div>
-                    <input id="colorPicker_textColor" type="text" class="coloris form-control" value="#fff" data-property="textColor" data-default="#fff">
+                    <input id="colorPicker_titleColor" type="text" class="coloris form-control" value="#000000" data-property="titleColor" data-default="#000000">
                   </div>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_headerColor" class="form-label">Header</label>
-                  <div>
-                    <input id="colorPicker_headerColor" type="text" class="coloris form-control" value="#22222E" data-property="headerColor" data-default="#22222E">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_footerColor" class="form-label">Footer</label>
-                  <div>
-                    <input id="colorPicker_footerColor" type="text" class="coloris form-control" value="#22222E" data-property="footerColor" data-default="#22222E">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_itemColor" class="form-label">Item</label>
-                  <div>
-                    <input id="colorPicker_itemColor" type="text" class="coloris form-control" value="#393A5A" data-property="itemColor" data-default="#393A5A">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_lineColor" class="form-label">Line</label>
-                  <div>
-                    <input id="colorPicker_lineColor" type="text" class="coloris form-control" value="#fff" data-property="lineColor" data-default="#fff">
-                  </div>
-                </div>
+      
               </div>
 
               <h4>Fonts</h4>
@@ -271,10 +249,6 @@
                   </label>
                 </div>
                 <div class="col-0 col-lg-9"></div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Header" class="form-label">Header</label>
-                  <select id="fontSelect_Header" class="form-select font-select" data-property="Header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
                 <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_Title" class="form-label">Item title</label>
                   <select id="fontSelect_Title" class="form-select font-select" data-property="Title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
@@ -297,16 +271,12 @@
               <h4 class="mt-2">Text size</h4>
               <div class="row gy-2">
                 <div class="col-12 col-md-6 col-lg-4">
-                  <label for="HeaderTextSizeSlider" class="form-label">Header</label>
-                  <input id="HeaderTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Header" min="-2", max="4" start="0" step="0.5">
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
                   <label for="TitleTextSizeSlider" class="form-label">Item title</label>
                   <input id="TitleTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Title" min="-1", max="2" start="0" step="0.25">
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                   <label for="Lightbox_titleTextSizeSlider" class="form-label">Lightbox title</label>
-                  <input id="Lightbox_titleTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Lightbox_title" min="-2", max="3" start="0" step="0.5">
+                  <input id="Lightbox_titleTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Lightbox_title" min="-3", max="3" start="0" step="0.5">
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
                   <label for="Lightbox_captionTextSizeSlider" class="form-label">Lightbox caption</label>

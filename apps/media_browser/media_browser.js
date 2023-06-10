@@ -159,66 +159,66 @@ function _populateResultsRow (currentKey) {
 
   $('#resultsRow').empty()
 
-  const input = $('#searchInput').val()
-  // Filter on search terms
-  const searchTerms = (input).split(' ')
-  const searchedData = []
-  spreadsheet.forEach((item, i) => {
-    let matchCount = 0
-    searchTerms.forEach((term, i) => {
-      if (term !== '' || (term === '' && searchTerms.length === 1)) {
-        // Strip out non-letters, since the keyboard doesn't allow them
-        if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
-          matchCount += 1
-        }
-      }
-    })
-    if (matchCount > 0) {
-      item.matchCount = matchCount
-      searchedData.push(item)
-    }
-  })
+  // const input = $('#searchInput').val()
+  // // Filter on search terms
+  // const searchTerms = (input).split(' ')
+  // const searchedData = []
+  // spreadsheet.forEach((item, i) => {
+  //   let matchCount = 0
+  //   searchTerms.forEach((term, i) => {
+  //     if (term !== '' || (term === '' && searchTerms.length === 1)) {
+  //       // Strip out non-letters, since the keyboard doesn't allow them
+  //       if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
+  //         matchCount += 1
+  //       }
+  //     }
+  //   })
+  //   if (matchCount > 0) {
+  //     item.matchCount = matchCount
+  //     searchedData.push(item)
+  //   }
+  // })
 
-  // Filter on filter options
-  const filters = $.makeArray($('.filterSelect'))
-  const filteredData = []
-  let thisKey, selectedValues, filterMathces
-  // Iterate through the remaining data and make sure it matches at least
-  // one filtered value.
-  searchedData.forEach((item, i) => {
-    filterMathces = {}
-    filters.forEach((filter, j) => {
-      thisKey = filter.getAttribute('data-filterKey')
-      selectedValues = $(filter).val()
-      if (selectedValues.length > 0) {
-        if (selectedValues.includes(item[thisKey])) {
-          filterMathces[thisKey] = 1
-          item.matchCount += 1
-        } else {
-          filterMathces[thisKey] = 0
-        }
-      } else {
-        // If no values are selected for this filter, pass all matches through
-        filterMathces[thisKey] = 1
-      }
-    })
-    // Iterate through the matches to make sure we've matched on every filter
-    let totalMathces = 0
-    for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
-      if (matchValue === 1) {
-        totalMathces += 1
-      }
-    }
-    if (totalMathces === filters.length) {
-      filteredData.push(item)
-    }
-  })
+  // // Filter on filter options
+  // const filters = $.makeArray($('.filterSelect'))
+  // const filteredData = []
+  // let thisKey, selectedValues, filterMathces
+  // // Iterate through the remaining data and make sure it matches at least
+  // // one filtered value.
+  // searchedData.forEach((item, i) => {
+  //   filterMathces = {}
+  //   filters.forEach((filter, j) => {
+  //     thisKey = filter.getAttribute('data-filterKey')
+  //     selectedValues = $(filter).val()
+  //     if (selectedValues.length > 0) {
+  //       if (selectedValues.includes(item[thisKey])) {
+  //         filterMathces[thisKey] = 1
+  //         item.matchCount += 1
+  //       } else {
+  //         filterMathces[thisKey] = 0
+  //       }
+  //     } else {
+  //       // If no values are selected for this filter, pass all matches through
+  //       filterMathces[thisKey] = 1
+  //     }
+  //   })
+  //   // Iterate through the matches to make sure we've matched on every filter
+  //   let totalMathces = 0
+  //   for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
+  //     if (matchValue === 1) {
+  //       totalMathces += 1
+  //     }
+  //   }
+  //   if (totalMathces === filters.length) {
+  //     filteredData.push(item)
+  //   }
+  // })
 
-  // Sort by the number of matches, so better results rise to the top.
-  filteredData.sort((a, b) => b.matchCount - a.matchCount)
+  // // Sort by the number of matches, so better results rise to the top.
+  // filteredData.sort((a, b) => b.matchCount - a.matchCount)
 
   // Make sure we have no more than 12 results to display
-  const displayedResults = filteredData.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
+  const displayedResults = spreadsheet.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
   // Create a card for each item and add it to the display
   displayedResults.forEach((item, i) => {
     createCard(item)
@@ -282,9 +282,30 @@ function loadDefinition (def) {
   defaultLang = langs[0]
 
   // Configure the attractor
+  if ('inactivity_timeout' in def) {
+    inactivityTimeout = def.inactivity_timeout * 1000
+  }
   if ('attractor' in def && def.attractor.trim() !== '') {
-    $('#attractorVideo').attr('src', 'content/' + def.attractor)
-    document.getElementById('attractorVideo').play()
+    if (constCommon.guessMimetype(def.attractor) === 'video') {
+      attractorType = 'video'
+
+      document.getElementById('attractorVideo').src = 'content/' + def.attractor
+      document.getElementById('attractorVideo').style.display = 'block'
+      document.getElementById('attractorImage').style.display = 'none'
+      document.getElementById('attractorVideo').play()
+    } else {
+      attractorType = 'image'
+      try {
+        document.getElementById('attractorVideo').stop()
+      } catch {
+        // Ignore the error that arises if we're pausing a video that doesn't exist.
+      }
+
+      document.getElementById('attractorImage').src = 'content/' + def.attractor
+      document.getElementById('attractorImage').style.display = 'block'
+      document.getElementById('attractorVideo').style.display = 'none'
+    }
+
     attractorAvailable = true
   } else {
     hideAttractor()
@@ -292,15 +313,15 @@ function loadDefinition (def) {
   }
 
   // Configure layout
-  if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
-    document.getElementById('seerchFilterPane').style.display = 'flex'
-    document.getElementById('displayPane').classList.remove('display-full')
-    document.getElementById('displayPane').classList.add('display-share')
-  } else {
-    document.getElementById('seerchFilterPane').style.display = 'none'
-    document.getElementById('displayPane').classList.add('display-full')
-    document.getElementById('displayPane').classList.remove('display-share')
-  }
+  // if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
+  //   document.getElementById('seerchFilterPane').style.display = 'flex'
+  //   document.getElementById('displayPane').classList.remove('display-full')
+  //   document.getElementById('displayPane').classList.add('display-share')
+  // } else {
+  //   document.getElementById('seerchFilterPane').style.display = 'none'
+  //   document.getElementById('displayPane').classList.add('display-full')
+  //   document.getElementById('displayPane').classList.remove('display-share')
+  // }
   if ('num_columns' in def.style.layout) {
     document.getElementById('resultsRow').classList = 'h-100 row row-cols-' + String(def.style.layout.num_columns)
     numCols = def.style.layout.num_columns
@@ -342,11 +363,21 @@ function loadDefinition (def) {
 
   // First, reset to defaults (in case a style option doesn't exist in the definition)
   root.style.setProperty('--backgroundColor', 'white')
+  root.style.setProperty('--titleColor', 'black')
 
   // Then, apply the definition settings
   Object.keys(def.style.color).forEach((key) => {
     document.documentElement.style.setProperty('--' + key, def.style.color[key])
   })
+
+  // Set icon colors based on the background color.
+  const backgroundColor = constCommon.getColorAsRGBA(document.body, 'background-color')
+  const backgroundClassification = constCommon.classifyColor(backgroundColor)
+  if (backgroundClassification === 'light') {
+    document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_black.svg'
+  } else {
+    document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_white.svg'
+  }
 
   // Font
 
@@ -376,7 +407,6 @@ function loadDefinition (def) {
   // Then, apply the definition settings
   Object.keys(def.style.text_size).forEach((key) => {
     const value = def.style.text_size[key]
-    console.log(key, value)
     root.style.setProperty('--' + key + '-font-adjust', value)
   })
 
@@ -401,7 +431,7 @@ function localize (lang) {
   if ('media_key' in definition.languages[lang]) {
     mediaKey = definition.languages[lang].media_key
   } else {
-    mediaKey = 'Media'
+    mediaKey = null
   }
   if ('thumbnail_key' in definition.languages[lang]) {
     thumbnailKey = definition.languages[lang].thumbnail_key
@@ -466,12 +496,18 @@ function showAttractor () {
 
   constCommon.config.currentInteraction = false
   if (attractorAvailable) {
-    document.getElementById('attractorVideo').play()
-      .then(result => {
-        $('#attractorOverlay').show()
-        hideImageLightBox()
-        clear()
-      })
+    if (attractorType === 'video') {
+      document.getElementById('attractorVideo').play()
+        .then(result => {
+          $('#attractorOverlay').fadeIn()
+          hideImageLightBox()
+          clear()
+        })
+    } else {
+      $('#attractorOverlay').fadeIn()
+      hideImageLightBox()
+      clear()
+    }
   } else {
     hideImageLightBox()
     clear()
@@ -481,8 +517,10 @@ function showAttractor () {
 function hideAttractor () {
   // Make the attractor layer invisible
 
-  $('#attractorOverlay').hide(result => {
-    document.getElementById('attractorVideo').pause()
+  $('#attractorOverlay').fadeOut(result => {
+    if (attractorType === 'video') {
+      document.getElementById('attractorVideo').pause()
+    }
     constCommon.config.currentInteraction = true
     resetActivityTimer()
   })
@@ -492,7 +530,7 @@ function resetActivityTimer () {
   // Cancel the existing activity timer and set a new one
 
   clearTimeout(inactivityTimer)
-  inactivityTimer = setTimeout(showAttractor, 30000)
+  inactivityTimer = setTimeout(showAttractor, inactivityTimeout)
 }
 
 function showImageInLightBox (image, title = '', caption = '', credit = '') {
@@ -526,44 +564,44 @@ function showImageInLightBox (image, title = '', caption = '', credit = '') {
   $('#imageLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)
 }
 
-const Keyboard = window.SimpleKeyboard.default
+// const Keyboard = window.SimpleKeyboard.default
 
-// Add a listener to each input so we direct keyboard input to the right one
-document.querySelectorAll('.input').forEach(input => {
-  input.addEventListener('focus', onInputFocus)
-})
-function onInputFocus (event) {
-  keyboard.setOptions({
-    inputName: event.target.id
-  })
-}
-function onInputChange (event) {
-  keyboard.setInput(event.target.value, event.target.id)
-}
-function onKeyPress (button) {
-  if (button === '{lock}' || button === '{shift}') handleShiftButton()
-  currentPage = 0
-  populateResultsRow(button)
-}
-document.querySelector('.input').addEventListener('input', event => {
-  keyboard.setInput(event.target.value)
-})
-function onChange (input) {
-  document.querySelector('#searchInput').value = input
-}
+// // Add a listener to each input so we direct keyboard input to the right one
+// document.querySelectorAll('.input').forEach(input => {
+//   input.addEventListener('focus', onInputFocus)
+// })
+// function onInputFocus (event) {
+//   keyboard.setOptions({
+//     inputName: event.target.id
+//   })
+// }
+// function onInputChange (event) {
+//   keyboard.setInput(event.target.value, event.target.id)
+// }
+// function onKeyPress (button) {
+//   if (button === '{lock}' || button === '{shift}') handleShiftButton()
+//   currentPage = 0
+//   populateResultsRow(button)
+// }
+// document.querySelector('.input').addEventListener('input', event => {
+//   keyboard.setInput(event.target.value)
+// })
+// function onChange (input) {
+//   document.querySelector('#searchInput').value = input
+// }
 
-const keyboard = new Keyboard({
-  onChange: input => onChange(input),
-  onKeyPress: button => onKeyPress(button),
-  layout: {
-    default: [
-      'Q W E R T Y U I O P',
-      'A S D F G H J K L',
-      'Z X C V B N M {bksp}',
-      '{space}'
-    ]
-  }
-})
+// const keyboard = new Keyboard({
+//   onChange: input => onChange(input),
+//   onKeyPress: button => onKeyPress(button),
+//   layout: {
+//     default: [
+//       'Q W E R T Y U I O P',
+//       'A S D F G H J K L',
+//       'Z X C V B N M {bksp}',
+//       '{space}'
+//     ]
+//   }
+// })
 
 let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
 const currentContent = []
@@ -579,7 +617,9 @@ constCommon.config.debug = true
 let currentDefintion = ''
 
 let inactivityTimer = null
+let inactivityTimeout = 30000
 let attractorAvailable = false
+let attractorType = 'image'
 
 const searchParams = constCommon.parseQueryString()
 if (searchParams.has('standalone')) {
@@ -603,7 +643,7 @@ if (searchParams.has('standalone')) {
 }
 
 // window.addEventListener('resize', setCardCount)
-document.getElementById('clearButton').addEventListener('click', clear)
+// document.getElementById('clearButton').addEventListener('click', clear)
 
 // Attach event listeners
 $('#previousPageButton').click(function () {
