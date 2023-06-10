@@ -9,3 +9,4 @@ SOS_kiosk/good-times-rg.ttf
 media_player/Gotham-Book.otf
 apps/content/*
 .DS_Store
+node_modules

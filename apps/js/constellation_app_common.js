@@ -542,3 +542,84 @@ export function saveScreenshotAsThumbnail (filename) {
     })
   })
 }
+
+export function createLanguageSwitcher (def, localize) {
+  // Take a definition file and use the language entries to make an appropriate language switcher.
+  // localize= is the name of a function that handles implementing the change in language
+  // based on the provided language code.
+
+  const langs = Object.keys(def.languages)
+
+  if (langs.length === 1) {
+    // No switcher necessary
+    $('#langSwitchDropdown').hide()
+    return
+  }
+
+  $('#langSwitchDropdown').show()
+  // Cycle the languagse and build an entry for each
+  $('#langSwitchOptions').empty()
+  langs.forEach((code) => {
+    const name = def.languages[code].display_name
+
+    const li = document.createElement('li')
+
+    const button = document.createElement('button')
+    button.classList = 'dropdown-item langSwitch-entry'
+    button.addEventListener('click', function () {
+      localize(code)
+    })
+    li.appendChild(button)
+
+    const flag = document.createElement('img')
+    const customImg = def.languages[code].custom_flag
+    if (customImg != null) {
+      flag.src = '../content/' + customImg
+    } else {
+      flag.src = '../_static/flags/' + code + '.svg'
+    }
+    flag.style.width = '30%'
+    flag.addEventListener('error', function () {
+      this.src = '../_static/icons/translation-icon_black.svg'
+    })
+    button.appendChild(flag)
+
+    const span = document.createElement('span')
+    span.classList = 'ps-2'
+    span.style.verticalAlign = 'middle'
+    span.innerHTML = name
+    button.appendChild(span)
+
+    $('#langSwitchOptions').append(li)
+  })
+}
+
+export function getColorAsRGBA (el, prop) {
+  // Look up the given CSS property on the given element and return an object with the RGBA values.
+
+  if ((typeof el === 'string') && (el[0] !== '#')) el = '#' + el
+
+  const color = $(el).css(prop) // Should be string of form RGBA(R,G,B,A) or RGB(R,G,B)
+  const colorSplit = color.split(', ')
+  const result = {
+    r: parseInt(colorSplit[0].split('(')[1]),
+    g: parseInt(colorSplit[1].trim()),
+    b: parseInt(colorSplit[2].split(')')[0].trim())
+  }
+
+  if (color.slice(0, 4) === 'RGBA') {
+    result.a = parseFloat(colorSplit.split(',')[3].split(')')[0].trim())
+  }
+  return result
+}
+
+export function classifyColor (color) {
+  // Take an object of the form {r: 134, g: 234, b: 324} and return 'light' or 'dark'
+  // Depending on the luminance
+  // From https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+
+  if ((color.r * 0.299 + color.g * 0.587 + color.b * 0.114) > 186) {
+    return 'light'
+  }
+  return 'dark'
+}
