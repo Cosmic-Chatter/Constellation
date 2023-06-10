@@ -420,10 +420,10 @@ function loadDefinition (def) {
       const csvAsJSON = constCommon.csvToJSON(response)
       spreadsheet = csvAsJSON // Global property
       localize(defaultLang)
-    })
 
-  // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
+      // Send a thumbnail to the helper
+      setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
+    })
 }
 
 function localize (lang) {

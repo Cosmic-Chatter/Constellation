@@ -717,7 +717,7 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
-    if (['dmx_control', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
+    if (['dmx_control', 'media_browser', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
 
@@ -727,14 +727,14 @@ export function showExhibitComponentInfo (id) {
         url: obj.getHelperURL(),
         endpoint: '/DMX/getScenes'
       })
-      .then((result) => {
-        console.log(result)
-        constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
-        document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
-      })
-      .catch((error) => {
-        document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
-      })
+        .then((result) => {
+          console.log(result)
+          constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+          document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
+        })
+        .catch((error) => {
+          document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+        })
     } else {
       $('#componentInfoModalContentTabButton').hide()
       $('#componentInfoModalDefinitionsTabButton').tab('show')
@@ -1446,7 +1446,7 @@ function getAllowableContentTypes (appID) {
   const supportedTypes = {
     heartbeat: ['ini'],
     infostation: ['ini'],
-    media_browser: ['ini'],
+    media_browser: ['const'],
     media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', 'aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
@@ -1528,7 +1528,7 @@ export function submitComponentSettingsChange () {
     updateComponentInfoModalFromHelper(obj.id)
 
     // If we have a modern definition-based app, hide the content tab
-    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
+    if (['media_browser', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
       $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalContentTabButton').show()

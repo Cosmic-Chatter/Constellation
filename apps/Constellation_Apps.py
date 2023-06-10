@@ -3,6 +3,7 @@ from functools import lru_cache
 import io
 import mimetypes
 import os
+import shutil
 import sys
 import threading
 from typing import Any
@@ -44,7 +45,6 @@ else:
     const_config.application_path = const_config.exec_path
 
 helper_utilities.convert_defaults_ini()
-
 
 helper_utilities.read_default_configuration()
 
@@ -208,7 +208,7 @@ async def create_thumbnail_video_from_frames(
 
 
 @app.post('/files/uploadThumbnail')
-async def upload_thumbnail(files: list[UploadFile] = File(),
+def upload_thumbnail(files: list[UploadFile] = File(),
                            config: const_config = Depends(get_config)):
     """Save uploaded files as thumbnails, formatting them appropriately."""
 
@@ -218,9 +218,11 @@ async def upload_thumbnail(files: list[UploadFile] = File(),
         final_path = helper_files.get_path(["thumbnails", filename], user_file=True)
         with config.content_file_lock:
             # First write the file to content
-            async with aiofiles.open(temp_path, 'wb') as out_file:
-                content = await file.read()  # async read
-                await out_file.write(content)  # async write
+            try:
+                with open(temp_path, 'wb') as out_file:
+                    shutil.copyfileobj(file.file, out_file)
+            finally:
+                file.file.close()
             # Next, generate a thumbnail
             helper_files.create_thumbnail(filename, 'image')
             # Finally, delete the source file
@@ -452,8 +454,8 @@ async def update_clip_list(data: dict[str, Any], config: const_config = Depends(
 
 
 @app.post("/uploadContent")
-async def upload_content(files: list[UploadFile] = File(),
-                         config: const_config = Depends(get_config)):
+def upload_content(files: list[UploadFile] = File(),
+                   config: const_config = Depends(get_config)):
     """Receive uploaded files and save them to disk"""
 
     for file in files:
@@ -462,9 +464,12 @@ async def upload_content(files: list[UploadFile] = File(),
             ["content", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
         with config.content_file_lock:
-            async with aiofiles.open(file_path, 'wb') as out_file:
-                content = await file.read()  # async read
-                await out_file.write(content)  # async write
+            try:
+                with open(file_path, 'wb') as out_file:
+                    shutil.copyfileobj(file.file, out_file)
+            finally:
+                file.file.close()
+
         mimetype = mimetypes.guess_type(file_path, strict=False)[0]
         if mimetype is not None:
             th = threading.Thread(target=helper_files.create_thumbnail, args=(filename, mimetype.split("/")[0]),
@@ -854,7 +859,6 @@ def start_app(with_webview: bool = True):
 
 
 def _start_server():
-
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
                 host="0.0.0.0",
