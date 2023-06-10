@@ -10,7 +10,6 @@ from typing import Any
 import uuid
 
 # Third-party modules
-import aiofiles
 from fastapi import FastAPI, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response

@@ -9,11 +9,12 @@ import urllib, urllib.request, urllib.error
 import shutil
 import sys
 import threading
-from typing import Union
+from typing import Any, Union
 import webbrowser
 
 # Non-standard modules
 from PIL import ImageGrab
+from pydantic.utils import deep_update as update_dictionary
 
 # Constellation modules
 import config
@@ -314,5 +315,42 @@ def convert_defaults_ini():
         "app": {
             "id": defaults_dict["id"],
             "group": defaults_dict["group"]
+        },
+        "control_server": {
+            "ip_address": defaults_dict["server_ip_address"],
+            "port": int(defaults_dict["server_port"])
+        },
+        "permissions": {},
+        "system": {
+            "port": int(defaults_dict["helper_port"]),
+            "standalone": False,
+            "remote_display": False
         }
     }
+
+    # Cycle through the possible default keys and migrate each appropriately
+    if "active_hours_start" in defaults_dict:
+        result = update_dictionary(result, {"system": {"active_hours": {"start": defaults_dict["active_hours_start"]}}})
+    if "active_hours_end" in defaults_dict:
+        result = update_dictionary(result, {"system": {"active_hours": {"end": defaults_dict["active_hours_end"]}}})
+    if "anydesk_id" in defaults_dict:
+        result = update_dictionary(result, {"system": {"remote_viewers": {"anydesk": defaults_dict["anydesk_id"]}}})
+    if "smart_restart_interval" in defaults_dict:
+        result = update_dictionary(result, {"smart_restart": {"interval": int(defaults_dict["smart_restart_interval"])}})
+    if "smart_restart_threshold" in defaults_dict:
+        result = update_dictionary(result, {"smart_restart": {"threshold": int(defaults_dict["smart_restart_threshold"])}})
+    if "smart_restart" in defaults_dict:
+        result = update_dictionary(result, {"smart_restart": {"state": defaults_dict["smart_restart"]}})
+    if "allow_refresh" in defaults_dict:
+        result = update_dictionary(result, {"permissions": {"refresh": str_to_bool(defaults_dict["allow_refresh"])}})
+    if "allow_restart" in defaults_dict:
+        result = update_dictionary(result, {"permissions": {"restart": str_to_bool(defaults_dict["allow_restart"])}})
+    if "allow_sleep" in defaults_dict:
+        result = update_dictionary(result, {"permissions": {"sleep": str_to_bool(defaults_dict["allow_sleep"])}})
+    if "allow_shutdown" in defaults_dict:
+        result = update_dictionary(result, {"permissions": {"shutdown": str_to_bool(defaults_dict["allow_shutdown"])}})
+    if "autoplay_audio" in defaults_dict:
+        result = update_dictionary(result, {"permissions": {"audio": str_to_bool(defaults_dict["autoplay_audio"])}})
+
+    config_path = helper_files.get_path(["configuration", "config.json"])
+    helper_files.write_json(result, config_path)
