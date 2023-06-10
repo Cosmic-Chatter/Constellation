@@ -645,9 +645,6 @@ if (searchParams.has('standalone')) {
   document.body.style.cursor = 'none'
 }
 
-// window.addEventListener('resize', setCardCount)
-// document.getElementById('clearButton').addEventListener('click', clear)
-
 // Attach event listeners
 $('#previousPageButton').click(function () {
   changePage(-1)

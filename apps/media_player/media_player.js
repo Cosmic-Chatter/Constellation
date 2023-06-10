@@ -1,71 +1,19 @@
 import * as constCommon from '../js/constellation_app_common.js'
 
-function updateFunc (update) {
-  // Read updates for media player-specific actions and act on them
+function updateParser (update) {
+  // Read updates specific to the media browser
 
-  if ('commands' in update) {
-    for (let i = 0; i < update.commands.length; i++) {
-      const cmd = (update.commands)[i]
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+}
 
-      if (cmd.startsWith('beginSynchronization')) {
-        const timeToPlay = cmd.split('_')[1]
-        synchronize(timeToPlay)
-      } else if (cmd === 'sendClipList') {
-        updateClipList(constCommon.config.sourceList)
-      } else if (cmd.startsWith('gotoClip')) {
-        const clipNumber = cmd.split('_')[1]
-        gotoSource(clipNumber)
-      } else if (cmd.startsWith('seekVideo')) {
-        const seek = cmd.split('_')
-        seekVideoByFraction(seek[1], parseFloat(seek[2]))
-      } else if (cmd === 'playVideo') {
-        document.getElementById('fullscreenVideo').play()
-      } else if (cmd === 'pauseVideo') {
-        document.getElementById('fullscreenVideo').pause()
-      } else if (cmd === 'disableAutoplay') {
-        constCommon.config.autoplayEnabled = false
-      } else if (cmd === 'enableAutoplay') {
-        constCommon.config.autoplayEnabled = true
-      } else if (cmd === 'toggleAutoplay') {
-        constCommon.config.autoplayEnabled = !constCommon.config.autoplayEnabled
-      }
-    }
-  }
-  if ('synchronize_with' in update) {
-    askToSynchronize(update.synchronize_with)
-    constCommon.config.waitingForSynchronization = true
-  }
-  if ('autoplay_audio' in update) {
-    // If desired, unmute the video
-    // Note that the file will need to be whitelisted by the browser; otherwise,
-    // it will not autoplay
-    if (constCommon.stringToBool(update.autoplay_audio)) {
-      document.getElementById('fullscreenVideo').muted = false
-      constCommon.config.autoplayAudio = true
-    } else {
-      document.getElementById('fullscreenVideo').muted = true
-      constCommon.config.autoplayAudio = false
-    }
-  }
-  if ('image_duration' in update) {
-    if (isFinite(parseInt(update.image_duration))) {
-      // Image duration is specified in seconds in defaults.ini
-      // but needs to be converted to milliseconds
-      constCommon.config.imageDuration = update.image_duration
-      imageDuration = update.image_duration * 1000
-      // console.log(`Setting image duration: ${update.image_duration * 1000} ms`)
-    }
-  }
-
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (constCommon.arraysEqual(constCommon.config.sourceList, update.content) === false) {
-      constCommon.sendConfigUpdate(update)
-      updateClipList(update.content)
-      constCommon.config.sourceList = update.content
-      gotoSource(0)
-    }
-  }
+function loadDefinition (def) {
+  // Take an object parsed from an INI string and use it to load a new set of contet
 }
 
 function synchronize (timeToPlay) {
@@ -271,15 +219,16 @@ function changeMedia (source, delayPlay, playOnly) {
     clearTimeout(sourceAdvanceTimer)
   }
 }
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
+constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'media_player'
+let currentDefintion = ''
 
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
 constCommon.config.sourceList = []
 let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.
 constCommon.config.waitingForSynchronization = false
 constCommon.config.autoplayEnabled = true
-let imageDuration = 30000 // milliseconds; the amount of time an image will be displayed before going to the next one
+const imageDuration = 30000 // milliseconds; the amount of time an image will be displayed before going to the next one
 constCommon.config.allowAudio = false
 
 constCommon.config.debug = true
@@ -287,11 +236,24 @@ document.addEventListener('click', unmute)
 
 constCommon.config.helperAddress = window.location.origin
 
-constCommon.askForDefaults()
-constCommon.sendPing()
+const searchParams = constCommon.parseQueryString()
+if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+  if (searchParams.has('definition')) {
+    constCommon.loadDefinition(searchParams.get('definition'))
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
+} else {
+  // We are displaying this for real
+  constCommon.askForDefaults()
+    .then(() => {
+      constCommon.sendPing()
 
-setInterval(constCommon.sendPing, 5000)
-setInterval(constCommon.checkForHelperUpdates, 1000)
+      setInterval(constCommon.sendPing, 5000)
+    })
+}
 
 // Hide the cursor
 document.body.style.cursor = 'none'
