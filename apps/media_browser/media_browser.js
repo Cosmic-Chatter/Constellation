@@ -24,10 +24,10 @@ function changePage (val) {
 
 function clear () {
   currentPage = 0
-  $('#searchInput').val('')
-  keyboard.input.default = ''
-  keyboard.input.searchInput = ''
-  $('.filterSelect').val(null)
+  // $('#searchInput').val('')
+  // keyboard.input.default = ''
+  // keyboard.input.searchInput = ''
+  // $('.filterSelect').val(null)
   populateResultsRow()
 }
 
