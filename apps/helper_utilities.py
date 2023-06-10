@@ -295,3 +295,24 @@ def update_defaults(data: dict, cull: bool = False, force: bool = False):
             defaults_path = helper_files.get_path(['defaults.ini'], user_file=True)
             with open(defaults_path, 'w', encoding='UTF-8') as f:
                 config.defaults_object.write(f)
+
+
+def convert_defaults_ini():
+    """Convert from the legacy defaults.ini file to the JSON-based configuration files"""
+
+    # Read defaults.ini
+    config_reader = configparser.ConfigParser(delimiters="=")
+    defaults_path = os.path.join(config.application_path, "defaults.ini")
+
+    if not os.path.isfile(defaults_path):
+        return
+
+    config_reader.read(defaults_path)
+
+    defaults_dict = dict(config_reader["CURRENT"].items())
+    result = {
+        "app": {
+            "id": defaults_dict["id"],
+            "group": defaults_dict["group"]
+        }
+    }

@@ -421,6 +421,9 @@ function loadDefinition (def) {
       spreadsheet = csvAsJSON // Global property
       localize(defaultLang)
     })
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
 }
 
 function localize (lang) {

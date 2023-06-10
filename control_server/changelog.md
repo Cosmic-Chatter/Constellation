@@ -1,3 +1,16 @@
+# **Constellation 3.2**
+__*Constellation*__ 3.2 provides a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.
+
+## <ins>New features</ins>
+- Run __*Constellation*__ as a self-contained app.
+- Create and manage complex lighting setups with DMX Control.
+  - Connect to DMX devices using an OpenDMX or uDMX controller.
+  - Bridge multiple DMX universes with groups.
+
+## <ins>Updated features</ins>
+- Media Browser is now configured entirely through the user interface.
+- Media Browser now supports portrait orientations and many more customization options.
+
 # **Constellation 3.1**
 __*Constellation*__ 3.1 introduces a new app, Timeline Explorer. Turn a spreadsheet into an interactive timeline, and control its look and feel like never before.
 
