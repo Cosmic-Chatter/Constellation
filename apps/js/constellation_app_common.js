@@ -625,3 +625,9 @@ export function classifyColor (color) {
   }
   return 'dark'
 }
+
+export function withExtension (path, ext) {
+  // Return the given path with its extension replaced by ext
+
+  return path.split('.').slice(0, -1).join('.') + '.' + ext
+}

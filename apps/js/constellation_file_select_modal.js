@@ -411,7 +411,7 @@ function getDefaultDocumentImage () {
   else return '/_static/icons/document_black.svg'
 }
 
-function getDefaultAudioIcon () {
+export function getDefaultAudioIcon () {
   // Return the approriate thumbnail based on whether dark mode is enabled.
 
   const mode = document.querySelector('html').getAttribute('data-bs-theme')

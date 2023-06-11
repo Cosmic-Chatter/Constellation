@@ -177,121 +177,106 @@ function resizePreview () {
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
-function checkContentExists () {
-  // Cross-check content from the spreadsheet with files in the content directory.
+function addItem (file = null) {
+  // Add a blank item to the itemList
 
-  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-  const imageKeys = []
+  const itemCol = document.createElement('div')
+  itemCol.classList = 'col-12 col-md-6 row mt-2 content-item'
 
-  const checkContentButton = document.getElementById('checkContentButton')
-  checkContentButton.setAttribute('disabled', true)
-  checkContentButton.innerHTML = 'Checking...'
+  const selectButtonCol = document.createElement('div')
+  selectButtonCol.classList = 'col-12'
+  itemCol.appendChild(selectButtonCol)
 
-  // Loop through the defintion and collect any unique image keys
-  Object.keys(workingDefinition.languages).forEach((lang) => {
-    if (imageKeys.includes(workingDefinition.languages[lang].media_key) === false) {
-      imageKeys.push(workingDefinition.languages[lang].media_key)
-    }
-  })
-
-  // Get a list of available content
-  let availableContent
-  const missingContent = []
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      console.log(result)
-      availableContent = result.all_exhibits
-      // Retrieve the spreadsheet and check the content for each image key against the available content
-      constCommon.makeHelperRequest({
-        method: 'GET',
-        endpoint: '/content/' + workingDefinition.spreadsheet,
-        rawResponse: true
-      })
-        .then((raw) => {
-          const spreadsheet = constCommon.csvToJSON(raw)
-          spreadsheet.forEach((row) => {
-            imageKeys.forEach((key) => {
-              if (row[key].trim() === '') return
-              if (availableContent.includes(row[key]) === false) missingContent.push(row[key])
-            })
-          })
-          const missingContentField = document.getElementById('missingContentWarningField')
-          if (missingContent.length === 0) {
-            missingContentField.classList.add('text-success')
-            missingContentField.classList.remove('text-danger')
-            missingContentField.innerHTML = 'No missing content!'
-          } else {
-            missingContentField.classList.add('text-danger')
-            missingContentField.classList.remove('text-success')
-            let html = '<b>Missing content found:</b><ul>'
-            missingContent.forEach((file) => {
-              html += '<li>' + file + '</li>'
-            })
-            html += '</ul>'
-            missingContentField.innerHTML = html
-          }
-          checkContentButton.removeAttribute('disabled')
-          checkContentButton.innerHTML = 'Check content'
-        })
+  const selectButton = document.createElement('button')
+  selectButton.classList = 'btn btn-info w-100 text-break select-button'
+  selectButton.innerHTML = 'Select file'
+  selectButton.addEventListener('click', (event) => {
+    constFileSelect.createFileSelectionModal({
+      filetypes: ['audio', 'image', 'video'],
+      multiple: false
     })
+      .then((result) => {
+        const file = result[0]
+        if (file == null) return
+        setItemContent(itemCol, file)
+      })
+  })
+  selectButtonCol.appendChild(selectButton)
+
+  const orderButtonsCol = document.createElement('div')
+  orderButtonsCol.classList = 'col-12 row'
+  itemCol.appendChild(orderButtonsCol)
+
+  const orderButtonLeft = document.createElement('div')
+  orderButtonLeft.classList = 'col-6 bg-secondary text-center'
+  orderButtonLeft.innerHTML = '◀'
+  orderButtonLeft.style.fontSize = '15px'
+  orderButtonLeft.style.cursor = 'grab'
+  orderButtonsCol.appendChild(orderButtonLeft)
+
+  const orderButtonRight = document.createElement('div')
+  orderButtonRight.classList = 'col-6 bg-secondary text-center'
+  orderButtonRight.innerHTML = '▶'
+  orderButtonRight.style.fontSize = '15px'
+  orderButtonRight.style.cursor = 'grab'
+  orderButtonsCol.appendChild(orderButtonRight)
+
+  const previewCol = document.createElement('div')
+  previewCol.classList = 'col-12'
+  previewCol.style.maxHeight = '200px'
+  previewCol.style.width = '100%'
+  itemCol.appendChild(previewCol)
+
+  const image = document.createElement('img')
+  image.classList = 'image-preview'
+  image.style.maxHeight = '200px'
+  image.style.width = '100%'
+  image.style.objectFit = 'contain'
+  image.style.display = 'none'
+  previewCol.appendChild(image)
+
+  const video = document.createElement('video')
+  video.classList = 'video-preview'
+  video.style.maxHeight = '200px'
+  video.style.width = '100%'
+  video.style.display = 'none'
+  video.style.objectFit = 'contain'
+  video.setAttribute('autoplay', true)
+  video.muted = 'true'
+  video.setAttribute('loop', 'true')
+  video.setAttribute('playsinline', 'true')
+  video.setAttribute('webkit-playsinline', 'true')
+  video.setAttribute('disablePictureInPicture', 'true')
+  previewCol.appendChild(video)
+
+  if (file != null) setItemContent(itemCol, file)
+
+  document.getElementById('itemList').appendChild(itemCol)
 }
 
-function populateFontSelects () {
-  // Get a list of all the content and add the available font files to the appropriate selects.
+function setItemContent (item, file) {
+  // Populate the given element, item, with content.
 
-  const types = ['Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit']
-  $('.font-select').empty()
+  const image = item.querySelector('.image-preview')
+  const video = item.querySelector('.video-preview')
+  const selectButton = item.querySelector('.select-button')
 
-  // First, search the content directory for any user-provided fonts
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      types.forEach((type) => {
-        // First, add the default
-        const defaultFont = document.createElement('option')
-        defaultFont.value = $('#fontSelect_' + type).data('default')
-        defaultFont.innerHTML = 'Default'
-        $('#fontSelect_' + type).append(defaultFont)
-
-        const header = document.createElement('option')
-        header.value = 'User-provided'
-        header.innerHTML = 'User-provided'
-        header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
-
-        result.all_exhibits.forEach((item) => {
-          if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
-            const option = document.createElement('option')
-            option.value = '../content/' + item
-            option.innerHTML = item
-            $('#fontSelect_' + type).append(option)
-          }
-        })
-      })
-
-      // Then, add the defaults
-      const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
-
-      types.forEach((type) => {
-        const header = document.createElement('option')
-        header.value = 'Built-in'
-        header.innerHTML = 'Built-in'
-        header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
-
-        defaultFonts.forEach((font) => {
-          const option = document.createElement('option')
-          option.value = '../_fonts/' + font
-          option.innerHTML = font
-          $('#fontSelect_' + type).append(option)
-        })
-      })
-    })
+  item.setAttribute('data-filename', file)
+  const mimetype = constCommon.guessMimetype(file)
+  selectButton.innerHTML = file
+  if (mimetype === 'audio') {
+    image.src = constFileSelect.getDefaultAudioIcon()
+    image.style.display = 'block'
+    video.style.display = 'none'
+  } else if (mimetype === 'image') {
+    image.src = '/thumbnails/' + constCommon.withExtension(file, 'jpg')
+    image.style.display = 'block'
+    video.style.display = 'none'
+  } else if (mimetype === 'video') {
+    video.src = '/thumbnails/' + constCommon.withExtension(file, 'mp4')
+    video.style.display = 'block'
+    image.style.display = 'none'
+  }
 }
 
 function rotatePreview () {
@@ -363,6 +348,11 @@ popoverTriggerList.map(function (popoverTriggerEl) {
   return new bootstrap.Popover(popoverTriggerEl)
 })
 
+// Content
+document.getElementById('addItemButton').addEventListener('click', (event) => {
+  addItem()
+})
+
 // Preview frame
 window.addEventListener('load', resizePreview)
 window.addEventListener('resize', resizePreview)
@@ -370,5 +360,4 @@ window.addEventListener('resize', resizePreview)
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
-populateFontSelects()
 clearDefinitionInput()
