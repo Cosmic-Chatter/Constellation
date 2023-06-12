@@ -33,23 +33,13 @@ function clearDefinitionInput (full = true) {
       .then((response) => {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
-          languages: {},
-          style: {
-            color: {},
-            font: {},
-            layout: {},
-            text_size: {}
-          }
+          content: {},
+          content_order: []
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
-          languages: {},
-          style: {
-            color: {},
-            font: {},
-            layout: {},
-            text_size: {}
-          }
+          content: {},
+          content_order: []
         })
       })
   }
@@ -177,18 +167,44 @@ function resizePreview () {
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
-function addItem (file = null) {
+function addItem () {
+  // Add an item to the working defintiion
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const item = {
+    uuid: String(Math.random() * 1e20),
+    filename: '',
+    duration: 30
+  }
+  workingDefinition.content[item.uuid] = item
+  workingDefinition.content_order.push(item.uuid)
+
+  createItemHTML(item, workingDefinition.content_order.length)
+  console.log($('#definitionSaveButton').data('workingDefinition'))
+}
+
+function createItemHTML (item, num) {
   // Add a blank item to the itemList
 
   const itemCol = document.createElement('div')
   itemCol.classList = 'col-12 col-md-6 row mt-2 content-item'
 
+  const numberCol = document.createElement('div')
+  numberCol.classList = 'col-3 pe-0'
+  itemCol.appendChild(numberCol)
+
+  const number = document.createElement('div')
+  number.classList = 'text-center bg-secondary w-100 h-100 pt-2 fw-bold'
+  number.innerHTML = num
+  numberCol.appendChild(number)
+
   const selectButtonCol = document.createElement('div')
-  selectButtonCol.classList = 'col-12'
+  selectButtonCol.classList = 'col-9 ps-0'
   itemCol.appendChild(selectButtonCol)
 
   const selectButton = document.createElement('button')
-  selectButton.classList = 'btn btn-info w-100 text-break select-button'
+  selectButton.classList = 'btn btn-info w-100 text-break select-button rounded-0'
   selectButton.innerHTML = 'Select file'
   selectButton.addEventListener('click', (event) => {
     constFileSelect.createFileSelectionModal({
@@ -198,28 +214,36 @@ function addItem (file = null) {
       .then((result) => {
         const file = result[0]
         if (file == null) return
-        setItemContent(itemCol, file)
+        setItemContent(item, itemCol, file)
       })
   })
   selectButtonCol.appendChild(selectButton)
 
   const orderButtonsCol = document.createElement('div')
-  orderButtonsCol.classList = 'col-12 row'
+  orderButtonsCol.classList = 'col-12'
   itemCol.appendChild(orderButtonsCol)
 
-  const orderButtonLeft = document.createElement('div')
-  orderButtonLeft.classList = 'col-6 bg-secondary text-center'
-  orderButtonLeft.innerHTML = '◀'
-  orderButtonLeft.style.fontSize = '15px'
-  orderButtonLeft.style.cursor = 'grab'
-  orderButtonsCol.appendChild(orderButtonLeft)
+  const orderButtonsRow = document.createElement('div')
+  orderButtonsRow.classList = 'row'
+  orderButtonsCol.appendChild(orderButtonsRow)
 
-  const orderButtonRight = document.createElement('div')
-  orderButtonRight.classList = 'col-6 bg-secondary text-center'
+  const orderButtonLeftCol = document.createElement('div')
+  orderButtonLeftCol.classList = 'col-6 pe-0'
+  orderButtonsRow.appendChild(orderButtonLeftCol)
+
+  const orderButtonLeft = document.createElement('button')
+  orderButtonLeft.classList = 'btn btn-secondary btn-sm w-100 rounded-0 border-bottom border-end'
+  orderButtonLeft.innerHTML = '◀'
+  orderButtonLeftCol.appendChild(orderButtonLeft)
+
+  const orderButtonRightCol = document.createElement('div')
+  orderButtonRightCol.classList = 'col-6  ps-0'
+  orderButtonsRow.appendChild(orderButtonRightCol)
+
+  const orderButtonRight = document.createElement('button')
+  orderButtonRight.classList = 'btn btn-secondary btn-sm w-100 rounded-0 border-bottom'
   orderButtonRight.innerHTML = '▶'
-  orderButtonRight.style.fontSize = '15px'
-  orderButtonRight.style.cursor = 'grab'
-  orderButtonsCol.appendChild(orderButtonRight)
+  orderButtonRightCol.appendChild(orderButtonRight)
 
   const previewCol = document.createElement('div')
   previewCol.classList = 'col-12'
@@ -228,7 +252,7 @@ function addItem (file = null) {
   itemCol.appendChild(previewCol)
 
   const image = document.createElement('img')
-  image.classList = 'image-preview'
+  image.classList = 'image-preview bg-secondary py-1'
   image.style.maxHeight = '200px'
   image.style.width = '100%'
   image.style.objectFit = 'contain'
@@ -236,7 +260,7 @@ function addItem (file = null) {
   previewCol.appendChild(image)
 
   const video = document.createElement('video')
-  video.classList = 'video-preview'
+  video.classList = 'video-preview bg-secondary py-1'
   video.style.maxHeight = '200px'
   video.style.width = '100%'
   video.style.display = 'none'
@@ -249,19 +273,31 @@ function addItem (file = null) {
   video.setAttribute('disablePictureInPicture', 'true')
   previewCol.appendChild(video)
 
-  if (file != null) setItemContent(itemCol, file)
+  const deleteCol = document.createElement('div')
+  deleteCol.classList = 'col-12'
+  itemCol.appendChild(deleteCol)
+
+  const deleteButton = document.createElement('button')
+  deleteButton.classList = 'btn btn-danger btn-sm w-100 rounded-0'
+  deleteButton.innerHTML = 'Delete'
+  deleteCol.appendChild(deleteButton)
+
+  if (item.filename !== '') setItemContent(item, itemCol, item.filename)
 
   document.getElementById('itemList').appendChild(itemCol)
 }
 
-function setItemContent (item, file) {
+function setItemContent (item, itemEl, file) {
   // Populate the given element, item, with content.
 
-  const image = item.querySelector('.image-preview')
-  const video = item.querySelector('.video-preview')
-  const selectButton = item.querySelector('.select-button')
+  updateWorkingDefinition(['content', item.uuid, 'filename'], file)
+  previewDefinition(true)
 
-  item.setAttribute('data-filename', file)
+  const image = itemEl.querySelector('.image-preview')
+  const video = itemEl.querySelector('.video-preview')
+  const selectButton = itemEl.querySelector('.select-button')
+
+  itemEl.setAttribute('data-filename', file)
   const mimetype = constCommon.guessMimetype(file)
   selectButton.innerHTML = file
   if (mimetype === 'audio') {
