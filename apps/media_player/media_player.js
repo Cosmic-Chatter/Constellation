@@ -10,6 +10,11 @@ function updateParser (update) {
         loadDefinition(result.definition)
       })
   }
+
+  if ('autoplay_audio' in update && update.autoplay_audio === 'true') {
+    document.getElementById('fullscreenVideo').muted = false
+    document.getElementById('audioPlayer').muted = false
+  }
 }
 
 function loadDefinition (def) {
@@ -72,11 +77,14 @@ function changeMedia (source) {
   if (['mp4', 'mpeg', 'm4v', 'webm', 'mov', 'ogv', 'mpg'].includes(ext.toLowerCase())) {
     // Video file
     clearTimeout(sourceAdvanceTimer) // Only used for pictures
+    videoContainer.style.opacity = 1
+    imageContainer.style.opacity = 0
     audio.pause()
     if (video.src !== filename) {
       video.pause()
       video.src = filename
       video.load()
+      video.play()
     }
     if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
       video.loop = false
