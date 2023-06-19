@@ -148,6 +148,9 @@ function saveDefintion () {
     .then((result) => {
       if ('success' in result && result.success === true) {
         console.log('Saved!')
+        // Create a thumbnail
+        createThumbnail()
+
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
         constCommon.getAvailableDefinitions('media_player')
@@ -158,6 +161,25 @@ function saveDefintion () {
           })
       }
     })
+}
+
+function createThumbnail () {
+  // Ask the helper to createa video thumbnail based on the thumbnails of all the selected media.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+  const files = []
+  workingDefinition.content_order.forEach((uuid) => {
+    files.push(workingDefinition.content[uuid].filename)
+  })
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/files/thumbnailVideoFromFrames',
+    params: {
+      filename: workingDefinition.uuid,
+      frames: files
+    }
+  })
 }
 
 function resizePreview () {
@@ -260,23 +282,38 @@ function createItemHTML (item, num) {
   })
   orderButtonRightCol.appendChild(orderButtonRight)
 
+  const durationCol = document.createElement('div')
+  durationCol.classList = 'col-12 mt-2 duration-col'
+  cardBody.appendChild(durationCol)
+
+  const durationLabel = document.createElement('label')
+  durationLabel.classList = 'form-label'
+  durationLabel.innerHTML = `
+  Duration
+  <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The number of seconds the image should be displayed." style="font-size: 0.55em;">?</span>
+  `
+  durationCol.appendChild(durationLabel)
+
+  const durationInput = document.createElement('input')
+  durationInput.classList = 'form-control'
+  durationInput.setAttribute('placeholder', 30)
+  durationInput.setAttribute('type', 'number')
+  durationInput.value = item.duration
+  durationInput.addEventListener('input', (event) => {
+    const inputStr = event.target.value
+    let durationVal
+    if (inputStr.trim() === '') {
+      durationVal = 30
+    } else {
+      durationVal = parseFloat(inputStr)
+    }
+    updateWorkingDefinition(['content', item.uuid, 'duration'], durationVal)
+  })
+  durationCol.appendChild(durationInput)
   if (constCommon.guessMimetype(item.filename) === 'image') {
-    const durationCol = document.createElement('div')
-    durationCol.classList = 'col-12 mt-2'
-    cardBody.appendChild(durationCol)
-
-    const durationLabel = document.createElement('label')
-    durationLabel.classList = 'form-label'
-    durationLabel.innerHTML = `
-    Duration
-    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The number of seconds the image should be displayed." style="font-size: 0.55em;">?</span>
-    `
-    durationCol.appendChild(durationLabel)
-
-    const durationInput = document.createElement('input')
-    durationInput.classList = 'form-control'
-    durationInput.value = item.duration
-    durationCol.appendChild(durationInput)
+    durationCol.style.display = 'block'
+  } else {
+    durationCol.style.display = 'none'
   }
 
   const previewCol = document.createElement('div')
@@ -347,14 +384,20 @@ function setItemContent (item, itemEl, file) {
     image.src = constFileSelect.getDefaultAudioIcon()
     image.style.display = 'block'
     video.style.display = 'none'
+    // Hide the duration input
+    itemEl.querySelector('.duration-col').style.display = 'none'
   } else if (mimetype === 'image') {
     image.src = '/thumbnails/' + constCommon.withExtension(file, 'jpg')
     image.style.display = 'block'
     video.style.display = 'none'
+    // Show the duration input
+    itemEl.querySelector('.duration-col').style.display = 'block'
   } else if (mimetype === 'video') {
     video.src = '/thumbnails/' + constCommon.withExtension(file, 'mp4')
     video.style.display = 'block'
     image.style.display = 'none'
+    // Hide the duration input
+    itemEl.querySelector('.duration-col').style.display = 'none'
   }
 }
 

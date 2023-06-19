@@ -157,7 +157,8 @@ def rename_file(old_name: str, new_name: str, absolute: bool = False):
 def create_thumbnail(filename: str, mimetype: str):
     """Create a thumbnail from the given media file and add it to the thumbnails directory.
 
-    If the input is an image, a jpg is created. If the input is a video, a short preview gif is created."""
+    If the input is an image, a jpg is created. If the input is a video, a short preview mp4 and a
+    jpg are created."""
 
     try:
         if mimetype == "image":
@@ -170,11 +171,17 @@ def create_thumbnail(filename: str, mimetype: str):
             _, video_details = get_video_file_details(filename)
             duration_sec = round(video_details["duration"])
             file_path = get_path(['content', filename], user_file=True)
-            subprocess.Popen([ff.get_ffmpeg_bin(), "-y",
-                              "-i", file_path,
+
+            # Then, create the video thumbnail
+            subprocess.Popen([ffmpeg_path, "-y", "-i", file_path,
                               "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
                               "-an",
                               get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
+
+            # Finally, create the image thumbnail from the halfway point
+            subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec/2)), '-i', file_path,
+                              '-vframes', '1', "-vf", "scale=400:-1",
+                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
 
     except OSError as e:
         print("create_thumbnail: error:", e)
@@ -186,23 +193,26 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
     """Take a list of image filenames and use FFmpeg to turn it into a video thumbnail."""
 
     output_path = get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)
-    sec_per_frame = duration/len(frames)
-    try:
-        # Loop through the frames and build a temp file
-        temp_path = get_path(["temp.txt"])
-        with config.content_file_lock:
-            with open(temp_path, 'w', encoding='UTF-8') as f:
-                for frame in frames:
-                    f.write("file '" + os.path.relpath(get_path(["content", frame], user_file=True)) + "'\n")
-                    f.write('duration ' + str(sec_per_frame) + '\n')
-            process = subprocess.Popen([ffmpeg_path, "-y", "-f", "concat", "-i",
-                                        temp_path, '-filter:v', 'scale=400:-2', '-an', '-c:v', 'libx264', output_path])
-            process.communicate()
-            os.remove(temp_path)
+    fps = len(frames)/duration
 
-    except ImportError as e:
-        print("create_thumbnail: error loading FFmpeg: ", e)
-        return False
+    # First, render each file in a consistent format
+    for i, frame in enumerate(frames):
+        thumb_path, _ = get_thumbnail(frame, force_image=True)
+        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1', '-pix_fmt', 'yuv420p', get_path(["thumbnails", '__tempOutput_' + str(i) + '.png'], user_file=True)]
+        process = subprocess.Popen(command)
+        process.communicate()
+
+    # Then, stitch them together into a slideshow
+    command = [ffmpeg_path, '-y', '-r', str(fps), '-pattern_type', 'glob',
+               '-i', get_path(["thumbnails", '__tempOutput_*.png'], user_file=True),
+               '-c:v', 'libx264', '-pix_fmt', 'yuv420p', "-vf", "scale=400:-2", output_path]
+    process = subprocess.Popen(command)
+    process.communicate()
+
+    # Finally, delete the temp files
+    for i in range(len(frames)):
+        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i) + '.png'], user_file=True))
+
     return True
 
 
@@ -284,18 +294,20 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
     return success
 
 
-def get_thumbnail_name(filename: str) -> str:
-    """Return the filename converted to the appropriate Constellation thumbnail format"""
+def get_thumbnail_name(filename: str, force_image=False) -> str:
+    """Return the filename converted to the appropriate Constellation thumbnail format.
+
+    force_image = True returns a jpg thumbnail regardless of if the media is an image or video
+    """
 
     mimetype, _ = mimetypes.guess_type(filename)
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        if os.path.splitext(filename)[-1].lower() == '.webp':
-            # Hack to fix webp. Should be removed for python 3.10+
-            return with_extension(filename, "jpg")
         return ""
-    if mimetype == "image":
+    if mimetype == "audio":
+        return get_path(["_static", "icons", "audio_black.png"])
+    elif mimetype == "image" or force_image is True:
         return with_extension(filename, "jpg")
     elif mimetype == "video":
         return with_extension(filename, "mp4")
@@ -303,8 +315,11 @@ def get_thumbnail_name(filename: str) -> str:
     return ""
 
 
-def get_thumbnail(filename: str) -> (Union[str, None], str):
-    """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype"""
+def get_thumbnail(filename: str, force_image=False) -> (Union[str, None], str):
+    """Check the thumbnails directory for a file corresponding to the given filename and return its path and mimetype.
+
+    force_image=True returns a jpg thumbnail even for videos.
+    """
 
     thumb_name = get_thumbnail_name(filename)
     mimetype, _ = mimetypes.guess_type(filename)
@@ -312,9 +327,7 @@ def get_thumbnail(filename: str) -> (Union[str, None], str):
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        if os.path.splitext(filename)[-1].lower() == '.webp':
-            # Hack to fix webp. Should be removed for python 3.10+
-            mimetype = 'image'
+        return None, ''
 
     if thumb_name == "":
         return None, mimetype
@@ -331,6 +344,7 @@ def create_missing_thumbnails():
     """Check the content directory for files without thumbnails and create them"""
 
     content = get_all_directory_contents("content")
+
     for file in content:
         file_path, mimetype = get_thumbnail(file)
         if file_path is None:
@@ -359,7 +373,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["configuration", "content", "definitions", "images", "static", "style", "text", "thumbnails", "thumbs", "videos"]
+    dir_list = ["configuration", "content", "definitions", "static", "thumbnails"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

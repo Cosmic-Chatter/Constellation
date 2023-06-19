@@ -97,10 +97,6 @@ app.mount("/content",
 app.mount("/_fonts",
           StaticFiles(directory=helper_files.get_path(["_fonts"])),
           name="_fonts")
-app.mount("/images",
-          StaticFiles(directory=helper_files.get_path(
-              ["images"], user_file=True)),
-          name="images")
 app.mount("/_static",
           StaticFiles(directory=helper_files.get_path(["_static"])),
           name="_static")
@@ -108,26 +104,10 @@ app.mount("/static",
           StaticFiles(directory=helper_files.get_path(
               ["static"], user_file=True)),
           name="static")
-app.mount("/style",
-          StaticFiles(directory=helper_files.get_path(
-              ["style"], user_file=True)),
-          name="style")
-app.mount("/text",
-          StaticFiles(directory=helper_files.get_path(
-              ["text"], user_file=True)),
-          name="thumbs")
-app.mount("/thumbs",
-          StaticFiles(directory=helper_files.get_path(
-              ["thumbs"], user_file=True)),
-          name="thumbs")
 app.mount("/thumbnails",
           StaticFiles(directory=helper_files.get_path(
               ["thumbnails"], user_file=True)),
           name="thumbnails")
-app.mount("/videos",
-          StaticFiles(directory=helper_files.get_path(
-              ["videos"], user_file=True)),
-          name="videos")
 
 
 @lru_cache()
@@ -202,6 +182,8 @@ async def create_thumbnail_video_from_frames(
         filename: str = Body(description='The name of the output file, without an extension.'),
         frames: list[str] = Body(description='A list of the files to include'),
         duration: float = Body(description='The length of the output video in seconds.', default=5)):
+    """Create a video thumbnail out of the given files."""
+
     success = helper_files.create_thumbnail_video_from_frames(frames, filename, duration)
     return {"success": success}
 
