@@ -1023,7 +1023,24 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     selectedBadge.innerHTML = '✓'
     name.append(selectedBadge)
 
-    if (thumbnails.includes(uuid + '.jpg')) {
+    if (thumbnails.includes(uuid + '.mp4')) {
+      const thumbCol = document.createElement('div')
+      thumbCol.classList = 'col-12 bg-info pt-2'
+      row.append(thumbCol)
+
+      const thumb = document.createElement('video')
+      thumb.style.height = '100px'
+      thumb.style.width = '100%'
+      thumb.style.objectFit = 'contain'
+      thumb.setAttribute('autoplay', true)
+      thumb.muted = 'true'
+      thumb.setAttribute('loop', 'true')
+      thumb.setAttribute('playsinline', 'true')
+      thumb.setAttribute('webkit-playsinline', 'true')
+      thumb.setAttribute('disablePictureInPicture', 'true')
+      thumb.src = component.getHelperURL() + '/thumbnails/' + uuid + '.mp4'
+      thumbCol.appendChild(thumb)
+    } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-info pt-2'
       row.append(thumbCol)
