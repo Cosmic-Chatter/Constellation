@@ -41,11 +41,14 @@ function clearDefinitionInput (full = true) {
           content: {},
           content_order: []
         })
+        previewDefinition()
       })
   }
 
   // Definition details
   $('#definitionNameInput').val('')
+
+  document.getElementById('itemList').innerHTML = ''
 }
 
 function createNewDefinition () {

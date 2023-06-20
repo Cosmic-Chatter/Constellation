@@ -657,8 +657,12 @@ export function showExhibitComponentInfo (id) {
   $('#componentSaveConfirmationButton').hide()
   $('#componentAvailableContentRow').hide()
   $('#componentcontentUploadInterface').hide()
-  $('#componentInfoModalDefinitionSaveButton').hide()
   constMaint.setComponentInfoModalMaintenanceStatus(id)
+
+  // Definition tab
+  document.getElementById('definitionTabAppFilterSelect').value = 'all'
+  document.getElementById('definitionTabThumbnailsCheckbox').checked = true
+  $('#componentInfoModalDefinitionSaveButton').hide()
 
   if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
     $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
@@ -717,7 +721,7 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
-    if (['dmx_control', 'media_browser', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
+    if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
 
@@ -997,6 +1001,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     col.setAttribute('id', 'definitionButton_' + uuid)
     col.classList = 'col-6 col-sm-4 mt-2 handCursor definition-entry'
     $(col).data('definition', definition)
+    col.setAttribute('data-app', definition.app)
     col.addEventListener('click', () => {
       handleDefinitionItemSelection(uuid)
     })
@@ -1007,25 +1012,29 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
     const name = document.createElement('div')
     name.setAttribute('id', 'definitionButtonName_' + uuid)
-    name.classList = 'col-12 bg-primary rounded-top py-1 position-relative'
+    name.classList = 'col-12 bg-primary rounded-top py-1 position-relative definition-name'
+    if (component.definition === definition.uuid) {
+      name.classList.remove('bg-primary')
+      name.classList.add('bg-success')
+    }
     name.style.fontSize = '18px'
     name.innerHTML = definition.name
     row.appendChild(name)
 
-    const selectedBadge = document.createElement('span')
-    selectedBadge.setAttribute('id', 'definitionButtonSelectedBadge_' + uuid)
-    selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
-    selectedBadge.style.right = '0%'
-    selectedBadge.style.top = '0%'
-    if (component.definition !== definition.uuid) {
-      selectedBadge.style.display = 'none'
-    }
-    selectedBadge.innerHTML = '✓'
-    name.append(selectedBadge)
+    // const selectedBadge = document.createElement('span')
+    // selectedBadge.setAttribute('id', 'definitionButtonSelectedBadge_' + uuid)
+    // selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
+    // selectedBadge.style.right = '0%'
+    // selectedBadge.style.top = '0%'
+    // if (component.definition !== definition.uuid) {
+    //   selectedBadge.style.display = 'none'
+    // }
+    // selectedBadge.innerHTML = '✓'
+    // name.append(selectedBadge)
 
     if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
-      thumbCol.classList = 'col-12 bg-info pt-2'
+      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
       row.append(thumbCol)
 
       const thumb = document.createElement('video')
@@ -1042,7 +1051,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
       thumbCol.appendChild(thumb)
     } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
-      thumbCol.classList = 'col-12 bg-info pt-2'
+      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
       row.append(thumbCol)
 
       const thumb = document.createElement('img')
@@ -1067,9 +1076,11 @@ function handleDefinitionItemSelection (uuid) {
   // Called when a user clicks on the definition in the componentInfoModal.
 
   $('.definition-entry').removeClass('definition-selected')
+  $('.definition-name').removeClass('bg-success')
+  $('.definition-name').addClass('bg-primary')
   $('#definitionButton_' + uuid).addClass('definition-selected')
-  $('.definition-selected-button').hide()
-  $('#definitionButtonSelectedBadge_' + uuid).show()
+  $('#definitionButtonName_' + uuid).addClass('bg-primary')
+  $('#definitionButtonName_' + uuid).addClass('bg-success')
   $('#componentInfoModalDefinitionSaveButton').show()
 }
 
@@ -1464,7 +1475,7 @@ function getAllowableContentTypes (appID) {
     heartbeat: ['ini'],
     infostation: ['ini'],
     media_browser: ['const'],
-    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', 'aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'],
+    media_player: ['const'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
@@ -1479,6 +1490,37 @@ function getAllowableContentTypes (appID) {
   }
 
   return []
+}
+
+export function onDefinitionTabThumbnailsCheckboxChange () {
+  // Show/hide the definition thumbnails
+
+  const defList = document.getElementById('componentInfoModalDefinitionList')
+  const checkState = document.getElementById('definitionTabThumbnailsCheckbox').checked
+
+  Array.from(defList.querySelectorAll('.definition-thumbnail')).forEach((entry) => {
+    if (checkState === true) {
+      entry.style.display = 'block'
+    } else {
+      entry.style.display = 'none'
+    }
+  })
+}
+
+export function filterDefinitionListByApp () {
+  // Hide the definition widgets for any app not matching the specified one.
+
+  const appToShow = document.getElementById('definitionTabAppFilterSelect').value
+  const defList = document.getElementById('componentInfoModalDefinitionList')
+
+  Array.from(defList.querySelectorAll('.definition-entry')).forEach((entry) => {
+    const thisApp = entry.getAttribute('data-app')
+    if ((thisApp === appToShow) || (appToShow === 'all')) {
+      entry.style.display = 'block'
+    } else {
+      entry.style.display = 'none'
+    }
+  })
 }
 
 export function toggleExhibitComponentInfoSettingWarnings () {
@@ -1545,7 +1587,7 @@ export function submitComponentSettingsChange () {
     updateComponentInfoModalFromHelper(obj.id)
 
     // If we have a modern definition-based app, hide the content tab
-    if (['media_browser', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
+    if (['media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
       $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalContentTabButton').show()

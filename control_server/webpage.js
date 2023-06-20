@@ -1109,6 +1109,12 @@ $('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSet
 $('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID').on('input', function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
+document.getElementById('definitionTabAppFilterSelect').addEventListener('change', (event) => {
+  constExhibit.filterDefinitionListByApp()
+})
+document.getElementById('definitionTabThumbnailsCheckbox').addEventListener('change', (event) => {
+  constExhibit.onDefinitionTabThumbnailsCheckboxChange()
+})
 $('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
 document.getElementById('componentInfoModalViewScreenshot').addEventListener('click', () => {
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
@@ -1116,7 +1122,7 @@ document.getElementById('componentInfoModalViewScreenshot').addEventListener('cl
 })
 document.getElementById('componentInfoModalEditDMXButton').addEventListener('click', (event) => {
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
-  window.open(component.getHelperURL() + '/dmx_control.html?standalone=true', '_blank').focus();
+  window.open(component.getHelperURL() + '/dmx_control.html?standalone=true', '_blank').focus()
 })
 // Schedule tab
 // =========================
