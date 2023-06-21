@@ -156,7 +156,7 @@
         <li class="nav-item dropdown d-block d-lg-none">
           <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">More</a>
           <div class="dropdown-menu">
-            <a class="dropdown-item d-block d-sm-none" id="nav-schedule-tab" data-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
+            <a class="dropdown-item d-block d-sm-none" id="nav-schedule-dropdown-tab" data-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
             <a class="dropdown-item d-block d-sm-none" id="nav-issues-dropdown-tab" data-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
             <a class="dropdown-item d-block d-md-none" id="nav-analytics-dropdown-tab" data-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
             <a class="dropdown-item" id="nav-settings-dropdown-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
@@ -269,11 +269,21 @@
                     <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item d-none d-sm-block">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalMaintenanceTabButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item d-none d-sm-block">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalSettingsTabButton" data-toggle="tab" href="#componentInfoModalSettingsTab" role="tab" aria-controls="Settings" aria-selected="false">Settings</a>
+                    </li>
+
+                    <!-- Overflow buttons -->
+                    <li class="nav-item dropdown d-block d-sm-none">
+                      <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">More</a>
+                      <div class="dropdown-menu">
+                        <a class="nav-link px-3 px-sm-4" id="componentInfoModalMaintenanceTabDropdownButton" data-toggle="tab" href="#componentInfoModalMaintenanceTab" role="tab" aria-controls="Maintenance" aria-selected="false">Maintenance</a>
+                        <a class="nav-link px-3 px-sm-4" id="componentInfoModalSettingsTabDropdownButton" data-toggle="tab" href="#componentInfoModalSettingsTab" role="tab" aria-controls="Settings" aria-selected="false">Settings</a>
+
+                      </div>
                     </li>
                   </ul>
 
@@ -281,7 +291,7 @@
                     <!-- Definition pane -->
                     <div class="tab-pane fade show active" id="componentInfoModalDefinitionsTab" role="tabpanel" aria-labelledby="componentInfoModalDefinitionsTabButton">
                       <div class="row mx-1 mt-2">
-                        <div class="col-3">
+                        <div class="col-4 col-sm-3">
                           <div class="form-check">
                             <input class="form-check-input" type="checkbox" value="" id="definitionTabThumbnailsCheckbox" checked>
                             <label class="form-check-label" for="definitionTabThumbnailsCheckbox">
@@ -289,7 +299,7 @@
                             </label>
                           </div>
                         </div>
-                        <div class="col-3">
+                        <div class="col-4 col-sm-3">
                           <div class="form-group">
                             <select class="form-control form-control-sm" value="all" id="definitionTabAppFilterSelect">
                               <option value="all">All</option>
@@ -305,6 +315,23 @@
                             <label class="form-check-label sr-only" for="definitionTabAppFilterSelect">
                               Filter by app
                             </label>
+                          </div>
+                        </div>
+                        <div class="col-4 col-sm-3 offset-sm-3 col-md-2 offset-md-4">
+                          <div class="dropdown">
+                            <button class="btn btn-primary btn-sm w-100 dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                              New
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                              <a class="dropdown-item disabled" href="#">Infostation</a>
+                              <a class="dropdown-item" href="#">Media Browser</a>
+                              <a class="dropdown-item" href="#">Media Player</a>
+                              <a class="dropdown-item" href="#">Timelapse Viewer</a>
+                              <a class="dropdown-item" href="#">Timeline Explorer</a>
+                              <a class="dropdown-item" href="#">Voting Kiosk</a>
+                              <a class="dropdown-item disabled" href="#">Word Cloud Input</a>
+                              <a class="dropdown-item disabled" href="#">Word Cloud Viewer</a>
+                            </div>
                           </div>
                         </div>
                       </div>

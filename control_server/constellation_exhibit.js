@@ -1002,39 +1002,64 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     col.classList = 'col-6 col-sm-4 mt-2 handCursor definition-entry'
     $(col).data('definition', definition)
     col.setAttribute('data-app', definition.app)
-    col.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
 
     const row = document.createElement('div')
     row.classList = 'row px-2'
     col.appendChild(row)
 
-    const name = document.createElement('div')
+    const btnGroupCol = document.createElement('div')
+    btnGroupCol.classList = 'col-12 px-0 mx-0'
+    row.appendChild(btnGroupCol)
+
+    const btnGroup = document.createElement('div')
+    btnGroup.classList = 'btn-group w-100'
+    btnGroupCol.appendChild(btnGroup)
+
+    const name = document.createElement('button')
     name.setAttribute('id', 'definitionButtonName_' + uuid)
-    name.classList = 'col-12 bg-primary rounded-top py-1 position-relative definition-name'
+    name.classList = 'btn btn-primary definition-name w-75'
+    name.style.borderBottomLeftRadius = '0'
     if (component.definition === definition.uuid) {
-      name.classList.remove('bg-primary')
-      name.classList.add('bg-success')
+      name.classList.remove('btn-primary')
+      name.classList.add('btn-success')
     }
+    name.addEventListener('click', () => {
+      handleDefinitionItemSelection(uuid)
+    })
     name.style.fontSize = '18px'
     name.innerHTML = definition.name
-    row.appendChild(name)
+    btnGroup.appendChild(name)
 
-    // const selectedBadge = document.createElement('span')
-    // selectedBadge.setAttribute('id', 'definitionButtonSelectedBadge_' + uuid)
-    // selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
-    // selectedBadge.style.right = '0%'
-    // selectedBadge.style.top = '0%'
-    // if (component.definition !== definition.uuid) {
-    //   selectedBadge.style.display = 'none'
-    // }
-    // selectedBadge.innerHTML = '✓'
-    // name.append(selectedBadge)
+    const dropdownBtn = document.createElement('button')
+    dropdownBtn.classList = 'btn btn-primary dropdown-toggle dropdown-toggle-split definition-dropdown'
+    dropdownBtn.setAttribute('id', 'definitionButtonDropdown_' + uuid)
+    dropdownBtn.style.borderBottomRightRadius = '0'
+    dropdownBtn.setAttribute('data-toggle', 'dropdown')
+    dropdownBtn.setAttribute('aria-haspopup', 'true')
+    dropdownBtn.setAttribute('aria-expanded', 'false')
+    dropdownBtn.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
+    if (component.definition === definition.uuid) {
+      dropdownBtn.classList.remove('btn-primary')
+      dropdownBtn.classList.add('btn-success')
+    }
+    btnGroup.appendChild(dropdownBtn)
+
+    const dropdownMenu = document.createElement('div')
+    dropdownMenu.classList = 'dropdown-menu'
+    dropdownMenu.innerHTML = `
+    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
+    <a class="dropdown-item" href="#">Edit</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item text-danger" href="#">Delete</a>
+    `
+    btnGroup.appendChild(dropdownMenu)
 
     if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
       row.append(thumbCol)
 
       const thumb = document.createElement('video')
@@ -1052,6 +1077,9 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
       row.append(thumbCol)
 
       const thumb = document.createElement('img')
@@ -1066,6 +1094,9 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     app.classList = 'col-12 bg-info rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
+    app.addEventListener('click', () => {
+      handleDefinitionItemSelection(uuid)
+    })
     row.appendChild(app)
 
     $('#componentInfoModalDefinitionList').append(col)
@@ -1076,11 +1107,13 @@ function handleDefinitionItemSelection (uuid) {
   // Called when a user clicks on the definition in the componentInfoModal.
 
   $('.definition-entry').removeClass('definition-selected')
-  $('.definition-name').removeClass('bg-success')
-  $('.definition-name').addClass('bg-primary')
+  $('.definition-name').removeClass('btn-success')
+  $('.definition-name').addClass('btn-primary')
+  $('.definition-dropdown').removeClass('btn-success')
+  $('.definition-dropdown').addClass('btn-primary')
   $('#definitionButton_' + uuid).addClass('definition-selected')
-  $('#definitionButtonName_' + uuid).addClass('bg-primary')
-  $('#definitionButtonName_' + uuid).addClass('bg-success')
+  $('#definitionButtonName_' + uuid).addClass('btn-success')
+  $('#definitionButtonDropdown_' + uuid).addClass('btn-success')
   $('#componentInfoModalDefinitionSaveButton').show()
 }
 
