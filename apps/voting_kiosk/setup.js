@@ -2,24 +2,7 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
-
-function populateAvailableDefinitions (definitions) {
-  // Take a list of definitions and add them to the select.
-
-  $('#availableDefinitionSelect').empty()
-  availableDefinitions = definitions
-  const keys = Object.keys(definitions).sort()
-
-  keys.forEach((uuid) => {
-    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
-    const definition = definitions[uuid]
-    const option = document.createElement('option')
-    option.value = uuid
-    option.innerHTML = definition.name
-
-    $('#availableDefinitionSelect').append(option)
-  })
-}
+import * as constSetup from '../js/constellation_setup_common.js'
 
 function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
@@ -117,30 +100,11 @@ function createNewDefinition () {
   clearDefinitionInput()
 }
 
-function deleteDefinition () {
-  // Delete the definition currently listed in the select.
-
-  const definition = $('#availableDefinitionSelect').val()
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/definitions/' + definition + '/delete'
-  })
-    .then(() => {
-      constCommon.getAvailableDefinitions('voting_kiosk')
-        .then((response) => {
-          if ('success' in response && response.success === true) {
-            populateAvailableDefinitions(response.definitions)
-          }
-        })
-    })
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = getDefinitionByUUID(uuid)
+  const def = constSetup.getDefinitionByUUID(uuid)
   console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -266,9 +230,9 @@ function createSurveyOption (userDetails, populateEditor = false) {
 
   if (optionOrder.includes(details.uuid) === false) {
     optionOrder.push(details.uuid)
-    updateWorkingDefinition(['option_order', optionOrder])
+    constSetup.updateWorkingDefinition(['option_order', optionOrder])
     Object.keys(defaults).forEach((key) => {
-      updateWorkingDefinition(['options', details.uuid, key], details[key])
+      constSetup.updateWorkingDefinition(['options', details.uuid, key], details[key])
     })
   }
 
@@ -447,30 +411,6 @@ function setIconUserFile (file = '') {
   }
 }
 
-function updateWorkingDefinition (property, value) {
-  // Update a field in the working defintion.
-  // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
-  // for definition.style.color.headerColor
-
-  constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
-}
-
-function getDefinitionByUUID (uuid = '') {
-  // Return the definition with this UUID
-
-  if (uuid === '') {
-    uuid = $('#availableDefinitionSelect').val()
-  }
-  let matchedDef = null
-  Object.keys(availableDefinitions).forEach((key) => {
-    const def = availableDefinitions[key]
-    if (def.uuid === uuid) {
-      matchedDef = def
-    }
-  })
-  return matchedDef
-}
-
 function previewDefinition (automatic = false) {
   // Save the definition to a temporary file and load it into the preview frame.
   // If automatic == true, we've called this function beceause a definition field
@@ -509,20 +449,12 @@ function saveDefintion () {
         constCommon.getAvailableDefinitions('voting_kiosk')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              populateAvailableDefinitions(response.definitions)
+              constSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
       }
     })
-}
-
-function resizePreview () {
-  const paneWidth = $('#previewPane').width()
-  const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
-
-  $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
 function populateFontSelects () {
@@ -580,20 +512,8 @@ function populateFontSelects () {
     })
 }
 
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
-
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
-  previewDefinition(false)
-}
-
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
-
-
-// All the available definitions
-let availableDefinitions = {}
 
 // Set up the color pickers
 function setUpColorPickers () {
@@ -615,56 +535,21 @@ function setUpColorPickers () {
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
 
-constCommon.getAvailableDefinitions('voting_kiosk')
-  .then((response) => {
-    if ('success' in response && response.success === true) {
-      populateAvailableDefinitions(response.definitions)
-    }
-  })
-
-// Activate tooltips
-const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-tooltipTriggerList.map(function (tooltipTriggerEl) {
-  return new bootstrap.Tooltip(tooltipTriggerEl)
-})
-
 // Add event listeners
 // -------------------------------------------------------------
 
 // Main buttons
 $('#newDefinitionButton').click(createNewDefinition)
-$('#editDefinitionButton').click(() => {
-  editDefinition()
-})
 $('#definitionSaveButton').click(saveDefintion)
 $('#previewRefreshButton').click(() => {
   previewDefinition()
-})
-document.getElementById('previewRotateButton').addEventListener('click', () => {
-  rotatePreview()
-})
-
-// Definition delete popover button
-const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
-deleteDefinitionButton.setAttribute('data-bs-toggle', 'popover')
-deleteDefinitionButton.setAttribute('title', 'Are you sure?')
-deleteDefinitionButton.setAttribute('data-bs-content', '<a id="DefinitionDeletePopover" class="btn btn-danger w-100">Confirm</a>')
-deleteDefinitionButton.setAttribute('data-bs-trigger', 'focus')
-deleteDefinitionButton.setAttribute('data-bs-html', 'true')
-$(document).on('click', '#DefinitionDeletePopover', function () {
-  deleteDefinition()
-})
-deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionButton.focus() })
-const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-popoverTriggerList.map(function (popoverTriggerEl) {
-  return new bootstrap.Popover(popoverTriggerEl)
 })
 
 // Behavior fields
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['behavior', key], event.target.value)
+    constSetup.updateWorkingDefinition(['behavior', key], event.target.value)
     previewDefinition(true)
   })
 })
@@ -673,7 +558,7 @@ Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
 Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-def-key')
-    updateWorkingDefinition(['text', key], event.target.value)
+    constSetup.updateWorkingDefinition(['text', key], event.target.value)
     previewDefinition(true)
   })
 })
@@ -687,9 +572,9 @@ document.getElementById('optionInput_icon_user_file').addEventListener('click', 
     .then((result) => {
       if (result != null && result.length > 0) {
         const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-        updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
+        constSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
         document.getElementById('optionInput_icon').value = 'user'
-        updateWorkingDefinition(['options', id, 'icon'], 'user')
+        constSetup.updateWorkingDefinition(['options', id, 'icon'], 'user')
         setIconUserFile(result[0])
         previewDefinition(true)
       }
@@ -697,10 +582,10 @@ document.getElementById('optionInput_icon_user_file').addEventListener('click', 
 })
 document.getElementById('optionInput_icon_user_file_DeleteButton').addEventListener('click', () => {
   const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-  updateWorkingDefinition(['options', id, 'icon_user_file'], '')
+  constSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], '')
   setIconUserFile('')
   document.getElementById('optionInput_icon').value = ''
-  updateWorkingDefinition(['options', id, 'icon'], '')
+  constSetup.updateWorkingDefinition(['options', id, 'icon'], '')
   previewDefinition(true)
 })
 Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
@@ -708,7 +593,7 @@ Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
     const id = document.getElementById('optionEditor').getAttribute('data-option-id')
     const field = event.target.getAttribute('data-field')
     if (id == null) return
-    updateWorkingDefinition(['options', id, field], event.target.value)
+    constSetup.updateWorkingDefinition(['options', id, field], event.target.value)
     document.getElementById('OptionHeaderText_' + id).innerHTML = formatOptionHeader($('#definitionSaveButton').data('workingDefinition').options[id])
     previewDefinition(true)
   })
@@ -717,14 +602,14 @@ Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
-  updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
+  constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
   previewDefinition(true)
 })
 $('#uploadFontInput').change(onFontUploadChange)
 
 $('.font-select').change(function () {
   const value = $(this).val().trim()
-  updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
+  constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
   previewDefinition(true)
 })
 
@@ -732,7 +617,7 @@ $('.font-select').change(function () {
 Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
     previewDefinition(true)
   })
 })
@@ -743,9 +628,9 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
     const headerHeight = parseInt(document.getElementById('headerToButtonsSlider').value)
     const footerHeight = parseInt(document.getElementById('buttonsToFooterSlider').value)
     const buttonHeight = 100 - headerHeight - footerHeight
-    updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
-    updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
-    updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
     console.log(headerHeight, buttonHeight, footerHeight)
     previewDefinition(true)
   })
@@ -753,7 +638,7 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
 Array.from(document.querySelectorAll('.padding-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
+    constSetup.updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
     previewDefinition(true)
   })
 })
@@ -765,9 +650,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Preview frame
-window.addEventListener('load', resizePreview)
-window.addEventListener('resize', resizePreview)
-
 populateFontSelects()
 clearDefinitionInput()
+
+constSetup.configure({
+  app: 'voting_kiosk',
+  loadDefinition: editDefinition
+})

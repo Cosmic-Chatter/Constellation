@@ -2,24 +2,7 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
-
-function populateAvailableDefinitions (definitions) {
-  // Take a list of definitions and add them to the select.
-
-  $('#availableDefinitionSelect').empty()
-  availableDefinitions = definitions
-  const keys = Object.keys(definitions).sort()
-
-  keys.forEach((uuid) => {
-    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
-    const definition = definitions[uuid]
-    const option = document.createElement('option')
-    option.value = uuid
-    option.innerHTML = definition.name
-
-    $('#availableDefinitionSelect').append(option)
-  })
-}
+import * as constSetup from '../js/constellation_setup_common.js'
 
 function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
@@ -103,30 +86,11 @@ function createNewDefinition () {
   clearDefinitionInput()
 }
 
-function deleteDefinition () {
-  // Delete the definition currently listed in the select.
-
-  const definition = $('#availableDefinitionSelect').val()
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/definitions/' + definition + '/delete'
-  })
-    .then(() => {
-      constCommon.getAvailableDefinitions('media_browser')
-        .then((response) => {
-          if ('success' in response && response.success === true) {
-            populateAvailableDefinitions(response.definitions)
-          }
-        })
-    })
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = getDefinitionByUUID(uuid)
+  const def = constSetup.getDefinitionByUUID(uuid)
   console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -138,7 +102,7 @@ function editDefinition (uuid = '') {
   document.getElementById('spreadsheetSelect').setAttribute('data-filename', def.spreadsheet)
 
   // Attractor
-  if (def.attractor.trim() !== '') {
+  if ('attractor' in def && def.attractor.trim() !== '') {
     $('#attractorSelect').html(def.attractor)
   } else {
     $('#attractorSelect').html('Select file')
@@ -362,7 +326,7 @@ function createLanguageTab (code, displayName) {
     input.addEventListener('change', function () {
       let value = $(this).val()
       if (typeof value === 'string') value = value.trim()
-      updateWorkingDefinition(['languages', code, inputFields[key].property], value)
+      constSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
       previewDefinition(true)
     })
     col.appendChild(input)
@@ -418,39 +382,6 @@ function deleteLanguageFlag (lang) {
     }
   })
 }
-
-// function onSpreadsheetUploadChange () {
-//   // Classed when the user selects CSV files to upload
-
-//   const fileInput = $('#uploadSpreadsheetInput')[0]
-//   const files = fileInput.files
-//   const formData = new FormData()
-
-//   $('#uploadSpreadsheetName').html('Uploading')
-
-//   Object.keys(files).forEach((key) => {
-//     const file = files[key]
-//     formData.append('files', file)
-//   })
-
-//   const xhr = new XMLHttpRequest()
-//   xhr.open('POST', '/uploadContent', true)
-
-//   xhr.onreadystatechange = function () {
-//     if (this.readyState !== 4) return
-//     if (this.status === 200) {
-//       const response = JSON.parse(this.responseText)
-
-//       if ('success' in response) {
-//         $('#uploadSpreadsheetName').html('Upload new')
-//         populateSpreadsheetSelect()
-//       }
-//     } else if (this.status === 422) {
-//       console.log(JSON.parse(this.responseText))
-//     }
-//   }
-//   xhr.send(formData)
-// }
 
 function onFontUploadChange () {
   // Classed when the user selects font files to upload
@@ -513,38 +444,13 @@ function onFlagUploadChange (lang) {
       if ('success' in response) {
         $('#uploadFlagFilename_' + lang).html('Upload')
         $('#flagImg_' + lang).attr('src', '../content/' + newName)
-        updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
+        constSetup.updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
       }
     } else if (this.status === 422) {
       console.log(JSON.parse(this.responseText))
     }
   }
   xhr.send(formData)
-}
-
-function updateWorkingDefinition (property, value) {
-  // Update a field in the working defintion.
-  // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
-  // for definition.style.color.headerColor
-
-  constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
-  console.log($('#definitionSaveButton').data('workingDefinition'))
-}
-
-function getDefinitionByUUID (uuid = '') {
-  // Return the definition with this UUID
-
-  if (uuid === '') {
-    uuid = $('#availableDefinitionSelect').val()
-  }
-  let matchedDef = null
-  Object.keys(availableDefinitions).forEach((key) => {
-    const def = availableDefinitions[key]
-    if (def.uuid === uuid) {
-      matchedDef = def
-    }
-  })
-  return matchedDef
 }
 
 function previewDefinition (automatic = false) {
@@ -586,19 +492,11 @@ function saveDefintion () {
         constCommon.getAvailableDefinitions('media_browser')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              populateAvailableDefinitions(response.definitions)
+              constSetup.populateAvailableDefinitions(response.definitions)
             }
           })
       }
     })
-}
-
-function resizePreview () {
-  const paneWidth = $('#previewPane').width()
-  const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
-
-  $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
 function onAttractorFileChange () {
@@ -788,18 +686,8 @@ function populateKeySelects (keyList) {
   })
 }
 
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
-
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
-}
-
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
-
-// All the available definitions
-let availableDefinitions = {}
 
 // The input fields to specifiy content for each langauge
 const inputFields = {
@@ -870,55 +758,21 @@ function setUpColorPickers () {
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
 
-constCommon.getAvailableDefinitions('media_browser')
-  .then((response) => {
-    if ('success' in response && response.success === true) {
-      populateAvailableDefinitions(response.definitions)
-    }
-  })
-
-// Activate tooltips
-const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-tooltipTriggerList.map(function (tooltipTriggerEl) {
-  return new bootstrap.Tooltip(tooltipTriggerEl)
-})
-
 // Add event listeners
 // -------------------------------------------------------------
 
 // Main buttons
 $('#newDefinitionButton').click(createNewDefinition)
-$('#editDefinitionButton').click(() => {
-  editDefinition()
-})
 $('#definitionSaveButton').click(saveDefintion)
 $('#previewRefreshButton').click(() => {
   previewDefinition()
 })
-document.getElementById('previewRotateButton').addEventListener('click', () => {
-  rotatePreview()
-})
+
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true })
 })
 document.getElementById('checkContentButton').addEventListener('click', checkContentExists)
-
-// Definition delete popover button
-const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
-deleteDefinitionButton.setAttribute('data-bs-toggle', 'popover')
-deleteDefinitionButton.setAttribute('title', 'Are you sure?')
-deleteDefinitionButton.setAttribute('data-bs-content', '<a id="DefinitionDeletePopover" class="btn btn-danger w-100">Confirm</a>')
-deleteDefinitionButton.setAttribute('data-bs-trigger', 'focus')
-deleteDefinitionButton.setAttribute('data-bs-html', 'true')
-$(document).on('click', '#DefinitionDeletePopover', function () {
-  deleteDefinition()
-})
-deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionButton.focus() })
-const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-popoverTriggerList.map(function (popoverTriggerEl) {
-  return new bootstrap.Popover(popoverTriggerEl)
-})
 
 // Definition fields
 document.getElementById('spreadsheetSelect').addEventListener('click', (event) => {
@@ -950,7 +804,7 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 })
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
-  updateWorkingDefinition(['inactivity_timeout'], event.target.value)
+  constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
   previewDefinition(true)
 })
 
@@ -960,15 +814,15 @@ document.getElementById('inactivityTimeoutField').addEventListener('change', (ev
 //   previewDefinition(true)
 // })
 document.getElementById('itemsPerPageInput').addEventListener('change', (event) => {
-  updateWorkingDefinition(['style', 'layout', 'items_per_page'], parseInt(event.target.value))
+  constSetup.updateWorkingDefinition(['style', 'layout', 'items_per_page'], parseInt(event.target.value))
   previewDefinition(true)
 })
 document.getElementById('numColsSelect').addEventListener('change', (event) => {
-  updateWorkingDefinition(['style', 'layout', 'num_columns'], parseInt(event.target.value))
+  constSetup.updateWorkingDefinition(['style', 'layout', 'num_columns'], parseInt(event.target.value))
   previewDefinition(true)
 })
 document.getElementById('imageHeightSlider').addEventListener('input', (event) => {
-  updateWorkingDefinition(['style', 'layout', 'image_height'], parseInt(event.target.value))
+  constSetup.updateWorkingDefinition(['style', 'layout', 'image_height'], parseInt(event.target.value))
   previewDefinition(true)
 })
 Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
@@ -977,10 +831,10 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
     const captionHeight = parseInt(document.getElementById('lightboxCaptionHeightSlider').value)
     const creditHeight = parseInt(document.getElementById('lightboxCreditHeightSlider').value)
     const imageHeight = 100 - titleHeight - captionHeight - creditHeight
-    updateWorkingDefinition(['style', 'layout', 'lightbox_title_height'], titleHeight)
-    updateWorkingDefinition(['style', 'layout', 'lightbox_caption_height'], captionHeight)
-    updateWorkingDefinition(['style', 'layout', 'lightbox_credit_height'], creditHeight)
-    updateWorkingDefinition(['style', 'layout', 'lightbox_image_height'], imageHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_title_height'], titleHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_caption_height'], captionHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_credit_height'], creditHeight)
+    constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_image_height'], imageHeight)
     previewDefinition(true)
   })
 })
@@ -988,14 +842,14 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
-  updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
+  constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
   previewDefinition(true)
 })
 $('#uploadFontInput').change(onFontUploadChange)
 
 $('.font-select').change(function () {
   const value = $(this).val().trim()
-  updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
+  constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
   previewDefinition(true)
 })
 
@@ -1003,7 +857,7 @@ $('.font-select').change(function () {
 Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
     previewDefinition(true)
   })
 })
@@ -1015,12 +869,13 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Preview frame
-window.addEventListener('load', resizePreview)
-window.addEventListener('resize', resizePreview)
-
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
 populateFontSelects()
 clearDefinitionInput()
+
+constSetup.configure({
+  app: 'media_browser',
+  loadDefinition: editDefinition
+})

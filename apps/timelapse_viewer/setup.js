@@ -2,24 +2,7 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
-
-function populateAvailableDefinitions (definitions) {
-  // Take a list of definitions and add them to the select.
-
-  $('#availableDefinitionSelect').empty()
-  availableDefinitions = definitions
-  const keys = Object.keys(definitions).sort()
-
-  keys.forEach((uuid) => {
-    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
-    const definition = definitions[uuid]
-    const option = document.createElement('option')
-    option.value = uuid
-    option.innerHTML = definition.name
-
-    $('#availableDefinitionSelect').append(option)
-  })
-}
+import * as constSetup from '../js/constellation_setup_common.js'
 
 function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
@@ -74,30 +57,11 @@ function createNewDefinition () {
   clearDefinitionInput()
 }
 
-function deleteDefinition () {
-  // Delete the definition currently listed in the select.
-
-  const definition = $('#availableDefinitionSelect').val()
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/definitions/' + definition + '/delete'
-  })
-    .then(() => {
-      constCommon.getAvailableDefinitions('timelapse_viewer')
-        .then((response) => {
-          if ('success' in response && response.success === true) {
-            populateAvailableDefinitions(response.definitions)
-          }
-        })
-    })
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = getDefinitionByUUID(uuid)
+  const def = constSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -138,6 +102,7 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=' + def.uuid
+  previewDefinition()
 }
 
 function onFontUploadChange () {
@@ -186,239 +151,6 @@ function disableAttractorOptions (disable) {
   }
 }
 
-function formatOptionHeader (details) {
-  // Return a string that labels the option with the best information we have
-  if (details.label !== '') return details.label
-  if (details.value !== '') return details.value
-  if (details.icon !== '') {
-    if (details.icon === 'user' && details.icon_user_file !== '') return details.icon_user_file
-    return details.icon
-  }
-  return 'New Option'
-}
-
-function createSurveyOption (userDetails, populateEditor = false) {
-  // Create the HTML representation of a survey question and add it to the row.
-
-  const optionOrder = $('#definitionSaveButton').data('workingDefinition').option_order
-
-  const defaults = {
-    uuid: String(Math.random() * 1e20),
-    label: '',
-    value: '',
-    icon: '',
-    icon_user_file: ''
-  }
-  // Merge in user details
-  const details = { ...defaults, ...userDetails }
-
-  if (optionOrder.includes(details.uuid) === false) {
-    optionOrder.push(details.uuid)
-    updateWorkingDefinition(['option_order', optionOrder])
-    Object.keys(defaults).forEach((key) => {
-      updateWorkingDefinition(['options', details.uuid, key], details[key])
-    })
-  }
-
-  const col = document.createElement('div')
-  col.setAttribute('id', 'Option_' + details.uuid)
-  col.classList = 'col col-12 mt-2'
-
-  const container = document.createElement('div')
-  container.classList = 'mx-3'
-  col.appendChild(container)
-
-  const topRow = document.createElement('div')
-  topRow.classList = 'row'
-  container.appendChild(topRow)
-
-  const headerCol = document.createElement('div')
-  headerCol.classList = 'col-12 bg-secondary rounded-top'
-  topRow.appendChild(headerCol)
-
-  const headerText = document.createElement('div')
-  headerText.setAttribute('id', 'OptionHeaderText_' + details.uuid)
-  headerText.classList = 'text-light w-100 text-center font-weight-bold'
-  headerText.innerHTML = formatOptionHeader(details) || 'New option'
-  headerCol.appendChild(headerText)
-
-  const bottomRow = document.createElement('div')
-  bottomRow.classList = 'row'
-  container.appendChild(bottomRow)
-
-  const editCol = document.createElement('div')
-  editCol.classList = 'col-12 col-sm-6 col-lg-3 mx-0 px-0'
-  bottomRow.appendChild(editCol)
-
-  const editButton = document.createElement('button')
-  editButton.classList = 'btn btn-sm rounded-0 text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
-  editButton.style.cursor = 'pointer'
-  editButton.innerHTML = 'Edit'
-  editButton.addEventListener('click', () => {
-    populateOptionEditor(details.uuid)
-  })
-  editCol.appendChild(editButton)
-
-  const deleteCol = document.createElement('div')
-  deleteCol.classList = 'col-12 col-sm-6 col-lg-3 mx-0 px-0'
-  bottomRow.appendChild(deleteCol)
-
-  const deleteButton = document.createElement('button')
-  deleteButton.classList = 'btn btn-sm rounded-0 text-light bg-danger w-100 h-100 justify-content-center d-flex pl-1'
-  deleteButton.style.cursor = 'pointer'
-  deleteButton.innerHTML = 'Delete'
-  deleteButton.setAttribute('data-bs-toggle', 'popover')
-  deleteButton.setAttribute('title', 'Are you sure?')
-  deleteButton.setAttribute('data-bs-content', `<a id="DeleteOptionPopover_${details.uuid}" class="btn btn-danger w-100">Confirm</a>`)
-  deleteButton.setAttribute('data-bs-trigger', 'focus')
-  deleteButton.setAttribute('data-bs-html', 'true')
-  $(document).on('click', '#DeleteOptionPopover_' + details.uuid, function () {
-    deleteOption(details.uuid)
-  })
-  deleteButton.addEventListener('click', function () { deleteButton.focus() })
-  deleteCol.appendChild(deleteButton)
-
-  const leftArrowCol = document.createElement('div')
-  leftArrowCol.classList = 'col-6 col-lg-3 mx-0 px-0'
-  bottomRow.appendChild(leftArrowCol)
-
-  const leftArrowButton = document.createElement('button')
-  leftArrowButton.classList = 'btn btn-sm rounded-0 text-light bg-primary w-100 h-100 justify-content-center d-flex'
-  leftArrowButton.style.cursor = 'pointer'
-  leftArrowButton.innerHTML = '◀'
-  leftArrowButton.addEventListener('click', () => {
-    changeOptionOrder(details.uuid, -1)
-  })
-  leftArrowCol.appendChild(leftArrowButton)
-
-  const RightArrowCol = document.createElement('div')
-  RightArrowCol.classList = 'col-6 col-lg-3 mx-0 px-0'
-  bottomRow.appendChild(RightArrowCol)
-
-  const rightArrowButton = document.createElement('button')
-  rightArrowButton.classList = 'btn btn-sm rounded-0 text-light bg-primary w-100 h-100 justify-content-center d-flex'
-  rightArrowButton.style.cursor = 'pointer'
-  rightArrowButton.innerHTML = '▶'
-  rightArrowButton.addEventListener('click', () => {
-    changeOptionOrder(details.uuid, 1)
-  })
-  RightArrowCol.appendChild(rightArrowButton)
-
-  document.getElementById('optionRow').appendChild(col)
-
-  if (populateEditor === true) {
-    populateOptionEditor(details.uuid)
-  }
-
-  // Activate the popover
-  const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-  popoverTriggerList.map(function (popoverTriggerEl) {
-    return new bootstrap.Popover(popoverTriggerEl)
-  })
-}
-
-function deleteOption (uuid) {
-  // Delete an option and rebuild the GUI
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-
-  // Delete from the options dictionary
-  delete def.options[uuid]
-
-  // Delete from option order array
-  const searchFunc = (el) => el === uuid
-  const index = def.option_order.findIndex(searchFunc)
-  if (index > -1) { // only splice array when item is found
-    def.option_order.splice(index, 1)
-  }
-
-  // Rebuild the optionList GUI
-  document.getElementById('optionRow').innerHTML = ''
-  def.option_order.forEach((optionUUID) => {
-    const option = def.options[optionUUID]
-    createSurveyOption(option)
-  })
-  previewDefinition(true)
-}
-
-function changeOptionOrder (uuid, direction) {
-  // Move the option given by uuid in the direction specified
-  // direction should be -1 or 1
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  const searchFunc = (el) => el === uuid
-  const currentIndex = def.option_order.findIndex(searchFunc)
-
-  // Handle the edge cases
-  if (currentIndex === 0 && direction < 0) return
-  if (currentIndex === def.option_order.length - 1 && direction > 0) return
-
-  // Handle middle cases
-  const newIndex = currentIndex + direction
-  const currentValueOfNewIndex = def.option_order[newIndex]
-  def.option_order[newIndex] = uuid
-  def.option_order[currentIndex] = currentValueOfNewIndex
-
-  // Rebuild the optionList GUI
-  document.getElementById('optionRow').innerHTML = ''
-  def.option_order.forEach((optionUUID) => {
-    const option = def.options[optionUUID]
-    createSurveyOption(option)
-  })
-  previewDefinition(true)
-}
-
-function populateOptionEditor (id) {
-  // Take the details from an option and fill in the editor GUI
-
-  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-  const details = workingDefinition.options[id]
-  document.getElementById('optionEditor').setAttribute('data-option-id', id)
-
-  // Fill in the input fields
-  document.getElementById('optionInput_label').value = details.label
-  document.getElementById('optionInput_value').value = details.value
-  document.getElementById('optionInput_icon').value = details.icon
-  setIconUserFile(details.icon_user_file)
-}
-
-function setIconUserFile (file = '') {
-  // Set the icon_user_file style option and format the GUI to match.
-  if (file !== '') {
-    document.getElementById('optionInput_icon_user_file').innerHTML = file
-    document.getElementById('optionInput_icon_user_file_DeleteButtonCol').style.display = 'block'
-    document.getElementById('optionInput_icon_user_file_Col').classList.add('col-lg-9')
-  } else {
-    document.getElementById('optionInput_icon_user_file').innerHTML = 'Select file'
-    document.getElementById('optionInput_icon_user_file_DeleteButtonCol').style.display = 'none'
-    document.getElementById('optionInput_icon_user_file_Col').classList.remove('col-lg-9')
-  }
-}
-
-function updateWorkingDefinition (property, value) {
-  // Update a field in the working defintion.
-  // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
-  // for definition.style.color.headerColor
-
-  constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
-}
-
-function getDefinitionByUUID (uuid = '') {
-  // Return the definition with this UUID
-
-  if (uuid === '') {
-    uuid = $('#availableDefinitionSelect').val()
-  }
-  let matchedDef = null
-  Object.keys(availableDefinitions).forEach((key) => {
-    const def = availableDefinitions[key]
-    if (def.uuid === uuid) {
-      matchedDef = def
-    }
-  })
-  return matchedDef
-}
-
 function previewDefinition (automatic = false) {
   // Save the definition to a temporary file and load it into the preview frame.
   // If automatic == true, we've called this function beceause a definition field
@@ -457,20 +189,12 @@ function saveDefintion () {
         constCommon.getAvailableDefinitions('timelapse_viewer')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              populateAvailableDefinitions(response.definitions)
+              constSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
       }
     })
-}
-
-function resizePreview () {
-  const paneWidth = $('#previewPane').width()
-  const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
-
-  $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
 function populateFontSelects () {
@@ -543,7 +267,6 @@ function guessFilenamePattern () {
   const firstNoExt = firstSplit.join('.')
 
   const lastSplit = last.split('.')
-  const lastExt = lastSplit.pop()
   const lastNoExt = lastSplit.join('.')
 
   // Find common prefix
@@ -554,7 +277,7 @@ function guessFilenamePattern () {
     } else break
   }
   const pattern = prefix + '*.' + firstExt
-  updateWorkingDefinition(['files'], pattern)
+  constSetup.updateWorkingDefinition(['files'], pattern)
   document.getElementById('filePatternInput').value = pattern
 
   retrieveMatchingFilesCount()
@@ -577,17 +300,6 @@ function retrieveMatchingFilesCount () {
     document.getElementById('filenamePatternMatches').value = matchedFiles.length
   })
 }
-
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
-
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
-  previewDefinition(false)
-}
-
-// All the available definitions
-let availableDefinitions = {}
 
 // Set up the color pickers
 function setUpColorPickers () {
@@ -615,56 +327,21 @@ let matchedFiles = []
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
 
-constCommon.getAvailableDefinitions('timelapse_viewer')
-  .then((response) => {
-    if ('success' in response && response.success === true) {
-      populateAvailableDefinitions(response.definitions)
-    }
-  })
-
-// Activate tooltips
-const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-tooltipTriggerList.map(function (tooltipTriggerEl) {
-  return new bootstrap.Tooltip(tooltipTriggerEl)
-})
-
 // Add event listeners
 // -------------------------------------------------------------
 
 // Main buttons
 $('#newDefinitionButton').click(createNewDefinition)
-$('#editDefinitionButton').click(() => {
-  editDefinition()
-})
 $('#definitionSaveButton').click(saveDefintion)
 $('#previewRefreshButton').click(() => {
   previewDefinition()
-})
-document.getElementById('previewRotateButton').addEventListener('click', () => {
-  rotatePreview()
-})
-
-// Definition delete popover button
-const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
-deleteDefinitionButton.setAttribute('data-bs-toggle', 'popover')
-deleteDefinitionButton.setAttribute('title', 'Are you sure?')
-deleteDefinitionButton.setAttribute('data-bs-content', '<a id="DefinitionDeletePopover" class="btn btn-danger w-100">Confirm</a>')
-deleteDefinitionButton.setAttribute('data-bs-trigger', 'focus')
-deleteDefinitionButton.setAttribute('data-bs-html', 'true')
-$(document).on('click', '#DefinitionDeletePopover', function () {
-  deleteDefinition()
-})
-deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionButton.focus() })
-const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-popoverTriggerList.map(function (popoverTriggerEl) {
-  return new bootstrap.Popover(popoverTriggerEl)
 })
 
 // Behavior fields
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['behavior', key], event.target.value)
+    constSetup.updateWorkingDefinition(['behavior', key], event.target.value)
     previewDefinition(true)
   })
 })
@@ -737,7 +414,7 @@ document.getElementById('videoConversionModalSubmitButton').addEventListener('cl
 
 // Pattern generation
 document.getElementById('filePatternInput').addEventListener('change', (event) => {
-  updateWorkingDefinition(['files'], event.target.value)
+  constSetup.updateWorkingDefinition(['files'], event.target.value)
   retrieveMatchingFilesCount()
   previewDefinition(true)
 })
@@ -785,7 +462,7 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
 Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['attractor', property], event.target.value)
+    constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
     previewDefinition(true)
   })
 })
@@ -793,7 +470,7 @@ Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
 Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['attractor', property], event.target.checked)
+    constSetup.updateWorkingDefinition(['attractor', property], event.target.checked)
     // If we aren't using the attractor, disable the options
     if (event.target.getAttribute('id') === 'attractorCheck_use_attractor') {
       if (event.target.checked) {
@@ -813,7 +490,7 @@ document.getElementById('uploadFontInput').addEventListener('change', onFontUplo
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    updateWorkingDefinition(['attractor', property], event.target.value)
+    constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
     previewDefinition(true)
   })
 })
@@ -825,9 +502,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Preview frame
-window.addEventListener('load', resizePreview)
-window.addEventListener('resize', resizePreview)
-
 populateFontSelects()
 clearDefinitionInput()
+
+constSetup.configure({
+  app: 'timelapse_viewer',
+  loadDefinition: editDefinition
+})

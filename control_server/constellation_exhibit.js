@@ -746,6 +746,7 @@ export function showExhibitComponentInfo (id) {
 
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
+    configureNewDefinitionOptions(obj)
   } else {
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
@@ -873,6 +874,15 @@ function populateProjectorInfo (id) {
       createProjectorLampStatusEntry(lampList[i], i)
     }
   }
+}
+
+function configureNewDefinitionOptions (obj) {
+  // Use the given IP address to configure the URLs for creating new definitions.
+
+  Array.from(document.querySelectorAll('.defintion-new-option')).forEach((el) => {
+    const app = el.getAttribute('data-app')
+    el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+  })
 }
 
 export function convertAppIDtoDisplayName (appName) {
@@ -1048,9 +1058,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     dropdownMenu.classList = 'dropdown-menu'
     dropdownMenu.innerHTML = `
     <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
-    <a class="dropdown-item" href="#">Edit</a>
-    <div class="dropdown-divider"></div>
-    <a class="dropdown-item text-danger" href="#">Delete</a>
+    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
     `
     btnGroup.appendChild(dropdownMenu)
 

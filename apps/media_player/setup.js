@@ -2,24 +2,7 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
-
-function populateAvailableDefinitions (definitions) {
-  // Take a list of definitions and add them to the select.
-
-  $('#availableDefinitionSelect').empty()
-  availableDefinitions = definitions
-  const keys = Object.keys(definitions).sort()
-
-  keys.forEach((uuid) => {
-    if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
-    const definition = definitions[uuid]
-    const option = document.createElement('option')
-    option.value = uuid
-    option.innerHTML = definition.name
-
-    $('#availableDefinitionSelect').append(option)
-  })
-}
+import * as constSetup from '../js/constellation_setup_common.js'
 
 function clearDefinitionInput (full = true) {
   // Clear all input related to a defnition
@@ -57,31 +40,12 @@ function createNewDefinition () {
   clearDefinitionInput()
 }
 
-function deleteDefinition () {
-  // Delete the definition currently listed in the select.
-
-  const definition = $('#availableDefinitionSelect').val()
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/definitions/' + definition + '/delete'
-  })
-    .then(() => {
-      constCommon.getAvailableDefinitions('media_player')
-        .then((response) => {
-          if ('success' in response && response.success === true) {
-            populateAvailableDefinitions(response.definitions)
-          }
-        })
-    })
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = getDefinitionByUUID(uuid)
-  console.log(def)
+  const def = constSetup.getDefinitionByUUID(uuid)
+
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -90,31 +54,6 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../media_player.html?standalone=true&definition=' + def.uuid
-}
-
-function updateWorkingDefinition (property, value) {
-  // Update a field in the working defintion.
-  // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
-  // for definition.style.color.headerColor
-
-  constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
-  console.log($('#definitionSaveButton').data('workingDefinition'))
-}
-
-function getDefinitionByUUID (uuid = '') {
-  // Return the definition with this UUID
-
-  if (uuid === '') {
-    uuid = $('#availableDefinitionSelect').val()
-  }
-  let matchedDef = null
-  Object.keys(availableDefinitions).forEach((key) => {
-    const def = availableDefinitions[key]
-    if (def.uuid === uuid) {
-      matchedDef = def
-    }
-  })
-  return matchedDef
 }
 
 function previewDefinition (automatic = false) {
@@ -159,7 +98,7 @@ function saveDefintion () {
         constCommon.getAvailableDefinitions('media_player')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              populateAvailableDefinitions(response.definitions)
+              constSetup.populateAvailableDefinitions(response.definitions)
             }
           })
       }
@@ -183,14 +122,6 @@ function createThumbnail () {
       frames: files
     }
   })
-}
-
-function resizePreview () {
-  const paneWidth = $('#previewPane').width()
-  const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
-
-  $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
 function addItem () {
@@ -310,7 +241,7 @@ function createItemHTML (item, num) {
     } else {
       durationVal = parseFloat(inputStr)
     }
-    updateWorkingDefinition(['content', item.uuid, 'duration'], durationVal)
+    constSetup.updateWorkingDefinition(['content', item.uuid, 'duration'], durationVal)
   })
   durationCol.appendChild(durationInput)
   if (constCommon.guessMimetype(item.filename) === 'image') {
@@ -373,7 +304,7 @@ function createItemHTML (item, num) {
 function setItemContent (item, itemEl, file) {
   // Populate the given element, item, with content.
 
-  updateWorkingDefinition(['content', item.uuid, 'filename'], file)
+  constSetup.updateWorkingDefinition(['content', item.uuid, 'filename'], file)
   previewDefinition(true)
 
   const image = itemEl.querySelector('.image-preview')
@@ -447,13 +378,6 @@ function rebuildItemList () {
   })
 }
 
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
-
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
-}
-
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.querySelector('html').setAttribute('data-bs-theme', 'dark')
@@ -463,16 +387,6 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
-
-// All the available definitions
-let availableDefinitions = {}
-
-constCommon.getAvailableDefinitions('media_player')
-  .then((response) => {
-    if ('success' in response && response.success === true) {
-      populateAvailableDefinitions(response.definitions)
-    }
-  })
 
 // Activate tooltips
 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -485,35 +399,13 @@ tooltipTriggerList.map(function (tooltipTriggerEl) {
 
 // Main buttons
 $('#newDefinitionButton').click(createNewDefinition)
-$('#editDefinitionButton').click(() => {
-  editDefinition()
-})
 $('#definitionSaveButton').click(saveDefintion)
 $('#previewRefreshButton').click(() => {
   previewDefinition()
 })
-document.getElementById('previewRotateButton').addEventListener('click', () => {
-  rotatePreview()
-})
 
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true, filetypes: ['audio', 'image', 'video'] })
-})
-
-// Definition delete popover button
-const deleteDefinitionButton = document.getElementById('deleteDefinitionButton')
-deleteDefinitionButton.setAttribute('data-bs-toggle', 'popover')
-deleteDefinitionButton.setAttribute('title', 'Are you sure?')
-deleteDefinitionButton.setAttribute('data-bs-content', '<a id="DefinitionDeletePopover" class="btn btn-danger w-100">Confirm</a>')
-deleteDefinitionButton.setAttribute('data-bs-trigger', 'focus')
-deleteDefinitionButton.setAttribute('data-bs-html', 'true')
-$(document).on('click', '#DefinitionDeletePopover', function () {
-  deleteDefinition()
-})
-deleteDefinitionButton.addEventListener('click', function () { deleteDefinitionButton.focus() })
-const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-popoverTriggerList.map(function (popoverTriggerEl) {
-  return new bootstrap.Popover(popoverTriggerEl)
 })
 
 // Content
@@ -521,11 +413,12 @@ document.getElementById('addItemButton').addEventListener('click', (event) => {
   addItem()
 })
 
-// Preview frame
-window.addEventListener('load', resizePreview)
-window.addEventListener('resize', resizePreview)
-
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
 clearDefinitionInput()
+
+constSetup.configure({
+  app: 'media_player',
+  loadDefinition: editDefinition
+})
