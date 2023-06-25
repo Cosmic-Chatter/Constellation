@@ -1,8 +1,8 @@
 # **Constellation 3.2**
-__*Constellation*__ 3.2 provides a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.
+__*Constellation*__ 3.2 introduces a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.
 
 ## <ins>New features</ins>
-- Run __*Constellation*__ as a self-contained app.
+- Run __*Constellation*__ as a self-contained app. `BETA`
 - Create and manage complex lighting setups with DMX Control.
   - Connect to DMX devices using an OpenDMX or uDMX controller.
   - Bridge multiple DMX universes with groups. 

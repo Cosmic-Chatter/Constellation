@@ -21,7 +21,6 @@ A simple spreadsheet might look like this:
  | Pluto.jpg        | Pluto   | NASA         | Pluto is the best-studied Kuiper belt object.                             |
 
 Each line in the spreadsheet will represent one item in the browser. The name of each column is called its `key`. The media files (listed here under the `File` key) should be placed in the standard **_Constellation_** `content` directory.
-                         |
 
 #### Thumbnails
 The thumbnail is the first representation of the item that your user will see. If you upload your files through the web interface, **_Constellation_** will create a thumbnail for you. For more control over the thumbnails, you may provide your own. To do this, place these files in the `thumbnails` directory. They must have the same filename as the main image, and use the JPEG extension `.jpg`.
