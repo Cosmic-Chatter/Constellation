@@ -119,6 +119,7 @@ class DMXFixture {
     this.uuid = uuid
 
     this.channelValues = {}
+    this.valueMemory = {} // A place to store values temporarily when making changes.
     this.universe = null
     this.groups = [] // Hold the name of every group this fixture is in
   }
@@ -201,6 +202,33 @@ class DMXFixture {
     })
   }
 
+  locateStart() {
+    // Send max brightness values to aid in finding the fixture.
+
+    // Cycle the possible color channels + dimmer
+    ['a', 'b', 'dimmer', 'g', 'r', 'uv', 'w'].forEach((channel) => {
+      if (channel in this.channelValues) {
+        // First, save the current value
+        this.valueMemory[channel] = this.channelValues[channel]
+        // Then, set the max values
+        this.channelValues[channel] = 255
+        this.sendChannelUpdate(channel)
+      }
+    })
+  }
+
+  locateEnd() {
+    // Reset the brightness values to their pre-locate values.
+
+    // Cycle the possible color channels + dimmer
+    ['a', 'b', 'dimmer', 'g', 'r', 'uv', 'w'].forEach((channel) => {
+      if (channel in this.channelValues) {
+        this.channelValues[channel] = this.valueMemory[channel]
+        this.sendChannelUpdate(channel)
+      }
+    })
+  }
+
   createHTML (collectionName) {
     // Create the HTML representation for this fixture.
     // collectionName is the name of the universe/group/scene this HTML widget is being rendered for.
@@ -212,12 +240,31 @@ class DMXFixture {
 
     const row = document.createElement('div')
     row.classList = 'row mx-0'
+    row.style.backgroundColor = '#28587B'
     col.appendChild(row)
 
     const headerText = document.createElement('div')
-    headerText.classList = 'col-8 fixture-header'
+    headerText.classList = 'col-5 fixture-header'
     headerText.innerHTML = this.name
     row.appendChild(headerText)
+
+    const locateCol = document.createElement('div')
+    locateCol.classList = 'col-3'
+    row.appendChild(locateCol)
+
+    const locateBtn = document.createElement('button')
+    locateBtn.classList = 'btn btn-sm btn-secondary w-100'
+    locateBtn.innerHTML = 'Locate'
+    locateBtn.addEventListener('mousedown', (event) => {
+      this.locateStart()
+    })
+    locateBtn.addEventListener('mouseup', (event) => {
+      this.locateEnd()
+    })
+    locateBtn.addEventListener('mouseleave', (event) => {
+      this.locateEnd()
+    })
+    locateCol.appendChild(locateBtn)
 
     const colorPickerCol = document.createElement('div')
     colorPickerCol.classList = 'col-4 px-0 mx-0'
