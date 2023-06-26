@@ -167,7 +167,7 @@ class DMXFixture {
 
   sendGenericChannelUpdate (channel) {
     // Send a message to the helper asking it to update the given channel
-
+    console.log(channel, this.channelValues[channel])
     constCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/' + this.uuid + '/setChannel',

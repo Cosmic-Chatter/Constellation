@@ -575,7 +575,7 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
                                   duration: float = Body(description="How long the transition should take.",
                                                          default=0)):
     """Set the given channel of the given fixture to the given value."""
-
+    
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_channel(channel_name, value)
     return {"success": True, "configuration": fixture.get_dict()}

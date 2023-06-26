@@ -10,12 +10,24 @@ export function populateDMXScenesForInfoModal(groups, helperURL) {
         group.scenes.forEach(scene => {
             const col = document.createElement('div')
             col.classList = 'col-6 col-sm-4 mt-2 handCursor dmx-entry'
-            col.addEventListener('click', () => {
+            col.addEventListener('click', (event) => {
                 constTools.makeRequest({
                     method: 'POST',
                     url: helperURL,
                     endpoint: '/DMX/group/' + group.uuid + '/showScene',
                     params: {uuid: scene.uuid}
+                })
+                .then((response) => {
+                    if ('success' in response && response.success === true) {
+                        console.log(event.target)
+                        const nameEl = document.getElementById('DMXEntryName_' + scene.uuid)
+                        nameEl.classList.add('bg-success')
+                        nameEl.classList.remove('bg-primary')
+                        setTimeout(() => {
+                            nameEl.classList.remove('bg-success')
+                            nameEl.classList.add('bg-primary')
+                        }, 1000)
+                    }
                 })
             })
             container.appendChild(col)
@@ -26,6 +38,7 @@ export function populateDMXScenesForInfoModal(groups, helperURL) {
 
             const name = document.createElement('div')
             name.classList = 'col-12 bg-primary rounded-top py-1 position-relative'
+            name.setAttribute('id', 'DMXEntryName_' + scene.uuid)
             name.style.fontSize = '18px'
             name.innerHTML = scene.name
             row.appendChild(name)

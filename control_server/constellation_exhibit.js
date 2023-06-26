@@ -721,24 +721,25 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
+
+    // Fetch any DMX lighting scenes and show the tab if necessary
+    constTools.makeRequest({
+      method: 'GET',
+      url: obj.getHelperURL(),
+      endpoint: '/DMX/getScenes'
+    })
+      .then((result) => {
+        console.log(result)
+        constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
+      })
+      .catch((error) => {
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+      })
+      
     if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
-
-      // Fetch any DMX lighting scenes and show the tab if necessary
-      constTools.makeRequest({
-        method: 'GET',
-        url: obj.getHelperURL(),
-        endpoint: '/DMX/getScenes'
-      })
-        .then((result) => {
-          console.log(result)
-          constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
-          document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
-        })
-        .catch((error) => {
-          document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
-        })
     } else {
       $('#componentInfoModalContentTabButton').hide()
       $('#componentInfoModalDefinitionsTabButton').tab('show')
