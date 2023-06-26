@@ -168,6 +168,7 @@ function readUpdate (update) {
   let sendUpdate = false
 
   if ('commands' in update) {
+    console.log(update.commands)
     for (let i = 0; i < update.commands.length; i++) {
       const cmd = (update.commands)[i]
 
@@ -185,6 +186,11 @@ function readUpdate (update) {
         }
       } else if (cmd === 'reloadDefaults') {
         askForDefaults()
+      } else if (cmd.slice(0,15) === 'set_dmx_scene__') {
+        makeHelperRequest({
+          method: 'GET',
+          endpoint: '/DMX/setScene/' + cmd.slice(15)
+        })
       } else {
         console.log(`Command not recognized: ${cmd}`)
       }

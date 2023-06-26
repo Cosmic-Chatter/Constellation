@@ -390,6 +390,15 @@ def get_group(uuid_str: str) -> Union[DMXFixtureGroup, None]:
            return group 
 
 
+def get_scene(uuid_str: str) -> tuple[DMXScene | None, DMXFixtureGroup | None]:
+    """Return the matching DMXScene, searching across groups."""
+
+    for group in config.dmx_groups:
+        for scene in group.scenes:
+            if scene.uuid == uuid_str:
+                return scene, group
+    return None, None
+
 def get_universe(uuid_str: str) -> Union[DMXUniverse, None]:
     """Return the matching DMXUniverse."""
 

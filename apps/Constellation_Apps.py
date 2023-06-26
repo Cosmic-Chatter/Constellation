@@ -787,6 +787,14 @@ async def get_dmx_scenes():
     return response
 
 
+@app.get("/DMX/setScene/{scene_uuid}")
+async def set_dmx_scene(scene_uuid: str):
+    """Search for and run a DMX scene."""
+
+    _, group = helper_dmx.get_scene(scene_uuid)
+    group.show_scene(scene_uuid)
+
+
 @app.post("/DMX/group/{group_uuid}/showScene")
 async def set_dmx_group_scene(group_uuid: str,
                               uuid: str = Body(

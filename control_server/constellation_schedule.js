@@ -151,7 +151,7 @@ export function populateSchedule (schedule) {
       const value = item.value
 
       // Create the plain-language description of the action
-      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition'].includes(action)) {
+      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
         description = populateScheduleDescriptionHelper([item], false)
       } else if (action === 'set_exhibit') {
         description = `Set exhibit: ${target}`
@@ -270,6 +270,8 @@ function scheduleActionToDescription (action) {
       return 'Set content for'
     case 'set_definition':
       return 'Set defintion for'
+    case 'set_dmx_scene':
+      return 'Set DMX scene for'
     case 'set_exhibit':
       return 'Set exhibit'
     default:
@@ -345,7 +347,7 @@ export function setScheduleActionTargetSelector () {
     })
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
-  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition'].includes(action)) {
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
 
@@ -353,13 +355,13 @@ export function setScheduleActionTargetSelector () {
       setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents', 'Projectors'])
     } else if (['refresh_page', 'restart'].includes(action)) {
       setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents'])
-    } else if (['set_app', 'set_content', 'set_definition'].includes(action)) {
+    } else if (['set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
       setScheduleActionTargetSelectorPopulateOptions(['ExhibitComponents'])
     }
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
     // For certain ations, we want to then populare the value selector
-    if (['set_app', 'set_content', 'set_definition'].includes(action)) {
+    if (['set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
       setScheduleActionValueSelector()
     } else {
       $('#scheduleValueSelector').hide()
@@ -418,6 +420,33 @@ export function setScheduleActionValueSelector () {
         valueSelector.show()
         $('#scheduleValueSelectorLabel').show()
       })
+  } else if (action === 'set_dmx_scene') {
+    const component = constExhibit.getExhibitComponent(target.slice(5))
+
+    constTools.makeRequest({
+      method: 'GET',
+      url: component.helperAddress,
+      endpoint: '/DMX/getScenes'
+    })
+      .then((response) => {
+        if ('success' in response && response.success === true) {
+          response.groups.forEach((group) => {
+            const groupName = new Option(group.name, null)
+            groupName.setAttribute('disabled', true)
+            valueSelector.append(groupName)
+
+            group.scenes.forEach((scene) => {
+              valueSelector.append(new Option(scene.name, scene.uuid))
+            })
+          })
+        }
+
+        // In the case of editing an action, preselect any existing values
+        valueSelector.val($('#scheduleEditModal').data('currentValue'))
+        valueSelector.show()
+        $('#scheduleValueSelectorLabel').show()
+      })
+
   } else if (action === 'set_app') {
     const appDict = {
       infostation: 'InfoStation',
@@ -542,7 +571,7 @@ export function sendScheduleUpdateFromModal () {
   } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action) && target == null) {
     $('#scheduleEditErrorAlert').html('You must specifiy a target for this action').show()
     return
-  } else if (['set_app', 'set_content', 'set_deinition'].includes(value) && value == null) {
+  } else if (['set_app', 'set_content', 'set_deinition', 'set_dmx_scene'].includes(value) && value == null) {
     $('#scheduleEditErrorAlert').html('You must specifiy a value for this action').show()
     return
   }
