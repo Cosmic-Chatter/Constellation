@@ -168,7 +168,6 @@ function readUpdate (update) {
   let sendUpdate = false
 
   if ('commands' in update) {
-    console.log(update.commands)
     for (let i = 0; i < update.commands.length; i++) {
       const cmd = (update.commands)[i]
 

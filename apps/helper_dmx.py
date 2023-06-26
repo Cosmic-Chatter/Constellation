@@ -48,7 +48,7 @@ class DMXUniverse:
                 "'controller' must be one of 'OpenDMX' or 'uDMX'.")
 
     def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
-        """Create a fixture, add it to the universe."""
+        """Create a fixture and add it to the universe."""
 
         if len(self.fixtures) == 32:
             # We have reached the maximum limit for this universe

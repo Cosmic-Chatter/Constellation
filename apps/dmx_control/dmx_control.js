@@ -386,6 +386,22 @@ class DMXFixtureGroup {
     this.fixtures = {}
   }
 
+  locateStart() {
+    // Trigger the locate effect for every fixture in the group.
+
+    Object.keys(this.fixtures).forEach((key) => {
+      this.fixtures[key].locateStart()
+    })
+  }
+
+  locateEnd() {
+    // Trigger the locate effect for every fixture in the group.
+
+    Object.keys(this.fixtures).forEach((key) => {
+      this.fixtures[key].locateEnd()
+    })
+  }
+
   createMetaFixtureHTML() {
     // Create a widget that provides controls for any channels included in every fixture in the group.
     
@@ -408,13 +424,32 @@ class DMXFixtureGroup {
     col.classList = 'col-12 col-sm-6 col-lg-4 mt-2'
 
     const row = document.createElement('div')
+    row.style.backgroundColor = '#142f43'
     row.classList = 'row mx-0'
     col.appendChild(row)
 
     const headerText = document.createElement('div')
-    headerText.classList = 'col-8 meta-header'
+    headerText.classList = 'col-5 meta-header'
     headerText.innerHTML = 'Control all'
     row.appendChild(headerText)
+
+    const locateCol = document.createElement('div')
+    locateCol.classList = 'col-3'
+    row.appendChild(locateCol)
+
+    const locateBtn = document.createElement('button')
+    locateBtn.classList = 'btn btn-sm btn-secondary w-100'
+    locateBtn.innerHTML = 'Locate'
+    locateBtn.addEventListener('mousedown', (event) => {
+      this.locateStart()
+    })
+    locateBtn.addEventListener('mouseup', (event) => {
+      this.locateEnd()
+    })
+    locateBtn.addEventListener('mouseleave', (event) => {
+      this.locateEnd()
+    })
+    locateCol.appendChild(locateBtn)
 
     const colorPickerCol = document.createElement('div')
     colorPickerCol.classList = 'col-4 px-0 mx-0'
@@ -1315,7 +1350,6 @@ function addFixtureFromModal () {
   // Collect the necessary information from the addFixtureModal and ask the helper to add the fixture.
 
   const channelList = []
-  // $('#addFixtureChannelList').children().each(function () { channelList.push($(this).find('select').val()) })
   document.getElementById('addFixtureChannelList').childNodes.forEach((el) => {
     const select = el.querySelector('select')
     if (select.value !== 'other') {
@@ -1395,11 +1429,6 @@ function updateFunc (update) {
     for (let i = 0; i < update.commands.length; i++) {
       const cmd = (update.commands)[i]
     }
-  }
-
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    // console.log(update.content)
   }
 }
 
@@ -1615,7 +1644,14 @@ function addUniverseFromModal () {
     }
   })
     .then((response) => {
-      console.log(response)
+      if ('success' in response && response.success === true) {
+        console.log(response)
+        createUniverse(response.universe.name,
+                       response.universe.uuid,
+                       response.universe.controller)
+        rebuildUniverseInterface()
+        $('#addUniverseModal').modal('hide')
+      }
     })
 }
 
