@@ -415,6 +415,8 @@ class DMXFixtureGroup {
     // to find channels that exist for all.
     const matchingChannels = []
     const fixtureKeys = Object.keys(this.fixtures)
+    if (fixtureKeys.length === 0) return
+
     this.fixtures[fixtureKeys[0]].channelList.forEach((channel) => {
       let channelMatches = true
       fixtureKeys.forEach((fixtureUUID) => {
@@ -679,13 +681,16 @@ class DMXFixtureGroup {
     fixtureRow.classList = 'row'
     fixturePane.appendChild(fixtureRow)
 
-    // Add meta control widget
-    fixtureRow.appendChild(this.createMetaFixtureHTML())
+    if (Object.keys(this.fixtures).length > 0) {
+      // Add meta control widget
+      fixtureRow.appendChild(this.createMetaFixtureHTML())
 
-    Object.keys(this.fixtures).forEach((key) => {
-      const fixture = this.fixtures[key]
-      fixtureRow.appendChild(fixture.createHTML(this.safeName))
-    })
+      // Add regular fixtures
+      Object.keys(this.fixtures).forEach((key) => {
+        const fixture = this.fixtures[key]
+        fixtureRow.appendChild(fixture.createHTML(this.safeName))
+      })
+    }
 
     // Add scenes
     const sceneRow = document.createElement('div')
@@ -1423,6 +1428,21 @@ function createUniverse (name, uuid, controller) {
   return newUniverse
 }
 
+function deleteUniverse(uuid) {
+  // Ask the helper to delete the given universe and then remove it from the interface.
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/DMX/universe/' + uuid + '/delete'
+  })
+  .then((result) => {
+    if ('success' in result && result.success === true) {
+      $('#editUniverseModal').modal('hide')
+      getDMXConfiguration()
+    }
+  })
+}
+
 function createGroup (name, uuid = '') {
   // Create a new group and add it to the global list.
 
@@ -1743,6 +1763,9 @@ document.addEventListener('click', (event) => {
   switch (event.target.getAttribute('id')) {
     case 'groupDeletePopover':
       deleteGroup($('#editGroupModal').data('group'))
+      break
+    case 'universeDeletePopover':
+      deleteUniverse($('#editUniverseModal').data('uuid'))
       break
   }
 })

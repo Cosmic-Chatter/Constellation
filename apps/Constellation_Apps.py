@@ -920,6 +920,16 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
 
     return {"success": True}
 
+@app.get("/DMX/universe/{universe_uuid}/delete")
+async def delete_dmx_universe(universe_uuid: str):
+
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
+    helper_dmx.get_universe(uuid_str=universe_uuid).delete()
+
+    return {"success": True}
 
 def start_app(with_webview: bool = True):
     """Start the webserver.

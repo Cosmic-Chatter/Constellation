@@ -54,6 +54,21 @@ class DMXUniverse:
     def __str__(self, *args, **kwargs):
         return f"[DMXUniverse: '{self.name}' with controller '{self.controller_type}']"
     
+    def delete(self):
+        """Remove the universe."""
+
+        # Delete each fixture
+        for key in self.fixtures.copy():
+            self.fixtures[key].delete()
+
+        # Remove from config
+        config.dmx_universes = [x for x in config.dmx_universes if x.uuid != self.uuid]
+
+        write_dmx_configuration()
+
+        # Stop the controller
+        self.controller.close()
+    
     def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
         """Create a fixture and add it to the universe."""
 
