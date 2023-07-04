@@ -60,5 +60,5 @@ def show_webview_settings():
                                                       height=600,
                                                       width=800,
                                                       url='http://localhost:' + str(
-                                                          config.defaults_dict["helper_port"]))
+                                                          config.defaults["system"]["port"]))
     settings_window_open = True

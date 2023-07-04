@@ -114,7 +114,7 @@ export function sendPing () {
         endpoint: '/system/ping',
         params: requestDict
       })
-      .then(readUpdate)
+      .then(readServerUpdate)
   }
 
   // First, check the helper for updates, then send the ping
@@ -161,8 +161,8 @@ export function askForShutdown () {
   })
 }
 
-function readUpdate (update) {
-  // Function to read a message from the server and take action based on the contents
+function readServerUpdate (update) {
+  // Function to read a message from Control Server and take action based on the contents
   // 'update' should be an object
 
   let sendUpdate = false
@@ -185,7 +185,7 @@ function readUpdate (update) {
         }
       } else if (cmd === 'reloadDefaults') {
         askForDefaults()
-      } else if (cmd.slice(0,15) === 'set_dmx_scene__') {
+      } else if (cmd.slice(0, 15) === 'set_dmx_scene__') {
         makeHelperRequest({
           method: 'GET',
           endpoint: '/DMX/setScene/' + cmd.slice(15)
@@ -220,26 +220,18 @@ function readUpdate (update) {
     config.errorDict.missingContentWarnings = update.missingContentWarnings
   }
 
-  if ('allow_sleep' in update) {
-    config.allowedActionsDict.sleep = update.allow_sleep
-  }
-  if ('allow_refresh' in update) {
-    config.allowedActionsDict.refresh = update.allow_refresh
-  }
-  if ('allow_restart' in update) {
-    config.allowedActionsDict.restart = update.allow_restart
-  }
-  if ('allow_shutdown' in update) {
-    config.allowedActionsDict.shutdown = update.allow_shutdown
+  if ('permissions' in update) {
+    config.allowedActionsDict.sleep = update.permissions.sleep
+    config.allowedActionsDict.refresh = update.permissions.refresh
+    config.allowedActionsDict.restart = update.permissions.restart
+    config.allowedActionsDict.shutdown = update.permissions.shutdown
+    config.autoplayAudio = update.permissions.audio
   }
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
-  }
-  if ('autoplay_audio' in update) {
-    config.autoplayAudio = update.autoplay_audio
   }
   if ('other_app_path' in update) {
     config.otherAppPath = update.other_app_path
@@ -269,6 +261,99 @@ function readUpdate (update) {
   }
 }
 
+function readHelperUpdate (update) {
+  // Function to read a message from the server and take action based on the contents
+  // 'update' should be an object
+
+  console.log(update)
+
+  const sendUpdate = false
+
+  if ('commands' in update) {
+    for (let i = 0; i < update.commands.length; i++) {
+      const cmd = (update.commands)[i]
+
+      if (cmd === 'restart') {
+        askForRestart()
+      } else if (cmd === 'shutdown' || cmd === 'power_off') {
+        askForShutdown()
+      } else if (cmd === 'sleepDisplay') {
+        sleepDisplay()
+      } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
+        wakeDisplay()
+      } else if (cmd === 'refresh_page') {
+        if ('refresh' in config.allowedActionsDict && stringToBool(config.allowedActionsDict.refresh) === true) {
+          location.reload()
+        }
+      } else if (cmd === 'reloadDefaults') {
+        askForDefaults()
+      } else if (cmd.slice(0, 15) === 'set_dmx_scene__') {
+        makeHelperRequest({
+          method: 'GET',
+          endpoint: '/DMX/setScene/' + cmd.slice(15)
+        })
+      } else {
+        console.log(`Command not recognized: ${cmd}`)
+      }
+    }
+  }
+
+  // App settings
+  if ('app' in update) {
+    if ('id' in update.app) config.id = update.app.id
+    if ('group' in update) config.group = update.app.group
+  }
+  if ('control_server' in update) {
+    if (('ip_address' in update.control_server) && ('port' in update.control_server)) {
+      config.serverAddress = 'http://' + update.control_server.ip_address + ':' + update.control_server.port
+    }
+  }
+  if ('permissions' in update) {
+    config.allowedActionsDict.sleep = update.permissions.sleep
+    config.allowedActionsDict.refresh = update.permissions.refresh
+    config.allowedActionsDict.restart = update.permissions.restart
+    config.allowedActionsDict.shutdown = update.permissions.shutdown
+    config.autoplayAudio = update.permissions.audio
+  }
+  if ('software_update' in update) {
+    if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
+  }
+  if ('system' in update) {
+    if ('remote_viewers' in update.system) {
+      if ('anydesk_id' in update.system.remote_viewers) {
+        config.AnyDeskID = update.system.remote_viewers.anydesk_id
+      }
+    }
+  }
+  if ('other_app_path' in update) {
+    config.otherAppPath = update.other_app_path
+  }
+  if (sendUpdate) {
+    sendConfigUpdate(update)
+  }
+
+  // After we have saved any updates, see if we should change the app
+  if (stringToBool(parseQueryString().get('showSettings')) === false) {
+    if ('app' in update &&
+       'name' in update.app &&
+        update.app.name !== config.constellationAppID &&
+        update.app.name !== '') {
+      if (update.app.name === 'other') {
+        if (config.otherAppPath !== '') {
+          gotoApp('other', config.otherAppPath)
+        }
+      } else {
+        gotoApp(update.app.name)
+      }
+    }
+  }
+
+  // Call the updateParser, if provided, to parse actions for the specific app
+  if (typeof config.updateParser === 'function') {
+    config.updateParser(update)
+  }
+}
+
 export function askForDefaults () {
   // Send a message to the local helper and ask for the latest configuration
   // defaults, then use them.
@@ -283,7 +368,7 @@ export function askForDefaults () {
     method: 'GET',
     endpoint: '/getDefaults'
   })
-    .then(readUpdate, checkAgain)
+    .then(readHelperUpdate, checkAgain)
 }
 
 export function checkForHelperUpdates () {
@@ -294,7 +379,7 @@ export function checkForHelperUpdates () {
     endpoint: '/getUpdate',
     timeout: 500
   })
-    .then(readUpdate)
+    .then(readHelperUpdate)
 }
 
 export function sendConfigUpdate (update) {
@@ -303,7 +388,7 @@ export function sendConfigUpdate (update) {
 
   const defaults = { content: update.content, current_exhibit: update.current_exhibit }
 
-  const requestDict = { action: 'updateDefaults', defaults }
+  const requestDict = { defaults }
 
   makeHelperRequest(
     {

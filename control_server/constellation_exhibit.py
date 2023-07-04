@@ -646,12 +646,11 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
         component.config["AnyDeskID"] = data["AnyDeskID"]
     if "autoplay_audio" in data:
         component.config["autoplay_audio"] = data["autoplay_audio"]
-    if "imageDuration" in data:
-        component.config["image_duration"] = data["imageDuration"]
     if "allowed_actions" in data:
         allowed_actions = data["allowed_actions"]
+
         for key in allowed_actions:
-            if allowed_actions[key] is True or allowed_actions[key].lower() in ["true", "yes", "1"]:
+            if allowed_actions[key] is True:
                 if key not in component.config["allowed_actions"]:
                     component.config["allowed_actions"].append(key)
             else:

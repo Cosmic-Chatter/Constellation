@@ -43,9 +43,8 @@ if getattr(sys, 'frozen', False):
 else:
     const_config.application_path = const_config.exec_path
 
+helper_files.check_directory_structure()
 helper_utilities.convert_defaults_ini()
-
-helper_utilities.read_default_configuration()
 
 app = FastAPI()
 
@@ -144,11 +143,7 @@ async def serve_readme():
 async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
 
-    if "content" in config.defaults_dict:
-        active_content = [s.strip()
-                          for s in config.defaults_dict["content"].split(",")]
-    else:
-        active_content = ""
+    active_content = config.defaults["app"].get("content", [])
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
                 "definitions": helper_files.get_available_definitions(),
                 "thumbnails": helper_files.get_directory_contents("thumbnails"),
@@ -190,7 +185,7 @@ async def create_thumbnail_video_from_frames(
 
 @app.post('/files/uploadThumbnail')
 def upload_thumbnail(files: list[UploadFile] = File(),
-                           config: const_config = Depends(get_config)):
+                     config: const_config = Depends(get_config)):
     """Save uploaded files as thumbnails, formatting them appropriately."""
 
     for file in files:
@@ -274,29 +269,11 @@ async def send_clip_list(config: const_config = Depends(get_config)):
 
 @app.get("/getDefaults")
 async def send_defaults(config: const_config = Depends(get_config)):
-    config_to_send = config.defaults_dict.copy()
-    if "allow_restart" not in config_to_send:
-        config_to_send["allow_restart"] = "true"
+    config_to_send = config.defaults.copy()
 
     # Add the current update availability to pass to the control server
     config_to_send["software_update"] = config.software_update
 
-    # Reformat this content list as an array
-    if "content" in config_to_send:
-        config_to_send['content'] = \
-            [s.strip() for s in config_to_send['content'].split(",")]
-
-    if config.dictionary_object is not None:
-        # If there are multiple sections, build a meta-dictionary
-        if len(config.dictionary_object.items()) > 1:
-            meta_dict = {"meta": True}
-            for item in config.dictionary_object.items():
-                name = item[0]
-                meta_dict[name] = dict(config.dictionary_object.items(name))
-            config_to_send["dictionary"] = meta_dict
-        else:
-            config_to_send["dictionary"] = \
-                dict(config.dictionary_object.items("CURRENT"))
     config_to_send["availableContent"] = \
         {"all_exhibits": helper_files.get_all_directory_contents()}
 
@@ -316,14 +293,9 @@ async def send_update(config: const_config = Depends(get_config)):
     """Get some key info for updating the component and web console."""
 
     response_dict = {
-        "allow_refresh": config.defaults_dict.get("allow_refresh", "true"),
-        "allow_restart": config.defaults_dict.get("allow_restart", "false"),
-        "allow_shutdown": config.defaults_dict.get("allow_shutdown", "false"),
-        "allow_sleep": config.defaults_dict.get("allow_sleep", "false"),
-        "anydesk_id": config.defaults_dict.get("anydesk_id", ""),
-        "autoplay_audio": config.defaults_dict.get("autoplay_audio", "false"),
+        "permissions": config.defaults["permissions"],
+        "anydesk_id": config.defaults["system"]["remote_viewers"].get("anydesk_id", ""),
         "commands": config.commandList,
-        "image_duration": config.defaults_dict.get("image_duration", "10"),
         "missingContentWarnings": config.missingContentWarningList
     }
     return response_dict
@@ -460,27 +432,12 @@ def upload_content(files: list[UploadFile] = File(),
 
 
 @app.post("/setDefaults")
-async def set_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
+async def set_defaults(defaults: dict = Body(description="A dictionary matching the structure of config.json."),
+                       cull: bool = Body(description="Whether to replace the existing defaults with the provided ones.",
+                                         default=False)):
     """Update the given defaults with the specified values"""
 
-    if "defaults" not in data:
-        raise HTTPException(
-            status_code=400, detail="Must include field 'defaults'")
-
-    helper_utilities.update_defaults(data["defaults"], force=True)
-
-    return {"success": True}
-
-
-@app.post("/rewriteDefaults")
-async def rewrite_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
-    """Replace all defaults with only the given values."""
-
-    if "defaults" not in data:
-        raise HTTPException(
-            status_code=400, detail="Must include field 'defaults'")
-
-    helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
+    helper_utilities.update_defaults(defaults, cull=cull)
 
     return {"success": True}
 
@@ -545,7 +502,7 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
@@ -582,7 +539,7 @@ async def set_dmx_fixture_to_brightness(fixture_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_brightness(value, duration)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -597,11 +554,11 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
                                   duration: float = Body(description="How long the transition should take.",
                                                          default=0)):
     """Set the given channel of the given fixture to the given value."""
-    
+
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_channel(channel_name, value)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -618,7 +575,7 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     if fixture is None:
         return {"success": False, "reason": "Figure does not exist."}
@@ -629,11 +586,10 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
 @app.post("/DMX/group/create")
 async def create_dmx_group(name: str = Body(description="The name of the group to create."),
                            fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
-    
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     new_group = helper_dmx.create_group(name)
 
     fixtures = []
@@ -650,7 +606,6 @@ async def edit_dmx_group(group_uuid: str,
                          name: str = Body(description="The new name for the group", default=""),
                          fixture_list: list[str] = Body(
                              description="A list of UUIDs for fixtures that should be included.", default=[])):
-    
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
@@ -686,11 +641,10 @@ async def edit_dmx_group(group_uuid: str,
 
 @app.get("/DMX/group/{group_uuid}/delete")
 async def delete_dmx_group(group_uuid: str):
-
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_group(group_uuid).delete()
     helper_dmx.write_dmx_configuration()
     return {"success": True}
@@ -706,7 +660,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     uuid_str = group.create_scene(name, values, duration=duration)
     helper_dmx.write_dmx_configuration()
@@ -724,7 +678,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
 
     scene = group.get_scene(uuid_str=uuid)
@@ -745,7 +699,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.delete_scene(uuid)
 
@@ -765,7 +719,7 @@ async def set_dmx_fixture_to_brightness(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_brightness(value, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -780,7 +734,7 @@ async def set_dmx_group_channel(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_channel(channel, value)
     return {"success": True, "configuration": group.get_dict()}
@@ -797,7 +751,7 @@ async def set_dmx_group_to_color(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -865,7 +819,7 @@ async def set_dmx_scene(scene_uuid: str):
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     _, group = helper_dmx.get_scene(scene_uuid)
     group.show_scene(scene_uuid)
 
@@ -882,7 +836,7 @@ async def set_dmx_group_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.show_scene(uuid)
 
@@ -902,7 +856,7 @@ async def create_dmx_universe(name: str = Body(description="The name of the univ
                                               device_details=device_details)
     helper_dmx.write_dmx_configuration()
     const_config.dmx_active = True
-    
+
     return {"success": True, "universe": new_universe.get_dict()}
 
 
@@ -914,55 +868,88 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_universe(uuid_str=uuid).name = new_name
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}
 
+
 @app.get("/DMX/universe/{universe_uuid}/delete")
 async def delete_dmx_universe(universe_uuid: str):
-
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_universe(uuid_str=universe_uuid).delete()
 
     return {"success": True}
 
-def start_app(with_webview: bool = True):
+
+def bootstrap_app(port):
+    """Start the app without a config.json file.
+
+    Need this stub to work around a limitation in pywebview (no kwargs)
+    """
+
+    start_app(port=port)
+
+
+def start_app(port=None, with_webview: bool = True):
     """Start the webserver.
 
     If with_webview == True, start as a daemon thread so that when the webview closes, the app shuts down.
     """
 
-    const_config.server_process = threading.Thread(target=_start_server, daemon=with_webview)
+    const_config.server_process = threading.Thread(target=_start_server, daemon=with_webview, kwargs={"port": port})
     const_config.server_process.start()
 
 
-def _start_server():
+def _start_server(port=None):
+    if port is None:
+        port = int(const_config.defaults["system"]["port"])
+
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
-                host="0.0.0.0",
-                port=int(const_config.defaults_dict["helper_port"]),
+                host="localhost",
+                port=port,
                 reload=False, workers=1)
 
 
 if __name__ == "__main__":
-    # Check for missing content thumbnails and create them
-    helper_files.create_missing_thumbnails()
 
-    # Check the GitHub server for an available software update
-    helper_utilities.check_for_software_update()
+    defaults_path = helper_files.get_path(['configuration', 'config.json'], user_file=True)
+    missing_defaults_file = False
+    if os.path.exists(defaults_path):
+        helper_utilities.read_defaults()
 
-    # Activate Smart Restart
-    helper_system.smart_restart_check()
+        # Check for missing content thumbnails and create them
+        helper_files.create_missing_thumbnails()
 
-    print(
-        f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
+        # Check the GitHub server for an available software update
+        helper_utilities.check_for_software_update()
 
-    if const_config.defaults_dict.get("remote_display", "True") == "True":
+        # Activate Smart Restart
+        helper_system.smart_restart_check()
+
+        print(
+            f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
+    else:
+        print('config.json file not found! Bootstrapping server.')
+        missing_defaults_file = True
+
+        available_port = helper_utilities.find_available_port()
+
+        setup_window = webview.create_window('Constellation Apps Setup',
+                                             confirm_close=False,
+                                             height=720,
+                                             width=720,
+                                             min_size=(720, 720),
+                                             url='http://localhost:' + str(available_port) + '/first_time_setup.html')
+
+        webview.start(func=bootstrap_app, args=available_port)
+
+    if const_config.defaults["system"].get("remote_display", True) is True:
         # Start the server but don't create a GUI window
         start_app(with_webview=False)
     else:
@@ -976,7 +963,7 @@ if __name__ == "__main__":
                                            width=1280,
                                            min_size=(1280, 720),
                                            url='http://localhost:' + str(
-                                               const_config.defaults_dict["helper_port"]) + '/media_player.html')
+                                               const_config.defaults["system"]["port"]) + '/media_player.html')
 
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed
