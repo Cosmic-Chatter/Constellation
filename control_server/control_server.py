@@ -165,8 +165,8 @@ def command_line_setup_print_gui() -> None:
     print("Welcome to Constellation Control Server!")
     print("")
     print("This appears to be your first time running Control Server.")
-    print("In order to set up your configuration, you will be asked")
-    print("a few questions. If you don't know the answer, or wish to")
+    print("In order to set up your configuration, let's answer a few")
+    print("questions. If you don't know the answer, or wish to")
     print("accept the default, just press the enter key.")
     print("")
 
