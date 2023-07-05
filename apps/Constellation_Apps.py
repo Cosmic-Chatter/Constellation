@@ -496,6 +496,14 @@ async def get_dmx_controllers():
     return {"success": success, "reason": reason, "controllers": controllers}
 
 
+@app.get("/DMX/{universe_index}/debug")
+async def debug_dmx_universe(universe_index: int):
+    """Trigger the debug mode for the universe at the given index"""
+
+    print(const_config.dmx_universes, universe_index, type(universe_index))
+    const_config.dmx_universes[universe_index].controller.web_control()
+
+
 @app.get("/DMX/getConfiguration")
 async def get_dmx_configuration():
     """Return the JSON DMX configuration file."""
@@ -517,12 +525,14 @@ async def get_dmx_configuration():
 async def get_dmx_status():
     """Return a dictionary with the current channel value for every channel in every fixture."""
 
+    success, reason = helper_dmx.activate_dmx()
+
     result = {}
 
     for fixture in const_config.dmx_fixtures:
         result[fixture.uuid] = fixture.get_all_channel_values()
 
-    return {"success": True, "status": result}
+    return {"success": success, "reason": reason, "status": result}
 
 
 @app.post("/DMX/fixture/create")
@@ -532,6 +542,10 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
                              universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
     """Create a new DMX fixture"""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
@@ -541,6 +555,10 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
 @app.post("/DMX/fixture/remove")
 async def remove_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove.", embed=True)):
     """Remove the given DMX fixture from its universe and any groups"""
+
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
 
     fixture = helper_dmx.get_fixture(fixture_uuid)
     if fixture is None:
@@ -561,6 +579,10 @@ async def set_dmx_fixture_to_brightness(fixture_uuid: str,
                                             default=0)):
     """Set the given fixture to the specified brightness."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_brightness(value, duration)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -576,6 +598,10 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
                                                          default=0)):
     """Set the given channel of the given fixture to the given value."""
     
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_channel(channel_name, value)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -589,7 +615,13 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
                                                           default=0)):
     """Set the given fixture to the specified color."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     fixture = helper_dmx.get_fixture(fixture_uuid)
+    if fixture is None:
+        return {"success": False, "reason": "Figure does not exist."}
     fixture.set_color(color, duration)
     return {"success": True, "configuration": fixture.get_dict()}
 
@@ -597,6 +629,11 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
 @app.post("/DMX/group/create")
 async def create_dmx_group(name: str = Body(description="The name of the group to create."),
                            fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
+    
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     new_group = helper_dmx.create_group(name)
 
     fixtures = []
@@ -613,6 +650,11 @@ async def edit_dmx_group(group_uuid: str,
                          name: str = Body(description="The new name for the group", default=""),
                          fixture_list: list[str] = Body(
                              description="A list of UUIDs for fixtures that should be included.", default=[])):
+    
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+
     group = helper_dmx.get_group(group_uuid)
 
     if group is None:
@@ -644,6 +686,11 @@ async def edit_dmx_group(group_uuid: str,
 
 @app.get("/DMX/group/{group_uuid}/delete")
 async def delete_dmx_group(group_uuid: str):
+
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     helper_dmx.get_group(group_uuid).delete()
     helper_dmx.write_dmx_configuration()
     return {"success": True}
@@ -656,6 +703,10 @@ async def create_dmx_scene(group_uuid: str,
                            duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Create the given scene for the specified group."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     uuid_str = group.create_scene(name, values, duration=duration)
     helper_dmx.write_dmx_configuration()
@@ -670,6 +721,10 @@ async def create_dmx_scene(group_uuid: str,
                            duration: float = Body(description="The transition length in milliseconds.", default=0)):
     """Edit the given scene for the specified group."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
 
     scene = group.get_scene(uuid_str=uuid)
@@ -687,6 +742,10 @@ async def create_dmx_scene(group_uuid: str,
                            uuid: str = Body(description="The UUID of the scene to edit.", embed=True)):
     """Delete the given scene for the specified group."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     group.delete_scene(uuid)
 
@@ -703,6 +762,10 @@ async def set_dmx_fixture_to_brightness(group_uuid: str,
                                             default=0)):
     """Set the given group to the specified brightness."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     group.set_brightness(value, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -714,6 +777,10 @@ async def set_dmx_group_channel(group_uuid: str,
                                 value: int = Body(description="The value to set.")):
     """Set the given channel to the specified value for every fixture in the group."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     group.set_channel(channel, value)
     return {"success": True, "configuration": group.get_dict()}
@@ -727,6 +794,10 @@ async def set_dmx_group_to_color(group_uuid: str,
                                                         default=0)):
     """Set the given group to the specified color."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -791,6 +862,10 @@ async def get_dmx_scenes():
 async def set_dmx_scene(scene_uuid: str):
     """Search for and run a DMX scene."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     _, group = helper_dmx.get_scene(scene_uuid)
     group.show_scene(scene_uuid)
 
@@ -804,7 +879,10 @@ async def set_dmx_group_scene(group_uuid: str,
                               ):
     """Run a scene for the given group."""
 
-    helper_dmx.activate_dmx()
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     group = helper_dmx.get_group(group_uuid)
     group.show_scene(uuid)
 
@@ -818,11 +896,13 @@ async def create_dmx_universe(name: str = Body(description="The name of the univ
                                   description="A dictionary of hardware details for the controller.")):
     """Create a new DMXUniverse."""
 
+    helper_dmx.activate_dmx()
     new_universe = helper_dmx.create_universe(name,
                                               controller=controller,
                                               device_details=device_details)
     helper_dmx.write_dmx_configuration()
-
+    const_config.dmx_active = True
+    
     return {"success": True, "universe": new_universe.get_dict()}
 
 
@@ -831,11 +911,25 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
                               new_name: str = Body(description="The new name to set.")):
     """Change the name for a universe."""
 
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
     helper_dmx.get_universe(uuid_str=uuid).name = new_name
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}
 
+@app.get("/DMX/universe/{universe_uuid}/delete")
+async def delete_dmx_universe(universe_uuid: str):
+
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+    
+    helper_dmx.get_universe(uuid_str=universe_uuid).delete()
+
+    return {"success": True}
 
 def start_app(with_webview: bool = True):
     """Start the webserver.

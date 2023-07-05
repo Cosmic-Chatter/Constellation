@@ -4,7 +4,7 @@ from typing import Any, Union
 import uuid
 
 # Non-standard imports
-from PyDMXControl.controllers import OpenDMXController, uDMXController
+from PyDMXControl.controllers import OpenDMXController, TransmittingController, uDMXController
 from PyDMXControl.profiles.defaults import Fixture
 from pyftdi.ftdi import Ftdi
 
@@ -22,9 +22,10 @@ class DMXUniverse:
                        device_details: dict[str, Any] = {},
                        dynamic_frame = True,
                        uuid_str: str = ""):
-
+        
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
+        self.controller: TransmittingController
         self.controller_type = controller
 
         if uuid_str != "":
@@ -47,6 +48,27 @@ class DMXUniverse:
             raise ValueError(
                 "'controller' must be one of 'OpenDMX' or 'uDMX'.")
 
+    def __repr__(self, *args, **kwargs):
+        return f"[DMXUniverse: '{self.name}' with controller '{self.controller_type}']"
+
+    def __str__(self, *args, **kwargs):
+        return f"[DMXUniverse: '{self.name}' with controller '{self.controller_type}']"
+    
+    def delete(self):
+        """Remove the universe."""
+
+        # Delete each fixture
+        for key in self.fixtures.copy():
+            self.fixtures[key].delete()
+
+        # Remove from config
+        config.dmx_universes = [x for x in config.dmx_universes if x.uuid != self.uuid]
+
+        write_dmx_configuration()
+
+        # Stop the controller
+        self.controller.close()
+    
     def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
         """Create a fixture and add it to the universe."""
 
@@ -480,10 +502,11 @@ def activate_dmx() -> tuple[bool, str]:
 
     Returns True is DMX has been successfully activated (already or just now) and False otherwise.
     """
+
     reason = ""
     if not config.dmx_active:
         config.dmx_active, reason = read_dmx_configuration()
-
+    # print("activate_dmx: ", config.dmx_active, reason)
     return config.dmx_active, reason
 
 

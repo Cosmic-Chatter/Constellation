@@ -153,6 +153,20 @@ def capture_screenshot():
 
     return ImageGrab.grab().convert("RGB")
 
+def command_line_setup_print_gui() -> None:
+    """Helper to print the header content for the setup tool"""
+
+    clear_terminal()
+    print("##########################################################")
+    print("Welcome to Constellation Apps!")
+    print("")
+    print("This appears to be your first time running an app in this")
+    print("directory. In order to set up your configuration, let's")
+    print("answer a few questions. If you don't know the answer, or")
+    print("wish to accept the default, just press the enter key.")
+    print("##########################################################")
+    print("")
+
 
 def handle_missing_defaults_file():
     """Create a stub defaults.ini file and launch setup.html for configuration"""
@@ -161,29 +175,48 @@ def handle_missing_defaults_file():
 
     settings_dict = {"current_exhibit": "default"}
 
-    clear_terminal()
-    print("##########################################################")
-    print("Welcome to Constellation Apps!")
-    print("")
-    print("This appears to be your first time running an app in this")
-    print("directory. In order to set up your configuration, you will")
-    print("be asked a few questions. If you don't know the answer, or")
-    print("wish to accept the default, just press the enter key.")
-    print("")
+    command_line_setup_print_gui()
+    
     this_id = input("Enter a unique ID for this app (default: TEMP): ").strip()
     if this_id == "":
         this_id = "TEMP"
     settings_dict["id"] = this_id
+
+    command_line_setup_print_gui()
+
+    print("Groups are used to organize multiple related apps (for")
+    print("example, apps in the same gallery.) Every app must be")
+    print("part of a group.")
+    print("")
 
     this_group = input("Enter a group for this app (default: Default): ").strip()
     if this_group == "":
         this_group = "Default"
     settings_dict["group"] = this_group
 
+    command_line_setup_print_gui()
+
+    print("Constellation apps are controlled by Constellation Control")
+    print("Server. You must run Control Server, either on this PC or")
+    print("on another PC on this network. When setting up Control")
+    print("Server, you will select a static IP address and a port,")
+    print("which you need to provide to Constellation Apps now.")
+    print("")
+
+
     ip_address = input(f"Enter the static Constellation Control Server IP address. If you do not know what this is, ask your system administrator. (default: localhost): ").strip()
     if ip_address == "":
         ip_address = 'localhost'
     settings_dict["server_ip_address"] = ip_address
+
+    command_line_setup_print_gui()
+
+    print("Constellation apps are controlled by Constellation Control")
+    print("Server. You must run Control Server, either on this PC or")
+    print("on another PC on this network. When setting up Control")
+    print("Server, you will select a static IP address and a port,")
+    print("which you need to provide to Constellation Apps now.")
+    print("")
 
     server_port = input(
         f"Enter the port for the Constellation Control Server. If you do not know what this is, ask your system administrator. (default: 8082): ").strip()
@@ -206,6 +239,14 @@ def handle_missing_defaults_file():
                 print(e)
 
         s.close()
+
+    command_line_setup_print_gui()
+
+    print("Constellation Apps commuicates with the browser through a")
+    print("network port. The same port cannot be used by multiple")
+    print("apps on the same PC.")
+    print("")
+
     helper_port = input(
         f"Enter the port for this app. If you do not know what this is, ask your system administrator. (default: {this_port}): ").strip()
     if helper_port == "":
@@ -214,8 +255,16 @@ def handle_missing_defaults_file():
 
     location = ""
     while location.lower() != 'local' and location.lower() != 'remote':
+        command_line_setup_print_gui()
+
+        print("If this PC will host the interface for the app, it is")
+        print("a 'local' app. If the interface for this app will be")
+        print("on another device (such as an iPad), this is a")
+        print("'remote' app.")
+        print("")
+
         location = input(
-            "Will the app be displayed on this local computer or on a remote device (such as an iPad)? [local | remote] (default: local): "
+            "Will the app be displayed on this local computer or on a remote device? [local | remote] (default: local): "
         )
         if location == "":
             location = "local"
@@ -227,6 +276,14 @@ def handle_missing_defaults_file():
 
     config.defaults_object.read_dict({"CURRENT": settings_dict})
     update_defaults(settings_dict, force=True)
+
+    command_line_setup_print_gui()
+
+    print("Through the web console on Constellation Control Server,")
+    print("you can peek at the current state of the app by viewing")
+    print("a screenshot. These screenshots are not stored and never")
+    print("leave your local network.")
+    print("")
 
     _ = input("Constellation Apps will now check for permission to capture screenshots (Press Enter to continue).")
     _ = capture_screenshot()

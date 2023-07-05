@@ -167,7 +167,11 @@ class DMXFixture {
 
   sendGenericChannelUpdate (channel) {
     // Send a message to the helper asking it to update the given channel
-    console.log(channel, this.channelValues[channel])
+
+    if (channel == null || this.channelValues[channel] == null) {
+      console.log("Error: null value:", channel, this.channelValues[channel])
+      return
+    }
     constCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/' + this.uuid + '/setChannel',
@@ -277,7 +281,7 @@ class DMXFixture {
     // colorPicker.setAttribute('data-coloris', true)
     colorPicker.value = 'rgb(255,255,255)'
     colorPicker.addEventListener('input', () => {
-      onColorChangeFromPicker(collectionName, thisUUID)
+      onColorChangeFromPicker(collectionName, thisUUID, false)
     })
     colorPickerCol.appendChild(colorPicker)
 
@@ -411,6 +415,8 @@ class DMXFixtureGroup {
     // to find channels that exist for all.
     const matchingChannels = []
     const fixtureKeys = Object.keys(this.fixtures)
+    if (fixtureKeys.length === 0) return
+
     this.fixtures[fixtureKeys[0]].channelList.forEach((channel) => {
       let channelMatches = true
       fixtureKeys.forEach((fixtureUUID) => {
@@ -675,13 +681,16 @@ class DMXFixtureGroup {
     fixtureRow.classList = 'row'
     fixturePane.appendChild(fixtureRow)
 
-    // Add meta control widget
-    fixtureRow.appendChild(this.createMetaFixtureHTML())
+    if (Object.keys(this.fixtures).length > 0) {
+      // Add meta control widget
+      fixtureRow.appendChild(this.createMetaFixtureHTML())
 
-    Object.keys(this.fixtures).forEach((key) => {
-      const fixture = this.fixtures[key]
-      fixtureRow.appendChild(fixture.createHTML(this.safeName))
-    })
+      // Add regular fixtures
+      Object.keys(this.fixtures).forEach((key) => {
+        const fixture = this.fixtures[key]
+        fixtureRow.appendChild(fixture.createHTML(this.safeName))
+      })
+    }
 
     // Add scenes
     const sceneRow = document.createElement('div')
@@ -1033,11 +1042,14 @@ function showEditGroupModal (groupUUID) {
   if ((groupUUID == null) || (groupUUID.trim() === '')) {
     $('#editGroupModalTitle').html('Create new group')
     groupUUID = ''
+    document.getElementById('editGroupNameInput').value = ''
+    document.getElementById('editGroupModalDeleteButton').style.display = 'none'
   } else {
     group = getGroupByUUID(groupUUID)
     $('#editGroupModalTitle').html('Edit ' + group.name)
     // Add the current name
     document.getElementById('editGroupNameInput').value = group.name
+    document.getElementById('editGroupModalDeleteButton').style.display = 'block'
   }
 
   $('#editGroupModal').data('group', groupUUID)
@@ -1084,26 +1096,46 @@ function editGroupFromModal () {
     group = getGroupByUUID(groupUUID)
     group.clearFixtures()
     group.name = document.getElementById('editGroupNameInput').value
-    endpoint = '/DMX/group/' + groupUUID + '/edit'
+    group.addFixtures(fixturesToAdd)
+
+    constCommon.makeHelperRequest({
+      method: 'POST',
+      endpoint: '/DMX/group/' + groupUUID + '/edit',
+      params: {
+        name: group.name,
+        fixture_list: fixturesToAddUUID
+      }
+    })
+      .then((result) => {
+        if ('uuid' in result) {
+          group.uuid = result.uuid
+        }
+        rebuildGroupsInterface()
+        $('#editGroupModal').modal('hide')
+      })
   } else {
     // We are creating a new group
-    group = createGroup(document.getElementById('editGroupNameInput').value)
-    endpoint = '/DMX/group/create'
+    createGroupFromModal(document.getElementById('editGroupNameInput').value, fixturesToAdd, fixturesToAddUUID)
   }
-  group.addFixtures(fixturesToAdd)
-  rebuildGroupsInterface()
+}
+
+function createGroupFromModal(name, fixturesToAdd, fixturesToAddUUID) {
+  // Ask the helper to create the group, then add the fixtures.
+
   constCommon.makeHelperRequest({
     method: 'POST',
-    endpoint,
+    endpoint: '/DMX/group/create',
     params: {
-      name: group.name,
+      name: name,
       fixture_list: fixturesToAddUUID
     }
   })
     .then((result) => {
-      if ('uuid' in result) {
-        group.uuid = result.uuid
+      if ('success' in result && result.success === true) {
+        const group = createGroup(name, result.uuid)
+        group.addFixtures(fixturesToAdd)
       }
+      rebuildGroupsInterface()
       $('#editGroupModal').modal('hide')
     })
 }
@@ -1396,12 +1428,54 @@ function createUniverse (name, uuid, controller) {
   return newUniverse
 }
 
+function deleteUniverse(uuid) {
+  // Ask the helper to delete the given universe and then remove it from the interface.
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/DMX/universe/' + uuid + '/delete'
+  })
+  .then((result) => {
+    if ('success' in result && result.success === true) {
+      $('#editUniverseModal').modal('hide')
+      getDMXConfiguration()
+    }
+  })
+}
+
 function createGroup (name, uuid = '') {
   // Create a new group and add it to the global list.
 
   const newGroup = new DMXFixtureGroup(name, uuid)
+  
   groupList.push(newGroup)
   return newGroup
+}
+
+function deleteGroup(uuid) {
+  // Ask the helper to delete the given group and then remove it from the interface.
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/DMX/group/' + uuid + '/delete'
+  })
+  .then((result) => {
+    if ('success' in result && result.success === true) {
+      groupList = groupList.filter((obj) => {
+        return obj.uuid !== uuid
+      })
+
+      // Cycle the fixtures and remove any reference to this group
+      universeList.forEach((universe) => {
+        Object.keys(universe.fixtures).forEach((key) => {
+          const fixture = universe.fixtures[key]
+          fixture.groups = fixture.groups.filter(e => e !== uuid)
+        })
+      })
+      $('#editGroupModal').modal('hide')
+      rebuildGroupsInterface()
+    }
+  })
 }
 
 function channelNameToDisplayName (name) {
@@ -1559,7 +1633,13 @@ function rebuildUniverseInterface () {
 function rebuildGroupsInterface () {
   // Take the list of group and add the HTML representation of each.
 
-  document.getElementById('noGroupsWarning').style.display = 'none'
+  if (groupList.length > 0) {
+    document.getElementById('noGroupsWarning').style.display = 'none'
+    document.getElementById('createNewGroupButton').style.display = 'block'
+  } else {
+    document.getElementById('noGroupsWarning').style.display = 'block'
+    document.getElementById('createNewGroupButton').style.display = 'none'
+  }
   $('#groupsRow').empty()
   groupList.forEach(group => {
     $('#groupsRow').append(group.createHTML())
@@ -1682,7 +1762,11 @@ $('#editSceneModalDeleteButton').click(deleteSceneFromModal)
 document.addEventListener('click', (event) => {
   switch (event.target.getAttribute('id')) {
     case 'groupDeletePopover':
-      console.log('here')
+      deleteGroup($('#editGroupModal').data('group'))
+      break
+    case 'universeDeletePopover':
+      deleteUniverse($('#editUniverseModal').data('uuid'))
+      break
   }
 })
 
@@ -1695,8 +1779,8 @@ constCommon.config.updateParser = updateFunc // Function to read app-specific up
 constCommon.config.constellationAppID = 'dmx_control'
 constCommon.config.helperAddress = window.location.origin
 
-const universeList = []
-const groupList = []
+let universeList = []
+let groupList = []
 
 constCommon.config.debug = true
 let standalone = false
