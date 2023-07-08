@@ -29,11 +29,6 @@
           </div>
         </div>
         <div class="col-12 mt-2 mb-4">
-          <div class="row">
-            <div class="col">
-              <button class="btn btn-secondary">Back</button>
-            </div>
-          </div>
         </div>
         <!-- Welcome -->
         <div id="welcome" class="col-12 wizard-pane">
@@ -46,12 +41,12 @@
                 Since this is your first time running Apps in this directory, we need to set up a few things before you can get started.
               </p>
               <div class="text-center">
-                <button class="btn btn-success">Let's go!</button>
+                <button data-page="welcome" class="btn btn-success next-button">Let's go!</button>
               </div>
           </div>
         </div>
         <!-- Control Server -->
-        <div id="control-server" class="col-12 wizard-pane">
+        <div id="control-server" class="col-12 wizard-pane" style="display: none;">
           <div class="alert alert-primary">
             <div class="h5 text-center">Are you using Control Server?</div>
             <p>
@@ -76,26 +71,30 @@
                   <label class="form-check-label" for="useControlServerToggle">Use Control Server</label>
                 </div>
               </div>
-              <div class="col-4">
+              <div id="controlServerIPInputGroup" class="col-4"  style="display: none;">
                 <div class="form-floating">
                   <input type="text" class="form-control" id="controlServerIPInput" placeholder="IP address">
                   <label for="controlServerIPInput">IP address</label>
                 </div>
               </div>
-              <div class="col">
+              <div id="controlServerPortInputGroup" class="col-3" style="display: none;">
                 <div class="form-floating">
                   <input type="number" class="form-control" id="controlServerPortInput" placeholder="Port">
                   <label for="controlServerPortInput">Port</label>
                 </div>
               </div>
+              <div id="controlServerDetailsWarning" class="col-12 mt-3 text-warning" style="display: none;">
+                You must specifiy Control Server's IP address and port. If you don't know these values, contact your system administrator.
+              </div>
             </div>
-            <div class="text-center">
-              <button class="btn btn-success mt-3">Next</button>
+            <div class="text-center mt-3">
+              <button data-page="control-server" class="btn btn-secondary back-button me-3">Back</button>
+              <button data-page="control-server" class="btn btn-success next-button ms-3">Next</button>
             </div>
           </div>
         </div>
         <!-- Remote display -->
-        <div id="remote-display" class="col-12 wizard-pane">
+        <div id="remote-display" class="col-12 wizard-pane" style="display: none;">
           <div class="alert alert-primary">
             <div class="h5 text-center">Will the app run entirely on this PC?</div>
             <p>
@@ -107,20 +106,27 @@
               </ul>
             </p>
             <div class="row mt-4">
-              <div class="col-8 offset-2 d-flex align-items-center">
+              <div class="col-8 d-flex align-items-center">
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" id="useControlServerToggle">
-                  <label class="form-check-label" for="useControlServerToggle">Use a remote device <span class="ms-2 badge bg-secondary">Advanced</span></label>
+                  <input class="form-check-input" type="checkbox" role="switch" id="useRemoteDisplayToggle">
+                  <label class="form-check-label" for="useRemoteDisplayToggle">Use a remote device <span class="ms-2 badge bg-secondary">Advanced</span></label>
+                </div>
+              </div>
+              <div id="remoteDisplayPortInputGroup" class="col-3" style="display: none;">
+                <div class="form-floating">
+                  <input type="number" class="form-control" id="remoteDisplayPortInput" placeholder="Port">
+                  <label for="remoteDisplayPortInput">Port</label>
                 </div>
               </div>
             </div>
-            <div class="text-center">
-              <button class="btn btn-success mt-3">Next</button>
+            <div class="text-center mt-3">
+              <button data-page="remote-display" class="btn btn-secondary back-button me-3">Back</button>
+              <button data-page="remote-display" class="btn btn-success next-button ms-3">Next</button>
             </div>
           </div>
         </div>
         <!-- Basic settings -->
-        <div id="basic-settings" class="col-12 wizard-pane">
+        <div id="basic-settings" class="col-12 wizard-pane" style="display: none;">
           <div class="alert alert-primary">
             <div class="h5 text-center">What should we call this component?</div>
             <p>
@@ -145,9 +151,50 @@
                   <label for="groupInput">Group</label>
                 </div>
               </div>
+              <div id="basicSettingsWarning" class="col-12 mt-3 text-warning" style="display: none;">
+                You must enter both an ID and a group for this component.
+              </div>
             </div>
-            <div class="text-center">
-              <button class="btn btn-success mt-3">Next</button>
+            
+            <div class="text-center mt-3">
+              <button data-page="basic-settings" class="btn btn-secondary back-button me-3">Back</button>
+              <button data-page="basic-settings" class="btn btn-success next-button ms-3">Next</button>
+            </div>
+          </div>
+        </div>
+        <!-- Summary -->
+        <div id="summary" class="col-12 wizard-pane" style="display: none;">
+          <div class="alert alert-primary">
+            <div class="h5 text-center">Setup Summary</div>
+            <p>
+              Here are the initial settings you've selected (these can always be changed later):
+            </p>
+            <div class="h6">Control Server</div>
+            <p>
+              <em id="summaryNoControlCenter">This app will not connect to Control Server.</em>
+              <div id="summaryControlServerDetails">
+                <b>IP address:</b> <span id="summaryControlServerIP"></span>
+                <br>
+                <b>Port:</b> <span id="summaryControlServerPort"></span>
+              </div>
+            </p>
+
+            <div class="h6">Remote display</div>
+            <p>
+              <em id="summaryNoRemoteDisplay">This app will not connect to a remote display.</em>
+              <div id="summaryRemoteDisplayDetails">
+                <b>Port:</b> <span id="summaryPort"></span>
+              </div>
+            </p>
+            <div class="h6">Identification</div>
+            <p>
+              <b>ID:</b> <span id="summaryID"></span>
+              <br>
+              <b>Group:</b> <span id="summaryGroup"></span>
+            </p>
+            <div class="text-center mt-3">
+              <button data-page="summary" class="btn btn-secondary back-button me-3">Back</button>
+              <button data-page="summary" class="btn btn-success next-button ms-3">Finish</button>
             </div>
           </div>
         </div>

@@ -294,7 +294,7 @@ async def send_update(config: const_config = Depends(get_config)):
 
     response_dict = {
         "permissions": config.defaults["permissions"],
-        "anydesk_id": config.defaults["system"]["remote_viewers"].get("anydesk_id", ""),
+        "anydesk_id": config.defaults["system"].get("remote_viewers", {}).get("anydesk_id", ""),
         "commands": config.commandList,
         "missingContentWarnings": config.missingContentWarningList
     }
@@ -886,6 +886,15 @@ async def delete_dmx_universe(universe_uuid: str):
     return {"success": True}
 
 
+@app.get('/closeSetupWizard')
+def close_setup_wizard():
+    """Destroy the setup wizard webview"""
+
+    for window in webview.windows:
+        if window.title == 'Constellation Apps Setup':
+            window.destroy()
+
+
 def bootstrap_app(port):
     """Start the app without a config.json file.
 
@@ -940,12 +949,13 @@ if __name__ == "__main__":
 
         available_port = helper_utilities.find_available_port()
 
-        setup_window = webview.create_window('Constellation Apps Setup',
-                                             confirm_close=False,
-                                             height=720,
-                                             width=720,
-                                             min_size=(720, 720),
-                                             url='http://localhost:' + str(available_port) + '/first_time_setup.html')
+        webview.create_window('Constellation Apps Setup',
+                              confirm_close=False,
+                              height=720,
+                              width=720,
+                              min_size=(720, 720),
+                              url='http://localhost:' + str(
+                                  available_port) + '/first_time_setup.html')
 
         webview.start(func=bootstrap_app, args=available_port)
 
