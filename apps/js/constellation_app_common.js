@@ -5,19 +5,17 @@ export const config = {
   AnyDeskID: '',
   autoplayAudio: false,
   constellationAppID: '',
-  contentPath: 'content',
   currentExhibit: 'default',
   currentInteraction: false,
   errorDict: {},
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
-  imageDuration: 10, // seconds
   otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
   platformDetails: {},
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 3.2,
+  softwareVersion: 3.3,
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
@@ -99,7 +97,6 @@ export function sendPing () {
       platform_details: config.platformDetails,
       AnyDeskID: config.AnyDeskID,
       currentInteraction: config.currentInteraction,
-      imageDuration: config.imageDuration,
       autoplay_audio: config.autoplayAudio
     }
     // See if there is an error to report
@@ -206,9 +203,6 @@ function readServerUpdate (update) {
   }
   if ('helperAddress' in update) {
     config.helperAddress = update.helperAddress
-  }
-  if ('contentPath' in update) {
-    config.contentPath = update.contentPath
   }
   if ('current_exhibit' in update) {
     if (update.currentExhibit !== config.currentExhibit) {
@@ -556,6 +550,25 @@ export function gotoApp (app, other = '') {
   } else {
     window.location = config.helperAddress + appLocations[app]
   }
+}
+
+export function appNameToDisplayName (appName) {
+  const displayNames = {
+    dmx_control: '/DMX Control',
+    infostation: 'InfoStation',
+    media_browser: 'Media Browser',
+    media_player: 'Media Player',
+    settings: 'Settings',
+    timelapse_viewer: 'Timelapse Viewer',
+    timeline_explorer: 'Timeline Explorer',
+    voting_kiosk: 'Voting Kiosk',
+    web_viewer: 'Web Viewer',
+    word_cloud_input: 'Word Cloud Input',
+    word_cloud_viewer: 'word Cloud Viewer'
+  }
+  if (appName in displayNames) {
+    return displayNames[appName]
+  } else return appName
 }
 
 export async function getAvailableDefinitions (appID) {

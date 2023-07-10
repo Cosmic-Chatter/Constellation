@@ -51,7 +51,7 @@
   </head>
 
   <body>
-    <div class="container-fluid">
+    <div class="container-fluid mb-5">
       <div class="row my-2">
         <div class='col-12'>
           <H2 class="d-none d-lg-inline">Constellation Component Configuration</H2>
@@ -70,79 +70,155 @@
 
       <div class="tab-content" id="nav-tabContent">
         <div class="tab-pane fade show active" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
-          
-          <div id="addSettingModal" class="modal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Add a setting</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class='row'>
-                    <div class='col-6 col-md-5'>
-                      <label for="settingKeyInputField">Key</label>
-                    </div>
-                    <div class='col-6 col-md-5 offset-md-2 ps-md-0'>
-                      <label for="settingValueInputField">Value</label>
-                    </div>
-                  </div>
-                  <div class='row'>
-                    <div class='col-6 col-md-5 me-md-0 pe-md-0'>
-                      <input type="text" class="form-control" id="settingKeyInputField" aria-describedby="settingKeyInputTip" placeholder="Type key or select below">
-                    </div>
-                    <div class='col-2 align-items-center align-text-center d-none d-md-flex mx-0 px-0'>
-                      <div class='w-100 h3'><center>=</center></div>
-                    </div>
-                    <div class='col-6 col-md-5 ms-md-0 ps-md-0'>
-                        <input id="settingValueInputTextField" type="text" class="form-control settingValueInputField">
-                        <input id="settingValueInputNumericField" type="number" class="form-control settingValueInputField">
-                        <select id="settingValueInputOptionField" class="form-control settingValueInputField">
-                          <option value='true'>True</option>
-                          <option value='false'>False</option>
-                        </select>
-                    </div>
-                  </div>
-                  <div class='row'>
-                    <div class='col-6 col-md-5 pe-md-0'>
-                      <select id="availableKeys" class="form-control mt-1"></select>
-                      <small id="settingKeyInputTip" class="form-text text-muted">Setting keys are always lowercase.</small>
-                    </div>
-                    <div class='col-6 col-md-5 offset-md-2 ps-md-0'>
-                      <small id="settingValueInputTip" class="form-text text-muted">Values are case sensitive and cannot contain the equals sign (=).</small>
-                    </div>
-                  </div>
-                  <div class="row mt-2">
-                    <div  class="col-12">
-                      <div id="modalSettingDescriptionField" class="alert alert-primary"></div>
-                    </div>
-                    <div id='modalEqualSignWarning' class="col-12 text-danger">
-                      The value field cannot contain the = symbol!
-                    </div>
-                  </div>
-  
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                  <button id='submitAddDefaultFromModal' type="button" class="btn btn-primary">Add setting</button>
-                </div>
-              </div>
-            </div>
-          </div>
   
           <div class='row'>
             <div class="col-12 mt-3">
               <button id="saveDefaultButton" class='btn btn-primary'>Save changes</button>
-              <button id="addDefaultButton" class='btn btn-info ms-2'>Add setting</button>
               <button id='manageContentButton' type="button" class="btn btn-info ms-2">Manage content</button>
             </div>
           </div>
-          <div class='row mt-3'>
-            <div class='col-12'>
-              <H3>Current settings</H3>
+          <!-- Basic settings -->
+          <div class="h4 mt-4">Basic settings</div>
+          <div class="row mt-2">
+            <!-- ID -->
+            <div id="IDInputGroup" class="col-6 col-sm-4 col-lg-3 col-xl-2">
+              <div class="mb-3">
+                <label for="IDInput" class="form-label">
+                  ID
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="text" class="form-control" id="IDInput">
+              </div>
+            </div>
+            <!-- Group -->
+            <div id="groupInputGroup" class="col-6 col-sm-4 col-lg-3 col-xl-2">
+              <div class="mb-3">
+                <label for="groupInput" class="form-label">
+                  Group
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Groups help you organize related components." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="text" class="form-control" id="groupInput">
+              </div>
+            </div>
+            <!-- Definition -->
+            <div id="definitionSelectGroup" class="col-6 col-sm-4 col-lg-3 col-xl-2">
+              <div class="mb-3">
+                <label for="definitionSelect" class="form-label">
+                  Definition
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="The selected definition sets which app content will be displayed." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="definitionSelect"></select>
+              </div>
             </div>
           </div>
-          <div id='cardRowCurrent' class='row mx-2 mb-5'></div>
+
+          <!-- Control Server -->
+          <div class="h4 mt-2">Control Server</div>
+          <p>
+            <i>Constellation Control Server helps you configure and control multiple interactives from anywhere in your museum.</i>
+          </p>
+          <div class="row mt-2">
+            <div class="col-7 col-sm-4 col-lg-3 mb-2 d-flex align-items-center">
+              <div class="form-check form-switch">
+                <input class="form-check-input gui-toggle" type="checkbox" role="switch" id="useControlServerToggle">
+                <label class="form-check-label" for="useControlServerToggle">Use Control Server</label>
+              </div>
+            </div>
+            <div id="controlServerIPInputGroup" class="col-6 col-sm-4 col-lg-3 col-xl-2">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="controlServerIPInput" placeholder="IP address">
+                <label for="controlServerIPInput">IP address</label>
+              </div>
+            </div>
+            <div id="controlServerPortInputGroup" class="col-5 col-sm-4 col-md-3 col-lg-2 col-xxl-1">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="controlServerPortInput" placeholder="Port">
+                <label for="controlServerPortInput">Port</label>
+              </div>
+            </div>
+          </div>
+          <!-- Smart Restart -->
+          <div id="smartRestartPane">
+            <div class="h5 mt-2">Smart Restart</div>
+          <p>
+            <i>Smart Restart helps you compenstate for a PC that occasionally drops a Wi-Fi connection. If the app cannot connect to Control Server for a given period of time, it can initiate a restat of the PC to regain the Wi-Fi connection.</i>
+          </p>
+          <div class="row mt-2">
+            <!-- Smart Restart mode -->
+            <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+              <div class="mb-3">
+                <label for="smartRestartStateSelect" class="form-label">
+                  Mode
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Patient mode will only restart the PC outside of the active hours, while aggressive will restart it at any time." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="smartRestartStateSelect">
+                  <option value="off">Off</option>
+                  <option value="patient">Patient</option>
+                  <option value="aggressive">Aggressive</option>
+                </select>
+              </div>
+            </div>
+            <!-- Smart Restart interval -->
+            <div class="col-6 col-sm-3 col-md-2">
+              <div class="mb-3">
+                <label for="smartRestartIntervalInput" class="form-label">
+                  Interval
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Time in seconds between checking in with Control Server." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="number" class="form-control" id="smartRestartIntervalInput" value="60">
+              </div>
+            </div>
+            <!-- Smart Restart threshold -->
+            <div class="col-6 col-sm-3 col-md-2">
+              <div class="mb-3">
+                <label for="smartRestartThresholdInput" class="form-label">
+                  Threshold
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Time in seconds the PC must be out of contact for before a restart is attempted." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="number" class="form-control" id="smartRestartThresholdInput" value="3600">
+              </div>
+            </div>
+            <!-- Active hours start -->
+            <div class="col-6 col-sm-3 col-lg-2">
+              <div class="mb-3">
+                <label for="activeHoursStartInput" class="form-label">
+                  Active hours start
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="The start of the period during which a restart will not be permitted in patient mode." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="text" class="form-control" id="activeHoursStartInput" value="8 AM">
+              </div>
+            </div>
+            <!-- Active hours end -->
+            <div class="col-6 col-sm-3 col-lg-2">
+              <div class="mb-3">
+                <label for="activeHoursEndInput" class="form-label">
+                  Active hours end
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="The end of the period during which a restart will not be permitted in patient mode." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <input type="text" class="form-control" id="activeHoursEndInput" value="8 PM">
+              </div>
+            </div>
+          </div>
+          </div>
+          <!-- Remote display -->
+          <div class="h4 mt-2">Remote display</div>
+          <p>
+            <span class="badge bg-secondary">Advanced</span> <i>For more complex setups, it's possible to run Constellation Apps on this PC, but use a different device as the display. The most common use case for this approach is <b>using an iPad or other tablet as the display.</b></i>
+          </p>
+          <div class="row mt-2">
+            <div class="col-7 col-sm-4 col-lg-3 d-flex align-items-center">
+              <div class="form-check form-switch">
+                <input class="form-check-input gui-toggle" type="checkbox" role="switch" id="useRemoteDisplayToggle">
+                <label class="form-check-label" for="useRemoteDisplayToggle">Use a remote display</label>
+              </div>
+            </div>
+            <div id="remoteDisplayPortInputGroup" class="col-5 col-sm-4 col-md-3 col-lg-2 col-xxl-1">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="remoteDisplayPortInput" placeholder="Port">
+                <label for="remoteDisplayPortInput">Port</label>
+              </div>
+            </div>
+          </div>
         </div>
   
         <div class="tab-pane fade" id="nav-apps" role="tabpanel" aria-labelledby="nav-apps-tab">

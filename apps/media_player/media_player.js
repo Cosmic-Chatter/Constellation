@@ -68,7 +68,7 @@ function changeMedia (source) {
   const image = document.getElementById('fullscreenImage')
   const imageContainer = document.getElementById('imageOverlay')
   const audio = document.getElementById('audioPlayer')
-  const filename = constCommon.config.contentPath + '/' + source.filename
+  const filename = 'content/' + source.filename
 
   // Split off the extension
   const split = source.filename.split('.')

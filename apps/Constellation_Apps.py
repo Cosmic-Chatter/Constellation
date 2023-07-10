@@ -277,7 +277,6 @@ async def send_defaults(config: const_config = Depends(get_config)):
     config_to_send["availableContent"] = \
         {"all_exhibits": helper_files.get_all_directory_contents()}
 
-    config_to_send["contentPath"] = "content"
     return config_to_send
 
 
@@ -910,8 +909,11 @@ def start_app(port=None, with_webview: bool = True):
     If with_webview == True, start as a daemon thread so that when the webview closes, the app shuts down.
     """
 
-    const_config.server_process = threading.Thread(target=_start_server, daemon=with_webview, kwargs={"port": port})
-    const_config.server_process.start()
+    if with_webview is True:
+        const_config.server_process = threading.Thread(target=_start_server, daemon=True, kwargs={"port": port})
+        const_config.server_process.start()
+    else:
+        _start_server()
 
 
 def _start_server(port=None):
