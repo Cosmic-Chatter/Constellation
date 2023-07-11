@@ -43,6 +43,7 @@ if getattr(sys, 'frozen', False):
 else:
     const_config.application_path = const_config.exec_path
 
+helper_files.check_directory_structure()
 helper_utilities.convert_defaults_ini()
 
 helper_utilities.read_default_configuration()
