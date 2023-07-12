@@ -36,7 +36,15 @@ reboot
 On macOS, it is not possible to hide the dock and menu bar permanently, so macOS is not recommended for use with a touchscreen.
 
 ### Local mode
-If you are running Constellation Apps in local mode, launching as a kiosk is very easy. On Windows, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target. On Linux, simply use this command to launch the app:
+If you are running Constellation Apps in local mode, launching as a kiosk is very easy.
+
+#### Windows 
+
+<img src="_static/fullscreen_shortcut.jpg" style="width: 300px; float: right; border: 2px solid gray; margin: 5px;"></img>
+On Windows, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target.
+
+#### Linux
+On Linux, simply use this command to launch the app:
 
 ```commandline
 ./Constellation_Apps fullscreen
