@@ -12,7 +12,7 @@ python-dateutil
 python-multipart
 pyusb
 pywebview; sys_platform != 'linux'
-pywebview[gtk]; sys_platform == 'linux'
+pywebview[qt]; sys_platform == 'linux'
 requests
 sockio
 uvicorn
