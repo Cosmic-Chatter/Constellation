@@ -4,61 +4,57 @@ import webview
 # Constellation modules
 import config
 
-settings_window_open: bool = False
-settings_window_reference: webview.Window | None = None
-
 
 def on_closed():
-    print('pywebview window is closed')
+    pass
 
 
 def on_closing():
-    print('pywebview window is closing')
+    pass
 
 
 def on_shown():
-    print('pywebview window shown')
+    pass
 
 
 def on_minimized():
-    print('pywebview window minimized')
+    pass
 
 
 def on_restored():
-    print('pywebview window restored')
+    pass
 
 
 def on_maximized():
-    print('pywebview window maximized')
-
+    pass
 
 def on_loaded():
-    print('DOM is ready')
 
     # unsubscribe event listener
     webview.windows[0].events.loaded -= on_loaded
 
 
 def on_resized(width, height):
-    print('pywebview window is resized. new dimensions are {width} x {height}'.format(width=width, height=height))
-
+    pass
 
 def on_moved(x, y):
-    print('pywebview window is moved. new coordinates are x: {x}, y: {y}'.format(x=x, y=y))
+    pass
 
 
 def show_webview_settings():
     """Create a settings window, or bring it to the front if it already exists."""
 
-    global settings_window_reference, settings_window_open
+    # First, see if we have a settings window already
+    for window in webview.windows:
+        if window.title == 'Constellation Apps - Configuration':
+            window.show()
+            return
 
-    if settings_window_open:
-        settings_window_reference.show()
-        return
+    # If not, create one
 
-    settings_window_reference = webview.create_window('Constellation Apps - Configuration',
+    webview.create_window('Constellation Apps - Configuration',
                                                       height=600,
                                                       width=800,
+                                                      text_select=True,
                                                       url='http://localhost:' + str(
                                                           config.defaults_dict["helper_port"]))
-    settings_window_open = True
