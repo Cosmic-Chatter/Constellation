@@ -6,6 +6,7 @@ export const config = {
   autoplayAudio: false,
   constellationAppID: '',
   contentPath: 'content',
+  currentDefinition: '',
   currentExhibit: 'default',
   currentInteraction: false,
   errorDict: {},
@@ -251,6 +252,7 @@ function readUpdate (update) {
   // After we have saved any updates, see if we should change the app
   if (stringToBool(parseQueryString().get('showSettings')) === false) {
     if ('app_name' in update &&
+        ('definition' in update === false || update.definition === '') &&
         update.app_name !== config.constellationAppID &&
         update.app_name !== '') {
       if (update.app_name === 'other') {
@@ -261,6 +263,33 @@ function readUpdate (update) {
         gotoApp(update.app_name)
       }
     }
+    
+  // Also check the definition file for a changed app.
+  if ('definition' in update && update.definition !== config.currentDefinition) {
+    config.currentDefinition = update.definition
+    makeHelperRequest({
+      method: 'GET',
+      endpoint: '/definitions/' + update.definition + '/load'
+    })
+    .then((result) => {
+      if ('success' in result && result.success === false) return
+      const def = result.definition
+      console.log(def)
+      if ('app' in def && 
+          def.app !== config.constellationAppID &&
+          def.app !== '') {
+            console.log(def, config.constellationAppID)
+            if (def.app === 'other') {
+              if (config.otherAppPath !== '') {
+                gotoApp('other', config.otherAppPath)
+              }
+            } else {
+              console.log('Switching to app', def.app)
+              gotoApp(def.app)
+            }
+          }
+    })
+  }
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
