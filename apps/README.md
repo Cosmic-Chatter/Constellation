@@ -17,7 +17,9 @@ Download the version appropriate for your operating system [here](https://cosmic
 A command-line setup window will launch, asking you a few basic questions. Once you use the keyboard to answer, Apps will launch and open a graphical interface in your default web browser.
 
 ### Local vs. remote `BETA`
-During the first-time setup, you will be asked if Constellation Apps will be displayed on a remote device or on the installation PC. Choosing `local` will configure the app to run as a self-contained GUI. Choosing `remote` will launch the app in the terminal, as was standard prior to **_Constellation 3.2_**.
+During the first-time setup, you may be asked if Constellation Apps will be displayed on a remote device or on the installation PC. Choosing `local` will configure the app to run as a self-contained GUI. Choosing `remote` will launch the app in the terminal, as was standard prior to **_Constellation 3.2_**.
+
+**The self-contained, local way of running the app is currently supported only on Windows.**
 
 ## Deploying Constellation Apps
 When configuring the app for use in production (i.e., on the museum floor), it is strongly recommended to set it up in kiosk mode. This will lock users into the application and supress many pop-ups.
@@ -36,7 +38,15 @@ reboot
 On macOS, it is not possible to hide the dock and menu bar permanently, so macOS is not recommended for use with a touchscreen.
 
 ### Local mode
-If you are running Constellation Apps in local mode, launching as a kiosk is very easy. On Windows, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target. On Linux, simply use this command to launch the app:
+If you are running Constellation Apps in local mode, launching as a kiosk is very easy.
+
+#### Windows 
+
+<img src="_static/fullscreen_shortcut.jpg" style="width: 300px; float: right; border: 2px solid gray; margin: 5px;"></img>
+On Windows, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target.
+
+#### Linux
+On Linux, simply use this command to launch the app:
 
 ```commandline
 ./Constellation_Apps fullscreen

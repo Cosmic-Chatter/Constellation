@@ -43,6 +43,7 @@ if getattr(sys, 'frozen', False):
 else:
     const_config.application_path = const_config.exec_path
 
+helper_files.check_directory_structure()
 helper_utilities.convert_defaults_ini()
 
 helper_utilities.read_default_configuration()
@@ -937,8 +938,11 @@ def start_app(with_webview: bool = True):
     If with_webview == True, start as a daemon thread so that when the webview closes, the app shuts down.
     """
 
-    const_config.server_process = threading.Thread(target=_start_server, daemon=with_webview)
-    const_config.server_process.start()
+    if with_webview is True:
+        const_config.server_process = threading.Thread(target=_start_server, daemon=True)
+        const_config.server_process.start()
+    else:
+        _start_server()
 
 
 def _start_server():

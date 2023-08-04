@@ -253,26 +253,34 @@ def handle_missing_defaults_file():
         helper_port = str(this_port)
     settings_dict["helper_port"] = helper_port
 
-    location = ""
-    while location.lower() != 'local' and location.lower() != 'remote':
-        command_line_setup_print_gui()
+    # Select whether to use a remote display (i.e., the browser) or a unified app
+    # provided by pywebview. Because of graphics library compatitibilty issues on 
+    # Linux, the 'local' option is not available if the platform is linux and the 
+    # app has been compiled by Pyinstaller.
 
-        print("If this PC will host the interface for the app, it is")
-        print("a 'local' app. If the interface for this app will be")
-        print("on another device (such as an iPad), this is a")
-        print("'remote' app.")
-        print("")
-
-        location = input(
-            "Will the app be displayed on this local computer or on a remote device? [local | remote] (default: local): "
-        )
-        if location == "":
-            location = "local"
-
-    if location == 'local':
-        settings_dict["remote_display"] = False
-    else:
+    if getattr(sys, 'frozen', True) and sys.platform == 'linux':
         settings_dict["remote_display"] = True
+    else:
+        location = ""
+        while location.lower() != 'local' and location.lower() != 'remote':
+            command_line_setup_print_gui()
+
+            print("If this PC will host the interface for the app, it is")
+            print("a 'local' app. If the interface for this app will be")
+            print("on another device (such as an iPad), this is a")
+            print("'remote' app.")
+            print("")
+
+            location = input(
+                "Will the app be displayed on this local computer or on a remote device? [local | remote] (default: local): "
+            )
+            if location == "":
+                location = "local"
+
+        if location == 'local':
+            settings_dict["remote_display"] = False
+        else:
+            settings_dict["remote_display"] = True
 
     config.defaults_object.read_dict({"CURRENT": settings_dict})
     update_defaults(settings_dict, force=True)

@@ -20,6 +20,7 @@ function updateParser (update) {
 function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
   console.log(def)
+  constCommon.config.sourceList = []
   def.content_order.forEach((uuid) => {
     constCommon.config.sourceList.push(def.content[uuid])
   })

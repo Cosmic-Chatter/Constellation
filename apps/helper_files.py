@@ -198,20 +198,20 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
     # First, render each file in a consistent format
     for i, frame in enumerate(frames):
         thumb_path, _ = get_thumbnail(frame, force_image=True)
-        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1', '-pix_fmt', 'yuv420p', get_path(["thumbnails", '__tempOutput_' + str(i) + '.png'], user_file=True)]
+        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1', '-pix_fmt', 'yuv420p', get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True)]
         process = subprocess.Popen(command)
         process.communicate()
 
     # Then, stitch them together into a slideshow
-    command = [ffmpeg_path, '-y', '-r', str(fps), '-pattern_type', 'glob',
-               '-i', get_path(["thumbnails", '__tempOutput_*.png'], user_file=True),
+    command = [ffmpeg_path, '-y', '-r', str(fps),
+               '-i', get_path(["thumbnails", '__tempOutput_%04d.png'], user_file=True),
                '-c:v', 'libx264', '-pix_fmt', 'yuv420p', "-vf", "scale=400:-2", output_path]
     process = subprocess.Popen(command)
     process.communicate()
 
     # Finally, delete the temp files
     for i in range(len(frames)):
-        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i) + '.png'], user_file=True))
+        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True))
 
     return True
 
@@ -304,7 +304,10 @@ def get_thumbnail_name(filename: str, force_image=False) -> str:
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        return ""
+        if filename[-5:].lower() == '.webp':
+            mimetype = 'image'
+        else:
+            return ""
     if mimetype == "audio":
         return get_path(["_static", "icons", "audio_black.png"])
     elif mimetype == "image" or force_image is True:
@@ -327,14 +330,20 @@ def get_thumbnail(filename: str, force_image=False) -> (Union[str, None], str):
     try:
         mimetype = mimetype.split("/")[0]
     except AttributeError:
-        return None, ''
+        if filename[-5:].lower() == '.webp':
+            mimetype = 'image'
+        else:
+            print(f"get_thumbnail: bad mimetype {mimetype} for file {filename}")
+            return None, ''
 
     if thumb_name == "":
+        print(f"get_thumbnail: thumbnail name is blank.")
         return None, mimetype
 
     thumb_path = get_path(["thumbnails", thumb_name], user_file=True)
 
     if not os.path.exists(thumb_path):
+        print(f"get_thumbnail: thumbnail does not exist.")
         return None, mimetype
 
     return thumb_path, mimetype
