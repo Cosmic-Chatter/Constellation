@@ -132,6 +132,9 @@ def queue_json_schedule(schedule: dict) -> None:
     config.json_next_event = []
     for key in schedule:
         event = schedule[key]
+        if event["action"] == "note":
+            # Don't queue notes
+            continue
         event_time = dateutil.parser.parse(event["time"])
         seconds_from_now = (event_time - datetime.datetime.now()).total_seconds()
         if seconds_from_now >= 0:

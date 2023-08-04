@@ -155,14 +155,34 @@ export function populateSchedule (schedule) {
         description = populateScheduleDescriptionHelper([item], false)
       } else if (action === 'set_exhibit') {
         description = `Set exhibit: ${target}`
+      } else if (action === 'note') {
+        description = item.value
       }
 
-      if (description != null) {
-        const eventRow = document.createElement('div')
-        eventRow.classList = 'row mt-2 eventListing'
-        $(eventRow).data('time_in_seconds', item.time_in_seconds)
-        dayContainer.appendChild(eventRow)
+      if (description == null) return
 
+      const eventRow = document.createElement('div')
+      eventRow.classList = 'row mt-2 eventListing'
+      $(eventRow).data('time_in_seconds', item.time_in_seconds)
+      dayContainer.appendChild(eventRow)
+
+      if (action === 'note') {
+        const eventDescriptionCol = document.createElement('div')
+        eventDescriptionCol.classList = 'col-9 mr-0 pr-0'
+        eventRow.appendChild(eventDescriptionCol)
+
+        const eventDescriptionOuterContainer = document.createElement('div')
+        eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pr-1 rounded-left'
+        eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
+
+        const eventDescriptionInnerContainer = document.createElement('div')
+        eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+        eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
+
+        const eventDescription = document.createElement('center')
+        eventDescription.innerHTML = description
+        eventDescriptionOuterContainer.appendChild(eventDescription)
+      } else {
         const eventTimeCol = document.createElement('div')
         eventTimeCol.classList = 'col-4 mr-0 pr-0'
         eventRow.appendChild(eventTimeCol)
@@ -191,22 +211,22 @@ export function populateSchedule (schedule) {
         const eventDescription = document.createElement('center')
         eventDescription.innerHTML = description
         eventDescriptionOuterContainer.appendChild(eventDescription)
-
-        const eventEditButtonCol = document.createElement('div')
-        eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
-        eventRow.appendChild(eventEditButtonCol)
-
-        const eventEditButton = document.createElement('button')
-        eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
-        eventEditButton.setAttribute('type', 'button')
-        eventEditButton.style.borderStyle = 'solid'
-        eventEditButton.style.border = '0px'
-        eventEditButton.innerHTML = 'Edit'
-        eventEditButton.addEventListener('click', function () {
-          scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
-        })
-        eventEditButtonCol.appendChild(eventEditButton)
       }
+
+      const eventEditButtonCol = document.createElement('div')
+      eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
+      eventRow.appendChild(eventEditButtonCol)
+
+      const eventEditButton = document.createElement('button')
+      eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
+      eventEditButton.setAttribute('type', 'button')
+      eventEditButton.style.borderStyle = 'solid'
+      eventEditButton.style.border = '0px'
+      eventEditButton.innerHTML = 'Edit'
+      eventEditButton.addEventListener('click', function () {
+        scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
+      })
+      eventEditButtonCol.appendChild(eventEditButton)
     })
     // Sort the elements by time
     const events = $(dayContainer).children('.eventListing')
@@ -347,6 +367,7 @@ export function setScheduleActionTargetSelector () {
     })
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
+    $("#scheduleNoteInput").hide()
   } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
@@ -367,12 +388,21 @@ export function setScheduleActionTargetSelector () {
       $('#scheduleValueSelector').hide()
       $('#scheduleValueSelectorLabel').hide()
     }
+    $("#scheduleNoteInput").hide()
+  } else if (action === 'note') {
+    targetSelector.hide()
+    $('#scheduleTargetSelectorLabel').hide()
+    targetSelector.val(null)
+    $('#scheduleValueSelector').hide()
+    $('#scheduleValueSelectorLabel').hide()
+    $("#scheduleNoteInput").show()
   } else {
     targetSelector.hide()
     $('#scheduleTargetSelectorLabel').hide()
     targetSelector.val(null)
     $('#scheduleValueSelector').hide()
     $('#scheduleValueSelectorLabel').hide()
+    $("#scheduleNoteInput").hide()
   }
 }
 
@@ -386,8 +416,12 @@ export function setScheduleActionValueSelector () {
   valueSelector.empty()
 
   if (['set_content', 'set_definition'].includes(action)) {
-    const component = constExhibit.getExhibitComponent(target.slice(5))
-
+    try {
+      const component = constExhibit.getExhibitComponent(target.slice(5))
+    } catch {
+      return
+    }
+    
     constTools.makeRequest({
       method: 'GET',
       url: component.helperAddress,
@@ -421,7 +455,13 @@ export function setScheduleActionValueSelector () {
         $('#scheduleValueSelectorLabel').show()
       })
   } else if (action === 'set_dmx_scene') {
-    const component = constExhibit.getExhibitComponent(target.slice(5))
+    let component
+    try {
+      component = constExhibit.getExhibitComponent(target.slice(5))
+    } catch {
+      return
+    }
+    
 
     constTools.makeRequest({
       method: 'GET',
@@ -488,13 +528,15 @@ export function scheduleConfigureEditModal (scheduleName,
   if (currentScheduleID == null) {
     currentScheduleID = String(new Date().getTime())
   }
-
+  
   // Hide elements that aren't always visible
   $('#scheduleTargetSelector').hide()
   $('#scheduleTargetSelectorLabel').hide()
   $('#scheduleValueSelector').hide()
   $('#scheduleValueSelectorLabel').hide()
   $('#scheduleEditErrorAlert').hide()
+  $('#scheduleNoteInput').hide()
+  $('#scheduleNoteInput').val('')
 
   // Tag the modal with a bunch of data that we can read if needed when
   // submitting the change
@@ -530,14 +572,16 @@ export function scheduleConfigureEditModal (scheduleName,
     $('#scheduleActionTimeInput').val(currentTime)
     $('#scheduleActionSelector').val(currentAction)
 
-    if (currentTarget != null) {
-      setScheduleActionTargetSelector()
-      $('#scheduleTargetSelector').val(currentTarget)
-      $('#scheduleTargetSelector').show()
-      $('#scheduleTargetSelectorLabel').show()
-    }
-    if (currentValue != null) {
-
+    if (currentAction === 'note') {
+      $('#scheduleNoteInput').val(currentValue)
+      $('#scheduleNoteInput').show()
+    } else {
+      if (currentTarget != null) {
+        setScheduleActionTargetSelector()
+        $('#scheduleTargetSelector').val(currentTarget)
+        $('#scheduleTargetSelector').show()
+        $('#scheduleTargetSelectorLabel').show()
+      }
     }
   } else {
     $('#scheduleActionTimeInput').val(null)
@@ -555,8 +599,15 @@ export function sendScheduleUpdateFromModal () {
   const scheduleName = $('#scheduleEditModal').data('scheduleName')
   const time = $('#scheduleActionTimeInput').val().trim()
   const action = $('#scheduleActionSelector').val()
-  const target = $('#scheduleTargetSelector').val()
-  const value = $('#scheduleValueSelector').val()
+  let target = $('#scheduleTargetSelector').val()
+  let value
+  if (action === 'note') {
+    value = [$('#scheduleNoteInput').val()]
+    target = ''
+    console.log(time, action, target)
+  } else {
+    value = $('#scheduleValueSelector').val()
+  }
   const scheduleID = $('#scheduleEditModal').data('scheduleID')
 
   if (time === '' || time == null) {
