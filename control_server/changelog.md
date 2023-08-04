@@ -1,3 +1,10 @@
+# **Constellation 3.3**
+
+## <ins>New features</ins>
+- Make your schedules easier to understand by adding Notes.
+
+## <ins>Updated features</ins>
+
 # **Constellation 3.2**
 __*Constellation*__ 3.2 introduces a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.
 
