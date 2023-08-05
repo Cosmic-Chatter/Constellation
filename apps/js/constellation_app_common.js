@@ -249,18 +249,18 @@ function readServerUpdate (update) {
       }
     }
 
-  // Also check the definition file for a changed app.
-  if ('definition' in update && update.definition !== config.currentDefinition) {
-    config.currentDefinition = update.definition
-    makeHelperRequest({
-      method: 'GET',
-      endpoint: '/definitions/' + update.definition + '/load'
-    })
-    .then((result) => {
-      if ('success' in result && result.success === false) return
-      const def = result.definition
-      console.log(def)
-      if ('app' in def &&
+    // Also check the definition file for a changed app.
+    if ('definition' in update && update.definition !== config.currentDefinition) {
+      config.currentDefinition = update.definition
+      makeHelperRequest({
+        method: 'GET',
+        endpoint: '/definitions/' + update.definition + '/load'
+      })
+        .then((result) => {
+          if ('success' in result && result.success === false) return
+          const def = result.definition
+          console.log(def)
+          if ('app' in def &&
           def.app !== config.constellationAppID &&
           def.app !== '') {
             console.log(def, config.constellationAppID)
@@ -273,8 +273,8 @@ function readServerUpdate (update) {
               gotoApp(def.app)
             }
           }
-    })
-  }
+        })
+    }
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -582,7 +582,7 @@ export function gotoApp (app, other = '') {
 
 export function appNameToDisplayName (appName) {
   const displayNames = {
-    dmx_control: '/DMX Control',
+    dmx_control: 'DMX Control',
     infostation: 'InfoStation',
     media_browser: 'Media Browser',
     media_player: 'Media Player',

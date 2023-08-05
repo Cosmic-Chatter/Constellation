@@ -22,7 +22,22 @@ function updateParser (update) {
       document.getElementById('controlServerPortInput').value = update.control_server.port
     }
   }
+  if ('smart_restart' in update) {
+    if ('state' in update.smart_restart) {
+      document.getElementById('smartRestartStateSelect').value = update.smart_restart.state
+    }
+    if ('interval' in update.smart_restart) {
+      document.getElementById('smartRestartIntervalInput').value = update.smart_restart.interval
+    }
+    if ('threshold' in update.smart_restart) {
+      document.getElementById('smartRestartThresholdInput').value = update.smart_restart.threshold
+    }
+  }
   if ('system' in update) {
+    if ('active hours' in update.system) {
+      document.getElementById('activeHoursStartInput').value = update.system.active_hours.start
+      document.getElementById('activeHoursEndInput').value = update.system.active_hours.end
+    }
     if ('port' in update.system) {
       document.getElementById('remoteDisplayPortInput').value = update.system.port
     }
@@ -47,6 +62,7 @@ function configureInterface () {
     document.getElementById('controlServerIPInputGroup').style.display = 'block'
     document.getElementById('controlServerPortInputGroup').style.display = 'block'
     document.getElementById('smartRestartPane').style.display = 'block'
+    document.getElementById('permissionsPane').style.display = 'block'
   } else {
     document.getElementById('IDInputGroup').style.display = 'none'
     document.getElementById('groupInputGroup').style.display = 'none'
@@ -54,11 +70,21 @@ function configureInterface () {
     document.getElementById('controlServerIPInputGroup').style.display = 'none'
     document.getElementById('controlServerPortInputGroup').style.display = 'none'
     document.getElementById('smartRestartPane').style.display = 'none'
+    document.getElementById('permissionsPane').style.display = 'none'
   }
   if (document.getElementById('useRemoteDisplayToggle').checked === true) {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'block'
   } else {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'none'
+  }
+  if (document.getElementById('smartRestartStateSelect').value === 'off') {
+    Array.from(document.querySelectorAll('.smart-restart-options-div')).forEach((el) => {
+      el.style.display = 'none'
+    })
+  } else {
+    Array.from(document.querySelectorAll('.smart-restart-options-div')).forEach((el) => {
+      el.style.display = 'block'
+    })
   }
 }
 
@@ -189,6 +215,9 @@ document.getElementById('manageContentButton').addEventListener('click', (event)
 })
 Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {
   el.addEventListener('change', configureInterface)
+})
+document.getElementById('smartRestartStateSelect').addEventListener('change', (event) => {
+  configureInterface()
 })
 
 // Apps page

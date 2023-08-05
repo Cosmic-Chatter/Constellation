@@ -930,7 +930,6 @@ def _start_server(port=None):
 if __name__ == "__main__":
 
     defaults_path = helper_files.get_path(['configuration', 'config.json'], user_file=True)
-    missing_defaults_file = False
     if os.path.exists(defaults_path):
         helper_utilities.read_defaults()
 
@@ -946,20 +945,25 @@ if __name__ == "__main__":
         print(
             f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
     else:
-        print('config.json file not found! Bootstrapping server.')
-        missing_defaults_file = True
+        # We need to create a config.json file based on user input.
 
-        available_port = helper_utilities.find_available_port()
+        if sys.platform == 'linux' and getattr(sys, 'frozen', False) is True:
+            # Linux apps compiled with Pyinstaller can't use the GUI
+            helper_utilities.handle_missing_defaults_file()
+        else:
+            print('config.json file not found! Bootstrapping server.')
 
-        webview.create_window('Constellation Apps Setup',
-                              confirm_close=False,
-                              height=720,
-                              width=720,
-                              min_size=(720, 720),
-                              url='http://localhost:' + str(
-                                  available_port) + '/first_time_setup.html')
+            available_port = helper_utilities.find_available_port()
 
-        webview.start(func=bootstrap_app, args=available_port)
+            webview.create_window('Constellation Apps Setup',
+                                  confirm_close=False,
+                                  height=720,
+                                  width=720,
+                                  min_size=(720, 720),
+                                  url='http://localhost:' + str(
+                                      available_port) + '/first_time_setup.html')
+
+            webview.start(func=bootstrap_app, args=available_port)
 
     if const_config.defaults["system"].get("remote_display", True) is True:
         # Start the server but don't create a GUI window

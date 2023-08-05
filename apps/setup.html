@@ -137,6 +137,70 @@
               </div>
             </div>
           </div>
+          <!-- Permissions -->
+          <div id="permissionsPane">
+            <div class="h5 mt-2">Permissions</div>
+            <p>
+              <i>Permissions enable you to adjust how much Control Server can affect the system.</i>
+            </p>
+            <div class="row mt-2 gy-2">
+              <!-- Audio permission -->
+              <div class="col-6 col-sm-4 col-md-2">
+                <label for="permissionsAudioInput" class="form-label">
+                  Audio
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="permissionsAudioInput">
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+              </div>
+              <!-- Refresh permission -->
+              <div class="col-6 col-sm-4 col-md-2">
+                <label for="permissionsRefreshInput" class="form-label">
+                  Refresh
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="permissionsRefreshInput">
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+              </div>
+              <!-- Restart permission -->
+              <div class="col-6 col-sm-4 col-md-2">
+                <label for="permissionsRestartInput" class="form-label">
+                  Refresh
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="permissionsRestartInput">
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+              </div>
+              <!-- Shutdown permission -->
+              <div class="col-6 col-sm-4 col-md-2">
+                <label for="permissionsShutdownInput" class="form-label">
+                  Shutdown
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shutdown the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="permissionsShutdownInput">
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+              </div>
+              <!-- Sleep permission -->
+              <div class="col-6 col-sm-4 col-md-2">
+                <label for="permissionsSleepInput" class="form-label">
+                  Sleep
+                  <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                </label>
+                <select class="form-select" id="permissionsSleepInput">
+                  <option value="true">Allow</option>
+                  <option value="false">Disallow</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <!-- Smart Restart -->
           <div id="smartRestartPane">
             <div class="h5 mt-2">Smart Restart</div>
@@ -159,7 +223,7 @@
               </div>
             </div>
             <!-- Smart Restart interval -->
-            <div class="col-6 col-sm-3 col-md-2">
+            <div class="col-6 col-sm-3 col-md-2 smart-restart-options-div">
               <div class="mb-3">
                 <label for="smartRestartIntervalInput" class="form-label">
                   Interval
@@ -169,7 +233,7 @@
               </div>
             </div>
             <!-- Smart Restart threshold -->
-            <div class="col-6 col-sm-3 col-md-2">
+            <div class="col-6 col-sm-3 col-md-2 smart-restart-options-div">
               <div class="mb-3">
                 <label for="smartRestartThresholdInput" class="form-label">
                   Threshold
@@ -179,7 +243,7 @@
               </div>
             </div>
             <!-- Active hours start -->
-            <div class="col-6 col-sm-3 col-lg-2">
+            <div class="col-6 col-sm-3 col-lg-2 smart-restart-options-div">
               <div class="mb-3">
                 <label for="activeHoursStartInput" class="form-label">
                   Active hours start
@@ -189,7 +253,7 @@
               </div>
             </div>
             <!-- Active hours end -->
-            <div class="col-6 col-sm-3 col-lg-2">
+            <div class="col-6 col-sm-3 col-lg-2 smart-restart-options-div">
               <div class="mb-3">
                 <label for="activeHoursEndInput" class="form-label">
                   Active hours end
