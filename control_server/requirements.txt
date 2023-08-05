@@ -2,7 +2,7 @@ aiofiles
 fastapi
 icmplib
 psutil
-pydantic
+pydantic==1.10.11 
 pypjlink2
 pyserial
 python-dateutil

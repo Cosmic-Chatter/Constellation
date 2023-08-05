@@ -79,6 +79,7 @@ function showAppHelpMOdal (app) {
   // Ask the helper to send the relavent README.md file and display it in the modal
 
   const endpointStems = {
+    dmx_control: '/dmx_control/',
     infostation: '/InfoStation/',
     media_browser: '/media_browser/',
     media_player: '/media_player/',
@@ -191,6 +192,9 @@ Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {
 })
 
 // Apps page
+$('#DMXControlHelpButton').click(function () {
+  showAppHelpMOdal('dmx_control')
+})
 $('#InfoStationHelpButton').click(function () {
   showAppHelpMOdal('infostation')
 })

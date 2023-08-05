@@ -6,42 +6,39 @@ import config
 
 
 def on_closed():
-    print('pywebview window is closed')
+    pass
 
 
 def on_closing():
-    print('pywebview window is closing')
+    pass
 
 
 def on_shown():
-    print('pywebview window shown')
+    pass
 
 
 def on_minimized():
-    print('pywebview window minimized')
+    pass
 
 
 def on_restored():
-    print('pywebview window restored')
+    pass
 
 
 def on_maximized():
-    print('pywebview window maximized')
-
+    pass
 
 def on_loaded():
-    print('DOM is ready')
 
     # unsubscribe event listener
     webview.windows[0].events.loaded -= on_loaded
 
 
 def on_resized(width, height):
-    print('pywebview window is resized. new dimensions are {width} x {height}'.format(width=width, height=height))
-
+    pass
 
 def on_moved(x, y):
-    print('pywebview window is moved. new coordinates are x: {x}, y: {y}'.format(x=x, y=y))
+    pass
 
 
 def show_webview_settings():
