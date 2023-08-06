@@ -22,6 +22,25 @@ function updateParser (update) {
       document.getElementById('controlServerPortInput').value = update.control_server.port
     }
   }
+  if ('permissions' in update) {
+    if ('audio' in update.permissions) {
+      document.getElementById('permissionsAudioInput').value = String(update.permissions.audio)
+    }
+    if ('refresh' in update.permissions) {
+      document.getElementById('permissionsRefreshInput').value = String(update.permissions.refresh)
+    }
+    if ('restart' in update.permissions) {
+      document.getElementById('permissionsRestartInput').value = String(update.permissions.restart)
+    }
+    if ('shutdown' in update.permissions) {
+      document.getElementById('permissionsShutdownInput').value = String(update.permissions.shutdown)
+    } else {
+      document.getElementById('permissionsShutdownInput').value = 'false'
+    }
+    if ('sleep' in update.permissions) {
+      document.getElementById('permissionsSleepInput').value = String(update.permissions.sleep)
+    }
+  }
   if ('smart_restart' in update) {
     if ('state' in update.smart_restart) {
       document.getElementById('smartRestartStateSelect').value = update.smart_restart.state
@@ -49,6 +68,82 @@ function updateParser (update) {
     }
   }
   configureInterface()
+}
+
+function saveConfiguration () {
+  // Construct an object from the user seetings and send it to the helper for saving.
+
+  const defaults = {
+    app: {},
+    system: {
+      remote_display: document.getElementById('useRemoteDisplayToggle').checked,
+      standalone: !document.getElementById('useControlServerToggle').checked
+    }
+  }
+
+  if (defaults.system.standalone === false) {
+    // We are using Control Server, so update relevant defaults
+    defaults.app.id = document.getElementById('IDInput').value.trim()
+    defaults.app.group = document.getElementById('groupInput').value.trim()
+    defaults.control_server = {
+      ip_address: document.getElementById('controlServerIPInput').value.trim(),
+      port: parseInt(document.getElementById('controlServerPortInput').value)
+    }
+    defaults.permissions = {
+      audio: constCommon.stringToBool(document.getElementById('permissionsAudioInput').value),
+      refresh: constCommon.stringToBool(document.getElementById('permissionsRefreshInput').value),
+      restart: constCommon.stringToBool(document.getElementById('permissionsRestartInput').value),
+      shutdown: constCommon.stringToBool(document.getElementById('permissionsShutdownInput').value),
+      sleep: constCommon.stringToBool(document.getElementById('permissionsSleepInput').value)
+    }
+    defaults.smart_restart = {
+      state: document.getElementById('smartRestartStateSelect').value,
+      interval: parseInt(document.getElementById('smartRestartIntervalInput').value),
+      threshold: parseInt(document.getElementById('smartRestartThresholdInput').value)
+    }
+    defaults.system.active_hours = {
+      start: document.getElementById('activeHoursStartInput').value.trim(),
+      end: document.getElementById('activeHoursEndInput').value.trim()
+    }
+  } else {
+    // We are not using Control Server
+    defaults.app.definition = document.getElementById('definitionSelect').value
+  }
+
+  if (defaults.system.remote_display === true) {
+    defaults.system.port = parseInt(document.getElementById('remoteDisplayPortInput').value)
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/setDefaults',
+    params: { defaults }
+  })
+    .then((result) => {
+      const el = document.getElementById('saveDefaultsButton')
+      el.classList.add('btn-success')
+      el.classList.remove('btn-primary')
+      el.innerHTML = 'Saved!'
+      setTimeout(() => {
+        console.log('here')
+        el.classList.remove('btn-success')
+        el.classList.add('btn-primary')
+        el.innerHTML = 'Save changes'
+      }, 2000)
+    })
+    .catch((result) => {
+      const el = document.getElementById('saveDefaultsButton')
+      el.classList.add('btn-danger')
+      el.classList.remove('btn-primary')
+      el.innerHTML = 'Error'
+      setTimeout(() => {
+        console.log('here')
+        el.classList.remove('btn-danger')
+        el.classList.add('btn-primary')
+        el.innerHTML = 'Save changes'
+      }, 2000)
+    })
+  console.log(defaults)
 }
 
 function configureInterface () {
@@ -210,6 +305,9 @@ populateAvailableDefinitions()
 
 // Add event handlers
 // Settings page
+document.getElementById('saveDefaultsButton').addEventListener('click', (event) => {
+  saveConfiguration()
+})
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelectModal.createFileSelectionModal({ manage: true })
 })
