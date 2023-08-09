@@ -10,8 +10,7 @@ function updateParser (update) {
         loadDefinition(result.definition)
       })
   }
-
-  if ('autoplay_audio' in update && update.autoplay_audio === 'true') {
+  if ('autoplay_audio' in update && update.autoplay_audio.toLowerCase() === 'true') {
     document.getElementById('fullscreenVideo').muted = false
     document.getElementById('audioPlayer').muted = false
   }
