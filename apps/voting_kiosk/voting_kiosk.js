@@ -138,6 +138,11 @@ function setActive () {
 function checkConnection () {
   // Send a message to the server checking that the connection is stable.
 
+  if (constCommon.config.standalone === true) {
+    badConnection = false
+    return
+  }
+
   constCommon.makeServerRequest(
     {
       method: 'GET',
@@ -329,7 +334,7 @@ function loadDefinition (definition) {
 
 function sendData () {
   // Collect the current value from each card, build a dictionary, and
-  // send it to the control server for storage.
+  // send it for storage.
 
   if (constCommon.config.debug) {
     console.log('Sending data...')
@@ -366,12 +371,22 @@ function sendData () {
     name: configurationName
   }
 
-  constCommon.makeServerRequest(
-    {
-      method: 'POST',
-      endpoint: '/tracker/flexible-tracker/submitData',
-      params: requestDict
-    })
+  // Submit the data to Control Server or the helper, depending on if we're standalone
+  if (constCommon.config.standalone === true) {
+    constCommon.makeHelperRequest(
+      {
+        method: 'POST',
+        endpoint: '/data/write',
+        params: requestDict
+      })
+  } else {
+    constCommon.makeServerRequest(
+      {
+        method: 'POST',
+        endpoint: '/tracker/flexible-tracker/submitData',
+        params: requestDict
+      })
+  }
 }
 
 function showSuccessMessage () {
@@ -405,7 +420,7 @@ constCommon.configureApp({
   parseUpdate: updateFunc
 })
 
-let badConnection = true
+let badConnection = false
 
 let configurationName = 'default'
 let currentDefintion = ''

@@ -368,6 +368,37 @@ async def rename_file(current_name: str = Body(description="The file to be renam
     return helper_files.rename_file(current_name, new_name)
 
 
+@app.post("/data/write")
+async def write_data(data: dict[str, Any] = Body(description="A dictionary of data to be written to file as JSON."),
+                     name: str = Body(description="The name of the file to write,")):
+    """Record the submitted data to file as JSON."""
+
+    file_path = helper_files.get_path(["data", name + ".txt"], user_file=True)
+    success, reason = helper_files.write_json(data, file_path, append=True, compact=True)
+    response = {"success": success, "reason": reason}
+    return response
+
+
+@app.post("/data/getCSV")
+async def get_tracker_data_csv(name: str = Body(description='The name of the filename to return as a CSV', embed=True)):
+    """Return the requested data file as a CSV string."""
+
+    if not name.lower().endswith(".txt"):
+        name += ".txt"
+    data_path = helper_files.get_path(["data", name], user_file=True)
+    if not os.path.exists(data_path):
+        return {"success": False, "reason": f"File {name}.txt does not exist!", "csv": ""}
+    result = helper_files.create_csv(data_path)
+    return {"success": True, "csv": result}
+
+
+@app.get("/data/getAvailable")
+async def get_available_data():
+    """Return a list of files in the /data directory."""
+
+    return {"success": True, "files": helper_files.get_available_data()}
+
+
 @app.post("/gotoClip")
 async def goto_clip(data: dict[str, Any], config: const_config = Depends(get_config)):
     """Command the client to display the given clip number"""
@@ -942,8 +973,11 @@ if __name__ == "__main__":
         # Activate Smart Restart
         helper_system.smart_restart_check()
 
-        print(
-            f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
+        if const_config.defaults['system']['standalone'] is True:
+            print(f"Starting Constellation Apps on port {const_config.defaults['system']['port']}.")
+        else:
+            print(
+                f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
     else:
         # We need to create a config.json file based on user input.
 

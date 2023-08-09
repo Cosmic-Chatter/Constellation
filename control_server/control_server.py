@@ -611,7 +611,7 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
         name += ".txt"
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
     if not os.path.exists(data_path):
-        return {"success": False, "reason": f"File {data['name']}.json does not exist!", "csv": ""}
+        return {"success": False, "reason": f"File {data['name']}.txt does not exist!", "csv": ""}
     result = c_track.create_CSV(data_path)
     return {"success": True, "csv": result}
 

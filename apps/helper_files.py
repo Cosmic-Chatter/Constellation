@@ -1,7 +1,9 @@
 """System Helper functions for managing files"""
 
 # Standard modules
+import csv
 import glob
+import io
 import json
 import logging
 import os
@@ -15,10 +17,10 @@ import mimetypes
 ffmpeg_path: str
 try:
     import pyffmpeg
+
     ffmpeg_path = pyffmpeg.FFmpeg().get_ffmpeg_bin()
 except ModuleNotFoundError:
     ffmpeg_path = 'ffmpeg'
-
 
 # Constellation modules
 import config
@@ -52,17 +54,126 @@ def load_json(path: str):
             return result
 
 
-def write_json(data, path: str, append: bool = False) -> None:
-    """Take the given object and try to write it to a JSON file."""
+def write_json(data: dict, path: str | os.PathLike, append: bool = False, compact: bool = False) -> tuple[bool, str]:
+    """Take the given object and try to write it to a JSON file.
+
+    Setting compact=True will print the dictionary on one line.
+    """
+
+    success = True
+    reason = ""
 
     if append:
         mode = 'a'
     else:
         mode = 'w'
 
-    with config.content_file_lock:
-        with open(path, mode, encoding='UTF-8') as f:
-            json.dump(data, f, indent=2, sort_keys=True)
+    try:
+        with config.content_file_lock:
+            with open(path, mode, encoding='UTF-8') as f:
+                if compact:
+                    json_str = json.dumps(data, sort_keys=True)
+                    f.write(json_str + "\n")
+                else:
+                    json_str = json.dumps(data, indent=2, sort_keys=True)
+                    f.write(json_str + "\n")
+    except TypeError:
+        success = False
+        reason = "Data is not JSON serializable"
+    except FileNotFoundError:
+        success = False
+        reason = f"File {path} does not exist"
+    except PermissionError:
+        success = False
+        reason = f"You do not have write permission for the file {path}"
+
+    return success, reason
+
+
+def create_csv(file_path: str | os.PathLike, filename: str = "") -> str:
+    """Load a data file and convert it to a CSV"""
+
+    dict_list = []
+    try:
+        with open(file_path, 'r', encoding="UTF-8") as f:
+            for line in f.readlines():
+                dict_list.append(json.loads(line))
+    except FileNotFoundError:
+        return ""
+    return json_list_to_csv(dict_list, filename=filename)
+
+
+def json_list_to_csv(dict_list: list, filename: str = "") -> str:
+    """Convert a list JSON dicts to a comma-separated string"""
+
+    # First, identify any keys that have lists as their value
+    all_keys = {}
+    keys = get_unique_keys(dict_list)
+    for key in keys:
+        # This function will return an empty list if the value is not a list,
+        # and a list of all unique values if it is.
+        unique_keys = get_unique_values(dict_list, key)
+        if len(unique_keys) > 0:
+            all_keys[key] = unique_keys
+        else:
+            all_keys[key] = None
+
+    # Next, reformat the dict_list so that keys with a list have those values
+    # flattened into the main dict level
+    reformed_dict_list = []
+    for this_dict in dict_list:
+        new_dict = {}
+        for key, value in this_dict.items():
+            if all_keys[key] is None:  # Simple key
+                value_to_write = this_dict[key]
+                if isinstance(value_to_write, str):
+                    value_to_write = value_to_write.replace("\n", " ")
+                new_dict[key] = value_to_write
+            else:
+                for sub_key in all_keys[key]:
+                    new_dict[key + " - " + sub_key] = sub_key in this_dict[key]
+        reformed_dict_list.append(new_dict)
+
+    # Build the CSV, optionally write it to disk, and then return it
+    try:
+        with io.StringIO(newline='') as f:
+            csv_writer = csv.DictWriter(f, get_unique_keys(reformed_dict_list))
+            csv_writer.writeheader()
+            csv_writer.writerows(reformed_dict_list)
+            result = f.getvalue()
+    except IndexError:
+        print("JSON_list_to_CSV: Error: Nothing to write")
+        result = ""
+
+    if filename != "":
+        with open(filename, 'w', encoding="UTF-8", newline="") as f:
+            f.write(result)
+    return result
+
+
+def get_unique_keys(dict_list: list) -> list:
+    """Return a set of unique keys from a list of dicts, sorted for consistency."""
+
+    return sorted(list(set().union(*(d.keys() for d in dict_list))))
+
+
+def get_unique_values(dict_list: list, key: str) -> list:
+    """For a given key, search the list of dicts for all unique values, expanding lists."""
+
+    unique_values = set()
+
+    for this_dict in dict_list:
+        if key in this_dict and isinstance(this_dict[key], list):
+            for value in this_dict[key]:
+                unique_values.add(value)
+
+    return list(unique_values)
+
+
+def get_available_data() -> list[str]:
+    """Return a list of files in the /data directory."""
+
+    return os.listdir(get_path(['data'], user_file=True))
 
 
 def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
@@ -179,7 +290,7 @@ def create_thumbnail(filename: str, mimetype: str):
                               get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
 
             # Finally, create the image thumbnail from the halfway point
-            subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec/2)), '-i', file_path,
+            subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec / 2)), '-i', file_path,
                               '-vframes', '1', "-vf", "scale=400:-1",
                               get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
 
@@ -193,12 +304,15 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
     """Take a list of image filenames and use FFmpeg to turn it into a video thumbnail."""
 
     output_path = get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)
-    fps = len(frames)/duration
+    fps = len(frames) / duration
 
     # First, render each file in a consistent format
     for i, frame in enumerate(frames):
         thumb_path, _ = get_thumbnail(frame, force_image=True)
-        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1', '-pix_fmt', 'yuv420p', get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True)]
+        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf',
+                   'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1',
+                   '-pix_fmt', 'yuv420p',
+                   get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True)]
         process = subprocess.Popen(command)
         process.communicate()
 
@@ -211,7 +325,7 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
 
     # Finally, delete the temp files
     for i in range(len(frames)):
-        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True))
+        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True))
 
     return True
 
@@ -382,7 +496,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["configuration", "content", "definitions", "static", "thumbnails"]
+    dir_list = ["configuration", "content", "data", "definitions", "static", "thumbnails"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

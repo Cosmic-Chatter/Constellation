@@ -196,6 +196,49 @@ function loadVersion () {
     })
 }
 
+function populateAvailableData () {
+  // Get a list of available data files and populate the voting kiosk download select
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/data/getAvailable'
+  })
+    .then((result) => {
+      const select = document.getElementById('votingKioskCSVDownloadSelect')
+      select.innerHTML = ''
+
+      result.files.forEach((file) => {
+        const split = file.split('.')
+        const noExt = split.slice(0, -1).join('.')
+        const option = new Option(noExt)
+        select.appendChild(option)
+      })
+    })
+}
+
+function downloadDataAsCSV () {
+  // Download the currently selected data file as a CSV file.
+
+  const name = document.getElementById('votingKioskCSVDownloadSelect').value
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/data/getCSV',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Convert the text to a file and initiate download
+        const fileBlob = new Blob([result.csv], {
+          type: 'text/plain'
+        })
+        const a = document.createElement('a')
+        a.href = window.URL.createObjectURL(fileBlob)
+        a.download = name + '.csv'
+        a.click()
+      }
+    })
+}
+
 function showAppHelpMOdal (app) {
   // Ask the helper to send the relavent README.md file and display it in the modal
 
@@ -301,6 +344,7 @@ markdownConverter.setFlavor('github')
 constCommon.askForDefaults(false)
 loadVersion()
 populateHelpTab()
+populateAvailableData()
 populateAvailableDefinitions()
 
 // Add event handlers
@@ -337,6 +381,7 @@ $('#timelapseViewerHelpButton').click(function () {
 $('#votingKioskHelpButton').click(function () {
   showAppHelpMOdal('voting_kiosk')
 })
+document.getElementById('votingKioskCSVDownloadButton').addEventListener('click', downloadDataAsCSV)
 $('#timelineExplorerHelpButton').click(function () {
   showAppHelpMOdal('timeline_explorer')
 })
