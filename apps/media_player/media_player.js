@@ -1,7 +1,7 @@
 import * as constCommon from '../js/constellation_app_common.js'
 
 function updateParser (update) {
-  // Read updates specific to the media browser
+  // Read updates specific to the media player
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
@@ -134,38 +134,17 @@ function changeMedia (source) {
     }
   }
 }
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_player'
-let currentDefintion = ''
-
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
 constCommon.config.sourceList = []
-let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.
-constCommon.config.waitingForSynchronization = false
 constCommon.config.autoplayEnabled = true
 constCommon.config.allowAudio = false
 
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
+constCommon.configureApp({
+  name: 'media_player',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
 
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-}
-
-// Hide the cursor
-document.body.style.cursor = 'none'
+let currentDefintion = ''
+let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.

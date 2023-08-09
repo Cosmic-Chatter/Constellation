@@ -4,24 +4,72 @@ export const config = {
   allowedActionsDict: { refresh: 'true' },
   AnyDeskID: '',
   autoplayAudio: false,
+  connectionChecker: null, // A function to check the connection with Control Server and act on it
   constellationAppID: '',
+  currentDefinition: '',
   currentExhibit: 'default',
   currentInteraction: false,
+  definitionLoader: null, // A function used by loadDefinition() to set up the specific app.
   errorDict: {},
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
   otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
-  platformDetails: {},
+  platformDetails: {
+    operating_system: String(platform.os),
+    browser: platform.name + ' ' + platform.version
+  },
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
   softwareVersion: 3.3,
+  standalone: false, // false == we are using Control Server
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
-config.platformDetails = {
-  operating_system: String(platform.os),
-  browser: platform.name + ' ' + platform.version
+export function configureApp (opt = {}) {
+  // Perform basic app setup
+
+  config.helperAddress = window.location.origin
+
+  if ('checkConnection' in opt) config.connectionChecker = opt.checkConnection
+  if ('debug' in opt) config.debug = opt.debut
+  if ('loadDefinition' in opt) {
+    config.definitionLoader = opt.loadDefinition
+  } else {
+    console.log('constellation_app_common: configureApp: you must specify the option loadDefinition')
+  }
+  if ('name' in opt) config.constellationAppID = opt.name
+  if ('parseUpdate' in opt) config.updateParser = opt.parseUpdate
+
+  const searchParams = parseQueryString()
+  if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+    if (searchParams.has('definition')) {
+      loadDefinition(searchParams.get('definition'))
+        .then((result) => {
+          config.definitionLoader(result.definition)
+        })
+    }
+  } else {
+  // We are displaying this for real
+    askForDefaults()
+      .then(() => {
+        if (config.standalone === false) {
+          // Using Control Server
+          sendPing()
+          setInterval(sendPing, 5000)
+          if (config.connectionChecker != null) setInterval(config.connectionChecker, 500)
+        } else {
+          // Not using Control Server
+          loadDefinition(config.currentDefinition)
+            .then((result) => {
+              config.definitionLoader(result.definition)
+            })
+        }
+      })
+    // Hide the cursor
+    document.body.style.cursor = 'none'
+  }
 }
 
 function makeRequest (opt) {
@@ -283,9 +331,10 @@ function readServerUpdate (update) {
   }
 }
 
-function readHelperUpdate (update) {
-  // Function to read a message from the server and take action based on the contents
+function readHelperUpdate (update, changeApp = true) {
+  // Function to read a message from the helper and take action based on the contents
   // 'update' should be an object
+  // Set changeApp === false to suppress changing the app if the definition has changed
 
   console.log(update)
 
@@ -323,7 +372,8 @@ function readHelperUpdate (update) {
   // App settings
   if ('app' in update) {
     if ('id' in update.app) config.id = update.app.id
-    if ('group' in update) config.group = update.app.group
+    if ('group' in update.app) config.group = update.app.group
+    if ('definition' in update.app) config.definition = update.app.definition
   }
   if ('control_server' in update) {
     if (('ip_address' in update.control_server) && ('port' in update.control_server)) {
@@ -346,6 +396,9 @@ function readHelperUpdate (update) {
         config.AnyDeskID = update.system.remote_viewers.anydesk_id
       }
     }
+    if ('standalone' in update.system) {
+      config.standalone = update.system.standalone
+    }
   }
   if ('other_app_path' in update) {
     config.otherAppPath = update.other_app_path
@@ -354,20 +407,37 @@ function readHelperUpdate (update) {
     sendConfigUpdate(update)
   }
 
-  // After we have saved any updates, see if we should change the app
-  if (stringToBool(parseQueryString().get('showSettings')) === false) {
-    if ('app' in update &&
-       'name' in update.app &&
-        update.app.name !== config.constellationAppID &&
-        update.app.name !== '') {
-      if (update.app.name === 'other') {
-        if (config.otherAppPath !== '') {
-          gotoApp('other', config.otherAppPath)
+  // After we have saved any updates, see if we should change the app based on the current definition
+  if (
+    changeApp === true &&
+    'app' in update &&
+    'definition' in update.app &&
+    update.app.definition !== config.currentDefinition &&
+    config.standalone === true
+  ) {
+    config.currentDefinition = update.app.definition
+    makeHelperRequest({
+      method: 'GET',
+      endpoint: '/definitions/' + update.app.definition + '/load'
+    })
+      .then((result) => {
+        if ('success' in result && result.success === false) return
+        const def = result.definition
+        console.log(def)
+        if ('app' in def &&
+        def.app !== config.constellationAppID &&
+        def.app !== '') {
+          console.log(def, config.constellationAppID)
+          if (def.app === 'other') {
+            if (config.otherAppPath !== '') {
+              gotoApp('other', config.otherAppPath)
+            }
+          } else {
+            console.log('Switching to app', def.app)
+            gotoApp(def.app)
+          }
         }
-      } else {
-        gotoApp(update.app.name)
-      }
-    }
+      })
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -376,9 +446,10 @@ function readHelperUpdate (update) {
   }
 }
 
-export function askForDefaults () {
+export function askForDefaults (changeApp = true) {
   // Send a message to the local helper and ask for the latest configuration
   // defaults, then use them.
+  // Set changeApp === false to supress changing the app based on the current definition
 
   const checkAgain = function () {
     $('#helperConnectionWarningAddress').text(config.helperAddress)
@@ -390,7 +461,9 @@ export function askForDefaults () {
     method: 'GET',
     endpoint: '/getDefaults'
   })
-    .then(readHelperUpdate, checkAgain)
+    .then((update) => {
+      readHelperUpdate(update, changeApp)
+    }, checkAgain)
 }
 
 export function checkForHelperUpdates () {
@@ -649,6 +722,8 @@ export function guessMimetype (filename) {
 
 export function loadDefinition (defName) {
   // Ask the helper for the given definition and return a promise containing it.
+
+  config.currentDefinition = defName
 
   return makeHelperRequest({
     method: 'GET',

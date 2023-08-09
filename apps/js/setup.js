@@ -64,7 +64,7 @@ function updateParser (update) {
       document.getElementById('useRemoteDisplayToggle').checked = update.system.remote_display
     }
     if ('standalone' in update.system) {
-      document.getElementById('useControlServerToggle').checked = ~update.system.standalone
+      document.getElementById('useControlServerToggle').checked = !update.system.standalone
     }
   }
   configureInterface()
@@ -298,7 +298,7 @@ tooltipTriggerList.map(function (tooltipTriggerEl) {
 const markdownConverter = new showdown.Converter()
 markdownConverter.setFlavor('github')
 
-constCommon.askForDefaults()
+constCommon.askForDefaults(false)
 loadVersion()
 populateHelpTab()
 populateAvailableDefinitions()

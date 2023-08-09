@@ -612,38 +612,19 @@ let currentPage = 0
 let cardsPerPage, numCols, numRows
 let defaultLang
 
-// Constellation stuff
-constCommon.config.helperAddress = window.location.origin
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_browser'
-constCommon.config.debug = true
+constCommon.configureApp({
+  name: 'media_browser',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
+
 let currentDefintion = ''
 
 let inactivityTimer = null
 let inactivityTimeout = 30000
 let attractorAvailable = false
 let attractorType = 'image'
-
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
 
 // Attach event listeners
 $('#previousPageButton').click(function () {
