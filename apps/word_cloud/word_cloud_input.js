@@ -42,57 +42,43 @@ function updateFunc (update) {
   // Read updates for word cloud-specific actions and act on them
 
   // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      constCommon.makeHelperRequest(
-        {
-          method: 'GET',
-          endpoint: '/content/' + definition,
-          rawResponse: true
-        })
-        .then((response) => {
-          updateContent(definition, constCommon.parseINIString(response))
-        })
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function updateContent (name, definition) {
-  // Clean up the old survey, then create the new one.
+function loadDefinition (definition) {
+  // Set up a new interface to collect input
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
+  console.log(definition)
 
   // Parse the settings and make the appropriate changes
-  if ('prompt' in definition.SETTINGS) {
-    document.getElementById('promptText').innerHTML = definition.SETTINGS.prompt
+  if ('prompt' in definition.content) {
+    document.getElementById('promptText').innerHTML = definition.content.prompt
   } else {
     document.getElementById('promptText').innerHTML = ''
   }
-  if ('collection_name' in definition.SETTINGS) {
-    collectionName = definition.SETTINGS.collection_name
+  if ('collection_name' in definition.behavior) {
+    collectionName = definition.behavior.collection_name
   } else {
     collectionName = 'default'
   }
-  if ('prompt_size' in definition.SETTINGS) {
-    document.getElementById('promptText').style.fontSize = definition.SETTINGS.prompt_size + 'vh'
+  if ('prompt_size' in definition.appearance) {
+    document.getElementById('promptText').style.fontSize = definition.appearance.prompt_size + 'vh'
   } else {
     document.getElementById('promptText').style.fontSize = '10vh'
   }
-  if ('prompt_color' in definition.SETTINGS) {
-    document.getElementById('promptText').style.color = definition.SETTINGS.prompt_color
+  if ('prompt_color' in definition.appearance) {
+    document.getElementById('promptText').style.color = definition.appearance.prompt_color
   } else {
     document.getElementById('promptText').style.color = 'black'
   }
-  if ('background_color' in definition.SETTINGS) {
-    document.body.style.backgroundColor = definition.SETTINGS.background_color
+  if ('background_color' in definition.appearance) {
+    document.body.style.backgroundColor = definition.appearance.background_color
   } else {
     document.body.style.backgroundColor = 'white'
   }
@@ -135,16 +121,15 @@ const keyboard = new Keyboard({
   }
 })
 
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'word_cloud_input'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
+constCommon.configureApp({
+  name: 'word_cloud_input',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
 
-let currentContent = {}
+let currentDefintion = ''
 let collectionName = 'default'
-
-constCommon.askForDefaults()
-setInterval(constCommon.sendPing, 5000)
 
 document.getElementById('clearButton').addEventListener('click', clear)
 document.getElementById('submitButton').addEventListener('click', sendTexttoServer)
