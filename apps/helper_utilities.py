@@ -417,7 +417,7 @@ def convert_defaults_ini():
     if "autoplay_audio" in defaults_dict:
         result = update_dictionary(result, {"permissions": {"audio": str_to_bool(defaults_dict["autoplay_audio"])}})
 
-    config_path = helper_files.get_path(["configuration", "config.json"])
+    config_path = helper_files.get_path(["configuration", "config.json"], user_file=True)
     try:
         helper_files.write_json(result, config_path)
     except FileNotFoundError:
