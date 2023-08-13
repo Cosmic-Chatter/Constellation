@@ -18,14 +18,18 @@ function clearDefinitionInput (full = true) {
           appearance: {},
           attractor: {},
           behavior: {},
-          content: {}
+          content: {
+            localization: {}
+          }
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
           appearance: {},
           attractor: {},
           behavior: {},
-          content: {}
+          content: {
+            localization: {}
+          }
         })
         previewDefinition(false)
       })
@@ -33,11 +37,31 @@ function clearDefinitionInput (full = true) {
 
   // Definition details
   document.getElementById('definitionNameInput').value = ''
+  document.getElementById('collectionNameInput').value = ''
 
   // Content details
+  document.getElementById('promptInput').value = ''
+  Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
+    el.value = ''
+  })
 
   // Attractor details
-  document.getElementById('attractorInput_attractor_timeout').value = 30
+  // document.getElementById('attractorInput_attractor_timeout').value = 30
+
+  // Reset color options
+  const colorInputs = ['background', 'input', 'input-background', 'submit', 'submit-background', 'clear', 'clear-background', 'prompt', 'keyboard-key', 'keyboard-key-background', 'keyboard-background']
+  colorInputs.forEach((input) => {
+    const el = $('#colorPicker_' + input)
+    el.val(el.data('default'))
+    document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+
+  // Font details
+  Array.from(document.querySelectorAll('.font-select')).forEach((el) => {
+    el.value = el.getAttribute('data-default')
+  })
+
+  document.getElementById('promptTextSizeSlider').value = 0
 }
 function createNewDefinition () {
   // Set up for a new definition
@@ -54,8 +78,44 @@ function editDefinition (uuid = '') {
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
   $('#definitionNameInput').val(def.name)
+  if ('collection_name' in def.behavior) {
+    document.getElementById('collectionNameInput').value = def.behavior.collection_name
+  } else {
+    document.getElementById('collectionNameInput').value = ''
+  }
+
+  // Content
+  if ('prompt' in def.content) {
+    document.getElementById('promptInput').value = def.content.prompt
+  } else {
+    document.getElementById('promptInput').value = ''
+  }
+
+  Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
+    const property = el.getAttribute('data-property')
+    if (property in def.content.localization) el.value = def.content.localization[property]
+  })
 
   // Set the appropriate values for the attractor fields
+
+  // Set the appropriate values for the color pickers
+  if ('color' in def.appearance) {
+    Object.keys(def.appearance.color).forEach((key) => {
+      $('#colorPicker_' + key).val(def.appearance.color[key])
+      document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
+    })
+  }
+
+  // Fonts
+  if ('font' in def.appearance) {
+    Object.keys(def.appearance.font).forEach((key) => {
+      document.getElementById('fontSelect_' + key).value = def.appearance.font[key]
+    })
+  }
+
+  if ('prompt' in def.appearance.text_size) {
+    document.getElementById('promptTextSizeSlider').value = def.appearance.text_size.prompt
+  }
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../word_cloud_input.html?standalone=true&definition=' + def.uuid
@@ -144,7 +204,7 @@ function saveDefintion () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const selects = ['fontSelect_prompt']
+  const selects = ['fontSelect_prompt', 'fontSelect_input', 'fontSelect_submit', 'fontSelect_clear']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
@@ -244,6 +304,14 @@ document.getElementById('promptInput').addEventListener('change', (event) => {
   previewDefinition(true)
 })
 
+Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
+  el.addEventListener('change', (event) => {
+    const property = event.target.getAttribute('data-property')
+    constSetup.updateWorkingDefinition(['content', 'localization', property], event.target.value)
+    previewDefinition(true)
+  })
+})
+
 // Attractor
 
 // Font upload
@@ -256,11 +324,18 @@ $('.font-select').change(function () {
   previewDefinition(true)
 })
 
+// Color
+$('.coloris').change(function () {
+  const value = $(this).val().trim()
+  constSetup.updateWorkingDefinition(['appearance', 'color', $(this).data('property')], value)
+  previewDefinition(true)
+})
+
 // Realtime-sliders should adjust as we drag them
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
+    constSetup.updateWorkingDefinition(['appearance', 'text_size', property], event.target.value)
     previewDefinition(true)
   })
 })

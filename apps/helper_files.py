@@ -90,6 +90,30 @@ def write_json(data: dict, path: str | os.PathLike, append: bool = False, compac
     return success, reason
 
 
+def write_raw_text(data: str, name: str, mode: str = "a") -> tuple[bool, str]:
+    """Write an un-formatted string to file"""
+
+    file_path = get_path(["data", name], user_file=True)
+    success = True
+    reason = ""
+
+    if mode != "a" and mode != "w":
+        return False, "Mode must be either 'a' (append, [default]) or 'w' (overwrite)"
+
+    try:
+        with config.content_file_lock:
+            with open(file_path, mode, encoding="UTF-8") as f:
+                f.write(data + "\n")
+    except FileNotFoundError:
+        success = False
+        reason = f"File {file_path} does not exist"
+    except PermissionError:
+        success = False
+        reason = f"You do not have write permission for the file {file_path}"
+
+    return success, reason
+
+
 def create_csv(file_path: str | os.PathLike, filename: str = "") -> str:
     """Load a data file and convert it to a CSV"""
 

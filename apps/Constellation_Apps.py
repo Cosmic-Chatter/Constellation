@@ -379,6 +379,24 @@ async def write_data(data: dict[str, Any] = Body(description="A dictionary of da
     return response
 
 
+@app.post("/data/writeRawText")
+async def write_raw_text(text: str = Body(description='The data to write.'),
+                         mode: str = Body(description="Pass 'a' to append or 'w' or overwrite.", default='a'),
+                         name: str = Body(description='The name of the file to write.')):
+    """Write the raw text to file.
+
+    Set mode == 'a' to append or 'w' to overwrite the file.
+    """
+
+    if mode != "a" and mode != "w":
+        response = {"success": False,
+                    "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
+        return response
+    success, reason = helper_files.write_raw_text(text, name + ".txt", mode=mode)
+    response = {"success": success, "reason": reason}
+    return response
+
+
 @app.post("/data/getCSV")
 async def get_tracker_data_csv(name: str = Body(description='The name of the filename to return as a CSV', embed=True)):
     """Return the requested data file as a CSV string."""
