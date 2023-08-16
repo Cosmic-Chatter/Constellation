@@ -15,15 +15,16 @@ A responsive web console provides system administrators an easy way to control b
 
 **_Constellation_** provides a number of `component` types, enabling the creation of a diverse array of digital exhibit pieces.
 
-| Component        | Description                                                                                                                   |
-|------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| Flexible Tracker | Build simple touch interfaces to help evaluators or other staff collect information. *Distributed as part of Control Server*. |
-| InfoStation      | Create custom touchscreen interfaces for text and media content.                                                              |
-| Media Browser    | Browse and view a collection of images and videos with a touchscreen interface.                                               |
-| Media Player     | Robust digital signage solution with an optional kiosk for interaction.                                                       |
-| Timelapse Viewer | Cycle through sets of images using a variety of input methods.                                                                |
-| Voting Kiosk     | Collect visitor feedback with a voting kiosk.                                                                                 |
-| Word Cloud       | Display a word cloud with an optional user input kiosk.                                                                       |
+| Component         | Description                                                                                                                   |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| Flexible Tracker  | Build simple touch interfaces to help evaluators or other staff collect information. *Distributed as part of Control Server*. |
+| InfoStation       | Create custom touchscreen interfaces for text and media content.                                                              |
+| Media Browser     | Browse and view a collection of images and videos with a touchscreen interface.                                               |
+| Media Player      | Robust digital signage solution with an optional kiosk for interaction.                                                       |
+| Timelapse Viewer  | Cycle through sets of images using a variety of input methods.                                                                |
+| Timeline Explorer | Create interactive timelines using a spreadsheet.                                                                             | 
+| Voting Kiosk      | Collect visitor feedback with a voting kiosk.                                                                                 |
+| Word Cloud        | Display a word cloud with an optional user input kiosk.                                                                       |
 
 ## Available utilities
 
