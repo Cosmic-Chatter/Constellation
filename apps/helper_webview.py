@@ -37,6 +37,7 @@ def on_loaded():
 def on_resized(width, height):
     pass
 
+
 def on_moved(x, y):
     pass
 
@@ -51,7 +52,6 @@ def show_webview_settings():
             return
 
     # If not, create one
-
     webview.create_window('Constellation Apps - Configuration',
                                                    height=600,
                                                    width=800,

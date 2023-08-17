@@ -991,6 +991,10 @@ if __name__ == "__main__":
         # Activate Smart Restart
         helper_system.smart_restart_check()
 
+        # Make sure we have a port available
+        if "port" not in const_config.defaults['system']:
+            const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
+
         if const_config.defaults['system']['standalone'] is True:
             print(f"Starting Constellation Apps on port {const_config.defaults['system']['port']}.")
         else:
@@ -1031,7 +1035,7 @@ if __name__ == "__main__":
                                            width=1280,
                                            min_size=(1280, 720),
                                            url='http://localhost:' + str(
-                                               const_config.defaults["system"]["port"]) + '/media_player.html')
+                                               const_config.defaults["system"]["port"]) + '/app.html')
 
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed

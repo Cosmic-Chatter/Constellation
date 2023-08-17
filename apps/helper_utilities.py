@@ -118,11 +118,26 @@ def update_defaults(data: dict[str, Any], cull: bool = False):
         config.defaults = data
     else:
         # Merge the new dictionary into the current one
-        config.defaults |= data
+        config.defaults = deep_merge(data, prior_defaults)
 
     defaults_path = helper_files.get_path(["configuration", "config.json"], user_file=True)
     helper_files.write_json(config.defaults, defaults_path)
 
+
+def deep_merge(source, destination):
+    """ Merge  a series of nested dictionaries. Merge source INTO destination
+
+    From https://stackoverflow.com/questions/20656135/python-deep-merge-dictionary-data/20666342#20666342
+    """
+    for key, value in source.items():
+        if isinstance(value, dict):
+            # get node or create one
+            node = destination.setdefault(key, {})
+            deep_merge(value, node)
+        else:
+            destination[key] = value
+
+    return destination
 
 def clear_terminal():
     """Clear the terminal"""
