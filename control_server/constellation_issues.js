@@ -87,12 +87,10 @@ export function rebuildIssueList () {
     deleteBut.setAttribute('class', 'btn btn-danger mt-1')
     deleteBut.setAttribute('data-toggle', 'popover')
     deleteBut.setAttribute('title', 'Are you sure?')
-    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100'>Confirm</a>`)
+    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
     deleteBut.setAttribute('data-trigger', 'focus')
     deleteBut.setAttribute('data-html', 'true')
-    $(document).on('click', `#Popover${issue.id}`, function () {
-      deleteIssue(issue.id)
-    })
+    // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
     deleteBut.addEventListener('click', function () { deleteBut.focus() })
     deleteBut.innerHTML = 'Delete'
     body.appendChild(deleteBut)
@@ -102,7 +100,7 @@ export function rebuildIssueList () {
   })
 }
 
-function deleteIssue (id) {
+export function deleteIssue (id) {
   // Ask the control server to remove the specified issue
 
   constTools.makeServerRequest({

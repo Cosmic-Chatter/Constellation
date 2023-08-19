@@ -1134,6 +1134,11 @@ $('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector
 
 // Issues tab
 // =========================
+// This event detects when the delete button has been clicked inside a popover to delete and issue.
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('issue-delete') === false) return
+  constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
+})
 $('#issueMediaViewFromModal').click(function () {
   constTools.openMediaInNewTab('issues/media/' + $('#issueMediaViewFromModal').data('filename'))
 })
