@@ -133,6 +133,78 @@ function sendComponentContentChangeRequest (id, content) {
   })
 }
 
+function showManageExhibitsModal () {
+  // Configure the manageExhibitsModal and show it.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/exhibit/getAvailable'
+  })
+    .then((result) => {
+      populateManageExhibitsExhibitList(result.available_exhibits)
+    })
+  $('#manageExhibitsModal').modal('show')
+}
+
+function populateManageExhibitsExhibitList (exhibits) {
+  // Take a list of exhibits and create a GUI representation for each
+
+  const exhibitRow = document.getElementById('manageExhibitsModalExhibitList')
+  exhibitRow.innerHTML = ''
+
+  exhibits.forEach((exhibit) => {
+    const col = document.createElement('div')
+    col.classList = 'col-12 mt-2'
+    exhibitRow.appendChild(col)
+
+    const button = document.createElement('button')
+    button.classList = 'btn btn-info w-100 manageExhibitListButton'
+    button.innerHTML = exhibit
+    button.addEventListener('click', (event) => {
+      Array.from(exhibitRow.querySelectorAll('.manageExhibitListButton')).forEach((el) => {
+        el.classList.replace('btn-success', 'btn-info')
+      })
+      event.target.classList.replace('btn-info', 'btn-success')
+      populateManageExhibitsExhibitContent(exhibit)
+    })
+    col.appendChild(button)
+  })
+}
+
+function populateManageExhibitsExhibitContent (exhibit) {
+  // Create a GUI representation of the given exhibit that shows the defintion for each component.
+
+  const contentList = document.getElementById('manageExhibitsModalExhibitContentList')
+  contentList.innerHTML = ''
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/exhibit/getDetails',
+    params: { name: exhibit }
+  })
+    .then((result) => {
+      console.log(result.exhibit)
+      result.exhibit.forEach((component) => {
+        const col = document.createElement('div')
+        col.classList = 'col-6 mt-2'
+        contentList.appendChild(col)
+
+        const row = document.createElement('div')
+        row.classList = 'row px-1'
+        col.appendChild(row)
+
+        const header = document.createElement('div')
+        header.classList = 'col-12 bg-primary rounded-top'
+        header.innerHTML = component.id
+        row.appendChild(header)
+
+        const body = document.createElement('div')
+        body.classList = 'col-12 bg-secondary'
+        row.appendChild(body)
+      })
+    })
+}
+
 function setCurrentExhibitName (name) {
   constConfig.currentExhibit = name
   document.getElementById('exhibitNameField').innerHTML = name
@@ -1164,6 +1236,7 @@ $('#componentInfoModalMaintenanceNote').on('input', function () {
 // Settings tab
 // =========================
 // Exhibits
+document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
 $('#exhibitSelect').change(function () {
   changeExhibit(false)
 })

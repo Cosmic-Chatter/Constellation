@@ -1405,6 +1405,33 @@
             </div>
           </div>
 
+          <!-- Modal for managing exhibits -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Exhibits</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <!-- Exhibit list -->
+                    <div class="col-4 border-right">
+                      <div id="manageExhibitsModalExhibitList" class="row"></div>
+                      <button id="manageExhibitsCreateExhibitButton" class="btn btn-primary w-100 mt-3">Create new</button>
+                    </div>
+                    <!-- Exhibit content -->
+                    <div class="col-8">
+                      <div id="manageExhibitsModalExhibitContentList" class="row"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <H3 class='mt-4'>Configuration</H3>
           <div class="row mt-1">
             <div class="col-6 col-md-3 col-lg-2 mt-2">
@@ -1424,13 +1451,16 @@
             </div>
           </div>
           <H3 class='mt-4'>Exhibits</H3>
-          <i>Exhibits enable you to define a set of content and apps for your gallery.</i>
+          <i>Exhibits match each component in your gallery with one of its definitions.</i>
           <div class="row mt-3">
             <div class="col-6 col-md-4 col-lg-3">
               <div class="form-group">
                 <label for="exhibitSelect">Set current exhibit</label>
                 <select class="form-control" id="exhibitSelect"></select>
               </div>
+            </div>
+            <div class="col-3">
+              <button id="manageExhibitsButton" class="btn btn-primary">Manage exhibits</button>
             </div>
             <div class="col-12 col-md-8">
               <div class="form-group">

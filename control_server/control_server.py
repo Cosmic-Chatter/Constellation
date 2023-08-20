@@ -505,6 +505,26 @@ async def set_component_app(component: ExhibitComponent,
     return {"success": True, "reason": ""}
 
 
+@app.get("/exhibit/getAvailable")
+async def get_available_exhibits():
+    """Return a list of available exhibits."""
+
+    return {"success": True, "available_exhibits": c_config.exhibit_list}
+
+
+@app.post("/exhibit/getDetails")
+async def get_exhibit_details(name: str = Body(description='The name of the exhibit to fetch.', embed=True)):
+    """Return the JSON for a particular exhibit."""
+
+    if not name.endswith('.json'):
+        name += '.json'
+    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
+    result = c_tools.load_json(exhibit_path)
+    if result is None:
+        return {"success": False, "reason": "Exhibit does not exist."}
+    return {"success": True, "exhibit": result}
+
+
 # Flexible Tracker actions
 @app.post("/tracker/{tracker_type}/createTemplate")
 async def create_tracker_template(data: dict[str, Any], tracker_type: str):
