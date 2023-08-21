@@ -1,6 +1,7 @@
 import constConfig from './config.js'
-import * as constTools from './constellation_tools.js'
+import * as constDMX from './constellation_dmx.js'
 import * as constMaint from './constellation_maintenance.js'
+import * as constTools from './constellation_tools.js'
 
 class BaseComponent {
   // A basic Constellation component.
@@ -35,7 +36,7 @@ class BaseComponent {
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
     let classString
-    if (getExhibitComponentGroup(this.group).components.length > 7) {
+    if (getExhibitComponentGroup(this.group).components.length > 704) {
       classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
       classString = 'col-12 col-sm-4 col-md-6 mt-1'
@@ -580,6 +581,8 @@ export function showExhibitComponentInfo (id) {
   ) {
     $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
     $('#componentInfoModalHelperIPAddressGroup').show()
+    // Cannot take screenshots of components with a remote helper
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
     $('#componentInfoModalHelperIPAddressGroup').hide()
   }
@@ -654,8 +657,12 @@ export function showExhibitComponentInfo (id) {
   $('#componentSaveConfirmationButton').hide()
   $('#componentAvailableContentRow').hide()
   $('#componentcontentUploadInterface').hide()
-  $('#componentInfoModalDefinitionSaveButton').hide()
   constMaint.setComponentInfoModalMaintenanceStatus(id)
+
+  // Definition tab
+  document.getElementById('definitionTabAppFilterSelect').value = 'all'
+  document.getElementById('definitionTabThumbnailsCheckbox').checked = true
+  $('#componentInfoModalDefinitionSaveButton').hide()
 
   if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
     $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
@@ -699,9 +706,11 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'projector') {
     populateProjectorInfo(obj.id)
     $('#componentInfoModaProejctorTabButton').show()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
     $('#componentInfoModaProejctorTabButton').hide()
     $('#componentInfoModalModelGroup').hide()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
   }
 
   // Must be after all the settings are configured
@@ -712,7 +721,23 @@ export function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
     $('#componentInfoModalSettingsTabButton').show()
     $('#componentInfoModalDefinitionsTabButton').show()
-    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
+
+    // Fetch any DMX lighting scenes and show the tab if necessary
+    constTools.makeRequest({
+      method: 'GET',
+      url: obj.getHelperURL(),
+      endpoint: '/DMX/getScenes'
+    })
+      .then((result) => {
+        console.log(result)
+        constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
+      })
+      .catch((error) => {
+        document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+      })
+      
+    if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
     } else {
@@ -722,7 +747,9 @@ export function showExhibitComponentInfo (id) {
 
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
+    configureNewDefinitionOptions(obj)
   } else {
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalContentTabButton').hide()
     $('#componentInfoModalDefinitionsTabButton').hide()
@@ -850,12 +877,22 @@ function populateProjectorInfo (id) {
   }
 }
 
+function configureNewDefinitionOptions (obj) {
+  // Use the given IP address to configure the URLs for creating new definitions.
+
+  Array.from(document.querySelectorAll('.defintion-new-option')).forEach((el) => {
+    const app = el.getAttribute('data-app')
+    el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+  })
+}
+
 export function convertAppIDtoDisplayName (appName) {
   // Convert app names to their display text
 
   let displayName = 'Unknown Component'
   if (appName !== '') {
     const constellationAppIdDisplayNames = {
+      dmx_control: 'DMX Control',
       heartbeat: 'Heartbeat',
       infostation: 'InfoStation',
       media_browser: 'Media Browser',
@@ -975,35 +1012,83 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     col.setAttribute('id', 'definitionButton_' + uuid)
     col.classList = 'col-6 col-sm-4 mt-2 handCursor definition-entry'
     $(col).data('definition', definition)
-    col.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
+    col.setAttribute('data-app', definition.app)
 
     const row = document.createElement('div')
     row.classList = 'row px-2'
     col.appendChild(row)
 
-    const name = document.createElement('div')
+    const btnGroupCol = document.createElement('div')
+    btnGroupCol.classList = 'col-12 px-0 mx-0'
+    row.appendChild(btnGroupCol)
+
+    const btnGroup = document.createElement('div')
+    btnGroup.classList = 'btn-group w-100'
+    btnGroupCol.appendChild(btnGroup)
+
+    const name = document.createElement('button')
     name.setAttribute('id', 'definitionButtonName_' + uuid)
-    name.classList = 'col-12 bg-primary rounded-top py-1 position-relative'
+    name.classList = 'btn btn-primary definition-name w-75'
+    name.style.borderBottomLeftRadius = '0'
+    if (component.definition === definition.uuid) {
+      name.classList.remove('btn-primary')
+      name.classList.add('btn-success')
+    }
+    name.addEventListener('click', () => {
+      handleDefinitionItemSelection(uuid)
+    })
     name.style.fontSize = '18px'
     name.innerHTML = definition.name
-    row.appendChild(name)
+    btnGroup.appendChild(name)
 
-    const selectedBadge = document.createElement('span')
-    selectedBadge.setAttribute('id', 'definitionButtonSelectedBadge_' + uuid)
-    selectedBadge.classList = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-success definition-selected-button'
-    selectedBadge.style.right = '0%'
-    selectedBadge.style.top = '0%'
-    if (component.definition !== definition.uuid) {
-      selectedBadge.style.display = 'none'
+    const dropdownBtn = document.createElement('button')
+    dropdownBtn.classList = 'btn btn-primary dropdown-toggle dropdown-toggle-split definition-dropdown'
+    dropdownBtn.setAttribute('id', 'definitionButtonDropdown_' + uuid)
+    dropdownBtn.style.borderBottomRightRadius = '0'
+    dropdownBtn.setAttribute('data-toggle', 'dropdown')
+    dropdownBtn.setAttribute('aria-haspopup', 'true')
+    dropdownBtn.setAttribute('aria-expanded', 'false')
+    dropdownBtn.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
+    if (component.definition === definition.uuid) {
+      dropdownBtn.classList.remove('btn-primary')
+      dropdownBtn.classList.add('btn-success')
     }
-    selectedBadge.innerHTML = '✓'
-    name.append(selectedBadge)
+    btnGroup.appendChild(dropdownBtn)
 
-    if (thumbnails.includes(uuid + '.jpg')) {
+    const dropdownMenu = document.createElement('div')
+    dropdownMenu.classList = 'dropdown-menu'
+    dropdownMenu.innerHTML = `
+    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
+    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
+    `
+    btnGroup.appendChild(dropdownMenu)
+
+    if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
-      thumbCol.classList = 'col-12 bg-info pt-2'
+      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
+      row.append(thumbCol)
+
+      const thumb = document.createElement('video')
+      thumb.style.height = '100px'
+      thumb.style.width = '100%'
+      thumb.style.objectFit = 'contain'
+      thumb.setAttribute('autoplay', true)
+      thumb.muted = 'true'
+      thumb.setAttribute('loop', 'true')
+      thumb.setAttribute('playsinline', 'true')
+      thumb.setAttribute('webkit-playsinline', 'true')
+      thumb.setAttribute('disablePictureInPicture', 'true')
+      thumb.src = component.getHelperURL() + '/thumbnails/' + uuid + '.mp4'
+      thumbCol.appendChild(thumb)
+    } else if (thumbnails.includes(uuid + '.jpg')) {
+      const thumbCol = document.createElement('div')
+      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
       row.append(thumbCol)
 
       const thumb = document.createElement('img')
@@ -1018,6 +1103,9 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     app.classList = 'col-12 bg-info rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
+    app.addEventListener('click', () => {
+      handleDefinitionItemSelection(uuid)
+    })
     row.appendChild(app)
 
     $('#componentInfoModalDefinitionList').append(col)
@@ -1028,9 +1116,13 @@ function handleDefinitionItemSelection (uuid) {
   // Called when a user clicks on the definition in the componentInfoModal.
 
   $('.definition-entry').removeClass('definition-selected')
+  $('.definition-name').removeClass('btn-success')
+  $('.definition-name').addClass('btn-primary')
+  $('.definition-dropdown').removeClass('btn-success')
+  $('.definition-dropdown').addClass('btn-primary')
   $('#definitionButton_' + uuid).addClass('definition-selected')
-  $('.definition-selected-button').hide()
-  $('#definitionButtonSelectedBadge_' + uuid).show()
+  $('#definitionButtonName_' + uuid).addClass('btn-success')
+  $('#definitionButtonDropdown_' + uuid).addClass('btn-success')
   $('#componentInfoModalDefinitionSaveButton').show()
 }
 
@@ -1063,6 +1155,7 @@ function updateComponentInfoModalFromHelper (id) {
     // We don't have enough information to contact the helper
     $('#componentInfoConnectionStatusFailed').show()
     $('#componentInfoConnectionStatusInPrograss').hide()
+    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
 
     // Show the maintenance tab
     $('#componentInfoModalMaintenanceTabButton').tab('show')
@@ -1154,10 +1247,8 @@ function updateComponentInfoModalFromHelper (id) {
       // Attach an event handler to change the button's color when clicked
       $('.componentContentButton').on('click', function (e) {
         const id = $(this).attr('id')
-        // $('.componentContentButton').not($(this)).removeClass("btn-primary").addClass("btn-secondary");
         $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
 
-        // $('.componentContentDropdownButton').not($("#"+id+"Dropdown")).removeClass("btn-primary").addClass("btn-secondary");
         $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
 
         if ($('.componentContentButton.btn-primary').length === 0) {
@@ -1425,8 +1516,8 @@ function getAllowableContentTypes (appID) {
   const supportedTypes = {
     heartbeat: ['ini'],
     infostation: ['ini'],
-    media_browser: ['ini'],
-    media_player: ['jpeg', 'jpg', 'gif', 'tiff', 'tif', 'png', 'webp', 'heic', 'mpeg', 'mpeg4', 'mp4', 'webm', 'm4v', 'avi', 'mov', 'mkv', 'ogv', 'aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'],
+    media_browser: ['const'],
+    media_player: ['const'],
     media_player_kiosk: ['ini'],
     sos_kiosk: ['ini'],
     sos_screen_player: ['ini'],
@@ -1441,6 +1532,37 @@ function getAllowableContentTypes (appID) {
   }
 
   return []
+}
+
+export function onDefinitionTabThumbnailsCheckboxChange () {
+  // Show/hide the definition thumbnails
+
+  const defList = document.getElementById('componentInfoModalDefinitionList')
+  const checkState = document.getElementById('definitionTabThumbnailsCheckbox').checked
+
+  Array.from(defList.querySelectorAll('.definition-thumbnail')).forEach((entry) => {
+    if (checkState === true) {
+      entry.style.display = 'block'
+    } else {
+      entry.style.display = 'none'
+    }
+  })
+}
+
+export function filterDefinitionListByApp () {
+  // Hide the definition widgets for any app not matching the specified one.
+
+  const appToShow = document.getElementById('definitionTabAppFilterSelect').value
+  const defList = document.getElementById('componentInfoModalDefinitionList')
+
+  Array.from(defList.querySelectorAll('.definition-entry')).forEach((entry) => {
+    const thisApp = entry.getAttribute('data-app')
+    if ((thisApp === appToShow) || (appToShow === 'all')) {
+      entry.style.display = 'block'
+    } else {
+      entry.style.display = 'none'
+    }
+  })
 }
 
 export function toggleExhibitComponentInfoSettingWarnings () {
@@ -1507,7 +1629,7 @@ export function submitComponentSettingsChange () {
     updateComponentInfoModalFromHelper(obj.id)
 
     // If we have a modern definition-based app, hide the content tab
-    if (['timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
+    if (['media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
       $('#componentInfoModalContentTabButton').hide()
     } else {
       $('#componentInfoModalContentTabButton').show()

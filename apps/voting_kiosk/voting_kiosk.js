@@ -138,6 +138,11 @@ function setActive () {
 function checkConnection () {
   // Send a message to the server checking that the connection is stable.
 
+  if (constCommon.config.standalone === true) {
+    badConnection = false
+    return
+  }
+
   constCommon.makeServerRequest(
     {
       method: 'GET',
@@ -329,7 +334,7 @@ function loadDefinition (definition) {
 
 function sendData () {
   // Collect the current value from each card, build a dictionary, and
-  // send it to the control server for storage.
+  // send it for storage.
 
   if (constCommon.config.debug) {
     console.log('Sending data...')
@@ -366,12 +371,22 @@ function sendData () {
     name: configurationName
   }
 
-  constCommon.makeServerRequest(
-    {
-      method: 'POST',
-      endpoint: '/tracker/flexible-tracker/submitData',
-      params: requestDict
-    })
+  // Submit the data to Control Server or the helper, depending on if we're standalone
+  if (constCommon.config.standalone === true) {
+    constCommon.makeHelperRequest(
+      {
+        method: 'POST',
+        endpoint: '/data/write',
+        params: requestDict
+      })
+  } else {
+    constCommon.makeServerRequest(
+      {
+        method: 'POST',
+        endpoint: '/tracker/flexible-tracker/submitData',
+        params: requestDict
+      })
+  }
 }
 
 function showSuccessMessage () {
@@ -397,13 +412,15 @@ document.addEventListener('wheel', function (e) {
   }
 }, { passive: false })
 
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'voting_kiosk'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
+constCommon.configureApp({
+  name: 'voting_kiosk',
+  debug: true,
+  checkConnection,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
 
-let badConnection = true
-let standalone = false
+let badConnection = false
 
 let configurationName = 'default'
 let currentDefintion = ''
@@ -413,28 +430,5 @@ let voteCounter = setInterval(sendData, recordingInterval * 1000)
 let blockTouches = false
 let touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
 let touchCooldown = 2 // seconds before blockTouches is reset
-
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  standalone = true
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-      setInterval(checkConnection, 500)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
 
 setInterval(constCommon.checkForHelperUpdates, 1000)

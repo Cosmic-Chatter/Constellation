@@ -1,4 +1,3 @@
-
 *.pyc
 *.log
 /control_server/galleryConfiguration.ini
@@ -7,3 +6,8 @@ media_player/good-times-rg.ttf
 media_player/Gotham-Bold.otf
 SOS_kiosk/good-times-rg.ttf
 media_player/Gotham-Book.otf
+apps/content/*
+.DS_Store
+node_modules
+/venv_3_10/*
+/venv_3_11/*

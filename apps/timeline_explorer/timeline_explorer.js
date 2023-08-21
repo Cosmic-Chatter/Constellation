@@ -322,31 +322,14 @@ let inactivityTimeout = 30
 let defaultLang
 
 // Constellation stuff
+constCommon.configureApp({
+  name: 'timeline_explorer',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
+
 let currentDefintion = ''
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'timeline_explorer'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
 
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
 adjustFontSize(-100) // Make sure the font modifier is at 1 to start
 hideAttractor()

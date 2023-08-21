@@ -4,26 +4,72 @@ export const config = {
   allowedActionsDict: { refresh: 'true' },
   AnyDeskID: '',
   autoplayAudio: false,
+  connectionChecker: null, // A function to check the connection with Control Server and act on it
   constellationAppID: '',
-  contentPath: 'content',
+  currentDefinition: '',
   currentExhibit: 'default',
   currentInteraction: false,
+  definitionLoader: null, // A function used by loadDefinition() to set up the specific app.
   errorDict: {},
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
-  imageDuration: 10, // seconds
   otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
-  platformDetails: {},
+  platformDetails: {
+    operating_system: String(platform.os),
+    browser: platform.name + ' ' + platform.version
+  },
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 3.1,
+  softwareVersion: 3.3,
+  standalone: false, // false == we are using Control Server
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
 
-config.platformDetails = {
-  operating_system: String(platform.os),
-  browser: platform.name + ' ' + platform.version
+export function configureApp (opt = {}) {
+  // Perform basic app setup
+
+  config.helperAddress = window.location.origin
+
+  if ('checkConnection' in opt) config.connectionChecker = opt.checkConnection
+  if ('debug' in opt) config.debug = opt.debut
+  if ('loadDefinition' in opt) {
+    config.definitionLoader = opt.loadDefinition
+  } else {
+    console.log('constellation_app_common: configureApp: you must specify the option loadDefinition')
+  }
+  if ('name' in opt) config.constellationAppID = opt.name
+  if ('parseUpdate' in opt) config.updateParser = opt.parseUpdate
+
+  const searchParams = parseQueryString()
+  if (searchParams.has('standalone')) {
+  // We are displaying this inside of a setup iframe
+    if (searchParams.has('definition')) {
+      loadDefinition(searchParams.get('definition'))
+        .then((result) => {
+          config.definitionLoader(result.definition)
+        })
+    }
+  } else {
+  // We are displaying this for real
+    askForDefaults()
+      .then(() => {
+        if (config.standalone === false) {
+          // Using Control Server
+          sendPing()
+          setInterval(sendPing, 5000)
+          if (config.connectionChecker != null) setInterval(config.connectionChecker, 500)
+        } else {
+          // Not using Control Server
+          loadDefinition(config.currentDefinition)
+            .then((result) => {
+              config.definitionLoader(result.definition)
+            })
+        }
+      })
+    // Hide the cursor
+    document.body.style.cursor = 'none'
+  }
 }
 
 function makeRequest (opt) {
@@ -99,7 +145,6 @@ export function sendPing () {
       platform_details: config.platformDetails,
       AnyDeskID: config.AnyDeskID,
       currentInteraction: config.currentInteraction,
-      imageDuration: config.imageDuration,
       autoplay_audio: config.autoplayAudio
     }
     // See if there is an error to report
@@ -114,7 +159,7 @@ export function sendPing () {
         endpoint: '/system/ping',
         params: requestDict
       })
-      .then(readUpdate)
+      .then(readServerUpdate)
   }
 
   // First, check the helper for updates, then send the ping
@@ -161,8 +206,8 @@ export function askForShutdown () {
   })
 }
 
-function readUpdate (update) {
-  // Function to read a message from the server and take action based on the contents
+function readServerUpdate (update) {
+  // Function to read a message from Control Server and take action based on the contents
   // 'update' should be an object
 
   let sendUpdate = false
@@ -185,6 +230,11 @@ function readUpdate (update) {
         }
       } else if (cmd === 'reloadDefaults') {
         askForDefaults()
+      } else if (cmd.slice(0, 15) === 'set_dmx_scene__') {
+        makeHelperRequest({
+          method: 'GET',
+          endpoint: '/DMX/setScene/' + cmd.slice(15)
+        })
       } else {
         console.log(`Command not recognized: ${cmd}`)
       }
@@ -202,9 +252,6 @@ function readUpdate (update) {
   if ('helperAddress' in update) {
     config.helperAddress = update.helperAddress
   }
-  if ('contentPath' in update) {
-    config.contentPath = update.contentPath
-  }
   if ('current_exhibit' in update) {
     if (update.currentExhibit !== config.currentExhibit) {
       sendUpdate = true
@@ -215,26 +262,18 @@ function readUpdate (update) {
     config.errorDict.missingContentWarnings = update.missingContentWarnings
   }
 
-  if ('allow_sleep' in update) {
-    config.allowedActionsDict.sleep = update.allow_sleep
-  }
-  if ('allow_refresh' in update) {
-    config.allowedActionsDict.refresh = update.allow_refresh
-  }
-  if ('allow_restart' in update) {
-    config.allowedActionsDict.restart = update.allow_restart
-  }
-  if ('allow_shutdown' in update) {
-    config.allowedActionsDict.shutdown = update.allow_shutdown
+  if ('permissions' in update) {
+    config.allowedActionsDict.sleep = update.permissions.sleep
+    config.allowedActionsDict.refresh = update.permissions.refresh
+    config.allowedActionsDict.restart = update.permissions.restart
+    config.allowedActionsDict.shutdown = update.permissions.shutdown
+    config.autoplayAudio = update.permissions.audio
   }
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('anydesk_id' in update) {
     config.AnyDeskID = update.anydesk_id
-  }
-  if ('autoplay_audio' in update) {
-    config.autoplayAudio = update.autoplay_audio
   }
   if ('other_app_path' in update) {
     config.otherAppPath = update.other_app_path
@@ -246,6 +285,7 @@ function readUpdate (update) {
   // After we have saved any updates, see if we should change the app
   if (stringToBool(parseQueryString().get('showSettings')) === false) {
     if ('app_name' in update &&
+        ('definition' in update === false || update.definition === '') &&
         update.app_name !== config.constellationAppID &&
         update.app_name !== '') {
       if (update.app_name === 'other') {
@@ -256,6 +296,33 @@ function readUpdate (update) {
         gotoApp(update.app_name)
       }
     }
+
+    // Also check the definition file for a changed app.
+    if ('definition' in update && update.definition !== config.currentDefinition) {
+      config.currentDefinition = update.definition
+      makeHelperRequest({
+        method: 'GET',
+        endpoint: '/definitions/' + update.definition + '/load'
+      })
+        .then((result) => {
+          if ('success' in result && result.success === false) return
+          const def = result.definition
+          console.log(def)
+          if ('app' in def &&
+          def.app !== config.constellationAppID &&
+          def.app !== '') {
+            console.log(def, config.constellationAppID)
+            if (def.app === 'other') {
+              if (config.otherAppPath !== '') {
+                gotoApp('other', config.otherAppPath)
+              }
+            } else {
+              console.log('Switching to app', def.app)
+              gotoApp(def.app)
+            }
+          }
+        })
+    }
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -264,9 +331,125 @@ function readUpdate (update) {
   }
 }
 
-export function askForDefaults () {
+function readHelperUpdate (update, changeApp = true) {
+  // Function to read a message from the helper and take action based on the contents
+  // 'update' should be an object
+  // Set changeApp === false to suppress changing the app if the definition has changed
+
+  console.log(update)
+
+  const sendUpdate = false
+
+  if ('commands' in update) {
+    for (let i = 0; i < update.commands.length; i++) {
+      const cmd = (update.commands)[i]
+
+      if (cmd === 'restart') {
+        askForRestart()
+      } else if (cmd === 'shutdown' || cmd === 'power_off') {
+        askForShutdown()
+      } else if (cmd === 'sleepDisplay') {
+        sleepDisplay()
+      } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
+        wakeDisplay()
+      } else if (cmd === 'refresh_page') {
+        if ('refresh' in config.allowedActionsDict && stringToBool(config.allowedActionsDict.refresh) === true) {
+          location.reload()
+        }
+      } else if (cmd === 'reloadDefaults') {
+        askForDefaults()
+      } else if (cmd.slice(0, 15) === 'set_dmx_scene__') {
+        makeHelperRequest({
+          method: 'GET',
+          endpoint: '/DMX/setScene/' + cmd.slice(15)
+        })
+      } else {
+        console.log(`Command not recognized: ${cmd}`)
+      }
+    }
+  }
+
+  // App settings
+  if ('app' in update) {
+    if ('id' in update.app) config.id = update.app.id
+    if ('group' in update.app) config.group = update.app.group
+    if ('definition' in update.app) config.definition = update.app.definition
+  }
+  if ('control_server' in update) {
+    if (('ip_address' in update.control_server) && ('port' in update.control_server)) {
+      config.serverAddress = 'http://' + update.control_server.ip_address + ':' + update.control_server.port
+    }
+  }
+  if ('permissions' in update) {
+    config.allowedActionsDict.sleep = update.permissions.sleep
+    config.allowedActionsDict.refresh = update.permissions.refresh
+    config.allowedActionsDict.restart = update.permissions.restart
+    config.allowedActionsDict.shutdown = update.permissions.shutdown
+    config.autoplayAudio = update.permissions.audio
+  }
+  if ('software_update' in update) {
+    if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
+  }
+  if ('system' in update) {
+    if ('remote_viewers' in update.system) {
+      if ('anydesk_id' in update.system.remote_viewers) {
+        config.AnyDeskID = update.system.remote_viewers.anydesk_id
+      }
+    }
+    if ('standalone' in update.system) {
+      config.standalone = update.system.standalone
+    }
+  }
+  if ('other_app_path' in update) {
+    config.otherAppPath = update.other_app_path
+  }
+  if (sendUpdate) {
+    sendConfigUpdate(update)
+  }
+
+  // After we have saved any updates, see if we should change the app based on the current definition
+  if (
+    changeApp === true &&
+    'app' in update &&
+    'definition' in update.app &&
+    update.app.definition !== config.currentDefinition &&
+    config.standalone === true
+  ) {
+    config.currentDefinition = update.app.definition
+    makeHelperRequest({
+      method: 'GET',
+      endpoint: '/definitions/' + update.app.definition + '/load'
+    })
+      .then((result) => {
+        if ('success' in result && result.success === false) return
+        const def = result.definition
+        console.log(def)
+        if ('app' in def &&
+        def.app !== config.constellationAppID &&
+        def.app !== '') {
+          console.log(def, config.constellationAppID)
+          if (def.app === 'other') {
+            if (config.otherAppPath !== '') {
+              gotoApp('other', config.otherAppPath)
+            }
+          } else {
+            console.log('Switching to app', def.app)
+            gotoApp(def.app)
+          }
+        }
+      })
+  }
+
+  // Call the updateParser, if provided, to parse actions for the specific app
+  if (typeof config.updateParser === 'function') {
+    config.updateParser(update)
+  }
+}
+
+export function askForDefaults (changeApp = true) {
   // Send a message to the local helper and ask for the latest configuration
   // defaults, then use them.
+  // Set changeApp === false to supress changing the app based on the current definition
 
   const checkAgain = function () {
     $('#helperConnectionWarningAddress').text(config.helperAddress)
@@ -278,7 +461,9 @@ export function askForDefaults () {
     method: 'GET',
     endpoint: '/getDefaults'
   })
-    .then(readUpdate, checkAgain)
+    .then((update) => {
+      readHelperUpdate(update, changeApp)
+    }, checkAgain)
 }
 
 export function checkForHelperUpdates () {
@@ -289,7 +474,7 @@ export function checkForHelperUpdates () {
     endpoint: '/getUpdate',
     timeout: 500
   })
-    .then(readUpdate)
+    .then(readHelperUpdate)
 }
 
 export function sendConfigUpdate (update) {
@@ -298,7 +483,7 @@ export function sendConfigUpdate (update) {
 
   const defaults = { content: update.content, current_exhibit: update.current_exhibit }
 
-  const requestDict = { action: 'updateDefaults', defaults }
+  const requestDict = { defaults }
 
   makeHelperRequest(
     {
@@ -447,6 +632,7 @@ export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
 
   const appLocations = {
+    dmx_control: '/dmx_control.html',
     infostation: '/infostation.html',
     media_browser: '/media_browser.html',
     media_player: '/media_player.html',
@@ -465,6 +651,25 @@ export function gotoApp (app, other = '') {
   } else {
     window.location = config.helperAddress + appLocations[app]
   }
+}
+
+export function appNameToDisplayName (appName) {
+  const displayNames = {
+    dmx_control: 'DMX Control',
+    infostation: 'InfoStation',
+    media_browser: 'Media Browser',
+    media_player: 'Media Player',
+    settings: 'Settings',
+    timelapse_viewer: 'Timelapse Viewer',
+    timeline_explorer: 'Timeline Explorer',
+    voting_kiosk: 'Voting Kiosk',
+    web_viewer: 'Web Viewer',
+    word_cloud_input: 'Word Cloud Input',
+    word_cloud_viewer: 'word Cloud Viewer'
+  }
+  if (appName in displayNames) {
+    return displayNames[appName]
+  } else return appName
 }
 
 export async function getAvailableDefinitions (appID) {
@@ -510,11 +715,15 @@ export function guessMimetype (filename) {
     return 'video'
   } else if (['jpeg', 'jpg', 'tiff', 'tif', 'png', 'bmp', 'gif', 'webp', 'eps', 'ps', 'svg'].includes(ext)) {
     return 'image'
+  } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'wav'].includes(ext)) {
+    return 'audio'
   }
 }
 
 export function loadDefinition (defName) {
   // Ask the helper for the given definition and return a promise containing it.
+
+  config.currentDefinition = defName
 
   return makeHelperRequest({
     method: 'GET',
@@ -540,4 +749,91 @@ export function saveScreenshotAsThumbnail (filename) {
         })
     })
   })
+}
+
+export function createLanguageSwitcher (def, localize) {
+  // Take a definition file and use the language entries to make an appropriate language switcher.
+  // localize= is the name of a function that handles implementing the change in language
+  // based on the provided language code.
+
+  const langs = Object.keys(def.languages)
+
+  if (langs.length === 1) {
+    // No switcher necessary
+    $('#langSwitchDropdown').hide()
+    return
+  }
+
+  $('#langSwitchDropdown').show()
+  // Cycle the languagse and build an entry for each
+  $('#langSwitchOptions').empty()
+  langs.forEach((code) => {
+    const name = def.languages[code].display_name
+
+    const li = document.createElement('li')
+
+    const button = document.createElement('button')
+    button.classList = 'dropdown-item langSwitch-entry'
+    button.addEventListener('click', function () {
+      localize(code)
+    })
+    li.appendChild(button)
+
+    const flag = document.createElement('img')
+    const customImg = def.languages[code].custom_flag
+    if (customImg != null) {
+      flag.src = '../content/' + customImg
+    } else {
+      flag.src = '../_static/flags/' + code + '.svg'
+    }
+    flag.style.width = '30%'
+    flag.addEventListener('error', function () {
+      this.src = '../_static/icons/translation-icon_black.svg'
+    })
+    button.appendChild(flag)
+
+    const span = document.createElement('span')
+    span.classList = 'ps-2'
+    span.style.verticalAlign = 'middle'
+    span.innerHTML = name
+    button.appendChild(span)
+
+    $('#langSwitchOptions').append(li)
+  })
+}
+
+export function getColorAsRGBA (el, prop) {
+  // Look up the given CSS property on the given element and return an object with the RGBA values.
+
+  if ((typeof el === 'string') && (el[0] !== '#')) el = '#' + el
+
+  const color = $(el).css(prop) // Should be string of form RGBA(R,G,B,A) or RGB(R,G,B)
+  const colorSplit = color.split(', ')
+  const result = {
+    r: parseInt(colorSplit[0].split('(')[1]),
+    g: parseInt(colorSplit[1].trim()),
+    b: parseInt(colorSplit[2].split(')')[0].trim())
+  }
+
+  if (color.slice(0, 4) === 'RGBA') {
+    result.a = parseFloat(colorSplit.split(',')[3].split(')')[0].trim())
+  }
+  return result
+}
+
+export function classifyColor (color) {
+  // Take an object of the form {r: 134, g: 234, b: 324} and return 'light' or 'dark'
+  // Depending on the luminance
+  // From https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+
+  if ((color.r * 0.299 + color.g * 0.587 + color.b * 0.114) > 186) {
+    return 'light'
+  }
+  return 'dark'
+}
+
+export function withExtension (path, ext) {
+  // Return the given path with its extension replaced by ext
+
+  return path.split('.').slice(0, -1).join('.') + '.' + ext
 }

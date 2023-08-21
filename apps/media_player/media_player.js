@@ -1,152 +1,30 @@
 import * as constCommon from '../js/constellation_app_common.js'
 
-function updateFunc (update) {
-  // Read updates for media player-specific actions and act on them
+function updateParser (update) {
+  // Read updates specific to the media player
 
-  if ('commands' in update) {
-    for (let i = 0; i < update.commands.length; i++) {
-      const cmd = (update.commands)[i]
-
-      if (cmd.startsWith('beginSynchronization')) {
-        const timeToPlay = cmd.split('_')[1]
-        synchronize(timeToPlay)
-      } else if (cmd === 'sendClipList') {
-        updateClipList(constCommon.config.sourceList)
-      } else if (cmd.startsWith('gotoClip')) {
-        const clipNumber = cmd.split('_')[1]
-        gotoSource(clipNumber)
-      } else if (cmd.startsWith('seekVideo')) {
-        const seek = cmd.split('_')
-        seekVideoByFraction(seek[1], parseFloat(seek[2]))
-      } else if (cmd === 'playVideo') {
-        document.getElementById('fullscreenVideo').play()
-      } else if (cmd === 'pauseVideo') {
-        document.getElementById('fullscreenVideo').pause()
-      } else if (cmd === 'disableAutoplay') {
-        constCommon.config.autoplayEnabled = false
-      } else if (cmd === 'enableAutoplay') {
-        constCommon.config.autoplayEnabled = true
-      } else if (cmd === 'toggleAutoplay') {
-        constCommon.config.autoplayEnabled = !constCommon.config.autoplayEnabled
-      }
-    }
-  }
-  if ('synchronize_with' in update) {
-    askToSynchronize(update.synchronize_with)
-    constCommon.config.waitingForSynchronization = true
-  }
-  if ('autoplay_audio' in update) {
-    // If desired, unmute the video
-    // Note that the file will need to be whitelisted by the browser; otherwise,
-    // it will not autoplay
-    if (constCommon.stringToBool(update.autoplay_audio)) {
-      document.getElementById('fullscreenVideo').muted = false
-      constCommon.config.autoplayAudio = true
-    } else {
-      document.getElementById('fullscreenVideo').muted = true
-      constCommon.config.autoplayAudio = false
-    }
-  }
-  if ('image_duration' in update) {
-    if (isFinite(parseInt(update.image_duration))) {
-      // Image duration is specified in seconds in defaults.ini
-      // but needs to be converted to milliseconds
-      constCommon.config.imageDuration = update.image_duration
-      imageDuration = update.image_duration * 1000
-      // console.log(`Setting image duration: ${update.image_duration * 1000} ms`)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (constCommon.arraysEqual(constCommon.config.sourceList, update.content) === false) {
-      constCommon.sendConfigUpdate(update)
-      updateClipList(update.content)
-      constCommon.config.sourceList = update.content
-      gotoSource(0)
-    }
+  if ('autoplay_audio' in update && update.autoplay_audio === 'true') {
+    document.getElementById('fullscreenVideo').muted = false
+    document.getElementById('audioPlayer').muted = false
   }
 }
 
-function synchronize (timeToPlay) {
-  // Function to set a timeout to begin playing the synchronized video
-
-  console.log('Playing video at:', timeToPlay)
-  setTimeout(function () { console.log('Actual time:', Date.now()); changeMedia('', false, true) }, parseInt(timeToPlay) - Date.now())
-}
-
-function askToSynchronize (otherIDs) {
-  // Function to communicate with the control server and indicate that we
-  // are ready to begin synchronization.
-
-  console.log('Asking to synchronize with', otherIDs)
-
-  const requestDict = {
-    id: constCommon.config.id,
-    type: constCommon.config.type,
-    synchronizeWith: otherIDs.split(',')
-  }
-
-  constCommon.makeServerRequest(
-    {
-      method: 'POST',
-      endpoint: '/system/beginSynchronization',
-      params: requestDict
-    })
-}
-
-function seekVideoByFraction (direction, fraction) {
-  // Seek to a point in the video given by the options.
-
-  const video = document.getElementById('fullscreenVideo')
-
-  let timeToGoTo
-  if (direction === 'back') {
-    timeToGoTo = video.currentTime - fraction * video.duration
-  } else if (direction === 'forward') {
-    timeToGoTo = video.currentTime + fraction * video.duration
-  }
-  // Handle boundaries
-  if (timeToGoTo < 0) {
-    timeToGoTo += video.duration
-  } else if (timeToGoTo > video.duration) {
-    timeToGoTo -= video.duration
-  }
-  video.currentTime = timeToGoTo
-}
-
-function unmute () {
-  document.getElementById('fullscreenVideo').muted = false
-  document.getElementById('audioPlayer').muted = false
-}
-
-function updateClipList (list) {
-  // Function that takes a list of filenames and passes it to the helper
-  // to hold for potentially sharing with a player_kiosk instance.
-
-  const requestDict = {
-    action: 'updateClipList',
-    clipList: list
-  }
-
-  constCommon.makeHelperRequest(
-    {
-      method: 'POST',
-      endpoint: '/updateClipList',
-      params: requestDict
-    })
-}
-
-function updateActiveClip (index) {
-  // Function that takes a list of filenames and passes it to the helper
-  // to hold for potentially sharing with a player_kiosk instance.
-
-  constCommon.makeHelperRequest(
-    {
-      method: 'POST',
-      endpoint: '/updateActiveClip',
-      params: { index }
-    })
+function loadDefinition (def) {
+  // Take an object parsed from an INI string and use it to load a new set of contet
+  console.log(def)
+  constCommon.config.sourceList = []
+  def.content_order.forEach((uuid) => {
+    constCommon.config.sourceList.push(def.content[uuid])
+  })
+  gotoSource(0)
 }
 
 function gotoSource (index) {
@@ -161,19 +39,13 @@ function gotoSource (index) {
 
   if (index < constCommon.config.sourceList.length) {
     constCommon.config.activeIndex = index
-    updateActiveClip(constCommon.config.activeIndex)
-    changeMedia(constCommon.config.contentPath + '/' + constCommon.config.sourceList[index], constCommon.config.waitingForSynchronization, false)
+    changeMedia(constCommon.config.sourceList[index])
   }
 }
 
 function gotoNextSource () {
   // Display the next file in sourceList, looping to the beginning if
   // necessary
-
-  if (constCommon.config.debug) {
-    console.log('gotoNextSource: image duration:', imageDuration)
-    console.log('Sources:', constCommon.config.sourceList)
-  }
 
   if (constCommon.config.activeIndex + 1 >= constCommon.config.sourceList.length) {
     constCommon.config.activeIndex = 0
@@ -184,12 +56,12 @@ function gotoNextSource () {
   gotoSource(constCommon.config.activeIndex)
 }
 
-function changeMedia (source, delayPlay, playOnly) {
+function changeMedia (source) {
   // Load and play a media file given in source
   // delayPlay and playOnly are used when synchronizing multiple displays
 
   if (constCommon.config.debug) {
-    console.log('changeMedia', source, delayPlay, playOnly)
+    console.log('changeMedia', source)
   }
 
   const video = document.getElementById('fullscreenVideo')
@@ -197,101 +69,82 @@ function changeMedia (source, delayPlay, playOnly) {
   const image = document.getElementById('fullscreenImage')
   const imageContainer = document.getElementById('imageOverlay')
   const audio = document.getElementById('audioPlayer')
+  const filename = 'content/' + source.filename
 
-  if (playOnly === false) { // We are going to load the media before we play it
-    // Split off the extension
-    const split = source.split('.')
-    const ext = split[split.length - 1]
+  // Split off the extension
+  const split = source.filename.split('.')
+  const ext = split[split.length - 1]
 
-    if (['mp4', 'mpeg', 'm4v', 'webm', 'mov', 'ogv', 'mpg'].includes(ext.toLowerCase())) {
-      // Video file
-      clearTimeout(sourceAdvanceTimer) // Only used for pictures
-      audio.pause()
-      if (video.src !== source) {
-        video.pause()
-        video.src = source
-        video.load()
-      }
-      if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
-        video.loop = false
-        video.onended = function () {
-          if (constCommon.config.autoplayEnabled === true) {
-            gotoNextSource()
-          } else {
-            video.play()
-          }
-        }
-      } else {
-        video.loop = true
-      }
-      if (delayPlay === false) {
-        console.log('here')
-        video.play()
-        videoContainer.style.opacity = 1
-        imageContainer.style.opacity = 0
-      }
-    } else if (['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp', 'heic', 'webp'].includes(ext.toLowerCase())) {
-      // Image file
-      video.pause()
-      audio.pause()
-      videoContainer.style.opacity = 0
-      image.src = source
-      imageContainer.style.opacity = 1
-      clearTimeout(sourceAdvanceTimer)
-      sourceAdvanceTimer = setTimeout(gotoNextSource, imageDuration)
-    } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'].includes(ext.toLowerCase())) {
-      // Audio file
-      video.pause()
-      videoContainer.style.opacity = 0
-      imageContainer.style.opacity = 0
-
-      if (audio.src !== source) {
-        audio.pause()
-        audio.src = source
-        audio.load()
-        audio.play()
-      }
-      if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
-        audio.loop = false
-        audio.onended = function () {
-          if (constCommon.config.autoplayEnabled === true) {
-            gotoNextSource()
-          } else {
-            audio.play()
-          }
-        }
-      } else {
-        audio.loop = true
-      }
-    }
-  } else {
-    video.play()
+  if (['mp4', 'mpeg', 'm4v', 'webm', 'mov', 'ogv', 'mpg'].includes(ext.toLowerCase())) {
+    // Video file
+    clearTimeout(sourceAdvanceTimer) // Only used for pictures
     videoContainer.style.opacity = 1
     imageContainer.style.opacity = 0
+    audio.pause()
+    if (video.src !== filename) {
+      video.pause()
+      video.src = filename
+      video.load()
+      video.play()
+    }
+    if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
+      video.loop = false
+      video.onended = function () {
+        if (constCommon.config.autoplayEnabled === true) {
+          gotoNextSource()
+        } else {
+          video.play()
+        }
+      }
+    } else {
+      video.loop = true
+    }
+  } else if (['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp', 'heic', 'webp'].includes(ext.toLowerCase())) {
+    // Image file
+    video.pause()
+    audio.pause()
+    videoContainer.style.opacity = 0
+    image.src = filename
+    imageContainer.style.opacity = 1
     clearTimeout(sourceAdvanceTimer)
+    sourceAdvanceTimer = setTimeout(gotoNextSource, source.duration * 1000)
+  } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'weba', 'wav'].includes(ext.toLowerCase())) {
+    // Audio file
+    video.pause()
+    videoContainer.style.opacity = 0
+    imageContainer.style.opacity = 0
+
+    if (audio.src !== filename) {
+      audio.pause()
+      audio.src = filename
+      audio.load()
+      audio.play()
+    }
+    if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
+      audio.loop = false
+      audio.onended = function () {
+        if (constCommon.config.autoplayEnabled === true) {
+          gotoNextSource()
+        } else {
+          audio.play()
+        }
+      }
+    } else {
+      audio.loop = true
+    }
   }
 }
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_player'
-
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
 constCommon.config.sourceList = []
-let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.
-constCommon.config.waitingForSynchronization = false
 constCommon.config.autoplayEnabled = true
-let imageDuration = 30000 // milliseconds; the amount of time an image will be displayed before going to the next one
 constCommon.config.allowAudio = false
 
-constCommon.config.debug = true
-document.addEventListener('click', unmute)
+constCommon.configureApp({
+  name: 'media_player',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
 
-constCommon.config.helperAddress = window.location.origin
-
-constCommon.askForDefaults()
-constCommon.sendPing()
-
-setInterval(constCommon.sendPing, 5000)
-setInterval(constCommon.checkForHelperUpdates, 1000)
-
-// Hide the cursor
-document.body.style.cursor = 'none'
+let currentDefintion = ''
+let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.

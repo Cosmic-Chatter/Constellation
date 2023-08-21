@@ -147,6 +147,9 @@ def queue_json_schedule(schedule: dict) -> None:
     config.json_next_event = []
     for key in schedule:
         event = schedule[key]
+        if event["action"] == "note":
+            # Don't queue notes
+            continue
         event_time = dateutil.parser.parse(event["time"])
         seconds_from_now = (event_time - datetime.datetime.now()).total_seconds()
         if seconds_from_now >= 0:
@@ -219,6 +222,14 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
         print(f"Changing definition for {target} to {value}")
         logging.info("Changing definition for %s to %s", target, value)
         c_exhibit.update_exhibit_configuration(target, {"content": [], "definition": value})
+    elif action == 'set_dmx_scene' and target is not None and value is not None:
+        if isinstance(value, list):
+            value = value[0]
+        if target.startswith("__id_"):
+            target = target[5:]
+        logging.info('Setting DMX scene for %s to %s', target, value)
+        component = c_exhibit.get_exhibit_component(target)
+        component.queue_command("set_dmx_scene__" + value)
     elif action == 'set_exhibit' and target is not None:
         print("Changing exhibit to:", target)
         logging.info("Changing exhibit to %s", target)

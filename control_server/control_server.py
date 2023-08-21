@@ -165,8 +165,8 @@ def command_line_setup_print_gui() -> None:
     print("Welcome to Constellation Control Server!")
     print("")
     print("This appears to be your first time running Control Server.")
-    print("In order to set up your configuration, you will be asked")
-    print("a few questions. If you don't know the answer, or wish to")
+    print("In order to set up your configuration, let's answer a few")
+    print("questions. If you don't know the answer, or wish to")
     print("accept the default, just press the enter key.")
     print("")
 
@@ -505,6 +505,26 @@ async def set_component_app(component: ExhibitComponent,
     return {"success": True, "reason": ""}
 
 
+@app.get("/exhibit/getAvailable")
+async def get_available_exhibits():
+    """Return a list of available exhibits."""
+
+    return {"success": True, "available_exhibits": c_config.exhibit_list}
+
+
+@app.post("/exhibit/getDetails")
+async def get_exhibit_details(name: str = Body(description='The name of the exhibit to fetch.', embed=True)):
+    """Return the JSON for a particular exhibit."""
+
+    if not name.endswith('.json'):
+        name += '.json'
+    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
+    result = c_tools.load_json(exhibit_path)
+    if result is None:
+        return {"success": False, "reason": "Exhibit does not exist."}
+    return {"success": True, "exhibit": result}
+
+
 # Flexible Tracker actions
 @app.post("/tracker/{tracker_type}/createTemplate")
 async def create_tracker_template(data: dict[str, Any], tracker_type: str):
@@ -611,7 +631,7 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
         name += ".txt"
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
     if not os.path.exists(data_path):
-        return {"success": False, "reason": f"File {data['name']}.json does not exist!", "csv": ""}
+        return {"success": False, "reason": f"File {data['name']}.txt does not exist!", "csv": ""}
     result = c_track.create_CSV(data_path)
     return {"success": True, "csv": result}
 

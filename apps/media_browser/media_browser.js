@@ -7,7 +7,7 @@ function changePage (val) {
       break
     case 1:
       currentPage += 1
-      if (currentPage * cardsPerPage > data.length) {
+      if (currentPage * cardsPerPage > spreadsheet.length) {
         currentPage -= 1
       }
       break
@@ -24,16 +24,17 @@ function changePage (val) {
 
 function clear () {
   currentPage = 0
-  $('#searchInput').val('')
-  keyboard.input.default = ''
-  keyboard.input.searchInput = ''
-  $('.filterSelect').val(null)
+  // $('#searchInput').val('')
+  // keyboard.input.default = ''
+  // keyboard.input.searchInput = ''
+  // $('.filterSelect').val(null)
   populateResultsRow()
 }
 
 function createCard (obj) {
   // Take a JSON object and turn it into a card in the resultsRow
 
+  const def = $(document).data('browserDefinition')
   let thumb
 
   if (thumbnailKey != null && thumbnailKey !== '') {
@@ -55,38 +56,50 @@ function createCard (obj) {
 
   obj.uniqueMediaBrowserID = id
 
-  let titleClass
-  if (title.length > 30) {
-    titleClass = 'resultTitleSmall'
-  } else if (title.length > 20) {
-    titleClass = 'resultTitleMedium'
+  const col = document.createElement('div')
+  col.classList = 'cardCol col align-items-center justify-content-center d-flex'
+  // Calculate the height of the card based on the number of rows
+
+  if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
+    col.style.height = String(Math.round(60 / numRows)) + 'vh'
   } else {
-    titleClass = 'resultTitleLarge'
+    col.style.height = String(Math.round(95 / numRows)) + 'vh'
   }
 
-  const col = document.createElement('div')
-  col.classList = 'cardCol col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 align-items-center justify-content-top d-flex'
-
   const card = document.createElement('div')
-  card.classList = 'resultCard row my-2 w-100'
+  card.classList = 'resultCard row w-100'
   card.addEventListener('click', function () {
     displayMedia(id)
   })
   col.appendChild(card)
 
-  const center = document.createElement('center')
-  card.appendChild(center)
+  const imgCol = document.createElement('div')
+  imgCol.classList = 'col col-12'
+
+  if ('image_height' in def.style.layout) {
+    imgCol.style.height = String(def.style.layout.image_height) + '%'
+  } else {
+    imgCol.style.height = '70%'
+  }
+  card.appendChild(imgCol)
 
   const img = document.createElement('img')
   img.classList = 'resultImg'
   img.src = thumb
   img.setAttribute('id', 'Entry_' + id)
-  center.appendChild(img)
 
-  const p = document.createElement('p')
-  p.classList = 'cardTitle ' + titleClass
-  p.innerHTML = title
-  center.appendChild(p)
+  imgCol.appendChild(img)
+
+  if (('imageHeight' in def.style.layout && def.style.layout.image_height < 100) || !('imageHeight' in def.style.layout)) {
+    const titleCol = document.createElement('div')
+    titleCol.classList = 'col col-12 text-center'
+    card.appendChild(titleCol)
+
+    const titleSpan = document.createElement('span')
+    titleSpan.classList = 'cardTitle'
+    titleSpan.innerHTML = title
+    titleCol.appendChild(titleSpan)
+  }
 
   $('#resultsRow').append(col)
 }
@@ -126,7 +139,7 @@ function populateFilterOptions (titles) {
     newSelect.multiple = true
     newSelect.setAttribute('data-filterKey', key)
 
-    const uniqueValues = [...new Set(data.map(entry => entry[key]))].sort()
+    const uniqueValues = [...new Set(spreadsheet.map(entry => entry[key]))].sort()
     let newOption
     uniqueValues.forEach((value, j) => {
       newOption = document.createElement('option')
@@ -146,71 +159,70 @@ function _populateResultsRow (currentKey) {
 
   $('#resultsRow').empty()
 
-  const input = $('#searchInput').val()
-  // Filter on search terms
-  const searchTerms = (input).split(' ')
-  const searchedData = []
-  data.forEach((item, i) => {
-    let matchCount = 0
-    searchTerms.forEach((term, i) => {
-      if (term !== '' || (term === '' && searchTerms.length === 1)) {
-        // Strip out non-letters, since the keyboard doesn't allow them
-        if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
-          matchCount += 1
-        }
-      }
-    })
-    if (matchCount > 0) {
-      item.matchCount = matchCount
-      searchedData.push(item)
-    }
-  })
+  // const input = $('#searchInput').val()
+  // // Filter on search terms
+  // const searchTerms = (input).split(' ')
+  // const searchedData = []
+  // spreadsheet.forEach((item, i) => {
+  //   let matchCount = 0
+  //   searchTerms.forEach((term, i) => {
+  //     if (term !== '' || (term === '' && searchTerms.length === 1)) {
+  //       // Strip out non-letters, since the keyboard doesn't allow them
+  //       if (item.searchData.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z\s]/ig, '').toLowerCase().includes(term.replace(/[^A-Za-z]/ig, '').toLowerCase())) {
+  //         matchCount += 1
+  //       }
+  //     }
+  //   })
+  //   if (matchCount > 0) {
+  //     item.matchCount = matchCount
+  //     searchedData.push(item)
+  //   }
+  // })
 
-  // Filter on filter options
-  const filters = $.makeArray($('.filterSelect'))
-  const filteredData = []
-  let thisKey, selectedValues, filterMathces
-  // Iterate through the remaining data and make sure it matches at least
-  // one filtered value.
-  searchedData.forEach((item, i) => {
-    filterMathces = {}
-    filters.forEach((filter, j) => {
-      thisKey = filter.getAttribute('data-filterKey')
-      selectedValues = $(filter).val()
-      if (selectedValues.length > 0) {
-        if (selectedValues.includes(item[thisKey])) {
-          filterMathces[thisKey] = 1
-          item.matchCount += 1
-        } else {
-          filterMathces[thisKey] = 0
-        }
-      } else {
-        // If no values are selected for this filter, pass all matches through
-        filterMathces[thisKey] = 1
-      }
-    })
-    // Iterate through the matches to make sure we've matched on every filter
-    let totalMathces = 0
-    for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
-      if (matchValue === 1) {
-        totalMathces += 1
-      }
-    }
-    if (totalMathces === filters.length) {
-      filteredData.push(item)
-    }
-  })
+  // // Filter on filter options
+  // const filters = $.makeArray($('.filterSelect'))
+  // const filteredData = []
+  // let thisKey, selectedValues, filterMathces
+  // // Iterate through the remaining data and make sure it matches at least
+  // // one filtered value.
+  // searchedData.forEach((item, i) => {
+  //   filterMathces = {}
+  //   filters.forEach((filter, j) => {
+  //     thisKey = filter.getAttribute('data-filterKey')
+  //     selectedValues = $(filter).val()
+  //     if (selectedValues.length > 0) {
+  //       if (selectedValues.includes(item[thisKey])) {
+  //         filterMathces[thisKey] = 1
+  //         item.matchCount += 1
+  //       } else {
+  //         filterMathces[thisKey] = 0
+  //       }
+  //     } else {
+  //       // If no values are selected for this filter, pass all matches through
+  //       filterMathces[thisKey] = 1
+  //     }
+  //   })
+  //   // Iterate through the matches to make sure we've matched on every filter
+  //   let totalMathces = 0
+  //   for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
+  //     if (matchValue === 1) {
+  //       totalMathces += 1
+  //     }
+  //   }
+  //   if (totalMathces === filters.length) {
+  //     filteredData.push(item)
+  //   }
+  // })
 
-  // Sort by the number of matches, so better results rise to the top.
-  filteredData.sort((a, b) => b.matchCount - a.matchCount)
+  // // Sort by the number of matches, so better results rise to the top.
+  // filteredData.sort((a, b) => b.matchCount - a.matchCount)
 
   // Make sure we have no more than 12 results to display
-  const displayedResults = filteredData.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
+  const displayedResults = spreadsheet.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
   // Create a card for each item and add it to the display
   displayedResults.forEach((item, i) => {
     createCard(item)
   })
-  // console.log("populateResultsRow runetime:", performance.now()-startTime)
   $('#resultsRow').fadeIn(200)
 }
 
@@ -223,7 +235,7 @@ function populateResultsRow (currentKey = '') {
 function displayMedia (id) {
   // Take the given id and display the media in the overlay.
 
-  const obj = data.filter(function (item) {
+  const obj = spreadsheet.filter(function (item) {
     return item.uniqueMediaBrowserID === id
   })[0]
 
@@ -245,78 +257,214 @@ function displayMedia (id) {
 
 function updateParser (update) {
   // Read updates specific to the media browser
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
 
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      const xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          loadContentFromINI(constCommon.parseINIString(xhr.responseText))
-        }
-      }
-      xhr.open('GET', constCommon.config.helperAddress + '/content/' + definition, true)
-      xhr.send(null)
-    }
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function loadContentFromINI (definition) {
+function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
+  // Tag the document with the defintion for later reference
+  $(document).data('browserDefinition', def)
 
-  if ('attractor' in definition.SETTINGS) {
-    $('#attractorVideo').attr('src', 'content/' + definition.SETTINGS.attractor)
-    document.getElementById('attractorVideo').play()
+  const root = document.querySelector(':root')
+
+  const langs = Object.keys(def.languages)
+  if (langs.length === 0) return
+
+  constCommon.createLanguageSwitcher(def, localize)
+  defaultLang = langs[0]
+
+  // Configure the attractor
+  if ('inactivity_timeout' in def) {
+    inactivityTimeout = def.inactivity_timeout * 1000
+  }
+  if ('attractor' in def && def.attractor.trim() !== '') {
+    if (constCommon.guessMimetype(def.attractor) === 'video') {
+      attractorType = 'video'
+
+      document.getElementById('attractorVideo').src = 'content/' + def.attractor
+      document.getElementById('attractorVideo').style.display = 'block'
+      document.getElementById('attractorImage').style.display = 'none'
+      document.getElementById('attractorVideo').play()
+    } else {
+      attractorType = 'image'
+      try {
+        document.getElementById('attractorVideo').stop()
+      } catch {
+        // Ignore the error that arises if we're pausing a video that doesn't exist.
+      }
+
+      document.getElementById('attractorImage').src = 'content/' + def.attractor
+      document.getElementById('attractorImage').style.display = 'block'
+      document.getElementById('attractorVideo').style.display = 'none'
+    }
+
     attractorAvailable = true
   } else {
     hideAttractor()
     attractorAvailable = false
   }
-  if ('media_key' in definition.SETTINGS) {
-    mediaKey = definition.SETTINGS.media_key
+
+  // Configure layout
+  // if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
+  //   document.getElementById('seerchFilterPane').style.display = 'flex'
+  //   document.getElementById('displayPane').classList.remove('display-full')
+  //   document.getElementById('displayPane').classList.add('display-share')
+  // } else {
+  //   document.getElementById('seerchFilterPane').style.display = 'none'
+  //   document.getElementById('displayPane').classList.add('display-full')
+  //   document.getElementById('displayPane').classList.remove('display-share')
+  // }
+  if ('num_columns' in def.style.layout) {
+    document.getElementById('resultsRow').classList = 'h-100 row row-cols-' + String(def.style.layout.num_columns)
+    numCols = def.style.layout.num_columns
   } else {
-    mediaKey = 'Media'
+    document.getElementById('resultsRow').classList = 'h-100 row row-cols-6'
+    numCols = 6
   }
-  if ('thumbnail_key' in definition.SETTINGS) {
-    thumbnailKey = definition.SETTINGS.thumbnail_key
+  if ('items_per_page' in def.style.layout) {
+    cardsPerPage = parseInt(def.style.layout.items_per_page)
+  } else {
+    cardsPerPage = 12
+  }
+  numRows = Math.ceil(cardsPerPage / numCols)
+
+  if ('lightbox_title_height' in def.style.layout) {
+    document.getElementById('imageLightboxTitle').style.height = String(def.style.layout.lightbox_title_height) + '%'
+  } else {
+    document.getElementById('imageLightboxTitle').style.height = '9%'
+  }
+  if ('lightbox_caption_height' in def.style.layout) {
+    document.getElementById('imageLightboxCaption').style.height = String(def.style.layout.lightbox_caption_height) + '%'
+  } else {
+    document.getElementById('imageLightboxCaption').style.height = '15%'
+  }
+  if ('lightbox_credit_height' in def.style.layout) {
+    document.getElementById('imageLightboxCredit').style.height = String(def.style.layout.lightbox_credit_height) + '%'
+  } else {
+    document.getElementById('imageLightboxCredit').style.height = '6%'
+  }
+  if ('lightbox_image_height' in def.style.layout) {
+    document.getElementById('imageLightboxImage').style.height = String(def.style.layout.lightbox_image_height) + '%'
+  } else {
+    document.getElementById('imageLightboxImage').style.height = '70%'
+  }
+
+  // Modify the style
+
+  // Color
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--backgroundColor', 'white')
+  root.style.setProperty('--titleColor', 'black')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.color).forEach((key) => {
+    document.documentElement.style.setProperty('--' + key, def.style.color[key])
+  })
+
+  // Set icon colors based on the background color.
+  const backgroundColor = constCommon.getColorAsRGBA(document.body, 'background-color')
+  const backgroundClassification = constCommon.classifyColor(backgroundColor)
+  if (backgroundClassification === 'light') {
+    document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_black.svg'
+  } else {
+    document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_white.svg'
+  }
+
+  // Font
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--Header-font', 'Header-default')
+  root.style.setProperty('--Title-font', 'Title-default')
+  root.style.setProperty('--Lightbox_title-font', 'Lightbox_title-default')
+  root.style.setProperty('--Lightbox_caption-font', 'Lightbox_caption-default')
+  root.style.setProperty('--Lightbox_credit-font', 'Lightbox_credit-default')
+
+  // Then, apply the definition settings
+  Object.keys(def.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(def.style.font[key]) + ')')
+    document.fonts.add(font)
+    root.style.setProperty('--' + key + '-font', key)
+  })
+
+  // Text size settings
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--Header-font-adjust', 0)
+  root.style.setProperty('--Title-font-adjust', 0)
+  root.style.setProperty('--Lightbox_title-font-adjust', 0)
+  root.style.setProperty('--Lightbox_caption-font-adjust', 0)
+  root.style.setProperty('--Lightbox_credit-font-adjust', 0)
+
+  // Then, apply the definition settings
+  Object.keys(def.style.text_size).forEach((key) => {
+    const value = def.style.text_size[key]
+    root.style.setProperty('--' + key + '-font-adjust', value)
+  })
+
+  // Load the CSV file containing the items ad build the results row
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/content/' + def.spreadsheet,
+    rawResponse: true
+  })
+    .then((response) => {
+      const csvAsJSON = constCommon.csvToJSON(response)
+      spreadsheet = csvAsJSON // Global property
+      localize(defaultLang)
+
+      // Send a thumbnail to the helper
+      setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
+    })
+}
+
+function localize (lang) {
+  // Use the spreadsheet and defintion to set the content to the given language
+
+  const definition = $(document).data('browserDefinition')
+
+  if ('media_key' in definition.languages[lang]) {
+    mediaKey = definition.languages[lang].media_key
+  } else {
+    mediaKey = null
+  }
+  if ('thumbnail_key' in definition.languages[lang]) {
+    thumbnailKey = definition.languages[lang].thumbnail_key
   } else {
     thumbnailKey = null
   }
-  if ('search_keys' in definition.SETTINGS) {
+  if ('title_key' in definition.languages[lang]) {
+    titleKey = definition.languages[lang].title_key
+  } else {
+    titleKey = null
+  }
+  if ('caption_key' in definition.languages[lang]) {
+    captionKey = definition.languages[lang].caption_key
+  } else {
+    captionKey = null
+  }
+  if ('credit_key' in definition.languages[lang]) {
+    creditKey = definition.languages[lang].credit_key
+  } else {
+    creditKey = null
+  }
+  if ('search_keys' in definition.languages[lang]) {
+    searchKeys = definition.languages[lang].search_keys
+  } else {
+    searchKeys = []
+  }
+
+  if ('filter_keys' in definition.languages[lang] && definition.languages[lang].filter_keys.length > 0) {
     // Split and trim the entries in a list
-    searchKeys = definition.SETTINGS.search_keys.split(',').map(function (item) {
-      return item.trim()
-    })
-  } else {
-    searchKeys = ['Title']
-  }
-  if ('title_key' in definition.SETTINGS) {
-    titleKey = definition.SETTINGS.title_key
-  } else {
-    titleKey = 'Title'
-  }
-  if ('caption_key' in definition.SETTINGS) {
-    captionKey = definition.SETTINGS.caption_key
-  } else {
-    captionKey = 'Caption'
-  }
-  if ('credit_key' in definition.SETTINGS) {
-    creditKey = definition.SETTINGS.credit_key
-  } else {
-    creditKey = 'Credit'
-  }
-  if ('filter_keys' in definition.SETTINGS) {
-    // Split and trim the entries in a list
-    filterKeys = definition.SETTINGS.filter_keys.split(',').map(function (item) {
+    filterKeys = definition.languages[lang].filter_keys.map(function (item) {
       return item.trim()
     })
     $('#filterRegion').show()
@@ -325,42 +473,25 @@ function loadContentFromINI (definition) {
     $('#filterRegion').hide()
   }
   let filterTitles = null
-  if ('filter_titles' in definition.SETTINGS) {
+  if ('filter_titles' in definition.languages[lang]) {
     // Split and trim the entries in a list
-    filterTitles = definition.SETTINGS.filter_titles.split(',').map(function (item) {
+    filterTitles = definition.languages[lang].map(function (item) {
       return item.trim()
     })
   }
-  if ('items_per_page' in definition.SETTINGS) {
-    cardsPerPage = parseInt(definition.SETTINGS.items_per_page)
-    customCardsPerPage = true
-  } else {
-    cardsPerPage = null
-    customCardsPerPage = false
-    setCardCount()
-  }
 
-  // Send a GET request for the content and then build the tab
-  const xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      // Set the global data variable
-      data = constCommon.csvToJSON(xhr.responseText)
+  populateFilterOptions(filterTitles)
 
-      // Create a new property, searchData, for each data element that includes
-      // everything we can search against as a string.
-      data.forEach((item, i) => {
-        item.searchData = ''
-        searchKeys.forEach((key, j) => {
-          item.searchData += String(item[key]) + ' '
-        })
-      })
-      populateResultsRow()
-      populateFilterOptions(filterTitles)
-    }
-  }
-  xhr.open('GET', constCommon.config.helperAddress + '/' + 'content/' + definition.SETTINGS.data, true)
-  xhr.send(null)
+  // Create a new property, searchData, for each data element that includes
+  // everything we can search against as a string.
+  spreadsheet.forEach((item, i) => {
+    item.searchData = ''
+    searchKeys.forEach((key, j) => {
+      item.searchData += String(item[key]) + ' '
+    })
+  })
+
+  populateResultsRow()
 }
 
 function showAttractor () {
@@ -368,12 +499,18 @@ function showAttractor () {
 
   constCommon.config.currentInteraction = false
   if (attractorAvailable) {
-    document.getElementById('attractorVideo').play()
-      .then(result => {
-        $('#attractorOverlay').show()
-        hideImageLightBox()
-        clear()
-      })
+    if (attractorType === 'video') {
+      document.getElementById('attractorVideo').play()
+        .then(result => {
+          $('#attractorOverlay').fadeIn()
+          hideImageLightBox()
+          clear()
+        })
+    } else {
+      $('#attractorOverlay').fadeIn()
+      hideImageLightBox()
+      clear()
+    }
   } else {
     hideImageLightBox()
     clear()
@@ -383,8 +520,10 @@ function showAttractor () {
 function hideAttractor () {
   // Make the attractor layer invisible
 
-  $('#attractorOverlay').hide(result => {
-    document.getElementById('attractorVideo').pause()
+  $('#attractorOverlay').fadeOut(result => {
+    if (attractorType === 'video') {
+      document.getElementById('attractorVideo').pause()
+    }
     constCommon.config.currentInteraction = true
     resetActivityTimer()
   })
@@ -394,43 +533,7 @@ function resetActivityTimer () {
   // Cancel the existing activity timer and set a new one
 
   clearTimeout(inactivityTimer)
-  inactivityTimer = setTimeout(showAttractor, 30000)
-}
-
-function setCardCount () {
-  // Based on the window size and the Bootstrap grid, calculate the number of
-  // cards we will be showing per page.
-
-  if (customCardsPerPage === false) {
-    const windowWidth = window.innerWidth
-    if (window.innerWidth > window.innerHeight) {
-      if (windowWidth >= 1200) {
-        cardsPerPage = 12
-      } else if (windowWidth >= 992) {
-        cardsPerPage = 8
-      } else if (windowWidth >= 768) {
-        cardsPerPage = 6
-      } else if (windowWidth >= 576) {
-        cardsPerPage = 4
-      } else {
-        cardsPerPage = 2
-      }
-    } else {
-      if (windowWidth >= 1000) {
-        cardsPerPage = 16
-      } else if (windowWidth >= 992) {
-        cardsPerPage = 8
-      } else if (windowWidth >= 768) {
-        cardsPerPage = 9
-      } else if (windowWidth >= 576) {
-        cardsPerPage = 6
-      } else {
-        cardsPerPage = 3
-      }
-    }
-  }
-
-  populateResultsRow()
+  inactivityTimer = setTimeout(showAttractor, inactivityTimeout)
 }
 
 function showImageInLightBox (image, title = '', caption = '', credit = '') {
@@ -451,79 +554,77 @@ function showImageInLightBox (image, title = '', caption = '', credit = '') {
 
   // Load the image with a callback to fade it in when it is loaded
   $('#imageLightboxImage').one('load', function () {
-    $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCredit').fadeIn()
-    if (caption === '') {
-      $('#imageLightboxImage').addClass('imageLightboxImageTall').removeClass('imageLightboxImageShort')
-      $('#imageLightboxCaption').hide()
-    } else {
-      $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
-      $('#imageLightboxCaption').fadeIn()
-    }
+    $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCredit, #imageLightboxCaption').fadeIn()
+    // if (caption === '') {
+    //   $('#imageLightboxImage').addClass('imageLightboxImageTall').removeClass('imageLightboxImageShort')
+    //   $('#imageLightboxCaption').hide()
+    // } else {
+    //   $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
+    //   $('#imageLightboxCaption').fadeIn()
+    // }
   }).attr('src', 'content/' + image)
 
   $('#imageLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)
 }
 
-const Keyboard = window.SimpleKeyboard.default
+// const Keyboard = window.SimpleKeyboard.default
 
-// Add a listener to each input so we direct keyboard input to the right one
-document.querySelectorAll('.input').forEach(input => {
-  input.addEventListener('focus', onInputFocus)
-})
-function onInputFocus (event) {
-  keyboard.setOptions({
-    inputName: event.target.id
-  })
-}
-function onInputChange (event) {
-  keyboard.setInput(event.target.value, event.target.id)
-}
-function onKeyPress (button) {
-  if (button === '{lock}' || button === '{shift}') handleShiftButton()
-  currentPage = 0
-  populateResultsRow(button)
-}
-document.querySelector('.input').addEventListener('input', event => {
-  keyboard.setInput(event.target.value)
-})
-function onChange (input) {
-  document.querySelector('#searchInput').value = input
-}
+// // Add a listener to each input so we direct keyboard input to the right one
+// document.querySelectorAll('.input').forEach(input => {
+//   input.addEventListener('focus', onInputFocus)
+// })
+// function onInputFocus (event) {
+//   keyboard.setOptions({
+//     inputName: event.target.id
+//   })
+// }
+// function onInputChange (event) {
+//   keyboard.setInput(event.target.value, event.target.id)
+// }
+// function onKeyPress (button) {
+//   if (button === '{lock}' || button === '{shift}') handleShiftButton()
+//   currentPage = 0
+//   populateResultsRow(button)
+// }
+// document.querySelector('.input').addEventListener('input', event => {
+//   keyboard.setInput(event.target.value)
+// })
+// function onChange (input) {
+//   document.querySelector('#searchInput').value = input
+// }
 
-const keyboard = new Keyboard({
-  onChange: input => onChange(input),
-  onKeyPress: button => onKeyPress(button),
-  layout: {
-    default: [
-      'Q W E R T Y U I O P',
-      'A S D F G H J K L',
-      'Z X C V B N M {bksp}',
-      '{space}'
-    ]
-  }
-})
+// const keyboard = new Keyboard({
+//   onChange: input => onChange(input),
+//   onKeyPress: button => onKeyPress(button),
+//   layout: {
+//     default: [
+//       'Q W E R T Y U I O P',
+//       'A S D F G H J K L',
+//       'Z X C V B N M {bksp}',
+//       '{space}'
+//     ]
+//   }
+// })
 
-// These will be loaded when an INI file is parsed
-let data, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
-let currentContent = []
+let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
+const currentContent = []
 let currentPage = 0
-let cardsPerPage
-let customCardsPerPage = false
+let cardsPerPage, numCols, numRows
+let defaultLang
 
-constCommon.config.helperAddress = window.location.origin
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_browser'
-constCommon.config.debug = true
+constCommon.configureApp({
+  name: 'media_browser',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
+
+let currentDefintion = ''
 
 let inactivityTimer = null
+let inactivityTimeout = 30000
 let attractorAvailable = false
-
-constCommon.askForDefaults()
-constCommon.sendPing()
-setInterval(constCommon.sendPing, 5000)
-
-window.addEventListener('resize', setCardCount)
-document.getElementById('clearButton').addEventListener('click', clear)
+let attractorType = 'image'
 
 // Attach event listeners
 $('#previousPageButton').click(function () {

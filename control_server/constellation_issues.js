@@ -69,7 +69,7 @@ export function rebuildIssueList () {
       mediaBut.setAttribute('class', 'btn btn-primary mr-1 mt-1')
       mediaBut.innerHTML = 'View image'
       mediaBut.addEventListener('click', function () {
-        issueMediaView(issue.media)
+        constTools.openMediaInNewTab('issues/media/' + issue.media)
       }, false)
       body.appendChild(mediaBut)
     }
@@ -87,12 +87,10 @@ export function rebuildIssueList () {
     deleteBut.setAttribute('class', 'btn btn-danger mt-1')
     deleteBut.setAttribute('data-toggle', 'popover')
     deleteBut.setAttribute('title', 'Are you sure?')
-    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100'>Confirm</a>`)
+    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
     deleteBut.setAttribute('data-trigger', 'focus')
     deleteBut.setAttribute('data-html', 'true')
-    $(document).on('click', `#Popover${issue.id}`, function () {
-      deleteIssue(issue.id)
-    })
+    // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
     deleteBut.addEventListener('click', function () { deleteBut.focus() })
     deleteBut.innerHTML = 'Delete'
     body.appendChild(deleteBut)
@@ -102,7 +100,7 @@ export function rebuildIssueList () {
   })
 }
 
-function deleteIssue (id) {
+export function deleteIssue (id) {
   // Ask the control server to remove the specified issue
 
   constTools.makeServerRequest({
@@ -283,118 +281,6 @@ export function uploadIssueMediaFile () {
     }, false)
 
     xhr.send(formData)
-  }
-}
-
-export function issueMediaView (filename) {
-  // Open the media file given by filename in a new browser tab
-
-  // First, determine if we have a picture or a video
-  const imgTypes = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff', 'webp']
-  const vidTypes = ['mp4', 'mov', 'webm']
-
-  let fileType = null
-  imgTypes.forEach((ext) => {
-    if (filename.toLowerCase().endsWith(ext)) {
-      fileType = 'image'
-    }
-  })
-  vidTypes.forEach((ext) => {
-    if (filename.toLowerCase().endsWith(ext)) {
-      fileType = 'video'
-    }
-  })
-
-  let html = null
-  if (fileType === 'image') {
-    html = `
-          <html>
-            <head>
-              <title>${filename}</title>
-              <style>
-                @media (orientation: landscape) {
-                  .zoomedOut{
-                    display: block;
-                    height: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    cursor: zoom-in;
-                    -webkit-user-select: none;
-                  }
-                }
-                @media (orientation: portrait) {
-                  .zoomedOut{
-                    display: block;
-                    width: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    cursor: zoom-in;
-                    -webkit-user-select: none;
-                  }
-                }
-
-                .zoomedIn{
-                  display: block;
-                  margin: auto;
-                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                  cursor: zoom-out;
-                  -webkit-user-select: none;
-                }
-              </style>
-            </head>
-            <body style="margin: 0px">
-              <img id="image" class='zoomedOut' src="issues/media/${filename}" onclick="toggleZoom()">
-            </body>
-            <script>
-
-              function toggleZoom() {
-                document.getElementById("image").classList.toggle('zoomedIn');
-                document.getElementById("image").classList.toggle('zoomedOut');
-              }
-            </script>
-          </html>
-    `
-  } else if (fileType === 'video') {
-    html = `
-          <html>
-            <head>
-              <title>${filename}</title>
-              <style>
-                @media (orientation: landscape) {
-                  .zoomedOut{
-                    display: block;
-                    height: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    -webkit-user-select: none;
-                  }
-                }
-                @media (orientation: portrait) {
-                  .zoomedOut{
-                    display: block;
-                    width: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    -webkit-user-select: none;
-                  }
-                }
-              </style>
-            </head>
-            <body style="margin: 0px">
-              <video class='zoomedOut' controls>
-                <source src="issues/media/${filename}">
-                This file is not playing.
-              </video>
-            </body>
-            <script>
-            </script>
-          </html>
-    `
-  }
-
-  if (html != null) {
-    const imageWindow = window.open('', '_blank')
-    imageWindow.document.write(html)
   }
 }
 
