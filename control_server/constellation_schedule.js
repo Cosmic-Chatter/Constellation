@@ -159,50 +159,49 @@ export function populateSchedule (schedule) {
   $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
 }
 
-function createScheduleEntryHTML(item, scheduleID, scheduleName, scheduleType) {
-  // Date a dictionary of properties and build an HTML representation of the schedule entry.
+function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) {
+  // Take a dictionary of properties and build an HTML representation of the schedule entry.
 
   let description = null
   const action = item.action
   const target = item.target
   const value = item.value
 
-      // Create the plain-language description of the action
-      if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
-        description = populateScheduleDescriptionHelper([item], false)
-      } else if (action === 'set_exhibit') {
-        description = `Set exhibit: ${target}`
-      } else if (action === 'note') {
-        description = item.value
-      }
+  // Create the plain-language description of the action
+  if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+    description = populateScheduleDescriptionHelper([item], false)
+  } else if (action === 'set_exhibit') {
+    description = `Set exhibit: ${target}`
+  } else if (action === 'note') {
+    description = item.value
+  }
 
-      if (description == null) return
+  if (description == null) return
 
-      const eventRow = document.createElement('div')
-      eventRow.classList = 'row mt-2 eventListing'
-      $(eventRow).data('time_in_seconds', item.time_in_seconds)
-      dayContainer.appendChild(eventRow)
+  const eventRow = document.createElement('div')
+  eventRow.classList = 'row mt-2 eventListing'
+  $(eventRow).data('time_in_seconds', item.time_in_seconds)
 
-      if (action === 'note') {
-        const eventDescriptionCol = document.createElement('div')
-        eventDescriptionCol.classList = 'col-9 mr-0 pr-0'
-        eventRow.appendChild(eventDescriptionCol)
+  if (action === 'note') {
+    const eventDescriptionCol = document.createElement('div')
+    eventDescriptionCol.classList = 'col-9 mr-0 pr-0'
+    eventRow.appendChild(eventDescriptionCol)
 
-        const eventDescriptionOuterContainer = document.createElement('div')
-        eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pr-1 rounded-left'
-        eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
+    const eventDescriptionOuterContainer = document.createElement('div')
+    eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pr-1 rounded-left'
+    eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
-        const eventDescriptionInnerContainer = document.createElement('div')
-        eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
-        eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
+    const eventDescriptionInnerContainer = document.createElement('div')
+    eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+    eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
 
-        const eventDescription = document.createElement('center')
-        eventDescription.innerHTML = description
-        eventDescriptionOuterContainer.appendChild(eventDescription)
-      } else {
-        const eventTimeCol = document.createElement('div')
-        eventTimeCol.classList = 'col-4 mr-0 pr-0'
-        eventRow.appendChild(eventTimeCol)
+    const eventDescription = document.createElement('center')
+    eventDescription.innerHTML = description
+    eventDescriptionOuterContainer.appendChild(eventDescription)
+  } else {
+    const eventTimeCol = document.createElement('div')
+    eventTimeCol.classList = 'col-4 mr-0 pr-0'
+    eventRow.appendChild(eventTimeCol)
 
     const eventTimeContainer = document.createElement('div')
     eventTimeContainer.classList = 'rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1'
@@ -212,50 +211,48 @@ function createScheduleEntryHTML(item, scheduleID, scheduleName, scheduleType) {
     eventTime.classList = 'align-self-center justify-content-center'
     eventTime.innerHTML = item.time
     eventTimeContainer.appendChild(eventTime)
+  }
 
-    const eventDescriptionCol = document.createElement('div')
-    eventDescriptionCol.classList = 'col-5 mx-0 px-0'
-    eventRow.appendChild(eventDescriptionCol)
+  const eventDescriptionCol = document.createElement('div')
+  eventDescriptionCol.classList = 'col-5 mx-0 px-0'
+  eventRow.appendChild(eventDescriptionCol)
 
-    const eventDescriptionOuterContainer = document.createElement('div')
-    eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
-    eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
+  const eventDescriptionOuterContainer = document.createElement('div')
+  eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
+  eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
-    const eventDescriptionInnerContainer = document.createElement('div')
-    eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
-    eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
+  const eventDescriptionInnerContainer = document.createElement('div')
+  eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+  eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
 
-        const eventDescription = document.createElement('center')
-        eventDescription.innerHTML = description
-        eventDescriptionOuterContainer.appendChild(eventDescription)
-      }
+  const eventDescription = document.createElement('center')
+  eventDescription.innerHTML = description
+  eventDescriptionOuterContainer.appendChild(eventDescription)
 
-      const eventEditButtonCol = document.createElement('div')
-      eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
-      eventRow.appendChild(eventEditButtonCol)
+  const eventEditButtonCol = document.createElement('div')
+  eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
+  eventRow.appendChild(eventEditButtonCol)
 
-      const eventEditButton = document.createElement('button')
-      eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
-      eventEditButton.setAttribute('type', 'button')
-      eventEditButton.style.borderStyle = 'solid'
-      eventEditButton.style.border = '0px'
-      eventEditButton.innerHTML = 'Edit'
-      eventEditButton.addEventListener('click', function () {
-        scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
-      })
-      eventEditButtonCol.appendChild(eventEditButton)
-    })
-    // Sort the elements by time
-    const events = $(dayContainer).children('.eventListing')
-    events.sort(function (a, b) {
-      return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
-    })
-    $(dayContainer).append(events)
-    // html += "</div>";
-    // $("#scheduleContainer").append(html);
+  const eventEditButton = document.createElement('button')
+  eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
+  eventEditButton.setAttribute('type', 'button')
+  eventEditButton.style.borderStyle = 'solid'
+  eventEditButton.style.border = '0px'
+  eventEditButton.innerHTML = 'Edit'
+  eventEditButton.addEventListener('click', function () {
+    scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
   })
+  eventEditButtonCol.appendChild(eventEditButton)
+  // Sort the elements by time
+  // const events = $(dayContainer).children('.eventListing')
+  // events.sort(function (a, b) {
+  //   return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+  // })
+  // $(dayContainer).append(events)
 
-  $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
+  // $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
+
+  return eventRow
 }
 
 function populateScheduleDescriptionHelper (eventList, includeTime) {
@@ -384,7 +381,7 @@ export function setScheduleActionTargetSelector () {
     })
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
-    $("#scheduleNoteInput").hide()
+    $('#scheduleNoteInput').hide()
   } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
@@ -405,21 +402,21 @@ export function setScheduleActionTargetSelector () {
       $('#scheduleValueSelector').hide()
       $('#scheduleValueSelectorLabel').hide()
     }
-    $("#scheduleNoteInput").hide()
+    $('#scheduleNoteInput').hide()
   } else if (action === 'note') {
     targetSelector.hide()
     $('#scheduleTargetSelectorLabel').hide()
     targetSelector.val(null)
     $('#scheduleValueSelector').hide()
     $('#scheduleValueSelectorLabel').hide()
-    $("#scheduleNoteInput").show()
+    $('#scheduleNoteInput').show()
   } else {
     targetSelector.hide()
     $('#scheduleTargetSelectorLabel').hide()
     targetSelector.val(null)
     $('#scheduleValueSelector').hide()
     $('#scheduleValueSelectorLabel').hide()
-    $("#scheduleNoteInput").hide()
+    $('#scheduleNoteInput').hide()
   }
 }
 
@@ -479,7 +476,6 @@ export function setScheduleActionValueSelector () {
       return
     }
 
-
     constTools.makeRequest({
       method: 'GET',
       url: component.helperAddress,
@@ -503,7 +499,6 @@ export function setScheduleActionValueSelector () {
         valueSelector.show()
         $('#scheduleValueSelectorLabel').show()
       })
-
   } else if (action === 'set_app') {
     const appDict = {
       infostation: 'InfoStation',
@@ -697,36 +692,36 @@ export function scheduleDeleteActionFromModal () {
     })
 }
 
-export function showManageFutureDateModal() {
+export function showManageFutureDateModal () {
   // Prepare the modal and show it.
 
   constTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/availableDateSpecificSchedules'
   })
-  .then((result) => {
-    console.log(result)
-  })
+    .then((result) => {
+      console.log(result)
+    })
 
   $('#manageFutureDateModal').modal('show')
 }
 
-export function onFutureDateCalendarInput(event) {
+export function onFutureDateCalendarInput (event) {
   // Called when the user selects a date on the manageFutureDateModal
 
   constTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + event.target.value + '/get'
   })
-  .then((day) => {
-    const scheduleList = document.getElementById('manageFutureDateEntryList')
-    scheduleList.innerHTML = ''
+    .then((day) => {
+      const scheduleList = document.getElementById('manageFutureDateEntryList')
+      scheduleList.innerHTML = ''
 
-    // Loop through the schedule elements and add a row for each
-    const scheduleIDs = Object.keys(day.schedule)
+      // Loop through the schedule elements and add a row for each
+      const scheduleIDs = Object.keys(day.schedule)
 
-    scheduleIDs.forEach((scheduleID) => {
-      scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, event.target.value, 'date-specific'))
+      scheduleIDs.forEach((scheduleID) => {
+        scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, event.target.value, 'date-specific'))
+      })
     })
-  })
 }
