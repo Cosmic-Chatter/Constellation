@@ -55,8 +55,11 @@ def retrieve_json_schedule():
     queue_json_schedule((config.json_schedule_list[0])["schedule"])
 
 
-def get_available_date_specific_schedules() -> list[str]:
-    """Search the schedule directory for a list of all available date-specific schedules and return their names."""
+def get_available_date_specific_schedules(all: bool = False) -> list[str]:
+    """Search the schedule directory for a list of available date-specific schedules and return their names.
+
+    By default, return only schedules for today's date or future. Set all=True to return past schedules.
+    """
 
     schedule_path = c_tools.get_path(["schedules"], user_file=True)
     available_schedules = os.listdir(schedule_path)
@@ -64,8 +67,20 @@ def get_available_date_specific_schedules() -> list[str]:
 
     for file in available_schedules:
         if file not in ['monday.json', 'tuesday.json', 'wednesday.json',
-                        'thursday.json', 'friday.json', 'saturday.json', 'sunday.json']:
+                        'thursday.json', 'friday.json', 'saturday.json', 'sunday.json', '.DS_']:
             schedules_to_return.append(file[:-5])
+
+    if all is False:
+        # Filter out schedules with past dates.
+        all_schedules = schedules_to_return.copy()
+        schedules_to_return = []
+        today = datetime.datetime.now().date()
+        for schedule in all_schedules:
+            try:
+                if dateutil.parser.parse(schedule).date() >= today:
+                    schedules_to_return.append(schedule)
+            except dateutil.parser._parser.ParserError:
+                pass
     return schedules_to_return
 
 

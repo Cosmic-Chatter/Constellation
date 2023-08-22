@@ -152,8 +152,6 @@ export function populateSchedule (schedule) {
       return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
     })
     $(dayContainer).append(events)
-    // html += "</div>";
-    // $("#scheduleContainer").append(html);
   })
 
   $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
@@ -211,23 +209,23 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
     eventTime.classList = 'align-self-center justify-content-center'
     eventTime.innerHTML = item.time
     eventTimeContainer.appendChild(eventTime)
+
+    const eventDescriptionCol = document.createElement('div')
+    eventDescriptionCol.classList = 'col-5 mx-0 px-0'
+    eventRow.appendChild(eventDescriptionCol)
+
+    const eventDescriptionOuterContainer = document.createElement('div')
+    eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
+    eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
+
+    const eventDescriptionInnerContainer = document.createElement('div')
+    eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
+    eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
+
+    const eventDescription = document.createElement('center')
+    eventDescription.innerHTML = description
+    eventDescriptionOuterContainer.appendChild(eventDescription)
   }
-
-  const eventDescriptionCol = document.createElement('div')
-  eventDescriptionCol.classList = 'col-5 mx-0 px-0'
-  eventRow.appendChild(eventDescriptionCol)
-
-  const eventDescriptionOuterContainer = document.createElement('div')
-  eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
-  eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
-
-  const eventDescriptionInnerContainer = document.createElement('div')
-  eventDescriptionInnerContainer.classList = 'align-self-center justify-content-center text-wrap'
-  eventDescriptionOuterContainer.appendChild(eventDescriptionInnerContainer)
-
-  const eventDescription = document.createElement('center')
-  eventDescription.innerHTML = description
-  eventDescriptionOuterContainer.appendChild(eventDescription)
 
   const eventEditButtonCol = document.createElement('div')
   eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
@@ -240,17 +238,9 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
   eventEditButton.style.border = '0px'
   eventEditButton.innerHTML = 'Edit'
   eventEditButton.addEventListener('click', function () {
-    scheduleConfigureEditModal(scheduleName, day.source, false, scheduleID, item.time, action, target, value)
+    scheduleConfigureEditModal(scheduleName, scheduleType.source, false, scheduleID, item.time, action, target, value)
   })
   eventEditButtonCol.appendChild(eventEditButton)
-  // Sort the elements by time
-  // const events = $(dayContainer).children('.eventListing')
-  // events.sort(function (a, b) {
-  //   return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
-  // })
-  // $(dayContainer).append(events)
-
-  // $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
 
   return eventRow
 }
@@ -430,8 +420,9 @@ export function setScheduleActionValueSelector () {
   valueSelector.empty()
 
   if (['set_content', 'set_definition'].includes(action)) {
+    let component
     try {
-      const component = constExhibit.getExhibitComponent(target.slice(5))
+      component = constExhibit.getExhibitComponent(target.slice(5))
     } catch {
       return
     }
@@ -658,6 +649,9 @@ export function sendScheduleUpdateFromModal () {
         if (update.success === true) {
           $('#scheduleEditModal').modal('hide')
           populateSchedule(update)
+          if ($('#manageFutureDateModal').hasClass('show')) {
+            populateFutureDateCalendarInput()
+          }
         } else {
           $('#scheduleEditErrorAlert').html(update.reason).show()
         }
@@ -700,18 +694,46 @@ export function showManageFutureDateModal () {
     endpoint: '/schedule/availableDateSpecificSchedules'
   })
     .then((result) => {
-      console.log(result)
+      if (result.success === true) {
+        const availableDatesList = document.getElementById('manageFutureDateAvailableSchedulesList')
+        availableDatesList.innerHTML = ''
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+
+        result.schedules.forEach((date) => {
+          const button = document.createElement('button')
+          button.classList = 'btn btn-info mt-2 w-100 futureEventDateButton'
+
+          // Build the date string
+          const dateObj = new Date(date)
+          button.innerHTML = dateObj.toLocaleDateString(undefined, options)
+
+          button.addEventListener('click', (event) => {
+            document.getElementById('manageFutureDateCalendarInput').value = date
+            populateFutureDateCalendarInput()
+
+            // Highlight the button
+            Array.from(availableDatesList.querySelectorAll('.futureEventDateButton')).forEach((el) => {
+              el.classList.replace('btn-success', 'btn-info')
+            })
+            event.target.classList.replace('btn-info', 'btn-success')
+          })
+
+          availableDatesList.appendChild(button)
+        })
+      }
     })
 
   $('#manageFutureDateModal').modal('show')
 }
 
-export function onFutureDateCalendarInput (event) {
+export function populateFutureDateCalendarInput () {
   // Called when the user selects a date on the manageFutureDateModal
+
+  const date = document.getElementById('manageFutureDateCalendarInput').value
 
   constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/schedule/' + event.target.value + '/get'
+    endpoint: '/schedule/' + date + '/get'
   })
     .then((day) => {
       const scheduleList = document.getElementById('manageFutureDateEntryList')
@@ -722,6 +744,13 @@ export function onFutureDateCalendarInput (event) {
 
       scheduleIDs.forEach((scheduleID) => {
         scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, event.target.value, 'date-specific'))
+
+        // Sort the elements by time
+        const events = $(scheduleList).children('.eventListing')
+        events.sort(function (a, b) {
+          return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+        })
+        $(scheduleList).append(events)
       })
     })
 }

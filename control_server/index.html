@@ -694,11 +694,12 @@
                     <div class="col-12 col-sm-5">
                       <label for="manageFutureDateCalendarInput" class="sr-only sr-only-focusable">Date</label>
                       <input id="manageFutureDateCalendarInput" type="date" class="form-control">
+                      <div id="manageFutureDateAvailableSchedulesList"></div>
                     </div>
                     <div class="col-12 col-sm-7">
                       <div class="row">
                         <div class="col-6">
-                          <button class="btn btn-primary w-100">Add action</button>
+                          <button id="manageFutureDateAddActionButton" class="btn btn-primary w-100">Add action</button>
                         </div>
                         <div class="col-6">
                           <button type="button" class="btn btn-danger w-100" data-dismiss="modal">Delete</button>
@@ -783,9 +784,6 @@
             </div>
             <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
               <button id='manageFutureDateButton' class='btn btn-primary w-100'>Manage future date</button>
-            </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
-              <button id='viewDateSpecificSchedulesButton' class='btn btn-info w-100'>Date-specific schedules</button>
             </div>
             <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto" role="alert">
               Date-specific schedule

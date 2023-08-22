@@ -1199,7 +1199,11 @@ document.getElementById('componentInfoModalEditDMXButton').addEventListener('cli
 // Schedule tab
 // =========================
 document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
-document.getElementById('manageFutureDateCalendarInput').addEventListener('change', constSchedule.onFutureDateCalendarInput)
+document.getElementById('manageFutureDateCalendarInput').addEventListener('change', constSchedule.populateFutureDateCalendarInput)
+document.getElementById('manageFutureDateAddActionButton').addEventListener('click', (event) => {
+  const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
+  constSchedule.scheduleConfigureEditModal(scheduleName, 'date-specific')
+})
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
