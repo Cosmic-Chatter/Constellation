@@ -689,6 +689,14 @@ export function scheduleDeleteActionFromModal () {
 export function showManageFutureDateModal () {
   // Prepare the modal and show it.
 
+  populateFutureDatesList()
+
+  $('#manageFutureDateModal').modal('show')
+}
+
+function populateFutureDatesList () {
+  // Get a list of upcoming dates with special schedules and build GUI elements for them.
+
   constTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/availableDateSpecificSchedules'
@@ -704,7 +712,7 @@ export function showManageFutureDateModal () {
           button.classList = 'btn btn-info mt-2 w-100 futureEventDateButton'
 
           // Build the date string
-          const dateObj = new Date(date)
+          const dateObj = new Date(date + 'T00:00')
           button.innerHTML = dateObj.toLocaleDateString(undefined, options)
 
           button.addEventListener('click', (event) => {
@@ -722,8 +730,6 @@ export function showManageFutureDateModal () {
         })
       }
     })
-
-  $('#manageFutureDateModal').modal('show')
 }
 
 export function populateFutureDateCalendarInput () {
@@ -739,6 +745,17 @@ export function populateFutureDateCalendarInput () {
       const scheduleList = document.getElementById('manageFutureDateEntryList')
       scheduleList.innerHTML = ''
 
+      if (day.success === false) {
+        document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
+        document.getElementById('manageFutureDateAddActionButton').style.display = 'none'
+        document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'none'
+        return
+      } else {
+        document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'none'
+        document.getElementById('manageFutureDateAddActionButton').style.display = 'block'
+        document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'block'
+      }
+
       // Loop through the schedule elements and add a row for each
       const scheduleIDs = Object.keys(day.schedule)
 
@@ -752,5 +769,27 @@ export function populateFutureDateCalendarInput () {
         })
         $(scheduleList).append(events)
       })
+    })
+}
+
+export function convertFutureScheduleFromModal () {
+  // Take the current date from the input and convert it to a date-specific schedule.
+
+  const date = document.getElementById('manageFutureDateCalendarInput').value
+  if (date === '') return
+
+  const dateObj = new Date(date + 'T00:00')
+  const dayOfWeek = dateObj.toLocaleDateString(undefined, { weekday: 'long' })
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/convert',
+    params: {
+      date,
+      convert_from: dayOfWeek
+    }
+  })
+    .then((result) => {
+      populateFutureDatesList()
     })
 }

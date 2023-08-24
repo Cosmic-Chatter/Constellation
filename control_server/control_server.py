@@ -965,9 +965,9 @@ async def get_specific_schedule(schedule_name: str):
 
     if not schedule_name.endswith('.json'):
         schedule_name += '.json'
-    schedule = c_sched.load_json_schedule(schedule_name)
+    success, schedule = c_sched.load_json_schedule(schedule_name)
 
-    return {"success": True, "schedule": schedule}
+    return {"success": success, "schedule": schedule}
 
 
 @app.post("/schedule/update")

@@ -1204,6 +1204,7 @@ document.getElementById('manageFutureDateAddActionButton').addEventListener('cli
   const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
   constSchedule.scheduleConfigureEditModal(scheduleName, 'date-specific')
 })
+document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', constSchedule.convertFutureScheduleFromModal)
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)

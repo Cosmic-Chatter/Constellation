@@ -48,7 +48,7 @@ def retrieve_json_schedule():
                 break
 
         if schedule_to_read is not None:
-            day_dict["schedule"] = load_json_schedule(schedule_to_read)
+            _, day_dict["schedule"] = load_json_schedule(schedule_to_read)
 
         config.json_schedule_list.append(day_dict)
 
@@ -84,7 +84,7 @@ def get_available_date_specific_schedules(all: bool = False) -> list[str]:
     return schedules_to_return
 
 
-def load_json_schedule(schedule_name: str) -> dict:
+def load_json_schedule(schedule_name: str) -> tuple[bool, dict]:
     """Load and parse the appropriate schedule file and return it"""
 
     schedule_path = c_tools.get_path(["schedules", schedule_name], user_file=True)
@@ -93,11 +93,11 @@ def load_json_schedule(schedule_name: str) -> dict:
             with open(schedule_path, "r", encoding="UTF-8") as f:
                 events = json.load(f)
         except FileNotFoundError:
-            return {}
+            return False, {}
         except json.decoder.JSONDecodeError:
-            return {}
+            return False, {}
 
-    return events
+    return True, events
 
 
 def write_json_schedule(schedule_name: str, schedule: dict) -> bool:
@@ -118,7 +118,7 @@ def write_json_schedule(schedule_name: str, schedule: dict) -> bool:
 def update_json_schedule(schedule_name: str, updates: dict) -> dict:
     """Write schedule updates to disk and return the updated schedule"""
 
-    schedule: dict = load_json_schedule(schedule_name)
+    _, schedule = load_json_schedule(schedule_name)
 
     # The keys should be the schedule_ids for the items to be updated
     for key in updates:
@@ -145,7 +145,7 @@ def update_json_schedule(schedule_name: str, updates: dict) -> dict:
 def delete_json_schedule_event(schedule_name: str, schedule_id: str) -> dict:
     """Delete the schedule item with the given id"""
 
-    schedule: dict = load_json_schedule(schedule_name)
+    _, schedule = load_json_schedule(schedule_name)
 
     if schedule_id in schedule:
         del schedule[schedule_id]

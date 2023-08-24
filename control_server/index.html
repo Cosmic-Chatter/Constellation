@@ -681,8 +681,8 @@
           
           <!-- Manage future date modal -->
           <div class="modal" tabindex="-1" role="dialog" id="manageFutureDateModal">
-            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-              <div class="modal-content">
+            <div class="modal-dialog constellation-dialog modal-dialog-centered" role="document">
+              <div class="modal-content"  style="height: max(80vh, 100px);">
                 <div class="modal-header">
                   <h5 class="modal-title">Manage a future date</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -690,19 +690,22 @@
                   </button>
                 </div>
                 <div class="modal-body">
-                  <div class="row">
+                  <div class="row h-100">
                     <div class="col-12 col-sm-5">
                       <label for="manageFutureDateCalendarInput" class="sr-only sr-only-focusable">Date</label>
                       <input id="manageFutureDateCalendarInput" type="date" class="form-control">
                       <div id="manageFutureDateAvailableSchedulesList"></div>
                     </div>
-                    <div class="col-12 col-sm-7">
-                      <div class="row">
-                        <div class="col-6">
-                          <button id="manageFutureDateAddActionButton" class="btn btn-primary w-100">Add action</button>
+                    <div class="col-12 col-sm-7 h-100">
+                      <div class="row h-100">
+                        <div id="manageFutureDateCreateScheduleButtonContainer" class="col-12 text-center mt-auto">
+                          <button id="manageFutureDateCreateScheduleButton" class="btn btn-primary">Create date-specific schedule</button>
                         </div>
                         <div class="col-6">
-                          <button type="button" class="btn btn-danger w-100" data-dismiss="modal">Delete</button>
+                          <button id="manageFutureDateAddActionButton" class="btn btn-primary w-100" style="display: none;">Add action</button>
+                        </div>
+                        <div class="col-6">
+                          <button id="manageFutureDateDeleteScheduleButton" type="button" class="btn btn-danger w-100" style="display: none;">Delete</button>
                         </div>
                       </div>
                       <div id="manageFutureDateEntryList"></div>
