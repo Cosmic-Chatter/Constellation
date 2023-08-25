@@ -95,6 +95,10 @@ def load_json_schedule(schedule_name: str) -> tuple[bool, dict]:
         except FileNotFoundError:
             return False, {}
         except json.decoder.JSONDecodeError:
+            # Check if the file is empty, which is a success condition
+            with open(schedule_path, "r", encoding="UTF-8") as f:
+                if len(f.read().strip()) == 0:
+                    return True, {}
             return False, {}
 
     return True, events

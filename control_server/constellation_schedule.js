@@ -14,6 +14,11 @@ export function deleteSchedule (name) {
     .then((response) => {
       if ('success' in response && response.success === true) {
         populateSchedule(response)
+        if ($('#manageFutureDateModal').hasClass('show')) {
+          populateFutureDatesList()
+          document.getElementById('manageFutureDateCalendarInput').value = ''
+          populateFutureDateCalendarInput()
+        }
       }
     })
 }
@@ -689,7 +694,13 @@ export function scheduleDeleteActionFromModal () {
 export function showManageFutureDateModal () {
   // Prepare the modal and show it.
 
+  // Clear any existing entries
+  document.getElementById('manageFutureDateEntryList').innerHTML = ''
+  document.getElementById('manageFutureDateCalendarInput').value = ''
   populateFutureDatesList()
+  document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
+  document.getElementById('manageFutureDateAddActionButton').style.display = 'none'
+  document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'none'
 
   $('#manageFutureDateModal').modal('show')
 }
@@ -707,9 +718,12 @@ function populateFutureDatesList () {
         availableDatesList.innerHTML = ''
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
 
-        result.schedules.forEach((date) => {
+        result.schedules.sort((date1, date2) => {
+          return new Date(date1) - new Date(date2)
+        }).forEach((date) => {
           const button = document.createElement('button')
           button.classList = 'btn btn-info mt-2 w-100 futureEventDateButton'
+          button.setAttribute('id', 'futureDateButton_' + date)
 
           // Build the date string
           const dateObj = new Date(date + 'T00:00')
@@ -736,15 +750,26 @@ export function populateFutureDateCalendarInput () {
   // Called when the user selects a date on the manageFutureDateModal
 
   const date = document.getElementById('manageFutureDateCalendarInput').value
+  const scheduleList = document.getElementById('manageFutureDateEntryList')
+  scheduleList.innerHTML = ''
+  const availableDatesList = document.getElementById('manageFutureDateAvailableSchedulesList')
+
+  Array.from(availableDatesList.querySelectorAll('.futureEventDateButton')).forEach((el) => {
+    el.classList.replace('btn-success', 'btn-info')
+  })
+
+  if (date === '') {
+    document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
+    document.getElementById('manageFutureDateAddActionButton').style.display = 'none'
+    document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'none'
+    return
+  }
 
   constTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + date + '/get'
   })
     .then((day) => {
-      const scheduleList = document.getElementById('manageFutureDateEntryList')
-      scheduleList.innerHTML = ''
-
       if (day.success === false) {
         document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
         document.getElementById('manageFutureDateAddActionButton').style.display = 'none'
@@ -754,6 +779,9 @@ export function populateFutureDateCalendarInput () {
         document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'none'
         document.getElementById('manageFutureDateAddActionButton').style.display = 'block'
         document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'block'
+
+        // Find the appropriate button and highlight it
+        document.getElementById('futureDateButton_' + date).classList.replace('btn-info', 'btn-success')
       }
 
       // Loop through the schedule elements and add a row for each

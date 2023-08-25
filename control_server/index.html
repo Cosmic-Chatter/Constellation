@@ -691,13 +691,15 @@
                 </div>
                 <div class="modal-body">
                   <div class="row h-100">
-                    <div class="col-12 col-sm-5">
-                      <label for="manageFutureDateCalendarInput" class="sr-only sr-only-focusable">Date</label>
-                      <input id="manageFutureDateCalendarInput" type="date" class="form-control">
-                      <div id="manageFutureDateAvailableSchedulesList"></div>
+                    <div class="col-12 col-sm-5 h-100">
+                      <div>
+                        <label for="manageFutureDateCalendarInput" class="sr-only sr-only-focusable">Date</label>
+                        <input id="manageFutureDateCalendarInput" type="date" class="form-control mb-3">
+                      </div>
+                      <div id="manageFutureDateAvailableSchedulesList" style="max-height: 50vh; overflow-y: auto;"></div>
                     </div>
-                    <div class="col-12 col-sm-7 h-100">
-                      <div class="row h-100">
+                    <div class="col-12 col-sm-7">
+                      <div class="row">
                         <div id="manageFutureDateCreateScheduleButtonContainer" class="col-12 text-center mt-auto">
                           <button id="manageFutureDateCreateScheduleButton" class="btn btn-primary">Create date-specific schedule</button>
                         </div>
