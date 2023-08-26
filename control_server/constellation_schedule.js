@@ -176,7 +176,7 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
   const value = item.value
 
   // Create the plain-language description of the action
-  if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+  if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_definition', 'set_dmx_scene'].includes(action)) {
     description = populateScheduleDescriptionHelper([item], false)
   } else if (action === 'set_exhibit') {
     description = `Set exhibit: ${target}`
@@ -298,10 +298,6 @@ function scheduleActionToDescription (action) {
       return 'Refresh'
     case 'restart':
       return 'Restart'
-    case 'set_app':
-      return 'Set app for'
-    case 'set_content':
-      return 'Set content for'
     case 'set_definition':
       return 'Set defintion for'
     case 'set_dmx_scene':
@@ -394,7 +390,7 @@ export function setScheduleActionTargetSelector () {
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
     $('#scheduleNoteInput').hide()
-  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_definition', 'set_dmx_scene'].includes(action)) {
     // Fill the target selector with the list of groups and ids, plus an option for all.
     targetSelector.empty()
 
@@ -404,14 +400,14 @@ export function setScheduleActionTargetSelector () {
     } else if (['refresh_page', 'restart'].includes(action)) {
       targetSelector.attr('multiple', true)
       setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents'])
-    } else if (['set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+    } else if (['set_definition', 'set_dmx_scene'].includes(action)) {
       targetSelector.attr('multiple', false)
       setScheduleActionTargetSelectorPopulateOptions(['ExhibitComponents'])
     }
     targetSelector.show()
     $('#scheduleTargetSelectorLabel').show()
     // For certain ations, we want to then populare the value selector
-    if (['set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+    if (['set_definition', 'set_dmx_scene'].includes(action)) {
       setScheduleActionValueSelector()
     } else {
       $('#scheduleValueSelector').hide()
@@ -444,7 +440,7 @@ export function setScheduleActionValueSelector () {
   const valueSelector = $('#scheduleValueSelector')
   valueSelector.empty()
 
-  if (['set_content', 'set_definition'].includes(action)) {
+  if (['set_definition'].includes(action)) {
     let component
     try {
       component = constExhibit.getExhibitComponent(target.slice(5))
@@ -458,11 +454,7 @@ export function setScheduleActionValueSelector () {
       endpoint: '/getAvailableContent'
     })
       .then((response) => {
-        if (action === 'set_content') {
-          response.all_exhibits.forEach((item) => {
-            valueSelector.append(new Option(item, item))
-          })
-        } else if (action === 'set_definition') {
+        if (action === 'set_definition') {
           // Convert the dictionary to an array, sorted by app ID
           const defList = Object.values(response.definitions).sort(function (a, b) {
             return (a.app < b.app) ? -1 : (a.app > b.app) ? 1 : 0
@@ -515,25 +507,6 @@ export function setScheduleActionValueSelector () {
         valueSelector.show()
         $('#scheduleValueSelectorLabel').show()
       })
-  } else if (action === 'set_app') {
-    const appDict = {
-      infostation: 'InfoStation',
-      media_browser: 'Media Browser',
-      media_player: 'Media Player',
-      timelapse_viewer: 'Timelapse Viewer',
-      timeline_explorer: 'Timeline Explorer',
-      voting_kiosk: 'Voting Kiosk',
-      word_cloud_input: 'Word Cloud Input',
-      word_cloud_viewer: 'Word Cloud Viewer'
-    }
-
-    Object.keys(appDict).forEach((key) => {
-      valueSelector.append(new Option(appDict[key], key))
-    })
-    // In the case of editing an action, preselect any existing values
-    valueSelector.val($('#scheduleEditModal').data('currentValue'))
-    valueSelector.show()
-    $('#scheduleValueSelectorLabel').show()
   } else {
     valueSelector.hide()
     $('#scheduleValueSelectorLabel').hide()
@@ -647,10 +620,10 @@ export function sendScheduleUpdateFromModal () {
   } else if (action === 'set_exhibit' && target == null) {
     $('#scheduleEditErrorAlert').html('You must specifiy an exhibit to set').show()
     return
-  } else if (['power_on', 'power_off', 'refresh_page', 'restart', 'set_content'].includes(action) && target == null) {
+  } else if (['power_on', 'power_off', 'refresh_page', 'restart'].includes(action) && target == null) {
     $('#scheduleEditErrorAlert').html('You must specifiy a target for this action').show()
     return
-  } else if (['set_app', 'set_content', 'set_deinition', 'set_dmx_scene'].includes(value) && value == null) {
+  } else if (['set_deinition', 'set_dmx_scene'].includes(value) && value == null) {
     $('#scheduleEditErrorAlert').html('You must specifiy a value for this action').show()
     return
   }

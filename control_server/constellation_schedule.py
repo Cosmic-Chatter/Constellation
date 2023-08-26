@@ -217,23 +217,7 @@ def execute_scheduled_action(action: str, target: Union[list, str, None], value:
     """Dispatch the appropriate action when called by a schedule timer"""
 
     config.last_update_time = time.time()
-    if action == 'set_app' and target is not None and value is not None:
-        if isinstance(value, str):
-            value = [value]
-        if target.startswith("__id_"):
-            target = target[5:]
-        print(f"Changing app for {target} to {value}")
-        logging.info("Changing app for %s to %s", target, value)
-        c_exhibit.update_exhibit_configuration(target, {"app_name": value})
-    elif action == 'set_content' and target is not None and value is not None:
-        if isinstance(value, str):
-            value = [value]
-        if target.startswith("__id_"):
-            target = target[5:]
-        print(f"Changing content for {target} to {value}")
-        logging.info("Changing content for %s to %s", target, value)
-        c_exhibit.update_exhibit_configuration(target, {"content": value, "definition": ""})
-    elif action == 'set_definition' and target is not None and value is not None:
+    if action == 'set_definition' and target is not None and value is not None:
         if isinstance(value, list):
             value = value[0]
         if target.startswith("__id_"):
