@@ -400,6 +400,16 @@ async def write_raw_text(text: str = Body(description='The data to write.'),
     return response
 
 
+@app.post("/data/getRawText")
+async def read_raw_text(name: str = Body(description='The name of the file to read.')):
+    """Load the given file and return the raw text."""
+
+    result, success, reason = helper_files.get_raw_text(name)
+
+    response = {"success": success, "reason": reason, "text": result}
+    return response
+
+
 @app.post("/data/getCSV")
 async def get_tracker_data_csv(name: str = Body(description='The name of the filename to return as a CSV', embed=True)):
     """Return the requested data file as a CSV string."""

@@ -114,6 +114,28 @@ def write_raw_text(data: str, name: str, mode: str = "a") -> tuple[bool, str]:
     return success, reason
 
 
+def get_raw_text(name: str) -> tuple[str, bool, str]:
+    """Return the contents of a text file."""
+
+    file_path = get_path(["data", name], user_file=True)
+    success = True
+    reason = ""
+    result = ""
+
+    try:
+        with config.content_file_lock:
+            with open(file_path, "r", encoding='UTF-8') as f:
+                result = f.read()
+    except FileNotFoundError:
+        success = False
+        reason = f"File {file_path} not found."
+    except PermissionError:
+        success = False
+        reason = f"You do not have read permission for the file {file_path}"
+
+    return result, success, reason
+
+
 def create_csv(file_path: str | os.PathLike, filename: str = "") -> str:
     """Load a data file and convert it to a CSV"""
 

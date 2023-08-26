@@ -53,15 +53,15 @@
       }
     </style>
 
-    <title>Word Cloud Input Setup</title>
+    <title>Word Cloud Viewer Setup</title>
 
   </head>
 
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
 
-      <H2>Word Cloud Input Setup</H2>
-      Use this utility to create and edit Word Cloud Input configurations.
+      <H2>Word Cloud Viewer Setup</H2>
+      Use this utility to create and edit Word Cloud Viewer configurations.
       <div class="row my-1 gx-2 gy-2">
         <div class="col-6 col-sm-3 col-md-3 col-lg-2">
           <button id="newDefinitionButton" class="btn btn-primary w-100">Create new</button>
@@ -124,34 +124,7 @@
                   <label for="promptInput" class="form-label">Prompt</label>
                   <input type="text" class="form-control" id="promptInput">
                 </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                  <label for="placeholderTextInput" class="form-label">Placeholder text</label>
-                  <input type="text" class="form-control localization-input" id="placeholderTextInput" placeholder="Type to enter response" data-property="placeholder">
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                  <label for="submitTextInput" class="form-label">Submit button text</label>
-                  <input type="text" class="form-control localization-input" id="submitTextInput" placeholder="Submit" data-property="submit">
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                  <label for="clearTextInput" class="form-label">Clear button text</label>
-                  <input type="text" class="form-control localization-input" id="clearTextInput" placeholder="Clear" data-property="clear">
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                  <label for="backspaceTextInput" class="form-label">Backspace button text</label>
-                  <input type="text" class="form-control localization-input" id="backspaceTextInput" placeholder="backspace" data-property="backspace">
-                </div>
               </div>
-
-              <!-- <h3 class="mt-2">Attractor</h3>
-              <div class="row mt-2 gy-2">
-                <div class="col-12 col-md-6 col-lg-3">
-                  <label for="attractorInput_attractor_timeout" class="form-label">
-                    Timeout
-                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="The length of time in seconds before the attractor animation should start playing." style="font-size: 0.55em;">?</span>
-                  </label>
-                  <input type="number" min="5" value="30" class="form-control attractor-input" id="attractorInput_attractor_timeout" data-property="attractor_timeout">
-                </div>
-              </div> -->
 
               <h3 class="mt-2">Appearance</h3>
               <h4 class="mt-2">Text size</h4>
@@ -177,57 +150,22 @@
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_input" class="form-label">Input text</label>
-                  <div>
-                    <input id="colorPicker_input" type="text" class="coloris form-control" value="#000" data-property="input" data-default="#000">
-                  </div>
+                  <label for="colorPicker_words" class="form-label">
+                    Word color mode
+                  </label>
+                  <select id="wordColorMode" class="form-select">
+                    <option value="random-dark">Random dark</option>
+                    <option value="random-light">Random light</option>
+                    <option value="specific">Single color</option>
+                  </select>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_input-background" class="form-label">Input background</label>
+                  <label for="colorPicker_words" class="form-label">
+                    Words
+                    <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="If color mode is set to single color, select that color here." style="font-size: 0.55em;">?</span>
+                  </label>
                   <div>
-                    <input id="colorPicker_input-background" type="text" class="coloris form-control" value="#e9ecef" data-property="input-background" data-default="#e9ecef">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_submit" class="form-label">Submit button text</label>
-                  <div>
-                    <input id="colorPicker_submit" type="text" class="coloris form-control" value="#fff" data-property="submit" data-default="#fff">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_submit-background" class="form-label">Submit button background</label>
-                  <div>
-                    <input id="colorPicker_submit-background" type="text" class="coloris form-control" value="#6c757d" data-property="submit-background" data-default="#6c757d">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_clear" class="form-label">Clear button text</label>
-                  <div>
-                    <input id="colorPicker_clear" type="text" class="coloris form-control" value="#fff" data-property="clear" data-default="#fff">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_clear-background" class="form-label">Clear button background</label>
-                  <div>
-                    <input id="colorPicker_clear-background" type="text" class="coloris form-control" value="#6c757d" data-property="clear-background" data-default="#6c757d">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_keyboard-key" class="form-label">Keyboard key text</label>
-                  <div>
-                    <input id="colorPicker_keyboard-key" type="text" class="coloris form-control" value="#000" data-property="keyboard-key" data-default="#000">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_keyboard-key-background" class="form-label">Keyboard key background</label>
-                  <div>
-                    <input id="colorPicker_keyboard-key-background" type="text" class="coloris form-control" value="#fff" data-property="keyboard-key-background" data-default="#fff">
-                  </div>
-                </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_keyboard-background" class="form-label">Keyboard background</label>
-                  <div>
-                    <input id="colorPicker_keyboard-background" type="text" class="coloris form-control" value="#ececec" data-property="keyboard-background" data-default="#ececec">
+                    <input id="colorPicker_words" type="text" class="coloris form-control" value="#000" data-property="words" data-default="#000">
                   </div>
                 </div>
               </div>
@@ -246,16 +184,8 @@
                   <select id="fontSelect_prompt" class="form-select font-select" data-property="prompt" data-default="../_fonts/OpenSans-Bold.ttf"></select>
                 </div>
                 <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_input" class="form-label">Input</label>
-                  <select id="fontSelect_input" class="form-select font-select" data-property="input" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_submit" class="form-label">Submit button</label>
-                  <select id="fontSelect_submit" class="form-select font-select" data-property="submit" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_clear" class="form-label">Clear button</label>
-                  <select id="fontSelect_clear" class="form-select font-select" data-property="clear" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                  <label for="fontSelect_words" class="form-label">Words</label>
+                  <select id="fontSelect_words" class="form-select font-select" data-property="words" data-default="../_fonts/OpenSans-Regular.ttf"></select>
                 </div>
               </div>
             </div>
@@ -263,7 +193,7 @@
         </div>
         <div id='previewPane' class="col-6 col-lg-5 sticky-top">
           <div id="previewContainer" class="">
-            <iframe id="previewFrame" class="mt-3 preview-landscape" src="../wordcloud_input.html?standalone=true"></iframe>
+            <iframe id="previewFrame" class="mt-3 preview-landscape" src="../word_cloud_viewer.html?standalone=true"></iframe>
           </div>
         </div>
       </div>
@@ -274,7 +204,7 @@
   <script type="text/javascript" src="../js/showdown.min.js"></script>
   <script type="text/javascript" src="../js/platform.js"></script>
   <script type="text/javascript" src="../js/coloris.min.js"></script>
-  <script type="module" src="setup_input.js"></script>
+  <script type="module" src="setup_viewer.js"></script>
 
   </body>
 
