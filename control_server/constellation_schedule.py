@@ -213,7 +213,7 @@ def queue_json_schedule(schedule: dict) -> None:
         config.schedule_timers = new_timers
 
 
-def execute_scheduled_action(action: str, target: Union[str, None], value: Union[list, str, None]):
+def execute_scheduled_action(action: str, target: Union[list, str, None], value: Union[list, str, None]):
     """Dispatch the appropriate action when called by a schedule timer"""
 
     config.last_update_time = time.time()
@@ -258,21 +258,24 @@ def execute_scheduled_action(action: str, target: Union[str, None], value: Union
         for component in config.componentList:
             component.update_configuration()
     elif target is not None:
-        if target == "__all":
-            c_exhibit.command_all_exhibit_components(action)
-        elif target.startswith("__group"):
-            group = target[8:]
-            for component in config.componentList:
-                if component.group == group:
-                    component.queue_command(action)
-            for component in config.projectorList:
-                if component.group == group:
-                    component.queue_command(action)
-            for component in config.wakeOnLANList:
-                if component.group == group:
-                    component.queue_command(action)
-        elif target.startswith("__id"):
-            c_exhibit.get_exhibit_component(target[5:]).queue_command(action)
+        if isinstance(target, str):
+            target = [target]
+        for target_i in target:
+            if target_i == "__all":
+                c_exhibit.command_all_exhibit_components(action)
+            elif target_i.startswith("__group"):
+                group = target_i[8:]
+                for component in config.componentList:
+                    if component.group == group:
+                        component.queue_command(action)
+                for component in config.projectorList:
+                    if component.group == group:
+                        component.queue_command(action)
+                for component in config.wakeOnLANList:
+                    if component.group == group:
+                        component.queue_command(action)
+            elif target_i.startswith("__id"):
+                c_exhibit.get_exhibit_component(target_i[5:]).queue_command(action)
     else:
         c_exhibit.command_all_exhibit_components(action)
 

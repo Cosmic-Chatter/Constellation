@@ -313,8 +313,19 @@ function scheduleActionToDescription (action) {
   }
 }
 
-function scheduleTargetToDescription (target) {
+function scheduleTargetToDescription (targetList) {
   // Convert targets such as "__id_TEST1" to English words like "TEST1"
+
+  let target
+  if (typeof targetList === 'string') {
+    target = targetList
+  } else {
+    if (targetList.length > 1) {
+      return 'multiple components'
+    } else {
+      target = targetList[0]
+    }
+  }
 
   if (target === '__all') {
     return 'all components'
@@ -374,6 +385,7 @@ export function setScheduleActionTargetSelector () {
 
   if (action === 'set_exhibit') {
     // Fill the target selector with a list of available exhiits
+    targetSelector.attr('multiple', false)
     targetSelector.empty()
     const availableExhibits = $.makeArray($('#exhibitSelect option'))
     availableExhibits.forEach((item) => {
@@ -387,10 +399,13 @@ export function setScheduleActionTargetSelector () {
     targetSelector.empty()
 
     if (['power_on', 'power_off'].includes(action)) {
+      targetSelector.attr('multiple', true)
       setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents', 'Projectors'])
     } else if (['refresh_page', 'restart'].includes(action)) {
+      targetSelector.attr('multiple', true)
       setScheduleActionTargetSelectorPopulateOptions(['All', 'Groups', 'ExhibitComponents'])
     } else if (['set_app', 'set_content', 'set_definition', 'set_dmx_scene'].includes(action)) {
+      targetSelector.attr('multiple', false)
       setScheduleActionTargetSelectorPopulateOptions(['ExhibitComponents'])
     }
     targetSelector.show()

@@ -1,9 +1,11 @@
 # **Constellation 3.3**
 
 ## <ins>New features</ins>
-- Make your schedules easier to understand by adding Notes.
+- Create date-specific schedules as far in the future as you want.
+- Make your schedules easier to understand by adding notes.
 
 ## <ins>Updated features</ins>
+- Multiple schedule targets can now be selected for certain actions.
 
 # **Constellation 3.2**
 __*Constellation*__ 3.2 introduces a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.
