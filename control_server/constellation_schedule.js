@@ -687,6 +687,9 @@ export function scheduleDeleteActionFromModal () {
       if ('success' in update && update.success === true) {
         $('#scheduleEditModal').modal('hide')
         populateSchedule(update)
+        if ($('#manageFutureDateModal').hasClass('show')) {
+          populateFutureDateCalendarInput()
+        }
       }
     })
 }
@@ -788,7 +791,7 @@ export function populateFutureDateCalendarInput () {
       const scheduleIDs = Object.keys(day.schedule)
 
       scheduleIDs.forEach((scheduleID) => {
-        scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, event.target.value, 'date-specific'))
+        scheduleList.appendChild(createScheduleEntryHTML(day.schedule[scheduleID], scheduleID, date, 'date-specific'))
 
         // Sort the elements by time
         const events = $(scheduleList).children('.eventListing')
