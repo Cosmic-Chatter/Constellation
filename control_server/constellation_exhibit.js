@@ -736,7 +736,7 @@ export function showExhibitComponentInfo (id) {
       .catch((error) => {
         document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
       })
-      
+
     if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
       $('#componentInfoModalContentTabButton').show()
       $('#componentInfoModalContentTabButton').tab('show')
@@ -882,7 +882,13 @@ function configureNewDefinitionOptions (obj) {
 
   Array.from(document.querySelectorAll('.defintion-new-option')).forEach((el) => {
     const app = el.getAttribute('data-app')
-    el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+    if (app === 'word_cloud_input') {
+      el.href = obj.getHelperURL() + '/word_cloud/setup_input.html'
+    } else if (app === 'word_cloud_viewer') {
+      el.href = obj.getHelperURL() + '/word_cloud/setup_viewer.html'
+    } else {
+      el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+    }
   })
 }
 
