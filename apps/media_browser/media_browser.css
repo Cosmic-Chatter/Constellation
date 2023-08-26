@@ -1,0 +1,241 @@
+:root {
+    /* Colors */
+    --backgroundColor: white;
+    --titleColor: black;
+
+    /* Font faces */
+    --Header-font: 'Header-default';
+    --Title-font: "Title-default";
+    --Lightbox_title-font: "Lightbox_title-default";
+    --Lightbox_caption-font: "Lightbox_caption-default";
+    --Lightbox_credit-font: "Lightbox_credit-default"
+
+    /* Font modifiers */
+    --fontModifier: '1.0';
+    --Header-font-adjust: 0;
+    --Title-font-adjust: 0;
+    --Lightbox_title-font-adjust: 0;
+    --Lightbox_caption-font-adjust: 0;
+    --Lightbox_credit-font-adjust: 0;
+}
+
+/* Font definitions */
+@font-face {
+    font-family: "Header-default";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+    font-family: "Title-default";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+    font-family: "Lightbox_title-default";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+    font-family: "Lightbox_caption-default";
+    src: url("../_fonts/OpenSans-Regular.ttf");
+}
+
+@font-face {
+    font-family: "Lightbox_credit-default";
+    src: url("../_fonts/OpenSans-LightItalic.ttf");
+}
+
+html {
+    touch-action: manipulation;
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;/* Firefox all */
+    -ms-user-select: none;
+    user-select: none;
+}
+body {
+    overflow: hidden;
+    background-color: var(--backgroundColor);
+}
+.card-body {
+}
+.cardCol {
+}
+.cardTitle {
+    margin-top: 15px;
+    font-size: calc(3vmax + var(--Title-font-adjust)*1vmax);
+    font-family: var(--Title-font);
+    color: var(--titleColor);
+}
+.container-fluid {
+    touch-action: manipulation;
+}
+.display-full {
+    height: 100vh;
+}
+.display-share {
+    height: 70vh;
+}
+.filterSelect {
+    font-size: 20px;
+    outline: none;
+}
+
+.imageLightboxImageShort {
+    max-height: 60%;
+}
+.imageLightboxImageTall {
+    max-height: 85%;
+}
+.input {
+    font-size: 30px;
+    border: 0px;
+}
+.pageButton {
+    font-size: 5vw;
+    background-color: RGBA(97,92,92,0.5)!important;
+    outline: none;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+}
+.resultCard {
+    height: 100%;
+}
+.resultImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+#attractorImage {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    object-fit: contain;
+}
+#attractorOverlay {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.9);
+    z-index: 2;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+}
+#attractorVideo {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+#displayPane {
+    overflow: hidden;
+}
+#filterRegion {
+    height: 100%;
+        align-items: flex-end;
+}
+#imageLightbox {
+    position: absolute;
+    height: 100vh;
+    width: 100vw;
+    top: 0vh;
+    left: 0px;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    opacity: 0;
+}
+#imageLightboxCaption {
+    font-size: calc(2vmax + var(--Lightbox_caption-font-adjust)*1vmax);
+    color: white;
+    overflow-y: auto;
+    height: 15%;
+    font-family: var(--Lightbox_caption-font);
+}
+#imageLightboxCredit {
+    font-size: calc(1.5vmax + var(--Lightbox_credit-font-adjust)*1vmax);
+    color: white;
+    padding-top: 10px;
+    height: 6%;
+    font-family: var(--Lightbox_credit-font);
+}
+#imageLightboxImage {
+    width: 100%;
+    height: 70%;
+    object-fit: contain;
+    display: block;
+    margin: auto;
+}
+#imageLightboxTitle {
+    text-align: center;
+    font-size: calc(3vmax + var(--Lightbox_title-font-adjust)*1vmax);
+    color: white;
+    height: 9%;
+    font-family: var(--Lightbox_title-font);
+}
+#langSwitchDropdown {
+    position: absolute;
+    width: 5vmax;
+    height: 5vmax;
+    bottom: 0px;
+    right: 0vw;
+    margin-right: 1vmax;
+    margin-bottom: 1vmax;
+}
+#logoRegion {
+    height: 100%;
+}
+#resultsPane {
+}
+#resultsRow {
+    padding-top: 2.5vh;
+}
+#searchInput {
+    outline: none;
+}
+#searchPane {
+    background-color: gray;
+}
+
+@media (orientation: landscape) {
+    .hg-rows {
+        height: 100%;
+    }
+    .hg-row {
+        height: 20%;
+    }
+    .hg-button {
+        height: 100%!important;
+    }
+    .simple-keyboard {
+        height: 100%;
+    }
+    #keyboardRegion {
+        height: 100%;
+    }
+}
+
+@media (orientation: portrait) {
+    .hg-button {
+        height: 3.5vh!important;
+    }
+    .hg-standardBtn {
+        height: 3.5vh!important;
+    }
+}

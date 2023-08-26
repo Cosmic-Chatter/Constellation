@@ -138,10 +138,15 @@ export function populateSchedule (schedule) {
     deleteButton.classList = 'btn btn-danger w-100'
     deleteButton.setAttribute('type', 'button')
     deleteButton.innerHTML = 'Delete date-specific schedule'
-    deleteButton.addEventListener('click', function () {
-      deleteSchedule(day.date)
-    })
+    deleteButton.setAttribute('data-toggle', 'popover')
+    deleteButton.setAttribute('title', 'Are you sure?')
+    deleteButton.setAttribute('data-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
+    deleteButton.setAttribute('data-trigger', 'focus')
+    deleteButton.setAttribute('data-html', 'true')
+    // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
+    deleteButton.addEventListener('click', function () { deleteButton.focus() })
     deleteButtonCol.appendChild(deleteButton)
+    $(deleteButton).popover()
 
     $('#scheduleContainer').append(dayContainer)
 

@@ -1206,17 +1206,29 @@ document.getElementById('manageFutureDateAddActionButton').addEventListener('cli
 })
 document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', constSchedule.convertFutureScheduleFromModal)
 document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
-  const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
-  constSchedule.deleteSchedule(scheduleName)
+  // const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
+  // constSchedule.deleteSchedule(scheduleName)
+  event.target.focus()
 })
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
 $('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector)
+// This event detects when the delete button has been clicked inside a popover to delete a date-specific schedule.
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('schedule-delete') === false) return
+  if ($('#manageFutureDateModal').hasClass('show')) {
+    // This popover is from the future dates edit modal
+    constSchedule.deleteSchedule(document.getElementById('manageFutureDateCalendarInput').value)
+  } else {
+    // This popover is from the main schedule page
+    constSchedule.deleteSchedule(event.target.getAttribute('id').slice(7))
+  }
+})
 
 // Issues tab
 // =========================
-// This event detects when the delete button has been clicked inside a popover to delete and issue.
+// This event detects when the delete button has been clicked inside a popover to delete an issue.
 document.addEventListener('click', (event) => {
   if (event.target.classList.contains('issue-delete') === false) return
   constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
@@ -1360,6 +1372,11 @@ $('#editTrackerTemplateModalAddTimerButton').click(function () {
 $('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalDeleteWidget)
 $('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
 $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
+
+// Activate all popovers
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})
 
 constConfig.serverAddress = location.origin
 
