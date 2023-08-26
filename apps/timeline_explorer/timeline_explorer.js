@@ -311,7 +311,7 @@ $('#fontSizeDecreaseButton').click(function () {
 $('#fontSizeIncreaseButton').click(function () {
   adjustFontSize(0.1)
 })
-document.getElementById('attractorOverlay').addEventListener('touchstart', hideAttractor)
+document.getElementById('attractorOverlay').addEventListener('click', hideAttractor)
 
 // Attractor
 let attractorAvailable = false
