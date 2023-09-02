@@ -753,7 +753,7 @@ export function saveScreenshotAsThumbnail (filename) {
 
 export function createLanguageSwitcher (def, localize) {
   // Take a definition file and use the language entries to make an appropriate language switcher.
-  // localize= is the name of a function that handles implementing the change in language
+  // localize is the name of a function that handles implementing the change in language
   // based on the provided language code.
 
   const langs = Object.keys(def.languages)

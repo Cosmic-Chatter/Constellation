@@ -58,7 +58,7 @@ function loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
-  createLanguageSwitcher(def)
+  constCommon.createLanguageSwitcher(def, localize)
   defaultLang = langs[0]
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
@@ -104,55 +104,6 @@ function adjustFontSize (increment) {
     fontModifier = 1
   }
   root.style.setProperty('--fontModifier', fontModifier)
-}
-
-function createLanguageSwitcher (def) {
-  // Take a definition file and use the language entries to make an appropriate language switcher.
-
-  const langs = Object.keys(def.languages)
-
-  if (langs.length === 1) {
-    // No switcher necessary
-    $('#langSwitchDropdown').hide()
-    return
-  }
-
-  $('#langSwitchDropdown').show()
-  // Cycle the languagse and build an entry for each
-  $('#langSwitchOptions').empty()
-  langs.forEach((code) => {
-    const name = def.languages[code].display_name
-
-    const li = document.createElement('li')
-
-    const button = document.createElement('button')
-    button.classList = 'dropdown-item'
-    button.addEventListener('click', function () {
-      localize(code)
-    })
-    li.appendChild(button)
-
-    const flag = document.createElement('img')
-    const customImg = def.languages[code].custom_flag
-    if (customImg != null) {
-      flag.src = '../content/' + customImg
-    } else {
-      flag.src = '../_static/flags/' + code + '.svg'
-    }
-    flag.style.width = '30%'
-    flag.addEventListener('error', function () {
-      this.src = '../_static/icons/translation-icon_black.svg'
-    })
-    button.appendChild(flag)
-
-    const span = document.createElement('span')
-    span.classList = 'ps-2'
-    span.style.verticalAlign = 'middle'
-    span.innerHTML = name
-    button.appendChild(span)
-
-    $('#langSwitchOptions').append(li)
-  })
 }
 
 function localize (lang) {

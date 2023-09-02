@@ -12,10 +12,8 @@
 
     <title>Constellation InfoStation</title>
 
-    <link rel="stylesheet" href="css/bootstrap_5_0/bootstrap.min.css">
-    <link rel="stylesheet" href="InfoStation/default_style.css">
-    <link rel="stylesheet" href="InfoStation/infostation.css">
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="InfoStation/css/infostation.css">
 
   </head>
 
@@ -38,14 +36,29 @@
       <div id='buttonRow' class='row'></div>
       <footer id='toolbar' class="fixed-bottom">
         <div class='row h-100'>
-          <div class='col-1 pe-0'>
-            <input id="fontSizeDecreaseButton" class='w-100 h-100 bg-primary' type='image' src='InfoStation/icons/text_size_down.png'></input>
+          <div class='col h-100 text-center'>
+            <button id="fontSizeDecreaseButton" type="button" class="btn btn-link h-100">
+              <img src="_static/icons/font_size_decrease.svg" height="60%">
+          </button>
           </div>
-          <div class='col-1 ps-0'>
-            <input id="fontSizeIncreaseButton" class='w-100 h-100 bg-primary' type='image' src='InfoStation/icons/text_size_up.png'></input>
+          <div class='col h-100 text-center'>
+              <button id="fontSizeIncreaseButton" type="button" class="btn btn-link h-100">
+                  <img src="_static/icons/font_size_increase.svg" height="60%">
+              </button>
           </div>
-          <div class='col-4'>
-            <button id="langToggleButton" class='btn btn-primary h-100'>Español</button>
+          <div class="col"></div>
+          <div class="col"></div>
+          <div class="col"></div>
+          <div class="col"></div>
+          <div class="col"></div>
+          <div class='col h-100'>
+              <div id="langSwitchDropdown" class="btn-group dropup w-100 h-100 text-center">
+                  <button type="button" class="btn btn-link" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="_static/icons/translation-icon_white.svg" height="80%">
+                  </button>
+                  <ul id="langSwitchOptions" class="dropdown-menu">
+                  </ul>
+              </div>
           </div>
         </div>
       </footer>
@@ -54,7 +67,7 @@
   </body>
 
   <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
-  <script type="text/javascript" src="js/bootstrap_5_0/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
   <script type="text/javascript" src="js/showdown.min.js"></script>
   <script type="text/javascript" src="js/platform.js"></script>
 

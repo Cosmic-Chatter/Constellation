@@ -131,7 +131,7 @@ function loadDefinition (definition) {
   // Parse the settings and make the appropriate changes
   const promptText = document.getElementById('promptText')
   const wordCloudContainer = document.getElementById('wordCloudContainer')
-  console.log(definition)
+
   if ('prompt' in definition.content) {
     promptText.innerHTML = definition.content.prompt
     promptText.classList.replace('promptText-none', 'promptText-full')
