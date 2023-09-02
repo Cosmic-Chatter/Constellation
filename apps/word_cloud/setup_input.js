@@ -312,8 +312,6 @@ Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
   })
 })
 
-// Attractor
-
 // Font upload
 document.getElementById('uploadFontInput').addEventListener('change', onFontUploadChange)
 

@@ -42,6 +42,7 @@ function clearDefinitionInput (full = true) {
   // Definition details
   document.getElementById('definitionNameInput').value = ''
   document.getElementById('collectionNameInput').value = ''
+  document.getElementById('refreshRateInput').value = 15
 
   // Content details
   document.getElementById('promptInput').value = ''
@@ -49,8 +50,9 @@ function clearDefinitionInput (full = true) {
     el.value = ''
   })
 
-  // Attractor details
-  // document.getElementById('attractorInput_attractor_timeout').value = 30
+  // Reset word cloud options
+  document.getElementById('wordRotationSelect').value = 'horizontal'
+  document.getElementById('cloudShapeSelect').value = 'circle'
 
   // Reset color options
   const colorInputs = ['background', 'prompt']
@@ -87,6 +89,11 @@ function editDefinition (uuid = '') {
   } else {
     document.getElementById('collectionNameInput').value = ''
   }
+  if ('refresh_rate' in def.behavior) {
+    document.getElementById('refreshRateInput').value = def.behavior.refresh_rate
+  } else {
+    document.getElementById('refreshRateInput').value = 15
+  }
 
   // Content
   if ('prompt' in def.content) {
@@ -100,7 +107,17 @@ function editDefinition (uuid = '') {
     if (property in def.content.localization) el.value = def.content.localization[property]
   })
 
-  // Set the appropriate values for the attractor fields
+  // Set values for the word cloud shape
+  if ('rotation' in def.appearance) {
+    document.getElementById('wordRotationSelect').value = def.appearance.rotation
+  } else {
+    document.getElementById('wordRotationSelect').value = 'horizontal'
+  }
+  if ('cloud_shape' in def.appearance) {
+    document.getElementById('cloudShapeSelect').value = def.appearance.cloud_shape
+  } else {
+    document.getElementById('cloudShapeSelect').value = 'circle'
+  }
 
   // Set the appropriate values for the color pickers
   if ('color' in def.appearance) {
@@ -301,6 +318,10 @@ document.getElementById('collectionNameInput').addEventListener('change', (event
   constSetup.updateWorkingDefinition(['behavior', 'collection_name'], event.target.value)
   previewDefinition(true)
 })
+document.getElementById('refreshRateInput').addEventListener('change', (event) => {
+  constSetup.updateWorkingDefinition(['behavior', 'refresh_rate'], event.target.value)
+  previewDefinition(true)
+})
 
 // Content
 document.getElementById('promptInput').addEventListener('change', (event) => {
@@ -316,7 +337,17 @@ Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
   })
 })
 
-// Attractor
+// Appearance
+// Rotation
+document.getElementById('wordRotationSelect').addEventListener('change', (event) => {
+  constSetup.updateWorkingDefinition(['appearance', 'rotation'], event.target.value)
+  previewDefinition(true)
+})
+
+document.getElementById('cloudShapeSelect').addEventListener('change', (event) => {
+  constSetup.updateWorkingDefinition(['appearance', 'cloud_shape'], event.target.value)
+  previewDefinition(true)
+})
 
 // Font upload
 document.getElementById('uploadFontInput').addEventListener('change', onFontUploadChange)
@@ -342,6 +373,25 @@ Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
     constSetup.updateWorkingDefinition(['appearance', 'text_size', property], event.target.value)
     previewDefinition(true)
   })
+})
+
+document.getElementById('wordColorMode').addEventListener('change', (event) => {
+  if (event.target.value === 'specific') {
+    const value = document.getElementById('colorPicker_words').value
+    constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], value)
+  } else {
+    constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
+  }
+  previewDefinition(true)
+})
+
+document.getElementById('colorPicker_words').addEventListener('change', (event) => {
+  // We only need to save this change to the definition is the word color mode is set to specific.
+
+  const mode = document.getElementById('wordColorMode').value
+  if (mode !== 'specific') return
+
+  constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
 })
 
 // Set color mode

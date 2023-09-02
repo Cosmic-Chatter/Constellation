@@ -150,6 +150,46 @@ function loadDefinition (definition) {
     collectionName = 'default'
   }
 
+  if ('refresh_rate' in definition.behavior) {
+    const newRate = parseFloat(definition.behavior.refresh_rate)
+    if (newRate !== textUpdateRate) {
+      textUpdateRate = newRate
+      clearInterval(textUpdateTimer)
+      textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
+    }
+  } else {
+    if (textUpdateRate !== 15) {
+      textUpdateRate = 15
+      textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
+    }
+  }
+
+  if ('rotation' in definition.appearance) {
+    if (definition.appearance.rotation === 'horizontal') {
+      WordCloudOptions.minRotation = 0
+      WordCloudOptions.maxRotation = 0
+    } else if (definition.appearance.rotation === 'right_angles') {
+      WordCloudOptions.minRotation = 1.5708
+      WordCloudOptions.maxRotation = 1.5708
+      WordCloudOptions.rotationSteps = 2
+    } else {
+      WordCloudOptions.minRotation = -1.5708
+      WordCloudOptions.maxRotation = 1.5708 // 6.2821
+      WordCloudOptions.rotationSteps = 100
+      WordCloudOptions.rotateRatio = 0.5
+    }
+  } else {
+    // Set horizontal only
+    WordCloudOptions.minRotation = 0
+    WordCloudOptions.maxRotation = 0
+  }
+
+  if ('cloud_shape' in definition.appearance) {
+    WordCloudOptions.shape = definition.appearance.cloud_shape
+  } else {
+    WordCloudOptions.shape = 'circle'
+  }
+
   const root = document.querySelector(':root')
 
   // Color settings
@@ -166,6 +206,11 @@ function loadDefinition (definition) {
     if ('background' in definition.appearance.color) {
       root.style.setProperty('--background-color', definition.appearance.color.background)
       WordCloudOptions.backgroundColor = definition.appearance.color.background
+    }
+    if ('words' in definition.appearance.color) {
+      WordCloudOptions.color = definition.appearance.color.words
+    } else {
+      WordCloudOptions.color = 'random-dark'
     }
   }
 
@@ -188,55 +233,13 @@ function loadDefinition (definition) {
     }
   }
 
-  if ('prompt_size' in definition.appearance) {
-    document.getElementById('promptText').style.fontSize = definition.appearance.prompt_size + 'vh'
+  if ('text_size' in definition.appearance && 'prompt' in definition.appearance.text_size) {
+    root.style.setProperty('--prompt-font-adjust', definition.appearance.text_size.prompt)
   } else {
-    document.getElementById('promptText').style.fontSize = '10vh'
+    root.style.setProperty('--prompt-font-adjust', 0)
   }
 
-  if ('word_colors' in definition.appearance) {
-    setCustomColors(definition.appearance.word_colors)
-  } else {
-    WordCloudOptions.color = 'random-dark'
-  }
-  if ('refresh_rate' in definition.behavior) {
-    const newRate = parseFloat(definition.behavior.refresh_rate)
-    if (newRate !== textUpdateRate) {
-      textUpdateRate = newRate
-      clearInterval(textUpdateTimer)
-      textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
-    }
-  } else {
-    if (textUpdateRate !== 15) {
-      textUpdateRate = 15
-      textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
-    }
-  }
   getTextUpdateFromServer()
-}
-
-function setCustomColors (colorStr) {
-  // Parse a string taken from the INI file and use it to set colors
-  console.log(colorStr)
-  const split = colorStr.split(',')
-
-  if (split.length === 1) {
-    // Assume this is the color we want
-    WordCloudOptions.color = split[0].trim()
-  } else if (split.length > 1) {
-    // Build a simple function to return colors, per the WordCloud2 spec
-    const colorList = []
-    split.forEach(item => {
-      colorList.push(item.trim())
-    })
-    const colorFunc = function (word, weight, fontSize, distance, theta) {
-      // Return a random color each time
-      return colorList[Math.floor(Math.random() * colorList.length)]
-    }
-    WordCloudOptions.color = colorFunc
-  } else {
-    WordCloudOptions.color = 'random-dark'
-  }
 }
 
 const divForWC = document.getElementById('wordCloudContainer')
