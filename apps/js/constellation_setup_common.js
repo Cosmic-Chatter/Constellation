@@ -1,4 +1,4 @@
-/* global bootstrap */
+/* global bootstrap, showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
 
@@ -34,8 +34,50 @@ export function configure (options) {
       configureFromQueryString()
     })
 
+  document.getElementById('helpButton').addEventListener('click', (event) => {
+    showAppHelpMOdal(config.app)
+  })
   createDefinitionDeletePopup()
   createEventListeners()
+}
+
+function showAppHelpMOdal (app) {
+  // Ask the helper to send the relavent README.md file and display it in the modal
+
+  const endpointStems = {
+    dmx_control: '/dmx_control/',
+    infostation: '/InfoStation/',
+    media_browser: '/media_browser/',
+    media_player: '/media_player/',
+    timelapse_viewer: '/timelapse_viewer/',
+    timeline_explorer: '/timeline_explorer/',
+    voting_kiosk: '/voting_kiosk/',
+    word_cloud: '/word_cloud/',
+    word_cloud_input: '/word_cloud/',
+    word_cloud_viewer: '/word_cloud/'
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: endpointStems[app] + 'README.md',
+    rawResponse: true
+  })
+    .then((result) => {
+      const formattedText = markdownConverter.makeHtml(result)
+      // Add the formatted text
+      $('#helpTextDiv').html(formattedText)
+      // Then, search the children for images and fix the links with the right endpoints
+      $('#helpTextDiv').find('img').each((i, img) => {
+        // Strip off the http://localhost:8000/ porition
+        const src = img.src.split('/').slice(3).join('/')
+        // Rebuild the correct path
+        img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
+        img.style.maxWidth = '100%'
+      })
+      $('#helpTextDiv').parent().parent().scrollTop(0)
+    })
+
+  $('#appHelpModal').modal('show')
 }
 
 export function populateAvailableDefinitions (definitions) {
@@ -168,3 +210,6 @@ function resizePreview () {
 
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
+
+const markdownConverter = new showdown.Converter()
+markdownConverter.setFlavor('github')

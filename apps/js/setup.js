@@ -363,31 +363,7 @@ document.getElementById('smartRestartStateSelect').addEventListener('change', (e
 })
 
 // Apps page
-$('#DMXControlHelpButton').click(function () {
-  showAppHelpMOdal('dmx_control')
-})
-$('#InfoStationHelpButton').click(function () {
-  showAppHelpMOdal('infostation')
-})
-$('#mediaBrowserHelpButton').click(function () {
-  showAppHelpMOdal('media_browser')
-})
-$('#mediaPlayerHelpButton').click(function () {
-  showAppHelpMOdal('media_player')
-})
-$('#timelapseViewerHelpButton').click(function () {
-  showAppHelpMOdal('timelapse_viewer')
-})
-$('#votingKioskHelpButton').click(function () {
-  showAppHelpMOdal('voting_kiosk')
-})
 document.getElementById('votingKioskCSVDownloadButton').addEventListener('click', downloadDataAsCSV)
-$('#timelineExplorerHelpButton').click(function () {
-  showAppHelpMOdal('timeline_explorer')
-})
-$('#wordCloudHelpButton').click(function () {
-  showAppHelpMOdal('word_cloud')
-})
 
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {

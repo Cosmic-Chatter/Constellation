@@ -3,7 +3,6 @@ InfoStation provides a touchscreen interface for creating digital labels. It sup
 
 ## Limitations
 * Optimized for use with a vertical 16:9 display powered by a Linux or Windows PC.
-* Currently supports a maximum of two languages.
 
 ## Configuration
 
@@ -12,101 +11,9 @@ InfoStation works best in **_Constellation's_** default, locally-installed mode.
 
 Connecting to a remote instance (such as using an iPad) is supported, but, requires a stable network connection.
 
-
-### Settings file
-
-To create an instance of InfoStation, you must provide an `INI` file as content. This settings file describes what content you want to display and how it should be organizaed. Let's start with a minimal example:
-
-```ini
-[SETTINGS]
-languages = en, es
-language_en = English
-language_es = Español
-```
-
-Every InfoStation content should start with a `[SETTINGS]` section. In this case, we are defining that our InfoStation will support two langauges, called `en` and `es`. These shorthand values will be used repeatedly throughout the rest of the file. We then give a written name for each.
-
-Next, let's imagine we are creating an InfoStation to explore the Apollo lunar landings. We might want a section that describes the history, followed by a collection of images and videos to explore.
-
-Let's add this to our settings file:
-
-```ini
-[SETTINGS]
-languages = en, es
-language_en = English
-language_es = Español
-order = TEXT, PHOTOS, VIDEO
-title_en = The Apollo Missions
-title_es = Las misiones Apolo
-```
-
-The `order` line gives the order the three tabs should be in. Their names will be `TEXT`, `PHOTOS` and `VIDEO`, but we could have called them anythiing. We also give our InfoStation a header title in every language we want to support.
-
-Finally, let's add an attractor. This is a fullscreen image or video that is shown with the InfoStation is idle to attract visitor attention.
-
-```ini
-[SETTINGS]
-languages = en, es
-language_en = English
-language_es = Español
-order = TEXT, PHOTOS, VIDEO
-title_en = The Apollo Missions
-title_es = Las misiones Apolo
-attractor = content/attractor.mp4
-timeout = 30
-```
-
-Here, we are saying that we have placed the file `attractor.mp4` into the content directory and that this file should be shows after 30 secodns of no interaction. If a video is playing, the 30-second timer won't start until after the vidoe is complete.
-
-It's now time to point InfoStation to the rest of our content. Let's start with the text tab:
-
-```ini
-[SETTINGS]
-...
-
-[TEXT]
-type = text
-title_en = History
-title_es = Historia
-content_en = content/history_en.md
-content_es = content/history_es.md
-```
-
-Again, we give a title in each of ouro supported languages. Then, we point InfoStation to a text file giving the content.
-
-Now, let's do the same for the `PHOTOS` and `VIDEO` tabs:
-
-```ini
-[SETTINGS]
-...
-
-[TEXT]
-type = text
-title_en = History
-title_es = Historia
-content_en = content/history_en.md
-content_es = content/history_es.md
-
-[PHOTOS]
-type = image
-title_en = Images
-title_es = Imágenes
-content_en = content/photos_en.ini
-content_es = content/photos_es.ini
-
-[VIDEO]
-type = video
-title_en = Videos
-title_es = Vídeos
-content_en = content/video_en.ini
-content_es = content/video_es.ini
-```
-
-With all that done, your settings file is complete! But the InfoStation isn't ready yet. We still need to detail the content for each of these sections.
-
 ### Text tabs
 
-Text tabs use a text file to describe their content. This text file should be formatted as a [Markdown file](https://www.markdownguide.org/basic-syntax/). Markdown is a powerful way of formatting text using simple symbols, but let's go over just a few of the basics.
+Text tabs format text using [Markdown](https://www.markdownguide.org/basic-syntax/). Markdown is a powerful way of formatting text using simple symbols, but let's go over just a few of the basics.
 
 Here is some simple text formatted with Markdown:
 
@@ -127,7 +34,7 @@ Markdown uses the `#` symbol to indicate headers. The headers get smaller as sym
 [placement](file_path "Title")
 ```
 
-`placement` should be one of `left`, `right`, or `full` and the title must be in quotes.
+`placement` should be one of `left`, `right`, or `full` and the title must be in quotes. Images should be uploaded as content and the `file_path` should begin with `content/` as shown above.
 
 InfoStation will break up the text into sections defined by top-level headers (`#`).
 

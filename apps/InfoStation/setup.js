@@ -425,6 +425,11 @@ function createInfoStationTab (lang, uuid = '') {
   buttonTextInput.value = workingDefinition.languages[lang].tabs[uuid].button_text
   buttonTextCol.appendChild(buttonTextInput)
 
+  const textTabTipCol = document.createElement('div')
+  textTabTipCol.classList = 'col-12 mt-3 fst-italic text-info'
+  textTabTipCol.innerHTML = 'Text in text tabs is formatted using Markdown.'
+  row.appendChild(textTabTipCol)
+
   const textCol = document.createElement('div')
   textCol.classList = 'col-12'
   row.appendChild(textCol)
