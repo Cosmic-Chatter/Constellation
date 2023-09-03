@@ -50,10 +50,19 @@ function loadDefinition (definition) {
   root.style.setProperty('--section-shadow-color', 'RGBA(34,34,46, .5)')
   root.style.setProperty('--text-color', 'white')
   root.style.setProperty('--toolbarButton-color', '#393A5A')
+  root.style.setProperty('--header-font', 'header-default')
+  root.style.setProperty('--body-font', 'body-default')
+  root.style.setProperty('--section-header-font', 'section-header-default')
 
   // Then, apply the definition settings
   Object.keys(definition.style.color).forEach((key) => {
     document.documentElement.style.setProperty('--' + key + '-color', definition.style.color[key])
+  })
+
+  Object.keys(definition.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(definition.style.font[key]) + ')')
+    document.fonts.add(font)
+    document.documentElement.style.setProperty('--' + key + '-font', key)
   })
 
   if (Object.keys(definition.languages).length > 0) {

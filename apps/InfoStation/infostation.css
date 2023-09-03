@@ -1,14 +1,44 @@
 :root {
+  /* Colors */
   --header-color: #706F8E;
   --footer-color: #706F8E;
   --background-color: #719abf;
-  --button-color: #22222E;
+  --tab-button-color: #6c757d;
+  --tab-button-active-color: #22222E;
   --text-color: white;
   --section-header-color: white;
   --section-background-color: #393A5A;
   --section-border-color: #E9E9E9;
   --section-shadow-color: RGBA(34,34,46, .5);
+
+  /* Font faces */
+  --header-font: 'header-default';
+  --body-font: 'body-default';
+  --section-header-font: 'section-header-default';
+  --button-font: 'button-default';
 }
+
+/* Font definitions */
+@font-face {
+  font-family: "header-default";
+  src: url("../../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+  font-family: "body-default";
+  src: url("../../_fonts/OpenSans-Regular.ttf");
+}
+
+@font-face {
+  font-family: "section-header-default";
+  src: url("../../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+  font-family: "button-default";
+  src: url("../../_fonts/OpenSans-Regular.ttf");
+}
+
 
 body, html {
   margin: 0px;
@@ -18,31 +48,38 @@ body, html {
   user-select: none;
   /* cursor: none; */
   overflow: hidden;
+  font-family: var(--body-font);
 }
 H1 {
   color: var(--section-header-color);
   font-size: 3.7vh;
   text-align: center;
+  font-family: var(--section-header-font);
 }
 H2 {
   color: var(--section-header-color);
   font-size: 3.2vh;
+  font-family: var(--section-header-font);
 }
 H3 {
   color: var(--section-header-color);
   font-size: 2.9vh;
+  font-family: var(--section-header-font);
 }
 H4 {
   color: var(--section-header-color);
   font-size: 2.6vh;
+  font-family: var(--section-header-font);
 }
 H5 {
   color: var(--section-header-color);
   font-size: 2.3vh;
+  font-family: var(--section-header-font);
 }
 H6 {
   color: var(--section-header-color);
   font-size: 2vh;
+  font-family: var(--section-header-font);
 }
 p {
   color: var(--text-color);
@@ -56,8 +93,8 @@ li {
   width: 0;
 }
 .bg-primary {
-  background-color: var(--button-color)!important;
-  border-color: var(--button-color)!important;
+  background-color: var(--tab-button-color)!important;
+  border-color: var(--tabbutton-color)!important;
 }
 .bigImage {
   object-fit: contain;
@@ -76,8 +113,12 @@ li {
   box-shadow: 1vw 1vw var(--section-shadow-color);
 }
 .btn-primary {
-  background-color: var(--button-color)!important;
-  border-color: var(--button-color)!important;
+  background-color: var(--tab-button-active-color)!important;
+  border-color: var(--tab-button-active-color)!important;
+}
+.btn-secondary {
+  background-color: var(--tab-button-color)!important;
+  border-color: var(--tab-button-color)!important;
 }
 .card-img-top {
   object-fit: contain;
@@ -132,6 +173,7 @@ li {
 }
 .tabButton {
   font-size: 2.5vh;
+  font-family: var(--button-font);
 }
 #attractorImage {
   width: 100%;
@@ -174,6 +216,7 @@ li {
   color: var(--text-color);
   background-color: var(--header-color);
   z-index: 1;
+  font-family: var(--header-font);
 }
 #nav-tabContent {
   height: 79vh;

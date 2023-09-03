@@ -581,7 +581,7 @@ function onAttractorFileChange () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const types = ['Header', 'Time', 'Title', 'Body']
+  const types = ['header', 'body', 'section-header', 'button']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
