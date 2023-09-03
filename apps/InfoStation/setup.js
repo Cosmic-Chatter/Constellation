@@ -46,7 +46,7 @@ function clearDefinitionInput (full = true) {
   document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Reset style options
-  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
+  const colorInputs = ['background', 'text', 'header', 'footer', 'section-header', 'section-background', 'section-border', 'section-shadow']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
@@ -89,19 +89,20 @@ function editDefinition (uuid = '') {
     $('#fontSelect_' + key).val(def.style.font[key])
   })
 
-  // Build out the key input interface
+  // Set up any existing languages and tabs
   let first = null
   Object.keys(def.languages).forEach((lang) => {
     const langDef = def.languages[lang]
-    if (first == null) {
-      createLanguageTab(lang, langDef.display_name)
-      first = lang
-    } else {
-      createLanguageTab(lang, langDef.display_name)
-    }
-    $('#languagePane_' + lang).removeClass('active').removeClass('show')
+    createLanguageTab(lang, langDef.display_name)
+    if (first == null) first = lang
 
+    $('#languagePane_' + lang).removeClass('active').removeClass('show')
     $('#headerText' + '_' + lang).val(langDef.header_text)
+
+    // Then build out any InfoStation tabs
+    def.languages[lang].tab_order.forEach((uuid) => {
+      createInfoStationTab(lang, uuid)
+    })
   })
   $('#languageTab_' + first).click()
   $('#languagePane_' + first).addClass('active')
@@ -153,6 +154,8 @@ function addLanguage () {
 function createLanguageTab (code, displayName) {
   // Create a new language tab for the given details.
   // Set first=true when creating the first tab
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
   // Create the tab button
   const tabButton = document.createElement('button')
@@ -247,9 +250,31 @@ function createLanguageTab (code, displayName) {
   })
   deleteCol.appendChild(deleteButton)
 
+  // Create the header input
+  const headerCol = document.createElement('div')
+  headerCol.classList = 'col-12'
+  row.appendChild(headerCol)
+
+  const headerInputLabel = document.createElement('label')
+  headerInputLabel.classList = 'form-label'
+  headerInputLabel.innerHTML = 'Header'
+  headerInputLabel.setAttribute('for', 'languageTabHeader_' + code)
+  headerCol.appendChild(headerInputLabel)
+
+  const headerInput = document.createElement('input')
+  headerInput.classList = 'form-control'
+  headerInput.setAttribute('type', 'text')
+  headerInput.setAttribute('id', 'languageTabHeader_' + code)
+  headerInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['languages', code, 'header'], event.target.value)
+    previewDefinition(true)
+  })
+  headerInput.value = workingDefinition.languages[code].header
+  headerCol.appendChild(headerInput)
+
   // Create the new sub-tab button
   const newInfoTabCol = document.createElement('div')
-  newInfoTabCol.classList = 'col col-12 col-lg-6 col-xl-4 d-flex'
+  newInfoTabCol.classList = 'col col-12 col-lg-6 col-xl-4 d-flex mt-2'
   row.appendChild(newInfoTabCol)
 
   const newInfoTabButton = document.createElement('button')
@@ -274,38 +299,6 @@ function createLanguageTab (code, displayName) {
   subTabPane.classList = 'tab-content'
   subTabPane.setAttribute('id', 'subTabPane_' + code)
   tabPane.appendChild(subTabPane)
-
-  // Create the various inputs
-  // Object.keys(inputFields).forEach((key) => {
-  //   const langKey = key + '_' + code
-  //   const col = document.createElement('div')
-  //   col.classList = 'col-12 col-md-6'
-  //   row.appendChild(col)
-
-  //   const label = document.createElement('label')
-  //   label.classList = 'form-label'
-  //   label.setAttribute('for', langKey)
-  //   label.innerHTML = inputFields[key].name
-  //   col.appendChild(label)
-
-  //   let input
-
-  //   if (inputFields[key].kind === 'select') {
-  //     input = document.createElement('select')
-  //     input.classList = 'form-select'
-  //   } else if (inputFields[key].kind === 'input') {
-  //     input = document.createElement('input')
-  //     input.setAttribute('type', inputFields[key].type)
-  //     input.classList = 'form-control'
-  //   }
-  //   input.setAttribute('id', langKey)
-  //   input.addEventListener('change', function () {
-  //     const value = $(this).val().trim()
-  //     constSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
-  //     previewDefinition(true)
-  //   })
-  //   col.appendChild(input)
-  // })
 
   // Switch to this new tab
   $(tabButton).click()
@@ -346,18 +339,22 @@ function deleteLanguageFlag (lang) {
   })
 }
 
-function createInfoStationTab (lang) {
+function createInfoStationTab (lang, uuid = '') {
   // Create a new InfoStation tab and attach it to the given language.
 
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-  const uuid = new Date() * 1e6 * Math.random()
-  workingDefinition.languages[lang].tabs[uuid] = {
-    header: '',
-    type: 'text'
-  }
-  workingDefinition.languages[lang].tab_order.push(uuid)
 
-  $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
+  if (uuid === '') {
+    uuid = new Date() * 1e6 * Math.random()
+    workingDefinition.languages[lang].tabs[uuid] = {
+      button_text: '',
+      type: 'text',
+      text: ''
+    }
+    workingDefinition.languages[lang].tab_order.push(uuid)
+
+    $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
+  }
 
   // Build the GUI
   // Create the tab button
@@ -368,13 +365,18 @@ function createInfoStationTab (lang) {
   tabButton.setAttribute('data-bs-target', '#infostationPane_' + lang + '_' + uuid)
   tabButton.setAttribute('type', 'button')
   tabButton.setAttribute('role', 'tab')
-  tabButton.innerHTML = 'New tab'
+  if (workingDefinition.languages[lang].tabs[uuid].button_text === '') {
+    tabButton.innerHTML = 'New tab'
+  } else {
+    tabButton.innerHTML = workingDefinition.languages[lang].tabs[uuid].button_text
+  }
+
   document.getElementById('subTabNav_' + lang).appendChild(tabButton)
 
   // Create corresponding pane
   const tabPane = document.createElement('div')
-  tabPane.classList = 'tab-pane fade show active'
-  tabPane.setAttribute('id', '#infostationPane_' + lang + '_' + uuid)
+  tabPane.classList = 'tab-pane fade show'
+  tabPane.setAttribute('id', 'infostationPane_' + lang + '_' + uuid)
   tabPane.setAttribute('role', 'tabpanel')
   tabPane.setAttribute('aria-labelledby', 'infostationTab_' + lang + '_' + uuid)
   document.getElementById('subTabPane_' + lang).appendChild(tabPane)
@@ -398,7 +400,51 @@ function createInfoStationTab (lang) {
   typeSelect.setAttribute('id', 'infostationTabTypeSelect_' + uuid)
   typeSelect.appendChild(new Option('Text', 'text'))
   typeSelect.appendChild(new Option('Media', 'media'))
+  typeSelect.value = workingDefinition.languages[lang].tabs[uuid].type
   typeSelectCol.appendChild(typeSelect)
+
+  const buttonTextCol = document.createElement('div')
+  buttonTextCol.classList = 'col-12 col-md-6'
+  row.appendChild(buttonTextCol)
+
+  const buttonTextLabel = document.createElement('label')
+  buttonTextLabel.classList = 'form-label'
+  buttonTextLabel.innerHTML = 'Button text'
+  buttonTextLabel.setAttribute('for', 'infostationTabButtonTextInput_' + uuid)
+  buttonTextCol.appendChild(buttonTextLabel)
+
+  const buttonTextInput = document.createElement('input')
+  buttonTextInput.classList = 'form-control'
+  buttonTextInput.setAttribute('type', 'text')
+  buttonTextInput.setAttribute('id', 'infostationTabButtonTextInput_' + uuid)
+  buttonTextInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'button_text'], event.target.value)
+    document.getElementById('infostationTab_' + lang + '_' + uuid).innerHTML = event.target.value
+    previewDefinition(true)
+  })
+  buttonTextInput.value = workingDefinition.languages[lang].tabs[uuid].button_text
+  buttonTextCol.appendChild(buttonTextInput)
+
+  const textCol = document.createElement('div')
+  textCol.classList = 'col-12'
+  row.appendChild(textCol)
+
+  const textLabel = document.createElement('label')
+  textLabel.classList = 'form-label'
+  textLabel.innerHTML = 'Text'
+  textLabel.setAttribute('for', 'infostationTabTextInput_' + uuid)
+  textCol.appendChild(textLabel)
+
+  const textInput = document.createElement('textarea')
+  textInput.classList = 'form-control'
+  textInput.setAttribute('rows', '5')
+  textInput.setAttribute('id', 'infostationTabTextInput_' + uuid)
+  textInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'text'], event.target.value)
+    previewDefinition(true)
+  })
+  textInput.value = workingDefinition.languages[lang].tabs[uuid].text
+  textCol.appendChild(textInput)
 
   $(tabButton).click()
   previewDefinition(true)
@@ -587,79 +633,8 @@ function populateFontSelects () {
     })
 }
 
-function populateKeySelects (keyList) {
-  // Take a list of keys and use it to populate all the selects used to match keys to parameters.
-
-  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
-  if (('languages' in workingDefinition) === false) return
-
-  Object.keys(workingDefinition.languages).forEach((lang) => {
-    const langDict = workingDefinition.languages[lang]
-    Object.keys(inputFields).forEach((input) => {
-      const inputDict = inputFields[input]
-      if (inputDict.kind === 'select') {
-        $('#' + input + '_' + lang).empty()
-
-        keyList.forEach((key) => {
-          const option = document.createElement('option')
-          option.value = key
-          option.innerHTML = key
-          $('#' + input + '_' + lang).append(option)
-        })
-
-        // If we already have a value for this select, set it
-        if (inputDict.property in langDict) {
-          $('#' + input + '_' + lang).val(langDict[inputDict.property])
-        } else {
-          $('#' + input + '_' + lang).val(null)
-        }
-      }
-    })
-  })
-}
-
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
-
-// The input fields to specifiy content for each langauge
-const inputFields = {
-  headerText: {
-    name: 'Header',
-    kind: 'input',
-    type: 'text',
-    property: 'header_text'
-  },
-  keyTimeSelect: {
-    name: 'Time key',
-    kind: 'select',
-    property: 'time_key'
-  },
-  keyTitleSelect: {
-    name: 'Title key',
-    kind: 'select',
-    property: 'title_key'
-  },
-  keyLevelSelect: {
-    name: 'Level key',
-    kind: 'select',
-    property: 'level_key'
-  },
-  keyShortSelect: {
-    name: 'Short text key',
-    kind: 'select',
-    property: 'short_text_key'
-  },
-  keyImageSelect: {
-    name: 'Image key',
-    kind: 'select',
-    property: 'image_key'
-  }
-  // keyThumbnailSelect: {
-  //   name: 'Thumbnail key',
-  //   kind: 'select',
-  //   property: 'thumbnail_key'
-  // }
-}
 
 // Set up the color pickers
 function setUpColorPickers () {

@@ -1,9 +1,13 @@
 :root {
-  --accent-color: #706F8E;
+  --header-color: #706F8E;
+  --footer-color: #706F8E;
   --background-color: #719abf;
   --button-color: #22222E;
-  --primary-color: #393A5A;
   --text-color: white;
+  --section-header-color: white;
+  --section-background-color: #393A5A;
+  --section-border-color: #E9E9E9;
+  --section-shadow-color: RGBA(34,34,46, .5);
 }
 
 body, html {
@@ -16,28 +20,28 @@ body, html {
   overflow: hidden;
 }
 H1 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 3.7vh;
   text-align: center;
 }
 H2 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 3.2vh;
 }
 H3 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 2.9vh;
 }
 H4 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 2.6vh;
 }
 H5 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 2.3vh;
 }
 H6 {
-  color: var(--text-color);
+  color: var(--section-header-color);
   font-size: 2vh;
 }
 p {
@@ -61,15 +65,15 @@ li {
   max-width: 100%;
 }
 .box {
-  background-color: var(--primary-color);
+  background-color: var(--section-background-color);
   padding: 3vw;
   margin-top: 2vw;
   margin-bottom: 2vw;
   border-style: solid;
   border-radius: 20px;
-  border-color: #E9E9E9;
+  border-color: var(--section-border-color);
   border-width: 10px;
-  box-shadow: 1vw 1vw RGBA(34,34,46, .5);
+  box-shadow: 1vw 1vw var(--section-shadow-color);
 }
 .btn-primary {
   background-color: var(--button-color)!important;
@@ -168,7 +172,7 @@ li {
   height: 10vh;
   line-height: 10vh;
   color: var(--text-color);
-  background-color: var(--accent-color);
+  background-color: var(--header-color);
   z-index: 1;
 }
 #nav-tabContent {
@@ -178,7 +182,7 @@ li {
   overflow-y: scroll;
 }
 #toolbar {
-  background-color: var(--accent-color);
+  background-color: var(--footer-color);
   height: 5vh;
   z-index: 1;
 }

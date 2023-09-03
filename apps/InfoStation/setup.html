@@ -162,39 +162,51 @@
               <h4>Colors</h4>
               <div class="row gy-2 mb-3">
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_backgroundColor" class="form-label">Background</label>
+                  <label for="colorPicker_background" class="form-label">Background</label>
                   <div>
-                    <input id="colorPicker_backgroundColor" type="text" class="coloris form-control" value="#719abf" data-property="backgroundColor" data-default="#719abf">
+                    <input id="colorPicker_background" type="text" class="coloris form-control" value="#719abf" data-property="background" data-default="#719abf">
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_textColor" class="form-label">Text</label>
+                  <label for="colorPicker_text" class="form-label">Body text</label>
                   <div>
-                    <input id="colorPicker_textColor" type="text" class="coloris form-control" value="#fff" data-property="textColor" data-default="#fff">
+                    <input id="colorPicker_text" type="text" class="coloris form-control" value="#fff" data-property="text" data-default="#fff">
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_headerColor" class="form-label">Header</label>
+                  <label for="colorPicker_header" class="form-label">Header</label>
                   <div>
-                    <input id="colorPicker_headerColor" type="text" class="coloris form-control" value="#22222E" data-property="headerColor" data-default="#22222E">
+                    <input id="colorPicker_header" type="text" class="coloris form-control" value="#22222E" data-property="header" data-default="#22222E">
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_footerColor" class="form-label">Footer</label>
+                  <label for="colorPicker_footer" class="form-label">Footer</label>
                   <div>
-                    <input id="colorPicker_footerColor" type="text" class="coloris form-control" value="#22222E" data-property="footerColor" data-default="#22222E">
+                    <input id="colorPicker_footer" type="text" class="coloris form-control" value="#22222E" data-property="footer" data-default="#22222E">
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_itemColor" class="form-label">Item</label>
+                  <label for="colorPicker_section-header" class="form-label">Section header</label>
                   <div>
-                    <input id="colorPicker_itemColor" type="text" class="coloris form-control" value="#393A5A" data-property="itemColor" data-default="#393A5A">
+                    <input id="colorPicker_section-header" type="text" class="coloris form-control" value="#fff" data-property="section-header" data-default="#fff">
                   </div>
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_lineColor" class="form-label">Line</label>
+                  <label for="colorPicker_section-background" class="form-label">Section background</label>
                   <div>
-                    <input id="colorPicker_lineColor" type="text" class="coloris form-control" value="#fff" data-property="lineColor" data-default="#fff">
+                    <input id="colorPicker_section-background" type="text" class="coloris form-control" value="#393A5A" data-property="section-background" data-default="#393A5A">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_section-border" class="form-label">Section border</label>
+                  <div>
+                    <input id="colorPicker_section-border" type="text" class="coloris form-control" value="#E9E9E9" data-property="section-border" data-default="#E9E9E9">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_section-shadow" class="form-label">Section shadow</label>
+                  <div>
+                    <input id="colorPicker_section-shadow" type="text" class="coloris form-control" value="RGBA(34,34,46, .5)" data-property="section-shadow" data-default="RGBA(34,34,46, .5)">
                   </div>
                 </div>
               </div>
@@ -227,7 +239,7 @@
             </div>
           </div>
         </div>
-        <div id='previewPane' class="col-6 col-lg-5 sticky-top">
+        <div id='previewPane' class="col-6 col-lg-5 sticky-top" style="z-index: 1;">
           <div id="previewContainer">
             <iframe id="previewFrame" class="mt-3 preview-portrait" src="../InfoStation.html?standalone=true"></iframe>
           </div>
