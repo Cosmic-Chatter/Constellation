@@ -32,6 +32,7 @@ function clearDefinitionInput (full = true) {
             text_size: {}
           }
         })
+        previewDefinition()
       })
   }
 
@@ -40,17 +41,24 @@ function clearDefinitionInput (full = true) {
   $('#languageAddExistsWarning').hide()
 
   // Definition details
-  $('#definitionNameInput').val('')
-  $('#languageNav').empty()
-  $('#languageNavContent').empty()
-  document.getElementById('missingContentWarningField').innerHTML = ''
+  document.getElementById('definitionNameInput').value = ''
+  document.getElementById('languageNav').innerHTML = ''
+  document.getElementById('languageNavContent').innerHTML = ''
+  document.getElementById('inactivityTimeoutField').value = 30
+  const attractorSelect = document.getElementById('attractorSelect')
+  attractorSelect.innerHTML = 'Select file'
+  attractorSelect.setAttribute('data-filename', '')
 
   // Reset style options
-  const colorInputs = ['background', 'text', 'header', 'footer', 'section-header', 'section-background', 'section-border', 'section-shadow']
-  colorInputs.forEach((input) => {
-    const el = $('#colorPicker_' + input)
-    el.val(el.data('default'))
-    document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  Array.from(document.querySelectorAll('.coloris')).forEach((el) => {
+    el.value = el.getAttribute('data-default')
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  Array.from(document.querySelectorAll('.font-select')).forEach((el) => {
+    el.value = el.getAttribute('data-default')
+  })
+  Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
+    el.value = 0
   })
 }
 
@@ -72,7 +80,11 @@ function editDefinition (uuid = '') {
   $('#definitionNameInput').val(def.name)
 
   // Attractor
-  $('#attractorSelect').html(def.attractor)
+  if ('attractor' in def && def.attractor.trim() !== '') {
+    document.getElementById('attractorSelect').innerHTML = def.attractor
+  } else {
+    document.getElementById('attractorSelect').innerHTML = 'Select file'
+  }
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
   if ('inactivity_timeout' in def) {
     document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
@@ -87,6 +99,12 @@ function editDefinition (uuid = '') {
   // Set the appropriate values for the font selects
   Object.keys(def.style.font).forEach((key) => {
     $('#fontSelect_' + key).val(def.style.font[key])
+  })
+
+  // Set the appropriate values for the text size sliders
+  Object.keys(def.style.text_size).forEach((key) => {
+    console.log(key + 'TextSizeSlider')
+    document.getElementById(key + 'TextSizeSlider').value = def.style.text_size[key]
   })
 
   // Set up any existing languages and tabs
@@ -138,9 +156,14 @@ function addLanguage () {
   })
   if (error) return
 
+  // If this is the first language added, make it the default
+  let defaultLang = false
+  if (Object.keys(workingDefinition.languages).length === 0) defaultLang = true
+
   workingDefinition.languages[code] = {
     display_name: displayName,
     code,
+    default: defaultLang,
     tabs: {},
     tab_order: []
   }
@@ -179,6 +202,39 @@ function createLanguageTab (code, displayName) {
   const row = document.createElement('div')
   row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
+
+  // Create default language checkbox
+  const defaultCol = document.createElement('div')
+  defaultCol.classList = 'col-12'
+  row.appendChild(defaultCol)
+
+  const checkContainer = document.createElement('div')
+  checkContainer.classList = 'form-check'
+  defaultCol.appendChild(checkContainer)
+
+  const defaultCheckbox = document.createElement('input')
+  defaultCheckbox.classList = 'form-check-input default-lang-checkbox'
+  defaultCheckbox.setAttribute('id', 'defaultCheckbox_' + code)
+  defaultCheckbox.setAttribute('data-lang', code)
+  defaultCheckbox.setAttribute('type', 'radio')
+  defaultCheckbox.checked = workingDefinition.languages[code].default
+  defaultCheckbox.addEventListener('change', (event) => {
+    // If the checkbox is checked, uncheck all the others and save to the working definition.
+    Array.from(document.querySelectorAll('.default-lang-checkbox')).forEach((el) => {
+      el.checked = false
+      constSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
+    })
+    event.target.checked = true
+    constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
+    previewDefinition(true)
+  })
+  checkContainer.appendChild(defaultCheckbox)
+
+  const defaultCheckboxLabel = document.createElement('label')
+  defaultCheckboxLabel.classList = 'form-check-label'
+  defaultCheckboxLabel.setAttribute('for', 'defaultCheckbox_' + code)
+  defaultCheckboxLabel.innerHTML = 'Default language'
+  checkContainer.appendChild(defaultCheckboxLabel)
 
   // Create the flag input
   const flagImgCol = document.createElement('div')
@@ -269,7 +325,7 @@ function createLanguageTab (code, displayName) {
     constSetup.updateWorkingDefinition(['languages', code, 'header'], event.target.value)
     previewDefinition(true)
   })
-  headerInput.value = workingDefinition.languages[code].header
+  headerInput.value = workingDefinition.languages[code].header ?? ''
   headerCol.appendChild(headerInput)
 
   // Create the new sub-tab button
@@ -349,7 +405,8 @@ function createInfoStationTab (lang, uuid = '') {
     workingDefinition.languages[lang].tabs[uuid] = {
       button_text: '',
       type: 'text',
-      text: ''
+      text: '',
+      uuid
     }
     workingDefinition.languages[lang].tab_order.push(uuid)
 
@@ -426,8 +483,8 @@ function createInfoStationTab (lang, uuid = '') {
   buttonTextCol.appendChild(buttonTextInput)
 
   const textTabTipCol = document.createElement('div')
-  textTabTipCol.classList = 'col-12 mt-3 fst-italic text-info'
-  textTabTipCol.innerHTML = 'Text in text tabs is formatted using Markdown.'
+  textTabTipCol.classList = 'col-12 mt-3 fst-italic alert alert-info'
+  textTabTipCol.innerHTML = 'Text and images in text tabs are formatted using Markdown. See the help page to learn more about Markdown.'
   row.appendChild(textTabTipCol)
 
   const textCol = document.createElement('div')
@@ -444,6 +501,7 @@ function createInfoStationTab (lang, uuid = '') {
   textInput.classList = 'form-control'
   textInput.setAttribute('rows', '5')
   textInput.setAttribute('id', 'infostationTabTextInput_' + uuid)
+  textInput.setAttribute('placeholder', '# Header\nThis is a sentence with a **bold** word and an _italics_ word.\n\n## Subheader\nThis is a sentance under the subheader.')
   textInput.addEventListener('change', (event) => {
     constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'text'], event.target.value)
     previewDefinition(true)
@@ -710,6 +768,15 @@ $('.font-select').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
   previewDefinition(true)
+})
+
+// Text size fields
+Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const property = event.target.getAttribute('data-property')
+    constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    previewDefinition(true)
+  })
 })
 
 // Set color mode

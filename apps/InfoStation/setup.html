@@ -142,7 +142,7 @@
                   <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="An attractor is a fullscreen image or video that takes over when the app is idle." style="font-size: 0.55em;">?</span>
                 </label>
                 <div class="col-8 col-sm-9 col-md-8 col-lg-9 col-xxl-10 pe-0">
-                  <button id="attractorSelect" class="btn btn-outline-primary w-100">Select file</button>
+                  <button id="attractorSelect" class="btn btn-outline-primary w-100 text-break">Select file</button>
                 </div>
                 <div class="col-4 col-sm-3 col-md-4 col-lg-3 col-xxl-2">
                   <button id="attractorSelectClear" class="btn btn-danger align-self-center w-100">✕</button>
@@ -163,11 +163,13 @@
                 <div class="col-12 col-md-6 col-lg-4">
                   <button id="manageContentButton" class="btn btn-primary w-100">Manage content</button>
                 </div>
-                <div id="missingContentWarningField" class="col-12"></div>
                 <H5 class="mt-2">Add a langauge</H5>
                 <i>For each language you suppot, you need to define the appropriate content.</i>
                 <div class="col-12 col-md-6 col-lg-4">
-                  <label for="languageNameInput" class="form-label">Display name</label>
+                  <label for="languageNameInput" class="form-label">
+                    Display name
+                    <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="This is how the language will appear in the language switcher." style="font-size: 0.55em;">?</span>
+                  </label>
                   <input type="text" placeholder="English" class="form-control" id="languageNameInput">
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
@@ -182,7 +184,7 @@
                   <span id="languageAddExistsWarning" class="text-danger">A language with that display name or language code already exists.</span>
                 </div>
               </div>
-              <H5>Current langauges</H5>
+              <H5 class="mt-3">Current langauges</H5>
               <nav>
                 <div id="languageNav" class="nav nav-tabs" role="tablist">
                 </div>
@@ -277,6 +279,25 @@
                 <div class="col-12 col-md-6 col-xl-3">
                   <label for="fontSelect_button" class="form-label">Tab button</label>
                   <select id="fontSelect_button" class="form-select font-select" data-property="button" data-default="../../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
+              </div>
+              <h4 class="mt-3">Text size</h4>
+              <div class="row gy-2">
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="headerTextSizeSlider" class="form-label">Header</label>
+                  <input id="headerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="header" min="-3", max="2" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="section-headerTextSizeSlider" class="form-label">Section header</label>
+                  <input id="section-headerTextSizeSlider" type="range" class="form-range text-size-slider" data-property="section-header" min="-1", max="1" start="0" step="0.1">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="bodyTextSizeSlider" class="form-label">Body text</label>
+                  <input id="bodyTextSizeSlider" type="range" class="form-range text-size-slider" data-property="body" min="-1", max="1" start="0" step="0.1">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="tab-buttonTextSizeSlider" class="form-label">Tab button</label>
+                  <input id="tab-buttonTextSizeSlider" type="range" class="form-range text-size-slider" data-property="tab-button" min="-1", max="1" start="0" step="0.1">
                 </div>
               </div>
             </div>

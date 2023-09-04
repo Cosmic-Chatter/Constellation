@@ -16,6 +16,13 @@
   --body-font: 'body-default';
   --section-header-font: 'section-header-default';
   --button-font: 'button-default';
+
+  /* Font size */
+  --font-size-adjust: 1; /* This is an overall adjustment for the +/- GUI buttons */
+  --header-font-size-adjust: 0;
+  --section-header-font-size-adjust: 0;
+  --body-font-size-adjust: 0;
+  --tab-button-font-size-adjust: 0;
 }
 
 /* Font definitions */
@@ -52,42 +59,50 @@ body, html {
 }
 H1 {
   color: var(--section-header-color);
-  font-size: 3.7vh;
+  font-size: max(min(calc((3.7vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 5.5vh), calc(3.7vh + var(--section-header-font-size-adjust)*1vh));
   text-align: center;
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 H2 {
   color: var(--section-header-color);
-  font-size: 3.2vh;
+  font-size: max(min(calc((3.2vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 5vh), calc(3.2vh + var(--section-header-font-size-adjust)*1vh));
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 H3 {
   color: var(--section-header-color);
-  font-size: 2.9vh;
+  font-size: max(min(calc((2.9vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.8vh), calc(2.9vh + var(--section-header-font-size-adjust)*1vh));
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 H4 {
   color: var(--section-header-color);
-  font-size: 2.6vh;
+  font-size: max(min(calc((2.6vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.5vh), calc(2.6vh + var(--section-header-font-size-adjust)*1vh));
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 H5 {
   color: var(--section-header-color);
-  font-size: 2.3vh;
+  font-size: max(min(calc((2.3vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.2vh), calc(2.3vh + var(--section-header-font-size-adjust)*1vh));
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 H6 {
   color: var(--section-header-color);
-  font-size: 2vh;
+  font-size: max(min(calc((2vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.9vh), calc(2vh + var(--section-header-font-size-adjust)*1vh));
   font-family: var(--section-header-font);
+  transition: font-size 0.1s;
 }
 p {
   color: var(--text-color);
-  font-size: 1.6vh;
+  font-size: max(min(calc((1.6vh + var(--body-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.5vh), calc(1.6vh + var(--body-font-size-adjust)*1vh));
+  transition: font-size 0.1s;
 }
 li {
   color: var(--text-color);
-  font-size: 1.6vh;
+  font-size: max(min(calc((1.6vh + var(--body-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.5vh), calc(1.6vh + var(--body-font-size-adjust)*1vh));
+  transition: font-size 0.1s;
 }
 ::-webkit-scrollbar {
   width: 0;
@@ -172,7 +187,7 @@ li {
   color: white;
 }
 .tabButton {
-  font-size: 2.5vh;
+  font-size: calc(2.5vh + var(--tab-button-font-size-adjust) * 1vh);
   font-family: var(--button-font);
 }
 #attractorImage {
@@ -210,13 +225,14 @@ li {
   font-size: 2vh;
 }
 #masthead {
-  font-size: 5vh;
+  font-size: calc(6vh + var(--header-font-size-adjust)*1vh);
   height: 10vh;
   line-height: 10vh;
   color: var(--text-color);
   background-color: var(--header-color);
   z-index: 1;
   font-family: var(--header-font);
+  transition: font-size 0.1s;
 }
 #nav-tabContent {
   height: 79vh;
