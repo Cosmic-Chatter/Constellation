@@ -300,11 +300,17 @@ function createLanguageTab (code, displayName) {
 
   const deleteButton = document.createElement('button')
   deleteButton.classList = 'btn btn-danger w-100 align-self-center'
+  deleteButton.setAttribute('data-bs-toggle', 'popover')
+  deleteButton.setAttribute('title', 'Are you sure?')
+  deleteButton.setAttribute('data-bs-content', `<a id='deleteLang_${code}' class='btn btn-danger w-100 lang-delete'>Confirm</a>`)
+  deleteButton.setAttribute('data-bs-trigger', 'focus')
+  deleteButton.setAttribute('data-bs-html', 'true')
+  // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
+  deleteButton.addEventListener('click', function () { deleteButton.focus() })
   deleteButton.innerHTML = 'Delete language'
-  deleteButton.addEventListener('click', () => {
-    deleteLanguageTab(code)
-  })
+
   deleteCol.appendChild(deleteButton)
+  $(deleteButton).popover()
 
   // Create the header input
   const headerCol = document.createElement('div')
@@ -509,8 +515,41 @@ function createInfoStationTab (lang, uuid = '') {
   textInput.value = workingDefinition.languages[lang].tabs[uuid].text
   textCol.appendChild(textInput)
 
+  // Create the delete button
+  const deleteCol = document.createElement('div')
+  deleteCol.classList = 'col-12'
+  row.appendChild(deleteCol)
+
+  const deleteButton = document.createElement('button')
+  deleteButton.classList = 'btn btn-danger w-100 align-self-center'
+  deleteButton.setAttribute('data-bs-toggle', 'popover')
+  deleteButton.setAttribute('title', 'Are you sure?')
+  deleteButton.setAttribute('data-bs-content', `<a id='deleteTab_${lang}_${uuid}' class='btn btn-danger w-100 tab-delete'>Confirm</a>`)
+  deleteButton.setAttribute('data-bs-trigger', 'focus')
+  deleteButton.setAttribute('data-bs-html', 'true')
+  // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
+  deleteButton.addEventListener('click', function () { deleteButton.focus() })
+  deleteButton.innerHTML = 'Delete tab'
+
+  deleteCol.appendChild(deleteButton)
+  $(deleteButton).popover()
+
   $(tabButton).click()
   previewDefinition(true)
+}
+
+function deleteInfoStationTab (lang, uuid) {
+  // Delete the given InfoStation tab
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  delete workingDefinition.languages[lang].tabs[uuid]
+  const index = workingDefinition.languages[lang].tab_order.indexOf(uuid)
+  workingDefinition.languages[lang].tab_order.splice(index, 1)
+
+  $('#infostationTab_' + lang + '_' + uuid).remove()
+  $('infostationPane_' + lang + '_' + uuid).remove()
+  $('.infostation-tab').click()
 }
 
 function onFontUploadChange () {
@@ -777,6 +816,25 @@ Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
     constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
     previewDefinition(true)
   })
+})
+
+// Listen for popover delete buttons
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('lang-delete') === false && event.target.classList.contains('tab-delete') === false) return
+
+  if (event.target.classList.contains('lang-delete')) {
+    const lang = event.target.getAttribute('id').split('_').slice(-1)[0]
+    deleteLanguageTab(lang)
+    previewDefinition(true)
+  }
+
+  if (event.target.classList.contains('tab-delete')) {
+    const split = event.target.getAttribute('id').split('_')
+    const lang = split.slice(-2)[0]
+    const uuid = split.slice(-1)[0]
+    deleteInfoStationTab(lang, uuid)
+    previewDefinition(true)
+  }
 })
 
 // Set color mode

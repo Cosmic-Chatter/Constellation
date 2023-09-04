@@ -85,12 +85,6 @@ function localize (lang) {
   document.getElementById('buttonRow').innerHTML = ''
   document.getElementById('nav-tabContent').innerHTML = ''
 
-  if (definition.tab_order.length < 2) {
-    document.getElementById('buttonRow').style.display = 'none'
-  } else {
-    document.getElementById('buttonRow').style.display = 'flex'
-  }
-
   if (definition.header != null) {
     document.getElementById('masthead').innerHTML = definition.header
   } else {
@@ -128,7 +122,23 @@ function createButton (title, id) {
 
   // Adjust the number of columns based on the number of buttons that have been added
   const nButtons = $('#buttonRow').children().length
-  document.getElementById('buttonRow').classList = 'row row-cols-' + String(nButtons)
+  const root = document.querySelector(':root')
+  let rowClass
+  let numRows
+
+  if (nButtons === 1) {
+    rowClass = '1'
+    numRows = 0
+  } else if (nButtons < 4) {
+    rowClass = String(nButtons)
+    numRows = 1
+  } else {
+    rowClass = '4'
+    numRows = Math.ceil(nButtons / 4)
+  }
+
+  root.style.setProperty('--button-rows', numRows)
+  document.getElementById('buttonRow').classList = 'row justify-content-center pt-3 pb-1 mx-1 gx-2 gy-2 row-cols-' + rowClass
 }
 
 function createTextTab (definition) {
@@ -321,21 +331,21 @@ function showAttractor () {
           $('#attractorOverlay').fadeIn(100)
         }).then(result => {
           fontSizeReset()
-          localize(Object.keys(definition.languages)[0])
+          localize(defaultLang)
           gotoTab(firstTab)
           $('#nav-tabContent').scrollTop(0)
         })
     } else {
       $('#attractorOverlay').fadeIn(100)
       fontSizeReset()
-      localize(Object.keys(definition.languages)[0])
+      localize(defaultLang)
       gotoTab(firstTab)
       $('#nav-tabContent').scrollTop(0)
     }
   } else {
     $('#attractorOverlay').fadeOut(100)
     fontSizeReset()
-    localize(Object.keys(definition.languages)[0])
+    localize(defaultLang)
     $('#nav-tabContent').scrollTop(0)
   }
 }

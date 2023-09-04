@@ -23,6 +23,9 @@
   --section-header-font-size-adjust: 0;
   --body-font-size-adjust: 0;
   --tab-button-font-size-adjust: 0;
+
+  /* Misc */
+  --button-rows: 1;
 }
 
 /* Font definitions */
@@ -219,7 +222,7 @@ li {
   bottom: 0;
 }
 #buttonRow {
-  height: 6vh;
+  height: calc(6vh * var(--button-rows));
 }
 #langToggleButton {
   font-size: 2vh;
@@ -235,7 +238,7 @@ li {
   transition: font-size 0.1s;
 }
 #nav-tabContent {
-  height: 79vh;
+  height: calc(85vh - 6vh * var(--button-rows));
   width: 100vw;
   overflow-x: hidden;
   overflow-y: scroll;
