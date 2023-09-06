@@ -9,130 +9,6 @@ import * as constSchedule from './constellation_schedule.js'
 import * as constTools from './constellation_tools.js'
 import * as constTracker from './constellation_tracker.js'
 
-function onUploadContentChange () {
-  // When we select a file for uploading, check against the existing files
-  // (as defined by their buttons) and warn if we will overwrite. Also
-  // check if the filename contains an =, which is not allowed
-
-  // Show the upload button (we may hide it later)
-  $('#contentUploadSubmitButton').show()
-
-  const fileInput = $('#componentContentUpload')[0]
-
-  // Check for filename collision and = sign in filename
-  const currentFiles = $('.componentContentButton').map(function () { return $(this).find('span').html() }).toArray()
-  let collision = false
-  let equals = false
-  for (let i = 0; i < fileInput.files.length; i++) {
-    const file = fileInput.files[i]
-    if (currentFiles.includes(file.name)) {
-      collision = true
-    }
-    if (file.name.includes('=')) {
-      equals = true
-    }
-  }
-  // Format button text
-  if (fileInput.files.length === 1) {
-    $('#componentContentUploadfilename').html('File: ' + fileInput.files[0].name)
-  } else {
-    $('#componentContentUploadfilename').html('Files: ' + fileInput.files[0].name + ` + ${fileInput.files.length - 1} more`)
-  }
-  if (collision) {
-    $('#uploadOverwriteWarning').show()
-  } else {
-    $('#uploadOverwriteWarning').hide()
-  }
-  if (equals) {
-    $('#contentUploadEqualSignWarning').show()
-    $('#contentUploadSubmitButton').hide()
-  } else {
-    $('#contentUploadEqualSignWarning').hide()
-  }
-}
-
-function uploadComponentContentFile () {
-  // Handle uploading files to the FastAPI-based system helper
-  const fileInput = $('#componentContentUpload')[0]
-
-  if (fileInput.files[0] != null) {
-    const id = $('#componentInfoModalTitle').html().trim()
-
-    const component = constExhibit.getExhibitComponent(id)
-
-    $('#contentUploadSubmitButton').prop('disabled', true)
-    $('#contentUploadSubmitButton').html('Working...')
-
-    const formData = new FormData()
-
-    for (let i = 0; i < fileInput.files.length; i++) {
-      const file = fileInput.files[i]
-      formData.append('files', file)
-    }
-
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', component.getHelperURL() + '/uploadContent', true)
-
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
-
-        if ('success' in response) {
-          constExhibit.queueCommand(id, 'reloadDefaults')
-          constExhibit.showExhibitComponentInfo('')
-        }
-      } else if (this.status === 422) {
-        console.log(JSON.parse(this.responseText))
-      }
-    }
-
-    xhr.upload.addEventListener('progress', function (evt) {
-      if (evt.lengthComputable) {
-        let percentComplete = evt.loaded / evt.total
-        percentComplete = parseInt(percentComplete * 100)
-        $('#contentUploadProgressBar').width(String(percentComplete) + '%')
-        if (percentComplete > 0) {
-          $('#contentUploadProgressBarContainer').show()
-        } else if (percentComplete === 100) {
-          $('#contentUploadProgressBarContainer').hide()
-        }
-      }
-    }, false)
-
-    xhr.send(formData)
-  }
-}
-
-function submitComponentContentChange () {
-  // Collect the new information from the componentInfoModal and pass it
-  // back to the server to be changed.
-
-  const id = $('#componentInfoModalTitle').html().trim()
-  const selectedButtons = $('.componentContentButton.btn-primary').find('.contentFilenameContainer')
-
-  const contentList = []
-  for (let i = 0; i < selectedButtons.length; i++) {
-    const content = selectedButtons[i].innerHTML.trim()
-    contentList.push(content)
-  }
-
-  sendComponentContentChangeRequest(id, contentList)
-
-  // Hide the modal
-  $('#componentInfoModal').modal('hide')
-}
-
-function sendComponentContentChangeRequest (id, content) {
-  // Send a request to the server to initiate a content change
-
-  constTools.makeServerRequest({
-    method: 'POST',
-    endpoint: '/component/' + id + '/setContent',
-    params: { content }
-  })
-}
-
 function showManageExhibitsModal () {
   // Configure the manageExhibitsModal and show it.
 
@@ -1152,21 +1028,12 @@ $('#componentsTabSettingsShowStatic').change(function () {
   constExhibit.rebuildComponentInterface()
 })
 // Component info modal
-$('#componentSaveConfirmationButton').click(submitComponentContentChange)
-$('#contentUploadSubmitButton').click(uploadComponentContentFile)
 $('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)
 $('#componentInfoModalMaintenanceSaveButton').click(function () {
   constMaintenance.submitComponentMaintenanceStatusChange('component')
 })
-$('#componentContentUpload').change(onUploadContentChange)
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
-})
-$('#componentInfoModalThumbnailCheckbox').change(function () {
-  constExhibit.updateComponentInfoModalContentButtonState()
-})
-$('#componentInfoModalHideIncompatibleCheckbox').change(function () {
-  constExhibit.updateComponentInfoModalContentButtonState()
 })
 $('#componentInfoModalSettingsAutoplayAudio').change(function () {
   constExhibit.toggleExhibitComponentInfoSettingWarnings()

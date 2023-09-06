@@ -264,9 +264,6 @@
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalDMXTabButton" data-toggle="tab" href="#componentInfoModalDMXTab" role="tab" aria-controls="DMX" aria-selected="false">DMX</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="false">Content</a>
-                    </li>
-                    <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
                     </li>
                     <li class="nav-item d-none d-sm-block">
@@ -336,6 +333,14 @@
                           </div>
                         </div>
                       </div>
+                      <div class="row mt-3" id="componentInfoConnectingNotice">
+                        <div class='col-8 offset-2'>
+                          <center>
+                            <H5 id="componentInfoConnectionStatusInPrograss">Connecting to component...</H5>
+                            <H5 id="componentInfoConnectionStatusFailed">Unable to connect to component</H5>
+                          </center>
+                        </div>
+                      </div>
                       <div id="componentInfoModalDefinitionList" class="row mx-1">
                       </div>
                     </div>
@@ -350,62 +355,6 @@
                         </div>
                         <div class="col-12">
                           <div  id="componentInfoModalDMXSceneList" class="row"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- Content pane -->
-                    <div class="tab-pane fade" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
-                      <div class="row mt-3" id="componentInfoConnectingNotice">
-                        <div class='col-8 offset-2'>
-                          <center>
-                            <H5 id="componentInfoConnectionStatusInPrograss">Connecting to component...</H5>
-                            <H5 id="componentInfoConnectionStatusFailed">Unable to connect to component</H5>
-                          </center>
-                        </div>
-                      </div>
-                      <div id="componentAvailableContentRow" class="row">
-                        <div class="col-6 mt-3">
-                          <H5>Available content</H5>
-                        </div>
-                        <div class="col-6 mt-3 d-flex justify-content-end">
-                          <div class="form-group form-check pr-3">
-                            <input type="checkbox" class="form-check-input" id="componentInfoModalHideIncompatibleCheckbox" checked>
-                            <label class="form-check-label" for="componentInfoModalHideIncompatibleCheckbox">Compatible</label>
-                          </div>
-                          <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="componentInfoModalThumbnailCheckbox" checked>
-                            <label class="d-none d-sm-block form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
-                            <label class="d-block d-sm-none form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbs</label>
-                          </div>
-                        </div>
-                        <div class="col-12 w-100">
-                          <div class="row" id="componentAvailableContentList"></div>
-                        </div>
-                        <div class='col-12'>
-                          <button type="button" class="btn btn-primary mt-2" id="componentSaveConfirmationButton">Save changes</button>
-                        </div>
-                      </div>
-
-                      <div id="componentcontentUploadInterface" class="form-group mt-3 mb-0">
-                        <label for="componentContentUpload"><H5>Upload new content</H5></label>
-                        <div class="row align-middle d-flex align-items-center">
-                          <div class="col-8">
-                            <label class="btn btn-outline-secondary mw-100">
-                              <span id="componentContentUploadfilename" style="overflow-wrap: break-word!important;">Choose file</span>
-                              <input hidden type="file" class="form-control-file" id="componentContentUpload">
-                            </label>
-                          </div>
-                          <div class="col-4">
-                            <button id="contentUploadSubmitButton" class='btn btn-block btn-outline-primary'>Upload</button>
-                          </div>
-
-                          <div class='col-12 mt-3' id='contentUploadProgressBarContainer'>
-                            <div class="progress" style="height: 25px;">
-                              <div id='contentUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                          </div>
-                          <div class='col-12 text-danger mt-2' id='uploadOverwriteWarning'>Warning: this upload will overwrite a file of the same name.</div>
-                          <div class='col-12 text-danger mt-2' id='contentUploadEqualSignWarning'>Filenames cannot contain the equal sign (=).</div>
                         </div>
                       </div>
                     </div>
@@ -491,21 +440,7 @@
                     </div>
                     <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
                       <div class="row mt-3">
-                        <div class="col-6 mt-1">
-                          <select id="componentInfoModalSettingsAppName" class="form-control componentInfoSetting">
-                            <option value="dmx_control">DMX Control</option>
-                            <option value="infostation">InfoStation</option>
-                            <option value="media_browser">Media Browser</option>
-                            <option value="media_player">Media Player</option>
-                            <option value="timelapse_viewer">Timelapse Viewer</option>
-                            <option value="timeline_explorer">Timeline Explorer</option>
-                            <option value="voting_kiosk">Voting Kiosk</option>
-                            <option value="word_cloud_input">Word Cloud Input</option>
-                            <option value="word_cloud_viewer">Word Cloud Viewer</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </div>
-                        <div class="col-6 mt-1">
+                        <div class="col-12 mt-1">
                           <a id='componentInfoModalFullSettingsButton' class="btn btn-primary" target='_blank'>Open full settings</a>
                         </div>
                         <div class="col-6 mt-1">

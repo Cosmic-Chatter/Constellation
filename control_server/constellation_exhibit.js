@@ -224,7 +224,6 @@ class ExhibitComponent extends BaseComponent {
     super(id, group)
 
     this.type = 'exhibit_component'
-    this.content = null
     this.helperAddress = null
     this.state = {}
     this.AnyDeskID = ''
@@ -251,9 +250,6 @@ class ExhibitComponent extends BaseComponent {
     }
     if ('constellation_app_id' in update) {
       this.constellationAppId = update.constellation_app_id
-    }
-    if ('content' in update) {
-      this.content = update.content
     }
     if ('definition' in update) {
       this.definition = update.definition
@@ -641,22 +637,10 @@ export function showExhibitComponentInfo (id) {
   }
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
-  $('#componentAvailableContentList').empty()
-  $('#contentUploadSubmitButton').prop('disabled', false)
-  $('#contentUploadSubmitButton').html('Upload')
-  $('#componentContentUploadfilename').html('Choose file')
-  $('#componentContentUpload').val(null)
-  $('#contentUploadSubmitButton').hide()
-  $('#contentUploadEqualSignWarning').hide()
-  $('#uploadOverwriteWarning').hide()
-  $('#contentUploadProgressBarContainer').hide()
-  $('#contentUploadSystemStatsView').hide()
   $('#componentInfoConnectingNotice').show()
   $('#componentInfoConnectionStatusFailed').hide()
   $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
-  $('#componentAvailableContentRow').hide()
-  $('#componentcontentUploadInterface').hide()
   constMaint.setComponentInfoModalMaintenanceStatus(id)
 
   // Definition tab
@@ -735,15 +719,10 @@ export function showExhibitComponentInfo (id) {
       })
       .catch((error) => {
         document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+        console.log(error)
       })
 
-    if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
-      $('#componentInfoModalContentTabButton').show()
-      $('#componentInfoModalContentTabButton').tab('show')
-    } else {
-      $('#componentInfoModalContentTabButton').hide()
-      $('#componentInfoModalDefinitionsTabButton').tab('show')
-    }
+    $('#componentInfoModalDefinitionsTabButton').tab('show')
 
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
@@ -751,7 +730,6 @@ export function showExhibitComponentInfo (id) {
   } else {
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
-    $('#componentInfoModalContentTabButton').hide()
     $('#componentInfoModalDefinitionsTabButton').hide()
 
     // This static component will defintely have no content.
@@ -1178,22 +1156,11 @@ function updateComponentInfoModalFromHelper (id) {
   })
     .then((availableContent) => {
       // Good connection, so show the interface elements
-      $('#componentAvailableContentRow').show()
-      $('#componentcontentUploadInterface').show()
       $('#componentInfoConnectingNotice').hide()
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
         populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails)
-      }
-
-      // If available, configure for multiple file upload
-      if ('multiple_file_upload' in availableContent) {
-        $('#componentContentUpload').prop('multiple', true)
-        $('#componentContentUploadfilename').html('Choose files')
-      } else {
-        $('#componentContentUpload').prop('multiple', false)
-        $('#componentContentUploadfilename').html('Choose file')
       }
 
       // If it is provided, show the system stats
@@ -1246,298 +1213,7 @@ function updateComponentInfoModalFromHelper (id) {
       } else {
         $('#contentUploadSystemStatsView').hide()
       }
-
-      // Build buttons for each file in all exhibits
-      populateComponentContent(availableContent, 'all_exhibits', id, obj.constellationAppId, 'componentAvailableContentList')
-
-      // Attach an event handler to change the button's color when clicked
-      $('.componentContentButton').on('click', function (e) {
-        const id = $(this).attr('id')
-        $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
-
-        $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
-
-        if ($('.componentContentButton.btn-primary').length === 0) {
-          $('#componentSaveConfirmationButton').hide() // Can't save a state with no selected content.
-        } else {
-          $('#componentSaveConfirmationButton').show()
-        }
-      })
     })
-}
-
-function populateComponentContent (availableContent, key, id, appName, div) {
-  // Get filenames listed under key in availableContent and add
-  // the resulting buttons to the div given by div
-
-  const activeContent = availableContent.active_content
-  const contentList = availableContent[key].sort(function (a, b) { return a.localeCompare(b) })
-  let thumbnailList = availableContent.thumbnails
-  if (thumbnailList == null) {
-    thumbnailList = []
-  }
-
-  $('#' + div).empty()
-
-  for (let i = 0; i < contentList.length; i++) {
-    const container = document.createElement('div')
-    container.classList = 'col-6 col-md-4 mt-1'
-
-    // Check if this file type is supported by the current app
-    const file = contentList[i]
-    const fileExt = contentList[i].split('.').pop().toLowerCase()
-    const supportedTypes = getAllowableContentTypes(appName)
-
-    if (!supportedTypes.includes(fileExt)) {
-      container.classList += ' incompatible-content'
-    }
-    if (activeContent.includes(contentList[i])) {
-      container.classList += ' active-content'
-    }
-
-    const btnGroup = document.createElement('div')
-    btnGroup.classList = 'btn-group w-100 h-100'
-    container.appendChild(btnGroup)
-
-    const button = document.createElement('button')
-    const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
-    button.setAttribute('type', 'button')
-    button.setAttribute('id', cleanFilename + 'Button')
-    button.classList = 'btn componentContentButton'
-
-    const fileName = document.createElement('span')
-    fileName.classList = 'contentFilenameContainer'
-    fileName.setAttribute('id', cleanFilename + 'NameField')
-    fileName.innerHTML = contentList[i]
-    button.appendChild(fileName)
-
-    const fileNameEditGroup = document.createElement('div')
-    fileNameEditGroup.setAttribute('id', cleanFilename + 'NameEditGroup')
-    fileNameEditGroup.classList = 'row'
-    button.appendChild(fileNameEditGroup)
-    $(fileNameEditGroup).hide() // Will be shown when editing the filename
-
-    const fileNameEditCol = document.createElement('div')
-    fileNameEditCol.classList = 'col-9 mr-0 pr-0'
-    fileNameEditGroup.appendChild(fileNameEditCol)
-
-    const fileNameEditCloseCol = document.createElement('div')
-    fileNameEditCloseCol.classList = 'col-3 ml-0 pl-0'
-    fileNameEditGroup.appendChild(fileNameEditCloseCol)
-
-    const fileNameEditCloseButton = document.createElement('button')
-    fileNameEditCloseButton.classList = 'btn btn-none px-0'
-    fileNameEditCloseButton.innerHTML = '&#x2715'
-    fileNameEditCloseButton.addEventListener('click', function (event) {
-      cancelFileRename(cleanFilename)
-      event.stopPropagation()
-    })
-    fileNameEditCloseCol.appendChild(fileNameEditCloseButton)
-
-    const fileNameEditField = document.createElement('input')
-    fileNameEditField.setAttribute('id', cleanFilename + 'NameEditField')
-    $(fileNameEditField).data('filename', file)
-    fileNameEditField.classList = 'form-control'
-    fileNameEditField.addEventListener('keyup', function (e) {
-      if (e.key === 'Enter') {
-        submitFileRename(cleanFilename)
-      }
-    })
-    fileNameEditCol.appendChild(fileNameEditField)
-
-    const fileNameEditErrorMessageCol = document.createElement('div')
-    fileNameEditErrorMessageCol.classList = 'col-12'
-    fileNameEditGroup.appendChild(fileNameEditErrorMessageCol)
-
-    const fileNameEditErrorMessage = document.createElement('span')
-    fileNameEditErrorMessage.setAttribute('id', cleanFilename + 'NameEditErrorMessage')
-    fileNameEditErrorMessage.classList = 'text-danger mt-1'
-    fileNameEditErrorMessage.innerHTML = 'A file with this name already exists!'
-    $(fileNameEditErrorMessage).hide()
-    fileNameEditErrorMessageCol.appendChild(fileNameEditErrorMessage)
-
-    let thumbName
-    const mimetype = constTools.guessMimetype(contentList[i])
-    if (mimetype === 'image') {
-      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.jpg'
-      if (thumbnailList.includes(thumbName)) {
-        const thumb = document.createElement('img')
-        thumb.classList = 'contentThumbnail mt-1'
-        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-        button.appendChild(thumb)
-      }
-    } else if (mimetype === 'video') {
-      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.mp4'
-      if (thumbnailList.includes(thumbName)) {
-        const thumb = document.createElement('video')
-        thumb.classList = 'contentThumbnail mt-1'
-        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-        thumb.setAttribute('loop', true)
-        thumb.setAttribute('autoplay', true)
-        thumb.setAttribute('disablePictureInPicture', true)
-        thumb.setAttribute('webkit-playsinline', true)
-        thumb.setAttribute('playsinline', true)
-        button.appendChild(thumb)
-      }
-    }
-
-    btnGroup.appendChild(button)
-
-    const dropdownButton = document.createElement('button')
-    dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('id', cleanFilename + 'ButtonDropdown')
-    dropdownButton.setAttribute('data-toggle', 'dropdown')
-    dropdownButton.setAttribute('aria-haspopup', true)
-    dropdownButton.setAttribute('aria-expanded', false)
-    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton'
-    // Color the button and dropdown button depending on the status of the content
-    if (activeContent.includes(contentList[i])) {
-      dropdownButton.classList += ' btn-primary'
-      button.classList += ' btn-primary'
-    } else {
-      dropdownButton.classList += ' btn-secondary'
-      button.classList += ' btn-secondary'
-    }
-    dropdownButton.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
-    btnGroup.appendChild(dropdownButton)
-
-    const dropdownMenu = document.createElement('div')
-    dropdownMenu.classList = 'dropdown-menu'
-
-    const renameFileButton = document.createElement('a')
-    renameFileButton.classList = 'dropdown-item'
-    renameFileButton.addEventListener('click', function () {
-      showFileRenameField(id, cleanFilename)
-    })
-    renameFileButton.innerHTML = 'Rename'
-    dropdownMenu.appendChild(renameFileButton)
-
-    const deleteFileButton = document.createElement('a')
-    deleteFileButton.classList = 'dropdown-item text-danger'
-    deleteFileButton.addEventListener('click', function () {
-      deleteRemoteFile(id, file)
-    })
-    deleteFileButton.innerHTML = 'Delete'
-    dropdownMenu.appendChild(deleteFileButton)
-    btnGroup.appendChild(dropdownMenu)
-
-    $('#' + div).append(container)
-  }
-  updateComponentInfoModalContentButtonState()
-}
-
-function showFileRenameField (id, cleanID) {
-  // Begin the process of editing a filename in the componentInfoModal
-
-  const filename = $('#' + cleanID + 'NameEditField').data('filename')
-  const fileNameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename
-  $('#' + cleanID + 'NameEditGroup').show()
-  $('#' + cleanID + 'NameEditErrorMessage').hide()
-
-  // Pass the filename to the edit field, and save it for later use
-  $('#' + cleanID + 'NameEditField')
-    .val(filename)
-    .data('id', id)
-  const el = $('#' + cleanID + 'NameEditField')[0]
-  el.setSelectionRange(0, fileNameWithoutExt.length)
-  el.focus()
-  $('#' + cleanID + 'NameField').hide()
-}
-
-function cancelFileRename (cleanID) {
-  // Called when the X button is clicked to close the file edit dialog without saving
-
-  $('#' + cleanID + 'NameField').show()
-  $('#' + cleanID + 'NameEditGroup').hide()
-}
-
-function submitFileRename (cleanID) {
-  // Called when the user submits the input field to send to the helper.
-
-  const input = $('#' + cleanID + 'NameEditField')
-  const currentName = input.data('filename')
-  const newName = input.val().trim()
-  const id = input.data('id')
-  const obj = getExhibitComponent(id)
-
-  // If the new name is actually the current name, just put things back how they were
-  if (currentName.trim() === newName.trim()) {
-    $('#' + cleanID + 'NameField').html(newName).show()
-    $('#' + cleanID + 'NameEditGroup').hide()
-    $('#' + cleanID + 'NameEditErrorMessage').hide()
-    return
-  }
-
-  // If the new name contains an equals sign, reject it
-  if (newName.includes('=')) {
-    $('#' + cleanID + 'NameEditErrorMessage').html('Filename cannot contain an equals sign.').show()
-    return
-  }
-
-  constTools.makeRequest({
-    method: 'POST',
-    url: obj.getHelperURL(),
-    endpoint: '/renameFile',
-    params: {
-      current_name: currentName,
-      new_name: newName
-    }
-  })
-    .then((result) => {
-      if (result.success === true) {
-        $('#' + cleanID + 'NameField').html(newName).show()
-        $('#' + cleanID + 'NameEditGroup').hide()
-        $('#' + cleanID + 'NameEditErrorMessage').hide()
-        input.data('filename', newName)
-      } else {
-        if (result.error === 'file_exists') {
-          $('#' + cleanID + 'NameEditErrorMessage').html('A file with this name already exists!').show()
-        }
-      }
-    })
-}
-
-export function updateComponentInfoModalContentButtonState () {
-  // Use the state of the filter checkboxes to show/hide the appropriate buttons
-
-  const showThumbs = $('#componentInfoModalThumbnailCheckbox').prop('checked')
-  if (showThumbs) {
-    $('.contentThumbnail').show()
-  } else {
-    $('.contentThumbnail').hide()
-  }
-
-  const hideIncompatible = $('#componentInfoModalHideIncompatibleCheckbox').prop('checked')
-  if (hideIncompatible) {
-    $('.incompatible-content').hide()
-    $('.active-content').show()
-  } else {
-    $('.incompatible-content').show()
-  }
-}
-
-function getAllowableContentTypes (appID) {
-  // Return a list of file extensions supported by the given appID
-
-  const supportedTypes = {
-    heartbeat: ['ini'],
-    infostation: ['ini'],
-    media_browser: ['const'],
-    media_player: ['const'],
-    media_player_kiosk: ['ini'],
-    sos_kiosk: ['ini'],
-    sos_screen_player: ['ini'],
-    timelapse_viewer: ['const'],
-    timeline_explorer: ['const'],
-    voting_kiosk: ['const'],
-    word_cloud_input: ['ini'],
-    word_cloud_viewer: ['ini']
-  }
-  if (appID in supportedTypes) {
-    return supportedTypes[appID]
-  }
-
-  return []
 }
 
 export function onDefinitionTabThumbnailsCheckboxChange () {
@@ -1634,13 +1310,6 @@ export function submitComponentSettingsChange () {
     obj.constellationAppId = app
     updateComponentInfoModalFromHelper(obj.id)
 
-    // If we have a modern definition-based app, hide the content tab
-    if (['media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
-      $('#componentInfoModalContentTabButton').hide()
-    } else {
-      $('#componentInfoModalContentTabButton').show()
-    }
-
     constTools.makeServerRequest({
       method: 'POST',
       endpoint: '/exhibit/setComponentApp',
@@ -1662,59 +1331,6 @@ export function getExhibitComponent (id) {
   })
 
   return result
-}
-
-function deleteRemoteFile (id, file, warn = true) {
-  // If called with warn=True, show a modal asking to delete the file.
-  // Otherwise, send the command to delete.
-
-  const model = $('#fileDeleteModal')
-
-  if (warn === true) {
-    $('#fileDeleteModalText').html(`Delete ${file} from ${id}?`)
-    // Remove any previous event handler and then add one to actually do the deletion.
-    $('#fileDeleteConfirmationButton').show()
-    $('#fileDeleteConfirmationButton').off()
-    $('#fileDeleteConfirmationButton').on('click', function () {
-      deleteRemoteFile(id, file, warn = false)
-    })
-    model.modal('show')
-  } else {
-    $('#fileDeleteModalText').html(`Deleting ${file}...`)
-    $('#fileDeleteConfirmationButton').hide()
-
-    const fileSplit = file.split(/[\\/]/) // regex to split on forward and back slashes
-    let exhibit
-    let fileToDelete
-    if (fileSplit.length > 1) {
-      // our file is of form "exhibit/file"
-      exhibit = fileSplit[0]
-      fileToDelete = fileSplit[1]
-    } else {
-      exhibit = constConfig.currentExhibit.split('.')[0]
-      fileToDelete = file
-    }
-    const obj = getExhibitComponent(id)
-    const requestDict = {
-      file: fileToDelete,
-      fromExhibit: exhibit
-    }
-
-    constTools.makeRequest({
-      method: 'POST',
-      url: obj.getHelperURL(),
-      endpoint: '/deleteFile',
-      params: requestDict
-    })
-      .then((response) => {
-        if ('success' in response) {
-          if (response.success === true) {
-            model.modal('hide')
-            showExhibitComponentInfo(id)
-          }
-        }
-      })
-  }
 }
 
 export function rebuildComponentInterface () {
