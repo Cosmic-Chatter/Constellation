@@ -49,14 +49,12 @@
   src: url("../../_fonts/OpenSans-Regular.ttf");
 }
 
-
 body, html {
   margin: 0px;
   padding: 0px;
   background: var(--background-color);
   overscroll-behavior-x: none;
   user-select: none;
-  /* cursor: none; */
   overflow: hidden;
   font-family: var(--body-font);
 }
@@ -119,9 +117,9 @@ li {
   padding: 3vmin;
   margin-bottom: 2vmin;
   border-style: solid;
-  border-radius: 20px;
+  border-radius: 1.8vmin;
   border-color: var(--section-border-color);
-  border-width: 10px;
+  border-width: 0.9vmin;
   box-shadow: 1vmin 1vmin var(--section-shadow-color);
 }
 .btn-primary {
@@ -162,14 +160,6 @@ li {
 }
 .image {
   width: 100%;
-}
-.overlay {
-  position: absolute;
-  left: 0px;
-  top: 10vh;
-  height: 80vmax;
-  width: 100vmin;
-  background-color: RGBA(0,0,0, 0.85);
 }
 .tabButton {
   font-size: calc(2.5vmax + var(--tab-button-font-size-adjust) * 1vmax);

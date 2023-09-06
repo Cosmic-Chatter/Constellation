@@ -5,8 +5,6 @@ import * as constCommon from '../js/constellation_app_common.js'
 function loadDefinition (definition) {
   // Parse the current definition and build the interface correspondingly.
 
-  console.log(definition)
-
   const root = document.querySelector(':root')
 
   $(document).data('definition', definition)
@@ -74,6 +72,9 @@ function loadDefinition (definition) {
     if (definition.languages[lang].default === true) defaultLang = lang
   })
   if (defaultLang !== '') localize(defaultLang)
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 function localize (lang) {
@@ -292,6 +293,13 @@ function updateFunc (update) {
   // Function to read a message from the server and take action based
   // on the contents
 
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
+  }
 }
 
 function resetActivityTimer () {
@@ -356,6 +364,7 @@ let timeoutDuration = 30000 // ms of no activity before the attractor is shown.
 let defaultLang = ''
 let textTabs = [] // Holds ids of textTabs.
 let firstTab = ''
+let currentDefintion = ''
 
 $(document).bind('touchstart', resetActivityTimer)
 $(document).bind('click', resetActivityTimer)
