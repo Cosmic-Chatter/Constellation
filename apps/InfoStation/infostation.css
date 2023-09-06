@@ -62,49 +62,49 @@ body, html {
 }
 H1 {
   color: var(--section-header-color);
-  font-size: max(min(calc((3.7vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 5.5vh), calc(3.7vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((3.7vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 5.5vmax), calc(3.7vmax + var(--section-header-font-size-adjust)*1vmax));
   text-align: center;
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 H2 {
   color: var(--section-header-color);
-  font-size: max(min(calc((3.2vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 5vh), calc(3.2vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((3.2vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 5vmax), calc(3.2vmax + var(--section-header-font-size-adjust)*1vmax));
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 H3 {
   color: var(--section-header-color);
-  font-size: max(min(calc((2.9vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.8vh), calc(2.9vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((2.9vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 4.8vmax), calc(2.9vmax + var(--section-header-font-size-adjust)*1vmax));
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 H4 {
   color: var(--section-header-color);
-  font-size: max(min(calc((2.6vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.5vh), calc(2.6vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((2.6vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 4.5vmax), calc(2.6vmax + var(--section-header-font-size-adjust)*1vmax));
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 H5 {
   color: var(--section-header-color);
-  font-size: max(min(calc((2.3vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 4.2vh), calc(2.3vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((2.3vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 4.2vmax), calc(2.3vmax + var(--section-header-font-size-adjust)*1vmax));
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 H6 {
   color: var(--section-header-color);
-  font-size: max(min(calc((2vh + var(--section-header-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.9vh), calc(2vh + var(--section-header-font-size-adjust)*1vh));
+  font-size: max(min(calc((2vmax + var(--section-header-font-size-adjust)*1vmax) * var(--font-size-adjust)), 3.9vmax), calc(2vmax + var(--section-header-font-size-adjust)*1vmax));
   font-family: var(--section-header-font);
   transition: font-size 0.1s;
 }
 p {
   color: var(--text-color);
-  font-size: max(min(calc((1.6vh + var(--body-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.5vh), calc(1.6vh + var(--body-font-size-adjust)*1vh));
+  font-size: max(min(calc((1.6vmax + var(--body-font-size-adjust)*1vmax) * var(--font-size-adjust)), 3.5vmax), calc(1.6vmax + var(--body-font-size-adjust)*1vmax));
   transition: font-size 0.1s;
 }
 li {
   color: var(--text-color);
-  font-size: max(min(calc((1.6vh + var(--body-font-size-adjust)*1vh) * var(--font-size-adjust)), 3.5vh), calc(1.6vh + var(--body-font-size-adjust)*1vh));
+  font-size: max(min(calc((1.6vmax + var(--body-font-size-adjust)*1vmax) * var(--font-size-adjust)), 3.5vmax), calc(1.6vmax + var(--body-font-size-adjust)*1vmax));
   transition: font-size 0.1s;
 }
 ::-webkit-scrollbar {
@@ -114,21 +114,15 @@ li {
   background-color: var(--tab-button-color)!important;
   border-color: var(--tabbutton-color)!important;
 }
-.bigImage {
-  object-fit: contain;
-  max-height: 50vh;
-  max-width: 100%;
-}
 .box {
   background-color: var(--section-background-color);
-  padding: 3vw;
-  margin-top: 2vw;
-  margin-bottom: 2vw;
+  padding: 3vmin;
+  margin-bottom: 2vmin;
   border-style: solid;
   border-radius: 20px;
   border-color: var(--section-border-color);
   border-width: 10px;
-  box-shadow: 1vw 1vw var(--section-shadow-color);
+  box-shadow: 1vmin 1vmin var(--section-shadow-color);
 }
 .btn-primary {
   background-color: var(--tab-button-active-color)!important;
@@ -140,10 +134,10 @@ li {
 }
 .card-img-top {
   object-fit: contain;
-  max-height: 28vw;
+  max-height: 28vmin;
 }
 .card-title {
-  font-size: 2.3vh;
+  font-size: 2.3vmax;
 }
 .float-left {
   float: left;
@@ -173,24 +167,12 @@ li {
   position: absolute;
   left: 0px;
   top: 10vh;
-  height: 80vh;
-  width: 100vw;
+  height: 80vmax;
+  width: 100vmin;
   background-color: RGBA(0,0,0, 0.85);
 }
-.overlayCaption {
-  color: white;
-  font-size: 50px;
-}
-.overlayCredit {
-  color: white;
-  font-size: 30px;
-}
-.overlayTitle {
-  font-size: 75px;
-  color: white;
-}
 .tabButton {
-  font-size: calc(2.5vh + var(--tab-button-font-size-adjust) * 1vh);
+  font-size: calc(2.5vmax + var(--tab-button-font-size-adjust) * 1vmax);
   font-family: var(--button-font);
 }
 #attractorImage {
@@ -222,13 +204,10 @@ li {
   bottom: 0;
 }
 #buttonRow {
-  height: calc(6vh * var(--button-rows));
-}
-#langToggleButton {
-  font-size: 2vh;
+  height: calc(6vmax * var(--button-rows));
 }
 #masthead {
-  font-size: calc(6vh + var(--header-font-size-adjust)*1vh);
+  font-size: calc(6vmax + var(--header-font-size-adjust)*1vmax);
   height: 10vh;
   line-height: 10vh;
   color: var(--text-color);
@@ -238,17 +217,18 @@ li {
   transition: font-size 0.1s;
 }
 #nav-tabContent {
-  height: calc(85vh - 6vh * var(--button-rows));
+  height: calc(85vmax - 6vmax * var(--button-rows));
   width: 100vw;
   overflow-x: hidden;
   overflow-y: scroll;
 }
 #toolbar {
   background-color: var(--footer-color);
-  height: 5vh;
+  height: 5vmax;
   z-index: 1;
 }
 
+/* Handle portrait and landscape orientations */
 @media (orientation: portrait) {
   .float-right, .float-left {
     width: 50%;
@@ -258,5 +238,25 @@ li {
 @media (orientation: landscape) {
   .float-right, .float-left {
     width: 35%;
+  }
+  .tabButtonCol {
+    width: 100%;
+  }
+  #mastheadDiv {
+    width: 30vw;
+  }
+  #nav-tabContent {
+    position: fixed;
+    left: 30vw;
+    top: 0vh;
+    width: 70vw;
+    height: 100vh;
+  }
+  #buttonRow {
+    width: 30vw;
+    height: calc(100vh - 10vh - 5vmax);
+  }
+  #toolbar {
+    width: 30vw;
   }
 }

@@ -448,24 +448,6 @@ function createInfoStationTab (lang, uuid = '') {
   row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
 
-  const typeSelectCol = document.createElement('div')
-  typeSelectCol.classList = 'col-12 col-md-6'
-  row.appendChild(typeSelectCol)
-
-  const typeSelectLabel = document.createElement('label')
-  typeSelectLabel.classList = 'form-label'
-  typeSelectLabel.innerHTML = 'Tab type'
-  typeSelectLabel.setAttribute('for', 'infostationTabTypeSelect_' + uuid)
-  typeSelectCol.appendChild(typeSelectLabel)
-
-  const typeSelect = document.createElement('select')
-  typeSelect.classList = 'form-select'
-  typeSelect.setAttribute('id', 'infostationTabTypeSelect_' + uuid)
-  typeSelect.appendChild(new Option('Text', 'text'))
-  typeSelect.appendChild(new Option('Media', 'media'))
-  typeSelect.value = workingDefinition.languages[lang].tabs[uuid].type
-  typeSelectCol.appendChild(typeSelect)
-
   const buttonTextCol = document.createElement('div')
   buttonTextCol.classList = 'col-12 col-md-6'
   row.appendChild(buttonTextCol)

@@ -786,7 +786,7 @@ export function createLanguageSwitcher (def, localize) {
     } else {
       flag.src = '../_static/flags/' + code + '.svg'
     }
-    flag.style.width = '30%'
+    flag.style.width = '10vmin'
     flag.addEventListener('error', function () {
       this.src = '../_static/icons/translation-icon_black.svg'
     })
