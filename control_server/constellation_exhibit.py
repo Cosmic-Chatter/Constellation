@@ -119,7 +119,6 @@ class ExhibitComponent(BaseComponent):
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
-        self.config["content"] = []
         self.config["definition"] = ""
 
         self.status_manager = component_helpers.ComponentStatusManager(category)
@@ -178,9 +177,6 @@ class ExhibitComponent(BaseComponent):
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
 
-            if "content" in component_config and self.config["content"] != component_config["content"]:
-                self.config["content"] = component_config["content"]
-                update_made = True
             if "definition" in component_config and self.config["definition"] != component_config["definition"]:
                 self.config["definition"] = component_config["definition"]
                 update_made = True
@@ -189,7 +185,6 @@ class ExhibitComponent(BaseComponent):
                 update_made = True
         except IndexError:
             # This component is not specified in the current exhibit configuration
-            self.config["content"] = []
             self.config["definition"] = ""
 
         self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]

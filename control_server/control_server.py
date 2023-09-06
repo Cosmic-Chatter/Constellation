@@ -414,23 +414,13 @@ async def set_component_app(component_id: str,
     return {"success": True}
 
 
-@app.post("/component/{component_id}/setContent")
-async def set_component_content(component_id: str,
-                                content: list[str] = Body(description="The content to be set.", embed=True)):
-    """Set the content for the component. Setting content clears the definition."""
-
-    c_exhibit.update_exhibit_configuration(component_id, {"content": content, "definition": ""})
-
-    return {"success": True}
-
-
 @app.post("/component/{component_id}/setDefinition")
 async def set_component_definition(component_id: str,
                                    uuid: str = Body(description="The UUID of the definition file to be set.",
                                                     embed=True)):
-    """Set the definition for the component. Setting a definition clears all content."""
+    """Set the definition for the component."""
 
-    c_exhibit.update_exhibit_configuration(component_id, {"content": [], "definition": uuid})
+    c_exhibit.update_exhibit_configuration(component_id, {"definition": uuid})
 
     return {"success": True}
 

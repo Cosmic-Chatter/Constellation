@@ -336,8 +336,6 @@ function readHelperUpdate (update, changeApp = true) {
   // 'update' should be an object
   // Set changeApp === false to suppress changing the app if the definition has changed
 
-  console.log(update)
-
   const sendUpdate = false
 
   if ('commands' in update) {
