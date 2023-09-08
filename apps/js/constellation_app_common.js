@@ -19,6 +19,7 @@ export const config = {
     operating_system: String(platform.os),
     browser: platform.name + ' ' + platform.version
   },
+  remoteDisplay: false, // false == we are using the webview app, true == browser
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
   softwareVersion: 3.3,
@@ -283,7 +284,7 @@ function readServerUpdate (update) {
   }
 
   // After we have saved any updates, see if we should change the app
-  if (stringToBool(parseQueryString().get('showSettings')) === false) {
+  if (stringToBool(parseQueryString().get('showSettings')) === false && config.constellationAppID !== 'dmx_control') {
     if ('app_name' in update &&
         ('definition' in update === false || update.definition === '') &&
         update.app_name !== config.constellationAppID &&
@@ -298,7 +299,7 @@ function readServerUpdate (update) {
     }
 
     // Also check the definition file for a changed app.
-    if ('definition' in update && update.definition !== config.currentDefinition) {
+    if (config.constellationAppID !== 'dmx_control' && 'definition' in update && update.definition !== config.currentDefinition) {
       config.currentDefinition = update.definition
       makeHelperRequest({
         method: 'GET',
@@ -389,6 +390,9 @@ function readHelperUpdate (update, changeApp = true) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
   if ('system' in update) {
+    if ('remote_display' in update.system) {
+      config.remoteDisplay = update.system.remote_display
+    }
     if ('remote_viewers' in update.system) {
       if ('anydesk_id' in update.system.remote_viewers) {
         config.AnyDeskID = update.system.remote_viewers.anydesk_id

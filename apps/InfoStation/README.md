@@ -1,9 +1,6 @@
 # InfoStation
 InfoStation provides a touchscreen interface for creating digital labels. It supports text, images, and videos across multiple languages.
 
-## Limitations
-* Optimized for use with a vertical 16:9 display powered by a Linux or Windows PC.
-
 ## Configuration
 
 ### Choosing hardware

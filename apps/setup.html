@@ -75,7 +75,7 @@
             <div class="col-12 mt-3">
               <button id="saveDefaultsButton" class='btn btn-primary' style="width: 150px;">Save changes</button>
               <button id='manageContentButton' type="button" class="btn btn-info ms-2">Manage content</button>
-              <button id='launchAppButton' type="button" class="btn btn-success ms-2">Launch app</button>
+              <button id='launchAppButton' type="button" class="btn btn-success ms-2 app-link" data-app-link="app" data-web-link="/app.html">Launch app</button>
             </div>
           </div>
           <!-- Basic settings -->
@@ -296,7 +296,7 @@
                 <div class="card-body">
                   <h3 class="card-title">DMX Control</h3>
                   <p class="card-text">Control DMX lighting.</p>
-                  <a href="dmx_control.html" target="_blank" class="btn btn-primary mt-1">Launch</a>
+                  <button class="btn btn-primary mt-1 app-link" data-app-link="dmx_control" data-web-link="/dmx_control.html">Launch</button>
                 </div>
               </div>
             </div>
@@ -308,7 +308,7 @@
                 <div class="card-body">
                   <h3 class="card-title">InfoStation</h3>
                   <p class="card-text">Use a touchscreen to explore digital labels containing a combination of text, images, and videos.</p>
-                  <a href="InfoStation/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="infostation_setup" data-web-link="/InfoStation/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                 </div>
               </div>
             </div>
@@ -320,7 +320,7 @@
                 <div class="card-body">
                   <h3 class="card-title">Media Browser</h3>
                   <p class="card-text">Scroll and filter a gallery of images using a touchscreen.</p>
-                  <a href="media_browser/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="media_browser_setup" data-web-link="/media_browser/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                 </div>
               </div>
             </div>
@@ -332,7 +332,7 @@
                 <div class="card-body">
                   <h3 class="card-title">Media Player</h3>
                   <p class="card-text">Digital signage app that loops any combination of audio, images, and video.</p>
-                  <a href="media_player/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="media_player_setup" data-web-link="/media_player/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                 </div>
               </div>
             </div>
@@ -344,7 +344,7 @@
                 <div class="card-body">
                   <h3 class="card-title">Timelapse Viewer</h3>
                   <p class="card-text">Use a variety of input devices to animate through a slideshow of timelapse images.</p>
-                  <a href="timelapse_viewer/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="timelapse_viewer_setup" data-web-link="/timelapse_viewer/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                 </div>
               </div>
             </div>
@@ -356,7 +356,7 @@
                 <div class="card-body">
                   <h3 class="card-title">Timeline Explorer</h3>
                   <p class="card-text">Generate an interactive timeline from a spreadsheet.</p>
-                  <a href="timeline_explorer/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="timeline_explorer_setup" data-web-link="/timeline_explorer/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                 </div>
               </div>
             </div>
@@ -368,7 +368,7 @@
                 <div class="card-body">
                   <h3 class="card-title">Voting Kiosk</h3>
                   <p class="card-text">Collect single-question survey responses and store them on Control Server.</p>
-                  <a href="voting_kiosk/setup.html" target="_blank" class="btn btn-primary mt-1">Configure</a>
+                  <button data-app-link="voting_kiosk_setup" data-web-link="/voting_kiosk/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
                   <br>
                   <label for="votingKioskCSVDownloadSelect" class="form-label mt-2">
                     Download data as CSV
@@ -392,8 +392,8 @@
                 <div class="card-body">
                   <h3 class="card-title">Word Cloud</h3>
                   <p class="card-text">Collect responses and create a word cloud, with profanity checking.</p>
-                  <a href="word_cloud/setup_input.html" target="_blank" class="btn btn-primary mt-1">Configure input</a>
-                  <a href="word_cloud/setup_viewer.html" target="_blank" class="btn btn-primary mt-1">Configure viewer</a>
+                  <button data-app-link="word_cloud_input_setup" data-web-link="/word_cloud/setup_input.html" class="btn btn-primary mt-1 app-link">Configure input</button>
+                  <button data-app-link="word_cloud_viewer_setup" data-web-link="/word_cloud/setup_viewer.html" class="btn btn-primary mt-1 app-link">Configure viewer</button>
                 </div>
               </div>
             </div>

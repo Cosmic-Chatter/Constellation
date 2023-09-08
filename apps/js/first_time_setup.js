@@ -153,7 +153,7 @@ function submitSettings () {
     .then((result) => {
       constCommon.makeHelperRequest({
         method: 'GET',
-        endpoint: '/closeSetupWizard'
+        endpoint: '/app/closeSetupWizard'
       })
     })
 }

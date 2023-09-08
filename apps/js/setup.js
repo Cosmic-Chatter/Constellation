@@ -227,53 +227,28 @@ function downloadDataAsCSV () {
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
-        // Convert the text to a file and initiate download
-        const fileBlob = new Blob([result.csv], {
-          type: 'text/plain'
-        })
-        const a = document.createElement('a')
-        a.href = window.URL.createObjectURL(fileBlob)
-        a.download = name + '.csv'
-        a.click()
+        if (constCommon.config.remoteDisplay === false) {
+          // Ask the app to create a save dialog
+          constCommon.makeHelperRequest({
+            method: 'POST',
+            endpoint: '/app/saveFile',
+            params: {
+              data: result.csv,
+              filename: name + '.csv'
+            }
+          })
+        } else {
+          // Ask the browser to initiate a download
+          const fileBlob = new Blob([result.csv], {
+            type: 'text/plain'
+          })
+          const a = document.createElement('a')
+          a.href = window.URL.createObjectURL(fileBlob)
+          a.download = name + '.csv'
+          a.click()
+        }
       }
     })
-}
-
-function showAppHelpMOdal (app) {
-  // Ask the helper to send the relavent README.md file and display it in the modal
-
-  const endpointStems = {
-    dmx_control: '/dmx_control/',
-    infostation: '/InfoStation/',
-    media_browser: '/media_browser/',
-    media_player: '/media_player/',
-    timelapse_viewer: '/timelapse_viewer/',
-    timeline_explorer: '/timeline_explorer/',
-    voting_kiosk: '/voting_kiosk/',
-    word_cloud: '/word_cloud/'
-  }
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: endpointStems[app] + 'README.md',
-    rawResponse: true
-  })
-    .then((result) => {
-      const formattedText = markdownConverter.makeHtml(result)
-      // Add the formatted text
-      $('#helpTextDiv').html(formattedText)
-      // Then, search the children for images and fix the links with the right endpoints
-      $('#helpTextDiv').find('img').each((i, img) => {
-        // Strip off the http://localhost:8000/ porition
-        const src = img.src.split('/').slice(3).join('/')
-        // Rebuild the correct path
-        img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
-        img.style.maxWidth = '100%'
-      })
-      $('#helpTextDiv').parent().parent().scrollTop(0)
-    })
-
-  $('#appHelpModal').modal('show')
 }
 
 function populateHelpTab () {
@@ -328,6 +303,25 @@ function populateAvailableDefinitions () {
     })
 }
 
+function gotoAppLink (el) {
+  // Navigate to the link given by element el, either in the browser or in the webview
+
+  if (constCommon.config.remoteDisplay === true) {
+    // Switch webpages in the browser
+
+    const endpoint = el.getAttribute('data-web-link')
+    window.open(window.location.origin + endpoint, '_blank').focus()
+  } else {
+    // Launch the appropriate webview page in the app
+
+    const page = el.getAttribute('data-app-link')
+    constCommon.makeHelperRequest({
+      method: 'GET',
+      endpoint: '/app/showWindow/' + page
+    })
+  }
+}
+
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'settings'
@@ -348,6 +342,14 @@ populateAvailableData()
 populateAvailableDefinitions()
 
 // Add event handlers
+
+// Activate app links
+Array.from(document.querySelectorAll('.app-link')).forEach((el) => {
+  el.addEventListener('click', (event) => {
+    gotoAppLink(event.target)
+  })
+})
+
 // Settings page
 document.getElementById('saveDefaultsButton').addEventListener('click', (event) => {
   saveConfiguration()

@@ -1,5 +1,5 @@
 # Standard modules
-from functools import lru_cache
+from functools import lru_cache, partial
 import io
 import mimetypes
 import os
@@ -947,13 +947,29 @@ async def delete_dmx_universe(universe_uuid: str):
     return {"success": True}
 
 
-@app.get('/closeSetupWizard')
+@app.get('/app/closeSetupWizard')
 def close_setup_wizard():
     """Destroy the setup wizard webview"""
 
     for window in webview.windows:
         if window.title == 'Constellation Apps Setup':
             window.destroy()
+
+
+@app.get('/app/showWindow/{window}')
+def show_webview_window(window: str):
+    """Show the requested webview window"""
+
+    helper_webview.show_webview_window(window)
+
+
+@app.post('/app/saveFile')
+def save_file_from_webview(data: str = Body(description='The string data to save to file'),
+                           filename: str = Body(description="The default filename to provide",
+                                                default="download.txt")):
+    """Ask the webview to create a file save dialog."""
+
+    helper_webview.save_file(data, filename)
 
 
 def bootstrap_app(port):
@@ -1068,7 +1084,37 @@ if __name__ == "__main__":
                 webview_menu.Menu(
                     'Settings',
                     [
-                        webview_menu.MenuAction('Show settings', helper_webview.show_webview_settings)
+                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings')),
+                        webview_menu.Menu('Configure',
+                                          [
+                                              webview_menu.MenuAction('DMX Control',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'dmx_control')),
+                                              webview_menu.MenuAction('InfoStation',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'infostation_setup')),
+                                              webview_menu.MenuAction('Media Browser',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'media_browser_setup')),
+                                              webview_menu.MenuAction('Media Player',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'media_player_setup')),
+                                              webview_menu.MenuAction('Timelapse Viewer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'timelapse_viewer_setup')),
+                                              webview_menu.MenuAction('Timeline Explorer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'timeline_explorer_setup')),
+                                              webview_menu.MenuAction('Voting Kiosk',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'voting_kiosk_setup')),
+                                              webview_menu.MenuAction('Word Cloud Input',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'word_cloud_input_setup')),
+                                              webview_menu.MenuAction('Word Cloud Viewer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'word_cloud_viewer_setup')),
+                                          ])
                     ]
                 )
             ]
