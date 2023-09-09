@@ -351,17 +351,17 @@ async def write_definition(definition: dict[str, Any] = Body(description="The JS
     return {"success": True, "uuid": definition["uuid"]}
 
 
-@app.post("/deleteFile")
-async def delete_file(data: dict[str, Any], config: const_config = Depends(get_config)):
-    """Delete the specified file from the content directory"""
+@app.post("/file/delete")
+async def delete_file(file: str | list[str] = Body(description="The file(s) to delete", embed=True)):
+    """Delete the specified file(s) from the content directory"""
 
-    if "file" in data:
-        helper_files.delete_file(data["file"])
-        response = {"success": True}
+    if isinstance(file, list):
+        for entry in file:
+            helper_files.delete_file(entry)
     else:
-        response = {"success": False,
-                    "reason": "Request missing field 'file'"}
-    return response
+        helper_files.delete_file(file)
+
+    return {"success": True}
 
 
 @app.post("/renameFile")

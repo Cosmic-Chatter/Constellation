@@ -195,7 +195,8 @@ export function createFileSelectionModal (userOptions) {
       // Only add this listener the first time we create a file select modal
       document.addEventListener('click', (event) => {
         if (event.target.getAttribute('id') !== 'fileDeletePopover') return
-        deleteFile()
+        const file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
+        deleteFiles([file])
       })
       document.body.setAttribute('data-fileDeletePopoverEventAdded', 'true')
     }
@@ -602,23 +603,22 @@ function uploadFile (options) {
   }
 }
 
-function deleteFile (file = '') {
-  // Delete the current file in the preview pane
+function deleteFiles (files) {
+  // Delete the given files
 
-  if (file === '') file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
-
-  console.log('Deleting file:', file)
   constCommon.makeHelperRequest({
     method: 'POST',
-    endpoint: '/deleteFile',
-    params: { file }
+    endpoint: '/file/delete',
+    params: { file: files }
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
-        const entry = document.getElementById('constFileSelectModal').querySelector(`.const-file-entry[data-filename="${file}"]`)
-        previewFile('', [])
-        document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', '')
-        entry.parentElement.removeChild(entry)
+        files.forEach((file) => {
+          const entry = document.getElementById('constFileSelectModal').querySelector(`.const-file-entry[data-filename="${file}"]`)
+          previewFile('', [])
+          document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', '')
+          entry.parentElement.removeChild(entry)
+        })
       }
     })
 }
@@ -627,10 +627,11 @@ function deleteMultipleFiles () {
   // Delete all selected files.
 
   const filesToDelete = document.querySelectorAll('.const-file-select-box.const-file-selected')
+  const filenamesToDelete = []
   filesToDelete.forEach((el) => {
-    const filename = el.getAttribute('data-filename')
-    deleteFile(filename)
+    filenamesToDelete.push(el.getAttribute('data-filename'))
   })
+  deleteFiles(filenamesToDelete)
 }
 
 function showRenameField () {

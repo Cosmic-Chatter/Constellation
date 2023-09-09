@@ -394,7 +394,7 @@ function deleteLanguageFlag (lang) {
   // Delete from server
   constCommon.makeHelperRequest({
     method: 'POST',
-    endpoint: '/deleteFile',
+    endpoint: '/file/delete',
     params: {
       file: flag
     }
