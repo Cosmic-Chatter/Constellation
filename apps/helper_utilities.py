@@ -178,12 +178,14 @@ def handle_missing_defaults_file():
         "app": {},
         "control_server": {},
         "permissions": {},
-        "system": {}
+        "system": {
+            "remote_display": True
+        }
     }
 
     command_line_setup_print_gui()
 
-    print("Press enter to continue...")
+    print("Press Enter to continue...")
     _ = input()
 
     command_line_setup_print_gui()
@@ -205,117 +207,69 @@ def handle_missing_defaults_file():
         defaults["system"]["standalone"] = False
     else:
         defaults["system"]["standalone"] = True
-    #
-    # this_id = input("Enter a unique ID for this app (default: TEMP): ").strip()
-    # if this_id == "":
-    #     this_id = "TEMP"
-    # settings_dict["id"] = this_id
-    #
-    # command_line_setup_print_gui()
-    #
-    # print("Groups are used to organize multiple related apps (for")
-    # print("example, apps in the same gallery.) Every app must be")
-    # print("part of a group.")
-    # print("")
-    #
-    # this_group = input("Enter a group for this app (default: Default): ").strip()
-    # if this_group == "":
-    #     this_group = "Default"
-    # settings_dict["group"] = this_group
-    #
-    # command_line_setup_print_gui()
-    #
-    # print("Constellation apps are controlled by Constellation Control")
-    # print("Server. You must run Control Server, either on this PC or")
-    # print("on another PC on this network. When setting up Control")
-    # print("Server, you will select a static IP address and a port,")
-    # print("which you need to provide to Constellation Apps now.")
-    # print("")
-    #
-    #
-    # ip_address = input(f"Enter the static Constellation Control Server IP address. If you do not know what this is, ask your system administrator. (default: localhost): ").strip()
-    # if ip_address == "":
-    #     ip_address = 'localhost'
-    # settings_dict["server_ip_address"] = ip_address
-    #
-    # command_line_setup_print_gui()
-    #
-    # print("Constellation apps are controlled by Constellation Control")
-    # print("Server. You must run Control Server, either on this PC or")
-    # print("on another PC on this network. When setting up Control")
-    # print("Server, you will select a static IP address and a port,")
-    # print("which you need to provide to Constellation Apps now.")
-    # print("")
-    #
-    # server_port = input(
-    #     f"Enter the port for the Constellation Control Server. If you do not know what this is, ask your system administrator. (default: 8082): ").strip()
-    # if server_port == "":
-    #     server_port = '8082'
-    # settings_dict["server_port"] = server_port
-    #
-    # this_port = 8000
-    # port_available = False
-    # while port_available is False:
-    #     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     try:
-    #         s.bind(("127.0.0.1", this_port))
-    #         port_available = True
-    #     except socket.error as e:
-    #         if e.errno == errno.EADDRINUSE:
-    #             this_port += 1
-    #         else:
-    #             # Something else raised the socket.error exception
-    #             print(e)
-    #
-    #     s.close()
-    #
-    # command_line_setup_print_gui()
-    #
-    # print("Constellation Apps commuicates with the browser through a")
-    # print("network port. The same port cannot be used by multiple")
-    # print("apps on the same PC.")
-    # print("")
-    #
-    # helper_port = input(
-    #     f"Enter the port for this app. If you do not know what this is, ask your system administrator. (default: {this_port}): ").strip()
-    # if helper_port == "":
-    #     helper_port = str(this_port)
-    # settings_dict["helper_port"] = helper_port
-    #
-    # location = ""
-    # while location.lower() != 'local' and location.lower() != 'remote':
-    #     command_line_setup_print_gui()
-    #
-    #     print("If this PC will host the interface for the app, it is")
-    #     print("a 'local' app. If the interface for this app will be")
-    #     print("on another device (such as an iPad), this is a")
-    #     print("'remote' app.")
-    #     print("")
-    #
-    #     location = input(
-    #         "Will the app be displayed on this local computer or on a remote device? [local | remote] (default: local): "
-    #     )
-    #     if location == "":
-    #         location = "local"
-    #
-    # if location == 'local':
-    #     settings_dict["remote_display"] = False
-    # else:
-    #     settings_dict["remote_display"] = True
-    #
-    # config.defaults_object.read_dict({"CURRENT": settings_dict})
-    # update_defaults(settings_dict, force=True)
-    #
-    # command_line_setup_print_gui()
-    #
-    # print("Through the web console on Constellation Control Server,")
-    # print("you can peek at the current state of the app by viewing")
-    # print("a screenshot. These screenshots are not stored and never")
-    # print("leave your local network.")
-    # print("")
-    #
-    # _ = input("Constellation Apps will now check for permission to capture screenshots (Press Enter to continue).")
-    # _ = capture_screenshot()
+
+    if defaults["system"]["standalone"] is False:
+        command_line_setup_print_gui()
+
+        print("--- Control Server ---")
+        print("")
+        ip = input("Enter the Control Server's static IP address (default=localhost): ").strip()
+        if ip == "":
+            ip = "localhost"
+        port = input("Enter the Control Server's port (default=8082): ").strip()
+        if port == "":
+            port = 8082
+        defaults["control_server"]["ip_address"] = ip
+        defaults["control_server"]["port"] = int(port)
+
+    command_line_setup_print_gui()
+
+    print("--- Select a port ---")
+    print("")
+    print("After completing setup, you will access Constellation Apps using the web address")
+    print("http://localhost:[port]. Which network port would you like to use?")
+    default_port = find_available_port()
+
+    port_to_use = input(f"Enter port (default={default_port}): ").strip()
+    if port_to_use == "":
+        port_to_use = default_port
+    defaults["system"]["port"] = int(port_to_use)
+
+    if defaults["system"]["standalone"] is False:
+        command_line_setup_print_gui()
+        print("--- Component Details ---")
+        print("")
+        print(" Since we're using Control Server, we need to identify this component. Each app")
+        print("instance needs:")
+        print("  - An ID, which uniquely identifies this component. A good ID might be")
+        print("    something like 'Sports Intro Video'.")
+        print("  - A group, which collects together related components. You might choose to")
+        print("    group by gallery, such as 'Sports Gallery', by purpose, like 'Video', or")
+        print("    something else.")
+
+        this_id = ""
+        while this_id == "":
+            this_id = input("Enter ID: ").strip()
+        group = ""
+        while group == "":
+            group = input("Enter group: ").strip()
+        defaults["app"]["id"] = this_id
+        defaults["app"]["group"] = group
+
+        command_line_setup_print_gui()
+
+        print("--- Screenshots ---")
+        print("")
+        print("Through the web console on Constellation Control Server, you can peek at the")
+        print("current state of the app by viewing a screenshot. These screenshots are  not")
+        print("stored and never leave your local network.")
+        print("")
+
+        print("Constellation Apps will now check for permission to capture screenshots.")
+        _ = input("Press Enter to continue...")
+        _ = capture_screenshot()
+
+    update_defaults(defaults, cull=True)
 
 
 def find_available_port(start=8000):
