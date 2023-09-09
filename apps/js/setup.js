@@ -167,11 +167,23 @@ function configureInterface () {
     document.getElementById('smartRestartPane').style.display = 'none'
     document.getElementById('permissionsPane').style.display = 'none'
   }
+  // Remote display
   if (document.getElementById('useRemoteDisplayToggle').checked === true) {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'block'
   } else {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'none'
   }
+  constCommon.makeHelperRequest({
+    method: "GET",
+    endpoint: "/system/getPlatformDetails"
+  })
+    .then((result) => {
+      if (result.os === 'linux') {
+        document.getElementById('useRemoteDisplayToggle').setAttribute('disabled', true)
+      }
+    })
+
+  // Smart Restart
   if (document.getElementById('smartRestartStateSelect').value === 'off') {
     Array.from(document.querySelectorAll('.smart-restart-options-div')).forEach((el) => {
       el.style.display = 'none'

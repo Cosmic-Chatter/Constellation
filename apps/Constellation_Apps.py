@@ -3,6 +3,7 @@ from functools import lru_cache, partial
 import io
 import mimetypes
 import os
+import platform
 import shutil
 import sys
 import threading
@@ -25,7 +26,7 @@ import helper_system
 import helper_utilities
 
 # If we're not on Linux, prepare to use the webview
-if sys.platform != 'liux':
+if sys.platform != 'linux':
     import webview
     import webview.menu as webview_menu
 
@@ -208,6 +209,25 @@ def upload_thumbnail(files: list[UploadFile] = File(),
             # Finally, delete the source file
             os.remove(temp_path)
     return {"success": True}
+
+
+@app.get('/system/getPlatformDetails')
+async def get_platform_details():
+    """Return details on the current operating system."""
+
+    details = {
+        "architecture": platform.architecture()[0],
+        "os_version": platform.release()
+    }
+
+    os = sys.platform
+    if os == "darwin":
+        os = 'macOS'
+    elif os == "win32":
+        os = "Windows"
+    details["os"] = os
+
+    return details
 
 
 @app.get('/system/getScreenshot', responses={200: {"content": {"image/png": {}}}}, response_class=Response)
