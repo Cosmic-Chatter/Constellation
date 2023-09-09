@@ -150,13 +150,10 @@ async def serve_readme():
 async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
 
-    active_content = config.defaults["app"].get("content", [])
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
                 "definitions": helper_files.get_available_definitions(),
                 "thumbnails": helper_files.get_directory_contents("thumbnails"),
-                "active_content": active_content,
-                "system_stats": helper_utilities.get_system_stats(),
-                "multiple_file_upload": True}
+                "system_stats": helper_utilities.get_system_stats()}
 
     return response
 
