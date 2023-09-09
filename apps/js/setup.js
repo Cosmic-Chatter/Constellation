@@ -368,6 +368,9 @@ Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {
 document.getElementById('smartRestartStateSelect').addEventListener('change', (event) => {
   configureInterface()
 })
+document.getElementById('useRemoteDisplayToggle').addEventListener('change', (event) => {
+  document.getElementById('remoteDisplayRestartRequiredWarning').style.display = 'block'
+})
 
 // Apps page
 document.getElementById('votingKioskCSVDownloadButton').addEventListener('click', downloadDataAsCSV)

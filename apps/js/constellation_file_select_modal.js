@@ -28,7 +28,7 @@ export function createFileSelectionModal (userOptions) {
           </div>
           <div class="modal-body">
             <div class="row mb-2">
-              <div class='col-4'>
+              <div class='col-4 col-sm-3 col-lg-2'>
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" value="" id="constFileSelectModalThumbnailCheckbox" checked>
                   <label class="form-check-label" for="constFileSelectModalThumbnailCheckbox">
@@ -36,7 +36,19 @@ export function createFileSelectionModal (userOptions) {
                   </label>
                 </div>
               </div>
-              <div class="offset-2 col-6 offset-lg-4 col-lg-4">
+              <div class='col-4 col-md-3 col-lg-2'>
+                <div id="selectAllCol" class="dropdown">
+                  <button class="btn btn-sm btn-primary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Multiple
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class='dropdown-item disabled fst-italic small'>Affects only items that <br>aren't filtered out</a></li>
+                    <li><a id='selectAllButton' class="dropdown-item text-primary" style="cursor: pointer;">Select all</a></li>
+                    <li><a id='deselectAllButton' class="dropdown-item text-primary" style="cursor: pointer;">Unselect all</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-4 col-sm-5 col-md-6 offset-lg-4 col-lg-4">
               <div class="input-group input-group-sm">
                 <input id="constFileSelectModalSearchField" type="text" placeholder="Search" class="form-control" aria-label="Search">
               </div>
@@ -106,6 +118,12 @@ export function createFileSelectionModal (userOptions) {
                       </div>
                     </div>
                     <div class='col-12 text-danger mt-2' id='constFileSelectModalUploadOverwriteWarning'>Warning: this upload will overwrite a file of the same name.</div>
+
+                    <div id="constFileSelectModalDeleteMultipleButtonCol" class="col-6 col-sm-4" style="display: none;">
+                      <div id="constFileSelectModalDeleteMultipleFileButton">
+                        <button class='btn btn-danger w-100' data-bs-toggle='popover' title='Are you sure?' data-bs-content='<a id="fileDeleteMultiplePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger='focus' data-bs-html='true'>Delete multiple</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -129,6 +147,17 @@ export function createFileSelectionModal (userOptions) {
           el.style.display = 'none'
         }
       })
+    })
+
+    // (de)select all button
+    if (options.multiple === false && options.manage === false) {
+      document.getElementById('selectAllCol').style.display = 'none'
+    }
+    document.getElementById('selectAllButton').addEventListener('click', (event) => {
+      selectAllFiles()
+    })
+    document.getElementById('deselectAllButton').addEventListener('click', (event) => {
+      deselectAllFiles()
     })
 
     // Search field
@@ -161,10 +190,6 @@ export function createFileSelectionModal (userOptions) {
     // File delete
     const deleteBUtton = document.getElementById('constFileSelectModalDeleteFileButton')
     deleteBUtton.addEventListener('click', function () { deleteBUtton.focus() })
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-    popoverTriggerList.map(function (popoverTriggerEl) {
-      return new bootstrap.Popover(popoverTriggerEl)
-    })
 
     if (document.body.getAttribute('data-fileDeletePopoverEventAdded') !== 'true') {
       // Only add this listener the first time we create a file select modal
@@ -175,6 +200,20 @@ export function createFileSelectionModal (userOptions) {
       document.body.setAttribute('data-fileDeletePopoverEventAdded', 'true')
     }
 
+    // Delete multiple
+    const deleteMultipleBUtton = document.getElementById('constFileSelectModalDeleteMultipleFileButton')
+    deleteMultipleBUtton.addEventListener('click', function () { deleteMultipleBUtton.focus() })
+
+    if (document.body.getAttribute('data-fileMultipleDeletePopoverEventAdded') !== 'true') {
+      // Only add this listener the first time we create a file select modal
+      document.addEventListener('click', (event) => {
+        if (event.target.getAttribute('id') !== 'fileDeleteMultiplePopover') return
+        deleteMultipleFiles()
+      })
+      document.body.setAttribute('data-fileMultipleDeletePopoverEventAdded', 'true')
+    }
+
+    // Choose button
     document.getElementById('constFileSelectModalChooseButton').addEventListener('click', () => {
       modal.querySelectorAll('.const-file-selected').forEach((el) => {
         selectedFiles.push(el.getAttribute('data-filename'))
@@ -215,12 +254,15 @@ export function createFileSelectionModal (userOptions) {
         // Configure manage vs select
         if (options.manage === true) {
           document.getElementById('constFileSelectModalChooseButton').style.display = 'none'
-          Array.from(document.querySelectorAll('.const-file-select-col')).forEach((el) => {
-            el.style.display = 'none'
-          })
         }
         new bootstrap.Modal(modal).show()
       })
+
+    // Activate popovers
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+    popoverTriggerList.map(function (popoverTriggerEl) {
+      return new bootstrap.Popover(popoverTriggerEl)
+    })
   })
 }
 
@@ -231,8 +273,10 @@ function filterComponentContent (strToMatch) {
     const filename = el.getAttribute('data-filename')
     if (filename.toLowerCase().includes(strToMatch.toLowerCase())) {
       el.style.display = 'flex'
+      el.setAttribute('data-filtered-out', 'false')
     } else {
       el.style.display = 'none'
+      el.setAttribute('data-filtered-out', 'true')
     }
   })
 }
@@ -282,6 +326,7 @@ function _populateComponentContent (fileDict, options) {
 
     const entry = document.createElement('div')
     entry.classList = 'col-12 row py-2 ps-4 const-file-entry'
+    entry.setAttribute('data-filtered-out', 'false')
     entry.innerHTML = `
       <div class='col-1 my-auto px-0 const-file-select-col' style="cursor: pointer;">
         <center>
@@ -314,7 +359,7 @@ function _populateComponentContent (fileDict, options) {
     // Checkbox
     const check = entry.querySelector('.const-file-select-box')
     check.addEventListener('click', (event) => {
-      selectFile(event, options.multiple)
+      selectFile(event.target, options.multiple)
     })
     check.setAttribute('data-filename', file)
 
@@ -420,11 +465,9 @@ export function getDefaultAudioIcon () {
   else return '/_static/icons/audio_black.svg'
 }
 
-function selectFile (event, allowMultiple) {
+function selectFile (target, allowMultiple) {
   // Called when the user clicks the checkbox on a file. If allowMultiple=false,
   // selecting one file unselects the others.
-
-  const target = event.target
 
   if (target.classList.contains('const-file-selected')) {
     target.classList.remove('const-file-selected', 'bg-success')
@@ -440,6 +483,39 @@ function selectFile (event, allowMultiple) {
     target.classList.add('const-file-selected', 'bg-success')
     target.innerHTML = '✓'
   }
+
+  // Check if multiple files are selected and show/hide the delete multiple button
+  if (allowMultiple === true) {
+    if (document.querySelectorAll('.const-file-select-box.const-file-selected').length > 1) {
+      document.getElementById('constFileSelectModalDeleteMultipleButtonCol').style.display = 'block'
+    } else {
+      document.getElementById('constFileSelectModalDeleteMultipleButtonCol').style.display = 'none'
+    }
+  }
+}
+
+function selectAllFiles () {
+  // Select all files that have not been filtered out.
+
+  document.getElementById('constFileSelectModalFileList').querySelectorAll('.const-file-entry').forEach((el) => {
+    if (el.getAttribute('data-filtered-out') === 'true') return
+    const checkbox = el.querySelector('.const-file-select-box')
+    checkbox.classList.add('const-file-selected', 'bg-success')
+    checkbox.innerHTML = '✓'
+  })
+
+  document.getElementById('constFileSelectModalDeleteMultipleButtonCol').style.display = 'block'
+}
+
+function deselectAllFiles () {
+  // Uncheck all files that are not filtered out
+
+  document.getElementById('constFileSelectModalFileList').querySelectorAll('.const-file-entry').forEach((el) => {
+    if (el.getAttribute('data-filtered-out') === 'true') return
+    const checkbox = el.querySelector('.const-file-select-box')
+    checkbox.classList.remove('const-file-selected', 'bg-success')
+    checkbox.innerHTML = ''
+  })
 }
 
 function onUploadContentChange () {
@@ -526,10 +602,11 @@ function uploadFile (options) {
   }
 }
 
-function deleteFile () {
+function deleteFile (file = '') {
   // Delete the current file in the preview pane
 
-  const file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
+  if (file === '') file = document.getElementById('constFileSelectModalFilePreview').getAttribute('data-filename')
+
   console.log('Deleting file:', file)
   constCommon.makeHelperRequest({
     method: 'POST',
@@ -544,6 +621,16 @@ function deleteFile () {
         entry.parentElement.removeChild(entry)
       }
     })
+}
+
+function deleteMultipleFiles () {
+  // Delete all selected files.
+
+  const filesToDelete = document.querySelectorAll('.const-file-select-box.const-file-selected')
+  filesToDelete.forEach((el) => {
+    const filename = el.getAttribute('data-filename')
+    deleteFile(filename)
+  })
 }
 
 function showRenameField () {
