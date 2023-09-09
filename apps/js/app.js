@@ -22,9 +22,24 @@ constCommon.askForDefaults()
       // Using Control Server
       constCommon.sendPing()
       setInterval(constCommon.sendPing, 5000)
-      if (constCommon.config.connectionChecker != null) setInterval(config.connectionChecker, 500)
+      if (constCommon.config.connectionChecker != null) setInterval(constCommon.config.connectionChecker, 500)
     } else {
       // Not using Control Server
       constCommon.loadDefinition(constCommon.config.currentDefinition)
     }
   })
+
+document.getElementById('settingsButton').addEventListener('click', (event) => {
+  if (constCommon.config.remoteDisplay === true) {
+    // Switch webpages in the browser
+
+    window.open(window.location.origin + '/setup.html', '_blank').focus()
+  } else {
+    // Launch the appropriate webview page in the app
+
+    constCommon.makeHelperRequest({
+      method: 'POST',
+      endpoint: '/app/showWindow/settings'
+    })
+  }
+})

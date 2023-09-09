@@ -956,11 +956,14 @@ def close_setup_wizard():
             window.destroy()
 
 
-@app.get('/app/showWindow/{window}')
-def show_webview_window(window: str):
+@app.post('/app/showWindow/{window}')
+def show_webview_window(window: str,
+                        reload: bool = Body(description="Should the window be reloaded if it already exists?",
+                                            embed=True,
+                                            default=False)):
     """Show the requested webview window"""
 
-    helper_webview.show_webview_window(window)
+    helper_webview.show_webview_window(window, reload=reload)
 
 
 @app.post('/app/saveFile')

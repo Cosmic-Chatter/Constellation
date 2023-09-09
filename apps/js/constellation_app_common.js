@@ -661,6 +661,7 @@ export function appNameToDisplayName (appName) {
     infostation: 'InfoStation',
     media_browser: 'Media Browser',
     media_player: 'Media Player',
+    other: 'Other app',
     settings: 'Settings',
     timelapse_viewer: 'Timelapse Viewer',
     timeline_explorer: 'Timeline Explorer',

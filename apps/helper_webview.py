@@ -42,8 +42,10 @@ def on_moved(x, y):
     pass
 
 
-def show_webview_window(app):
-    """Create a window for the given app, or bring it to the front if it already exists."""
+def show_webview_window(app, reload=False):
+    """Create a window for the given app, or bring it to the front if it already exists.
+    If reload=True, reload the window if it already exists.
+    """
 
     endpoints = {
         "app": "/app.html",
@@ -81,6 +83,8 @@ def show_webview_window(app):
     for window in webview.windows:
         if window.title == 'Constellation Apps - ' + names[app] or \
                 (app == 'app' and window.title == 'Constellation Apps'):
+            if reload:
+                reload_window(window)
             window.show()
             return
 
@@ -99,3 +103,9 @@ def save_file(data, default_filename: str):
 
     with open(result, 'w', encoding='UTF-8') as f:
         f.write(data)
+
+
+def reload_window(window: webview.Window):
+    """Get the current URL and load it again."""
+
+    window.load_url(window.get_current_url())

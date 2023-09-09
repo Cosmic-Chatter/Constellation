@@ -315,9 +315,14 @@ function gotoAppLink (el) {
     // Launch the appropriate webview page in the app
 
     const page = el.getAttribute('data-app-link')
+    let reload = false
+    if (page === 'app') {
+      reload = true
+    }
     constCommon.makeHelperRequest({
-      method: 'GET',
-      endpoint: '/app/showWindow/' + page
+      method: 'POST',
+      endpoint: '/app/showWindow/' + page,
+      params: { reload }
     })
   }
 }

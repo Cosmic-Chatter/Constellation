@@ -13,6 +13,11 @@
     <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
 
     <style>
+      #welcomeDiv {
+        width: 50%;
+        margin-left: 25%;
+        margin-top: 25%;
+      }
     </style>
   </head>
 
@@ -27,11 +32,22 @@
     </div>
   </div>
 
+<main class="container">
+  <div id="welcomeDiv" class="alert alert-primary">
+    <div class="h3 text-center">Welcome to Constellation Apps</div>
+    <p>
+      This window will display your app's content, but first you need to create a definition. To do that, visit settings.
+    </p>
+    <div class="text-center">
+      <button id="settingsButton" class="btn btn-success">Go to settings</button>
+    </div>  
+  </div>
+</main>
+
 
   <script src="js/jquery-3.6.1.min.js"></script>
   <script src="js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
   <script src="js/platform.js"></script>
-
   <script type="module" src="js/app.js"></script>
   </body>
 
