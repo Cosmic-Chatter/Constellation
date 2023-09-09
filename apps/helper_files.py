@@ -427,7 +427,7 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
         raise ValueError('file_type must be one of "jpg", "png", "webp"')
     try:
         input_path = get_path(['content', filename], user_file=True)
-        output_path = '.'.join(input_path.split('.')[0:-1]) + '_%06d.' + file_type
+        output_path = '.'.join(input_path.split('.')[0:-1]).replace(" ", "_") + '_%06d.' + file_type
         if file_type == 'jpg':
             args = [ffmpeg_path, "-i", input_path, "-qscale:v", "4", output_path]
         elif file_type == 'png':
