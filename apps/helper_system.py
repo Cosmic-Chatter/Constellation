@@ -110,6 +110,9 @@ def smart_restart_check():
     timer.daemon = True
     timer.start()
 
+    if config.defaults["system"]["standalone"] is True:
+        return
+
     # Then, ping the server
     headers = {'Content-type': 'application/json'}
 
