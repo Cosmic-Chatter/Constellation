@@ -9,6 +9,7 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 from typing import Any, Union
 
 # Non-standard imports
@@ -436,9 +437,9 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
             args = [ffmpeg_path, "-i", input_path, "-quality", "90", output_path]
 
         process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="UTF-8")
-        # process.communicate(timeout=3600)
-        # if process.returncode != 0:
-        #     success = False
+        th = threading.Thread(target=_create_thumbnails_for_converted_video, args=[process], daemon=True)
+        th.start()
+
     except OSError as e:
         print("convert_video_to_frame: error:", e)
         success = False
@@ -449,9 +450,18 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
         print("convert_video_to_frame: conversion timed out: ", e)
         success = False
 
-    create_missing_thumbnails()
-
     return success
+
+
+def _create_thumbnails_for_converted_video(process: subprocess.Popen):
+    """Join the given process and create thumbnails when it is complete."""
+
+    try:
+        process.communicate(timeout=3600)
+    except subprocess.TimeoutExpired as e:
+        print("convert_video_to_frame: conversion timed out: ", e)
+        pass
+    create_missing_thumbnails()
 
 
 def get_thumbnail_name(filename: str, force_image=False) -> str:
