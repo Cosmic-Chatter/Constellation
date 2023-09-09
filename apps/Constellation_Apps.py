@@ -16,8 +16,6 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
 import uvicorn
-import webview
-import webview.menu as webview_menu
 
 # Constellation modules
 import config as const_config
@@ -25,7 +23,13 @@ import helper_dmx
 import helper_files
 import helper_system
 import helper_utilities
-import helper_webview
+
+# If we're not on Linux, prepare to use the webview
+if sys.platform != 'liux':
+    import webview
+    import webview.menu as webview_menu
+
+    import helper_webview
 
 # Set up log file
 log_path: str = helper_files.get_path(["apps.log"], user_file=True)
@@ -1035,8 +1039,8 @@ if __name__ == "__main__":
     else:
         # We need to create a config.json file based on user input.
 
-        if sys.platform == 'linux' and getattr(sys, 'frozen', False) is True:
-            # Linux apps compiled with Pyinstaller can't use the GUI
+        if sys.platform == 'linux' :
+            # Linux apps can't use the GUI
             helper_utilities.handle_missing_defaults_file()
         else:
             print('config.json file not found! Bootstrapping server.')

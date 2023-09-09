@@ -155,14 +155,17 @@ def command_line_setup_print_gui() -> None:
     """Helper to print the header content for the setup tool"""
 
     clear_terminal()
-    print("##########################################################")
-    print("Welcome to Constellation Apps!")
+    print("################################################################################")
+    print("                      Welcome to Constellation Apps!")
     print("")
-    print("This appears to be your first time running an app in this")
-    print("directory. In order to set up your configuration, let's")
-    print("answer a few questions. If you don't know the answer, or")
-    print("wish to accept the default, just press the enter key.")
-    print("##########################################################")
+    print("Constellation Apps is a collection of software that helps you put your digital")
+    print("content front-and-center. It's a powerful yet intuitive way to build guest-")
+    print("facing digital interactives for use on the museum floor.")
+    print("")
+    print("Since this is your first time running Apps in this directory, we need to set up")
+    print("a few things before you can get started. If you don't know the answer, or wish")
+    print("to accept the default, just press the enter key.")
+    print("################################################################################")
     print("")
 
 
@@ -171,10 +174,37 @@ def handle_missing_defaults_file():
 
     """Prompt the user for several pieces of information on first-time setup"""
 
-    print("++++++++++ NEED NEW config.json SETUP")
-    # settings_dict = {"current_exhibit": "default"}
-    #
-    # command_line_setup_print_gui()
+    defaults = {
+        "app": {},
+        "control_server": {},
+        "permissions": {},
+        "system": {}
+    }
+
+    command_line_setup_print_gui()
+
+    print("Press enter to continue...")
+    _ = input()
+
+    command_line_setup_print_gui()
+
+    print("--- Control Server ---")
+    print("")
+    print("Constellation Control Server helps you configure and control multiple")
+    print("interactives from anywhere in your museum. With Control Server, you can:")
+    print("  - See the status of every interactive using Apps.")
+    print("  - Power on or off many types of projectors.")
+    print("  - Create daily schedules that automatically power on or off devices, change")
+    print("    digital signage, or even switch interactives.")
+    print("  - Collect and log evaluation data and analytics.")
+    print("  - Track exhibit maintenance.")
+    print("")
+
+    control_server = input("Use Control Server [Y/N] (default: N): ").strip()
+    if control_server.lower() == "y":
+        defaults["system"]["standalone"] = False
+    else:
+        defaults["system"]["standalone"] = True
     #
     # this_id = input("Enter a unique ID for this app (default: TEMP): ").strip()
     # if this_id == "":
