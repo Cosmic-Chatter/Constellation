@@ -188,6 +188,38 @@ async def create_thumbnail_video_from_frames(
     return {"success": success}
 
 
+@app.post('/files/generateThumbnail')
+def generate_thumbnail(source: str | list[str] = Body(description='The file(s) in content to generate thumbnails for'),
+                       mimetype: str | list[str] = Body(description='One of [image | video] that gives the mimetype of the file. Must have the same length as source.'),
+                       width: int = Body(description="The pixel width of the thumbnails.",
+                                         default=400)):
+    """Generate new thumbnail(s) from files in teh content directory"""
+
+    if isinstance(source, str):
+        source = [source]
+    if isinstance(mimetype, str):
+        mimetype = [mimetype]
+
+    if len(source) != len(mimetype):
+        return {"success": False, "reason": "source and mimetype must have the same length."}
+
+    request_success = True
+    request_reason = ""
+    for i in range(len(source)):
+        file = source[i]
+        file_mime = mimetype[i]
+
+        success, reason = helper_files.create_thumbnail(file, file_mime, block=True, width=width)
+        if success is False and reason == "ImportError":
+            request_success = False
+            request_reason = "FFmpeg not found"
+
+    result = {"success": request_success}
+    if request_reason != "":
+        result["reason"] = request_reason
+    return result
+
+
 @app.post('/files/uploadThumbnail')
 def upload_thumbnail(files: list[UploadFile] = File(),
                      config: const_config = Depends(get_config)):
@@ -196,7 +228,6 @@ def upload_thumbnail(files: list[UploadFile] = File(),
     for file in files:
         filename = file.filename
         temp_path = helper_files.get_path(["content", filename], user_file=True)
-        final_path = helper_files.get_path(["thumbnails", filename], user_file=True)
         with config.content_file_lock:
             # First write the file to content
             try:

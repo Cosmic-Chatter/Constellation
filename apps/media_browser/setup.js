@@ -550,10 +550,7 @@ function checkContentExists () {
 
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
   const imageKeys = []
-
-  const checkContentButton = document.getElementById('checkContentButton')
-  checkContentButton.setAttribute('disabled', true)
-  checkContentButton.innerHTML = 'Checking...'
+  document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Loop through the defintion and collect any unique image keys
   Object.keys(workingDefinition.languages).forEach((lang) => {
@@ -570,7 +567,6 @@ function checkContentExists () {
     endpoint: '/getAvailableContent'
   })
     .then((result) => {
-      console.log(result)
       availableContent = result.all_exhibits
       // Retrieve the spreadsheet and check the content for each image key against the available content
       constCommon.makeHelperRequest({
@@ -601,9 +597,79 @@ function checkContentExists () {
             html += '</ul>'
             missingContentField.innerHTML = html
           }
-          checkContentButton.removeAttribute('disabled')
-          checkContentButton.innerHTML = 'Check content'
         })
+    })
+}
+
+function showOptimizeContentModal () {
+  // Show the modal for optimizing the content and thumbnails.
+
+  document.getElementById('optimizeContentProgressBarDiv').style.display = 'none'
+  $('#optimizeContentModal').modal('show')
+}
+
+function optimizeMediaFromModal () {
+  // Collect the necessary information and then optimize the media.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const resolution = document.getElementById('resolutionSelect').value
+  const width = parseInt(resolution.split('_')[0])
+  const nCols = parseInt(document.getElementById('numColsSelect').value)
+  const thumbRes = width / nCols
+
+  // Loop through the defintion and collect any unique image keys
+  const imageKeys = []
+
+  Object.keys(workingDefinition.languages).forEach((lang) => {
+    if (imageKeys.includes(workingDefinition.languages[lang].media_key) === false) {
+      imageKeys.push(workingDefinition.languages[lang].media_key)
+    }
+  })
+
+  // Retrieve the spreadsheet and collect all images
+  const toOptimize = []
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/content/' + workingDefinition.spreadsheet,
+    rawResponse: true
+  })
+    .then((raw) => {
+      const spreadsheet = constCommon.csvToJSON(raw).json
+      spreadsheet.forEach((row) => {
+        imageKeys.forEach((key) => {
+          if (row[key].trim() === '') return
+          toOptimize.push(row[key])
+        })
+      })
+      const total = toOptimize.length
+      let numComplete = 0
+
+      // Show the progress bar
+      document.getElementById('optimizeContentProgressBarDiv').style.display = 'flex'
+      document.getElementById('optimizeContentProgressBar').style.width = '0%'
+      document.getElementById('optimizeContentProgressBarDiv').setAttribute('aria-valuenow', 0)
+
+      toOptimize.forEach((file) => {
+        constCommon.makeHelperRequest({
+          method: 'POST',
+          endpoint: '/files/generateThumbnail',
+          params: {
+            source: file,
+            mimetype: 'image',
+            width: thumbRes
+          }
+        })
+          .then((result) => {
+            if (result.success === true) {
+              numComplete += 1
+              const percent = Math.round(100 * numComplete / total)
+              document.getElementById('optimizeContentProgressBar').style.width = String(percent) + '%'
+              document.getElementById('optimizeContentProgressBarDiv').setAttribute('aria-valuenow', percent)
+            }
+          })
+      })
     })
 }
 
@@ -779,7 +845,13 @@ $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true })
 })
+document.getElementById('showCheckContentButton').addEventListener('click', () => {
+  document.getElementById('missingContentWarningField').innerHTML = ''
+  $('#checkContentModal').modal('show')
+})
 document.getElementById('checkContentButton').addEventListener('click', checkContentExists)
+document.getElementById('optimizeContentButton').addEventListener('click', showOptimizeContentModal)
+document.getElementById('optimizeContentBeginButton').addEventListener('click', optimizeMediaFromModal)
 
 // Definition fields
 document.getElementById('spreadsheetSelect').addEventListener('click', (event) => {

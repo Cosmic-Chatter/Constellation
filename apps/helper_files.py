@@ -312,18 +312,26 @@ def rename_file(old_name: str, new_name: str, absolute: bool = False):
     return {"success": True}
 
 
-def create_thumbnail(filename: str, mimetype: str):
+def create_thumbnail(filename: str, mimetype: str, block: bool = False, width: int = 400) -> tuple[bool, str]:
     """Create a thumbnail from the given media file and add it to the thumbnails directory.
 
     If the input is an image, a jpg is created. If the input is a video, a short preview mp4 and a
-    jpg are created."""
+    jpg are created.
+
+    Set block=True to block the calling thread when creating thumbnails.
+    """
 
     try:
         if mimetype == "image":
-            subprocess.call([ffmpeg_path, "-y",
-                             "-i", get_path(['content', filename], user_file=True),
-                             "-vf", "scale=400:-1",
-                             get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            proc = subprocess.Popen([ffmpeg_path, "-y",
+                                     "-i", get_path(['content', filename], user_file=True),
+                                     "-vf", f"scale={width}:-1",
+                                     get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
         elif mimetype == "video":
             # First, find the length of the video
             _, video_details = get_video_file_details(filename)
@@ -331,20 +339,33 @@ def create_thumbnail(filename: str, mimetype: str):
             file_path = get_path(['content', filename], user_file=True)
 
             # Then, create the video thumbnail
-            subprocess.Popen([ffmpeg_path, "-y", "-i", file_path,
-                              "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
-                              "-an",
-                              get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
-
+            proc = subprocess.Popen([ffmpeg_path, "-y", "-i", file_path,
+                                     "-filter:v",
+                                     f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale={width}:-2',
+                                     "-an",
+                                     get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
             # Finally, create the image thumbnail from the halfway point
-            subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec / 2)), '-i', file_path,
-                              '-vframes', '1', "-vf", "scale=400:-1",
-                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
-
+            proc = subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec / 2)), '-i', file_path,
+                                     '-vframes', '1', "-vf", f"scale={width}:-1",
+                                     get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
     except OSError as e:
         print("create_thumbnail: error:", e)
+        return False, 'OSError'
     except ImportError as e:
         print("create_thumbnail: error loading FFmpeg: ", e)
+        return False, 'ImportError'
+
+    return True, ""
 
 
 def create_thumbnail_video_from_frames(frames: list, filename: str, duration: float = 5) -> bool:

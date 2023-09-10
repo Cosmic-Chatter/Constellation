@@ -58,6 +58,7 @@
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
 
+      <!-- Help modal -->
       <div id="appHelpModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered mw-100 w-75">
           <div class="modal-content">
@@ -70,6 +71,74 @@
                 <div id='helpTextDiv' class="col-12"></div>
               </div>
 
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Check content modal -->
+      <div id="checkContentModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-100 w-75">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Check content</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body"  style="max-height: 70vh; overflow-y: auto;">
+              <div class="row align-items-center">
+                <div class="col-12">
+                  This tool checks that every media file listed in the spreadsheet has a corresponding file in the content directory.
+                </div>
+                <div class="col-12 mt-3">
+                  <button id="checkContentButton" class="btn btn-primary">Check content</button>
+                </div>
+                <div id="missingContentWarningField" class="col-12 mt-3">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Optimize content modal -->
+      <div id="optimizeContentModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-100 w-75">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Optimize content</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body"  style="max-height: 70vh; overflow-y: auto;">
+              <div class="row align-items-center">
+                <div class="col-12">
+                  This tool optimizes the resolution of your content to maximize performance. It accounts for the resolution of your screen, as well as the number of items per page. If you change these elements, you should re-optimize your content. The original files remain unaltered.
+                </div>
+                <div class="col-6">
+                  <label for="resolutionSelect" class="form-label">Display resolution</label>
+                  <select id="resolutionSelect" class="form-select">
+                    <option value="3840_2160">4K landscape (3840x2160)</option>
+                    <option value="2160_3840">4K portrait (2160x3840)</option>
+                    <option value="1920_1080">2K landscape (1920x1080)</option>
+                    <option value="1080_1920">2K portrait (1080x1920)</option>
+                    <option value="2732_2048">iPad landscape (2732x2048)</option>
+                    <option value="2048_2732">iPad portrait (2048x2732)</option>
+                  </select>
+                </div>
+                <div class="col-12 mt-3">
+                  <div id="optimizeContentProgressBarDiv" class="progress" role="progressbar" aria-label="Optimization progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div id="optimizeContentProgressBar" class="progress-bar bg-primary" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div class="col-12 mt-3">
+                  <button id="optimizeContentBeginButton" class="btn btn-primary">Optimize</button>
+                </div>
+              </div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -174,9 +243,11 @@
                   <button id="manageContentButton" class="btn btn-primary w-100">Manage content</button>
                 </div>
                 <div class="col-12 col-md-6 col-lg-4">
-                  <button id="checkContentButton" class="btn btn-info w-100">Check content</button>
+                  <button id="showCheckContentButton" class="btn btn-info w-100">Check content</button>
                 </div>
-                <div id="missingContentWarningField" class="col-12"></div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <button id="optimizeContentButton" class="btn btn-info w-100">Optimize content</button>
+                </div>
                 <H5 class="mt-2">Add a langauge</H5>
                 <i>For each language you suppot, you need to match columns in your spreadsheet to properties of the timeline.</i>
                 <div class="col-12 col-md-6 col-lg-4">

@@ -174,7 +174,7 @@ function createTimelineEntry (entry, langCode) {
 
     const image = document.createElement('img')
     image.style.width = '100%'
-    image.src = 'content/' + imageName
+    image.src = 'thumbnails/' + imageName
     flex2.appendChild(image)
   }
 
