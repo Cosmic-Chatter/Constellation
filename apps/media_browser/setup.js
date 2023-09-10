@@ -530,7 +530,14 @@ function onSpreadsheetFileChange () {
     rawResponse: true
   })
     .then((result) => {
-      const spreadsheet = constCommon.csvToJSON(result)
+      const csvAsJSON = constCommon.csvToJSON(result)
+      if (csvAsJSON.error === true) {
+        document.getElementById('badSpreadsheetWarningLineNumber').innerHTML = csvAsJSON.error_index + 2
+        document.getElementById('badSpreadsheetWarning').style.display = 'block'
+      } else {
+        document.getElementById('badSpreadsheetWarning').style.display = 'none'
+      }
+      const spreadsheet = csvAsJSON.json
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
@@ -572,7 +579,7 @@ function checkContentExists () {
         rawResponse: true
       })
         .then((raw) => {
-          const spreadsheet = constCommon.csvToJSON(raw)
+          const spreadsheet = constCommon.csvToJSON(raw).json
           spreadsheet.forEach((row) => {
             imageKeys.forEach((key) => {
               if (row[key].trim() === '') return

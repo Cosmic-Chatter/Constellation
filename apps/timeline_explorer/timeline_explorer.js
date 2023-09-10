@@ -69,7 +69,7 @@ function loadDefinition (def) {
   })
     .then((response) => {
       $('#timelineContainer').empty()
-      const csvAsJSON = constCommon.csvToJSON(response)
+      const csvAsJSON = constCommon.csvToJSON(response).json
       $(document).data('spreadsheet', csvAsJSON)
       localize(defaultLang)
     })

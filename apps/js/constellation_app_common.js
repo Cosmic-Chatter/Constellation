@@ -611,7 +611,45 @@ export function csvToJSON (csv) {
 
     result.push(obj)
   }
-  return result
+  const detectBad = detectBadCSV(result)
+
+  if (detectBad.error === true) {
+    return {
+      json: result,
+      error: true,
+      error_index: detectBad.error_index
+    }
+  }
+
+  return { json: result, error: false }
+}
+
+function detectBadCSV (jsonArray) {
+  // Take the JSON array from csvToJSON and check if it seems properly formed.
+
+  const lengthCounts = {}
+  const lengthList = []
+  jsonArray.forEach((el) => {
+    // Count the number of fields (which should be the same for each row)
+    const length = Object.keys(el).length
+    if (length in lengthCounts) {
+      lengthCounts[length] += 1
+    } else {
+      lengthCounts[length] = 1
+    }
+    lengthList.push(length)
+  })
+
+  // Assume that the length that occurs most often is the correct one
+  const mostCommon = parseInt(Object.keys(lengthCounts).reduce((a, b) => lengthCounts[a] > lengthCounts[b] ? a : b))
+  const badIndices = []
+  lengthList.forEach((el, i) => {
+    if (el !== mostCommon) badIndices.push(i)
+  })
+  if (badIndices.length > 0) {
+    return { error: true, error_index: badIndices[0] }
+  }
+  return { error: false }
 }
 
 function splitCsv (str) {

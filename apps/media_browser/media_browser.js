@@ -418,7 +418,7 @@ function loadDefinition (def) {
   })
     .then((response) => {
       const csvAsJSON = constCommon.csvToJSON(response)
-      spreadsheet = csvAsJSON // Global property
+      spreadsheet = csvAsJSON.json // Global property
       localize(defaultLang)
 
       // Send a thumbnail to the helper
