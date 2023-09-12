@@ -90,6 +90,9 @@ body {
     font-size: 30px;
     border: 0px;
 }
+.langSwitch-entry {
+    font-size: 3vmin;
+  }
 .pageButton {
     font-size: 5vw;
     background-color: RGBA(97,92,92,0.5)!important;

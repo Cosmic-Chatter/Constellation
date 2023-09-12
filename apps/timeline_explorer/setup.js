@@ -146,7 +146,15 @@ function addLanguage () {
   })
   if (error) return
 
-  workingDefinition.languages[code] = { display_name: displayName, code }
+  // If this is the first language added, make it the default
+  let defaultLang = false
+  if (Object.keys(workingDefinition.languages).length === 0) defaultLang = true
+
+  workingDefinition.languages[code] = {
+    display_name: displayName,
+    code,
+    default: defaultLang
+  }
   createLanguageTab(code, displayName)
 
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
@@ -157,6 +165,8 @@ function addLanguage () {
 function createLanguageTab (code, displayName) {
   // Create a new language tab for the given details.
   // Set first=true when creating the first tab
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
   // Create the tab button
   const tabButton = document.createElement('button')
@@ -180,6 +190,39 @@ function createLanguageTab (code, displayName) {
   const row = document.createElement('div')
   row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
+
+  // Create default language checkbox
+  const defaultCol = document.createElement('div')
+  defaultCol.classList = 'col-12'
+  row.appendChild(defaultCol)
+
+  const checkContainer = document.createElement('div')
+  checkContainer.classList = 'form-check'
+  defaultCol.appendChild(checkContainer)
+
+  const defaultCheckbox = document.createElement('input')
+  defaultCheckbox.classList = 'form-check-input default-lang-checkbox'
+  defaultCheckbox.setAttribute('id', 'defaultCheckbox_' + code)
+  defaultCheckbox.setAttribute('data-lang', code)
+  defaultCheckbox.setAttribute('type', 'radio')
+  defaultCheckbox.checked = workingDefinition.languages[code].default
+  defaultCheckbox.addEventListener('change', (event) => {
+    // If the checkbox is checked, uncheck all the others and save to the working definition.
+    Array.from(document.querySelectorAll('.default-lang-checkbox')).forEach((el) => {
+      el.checked = false
+      constSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
+    })
+    event.target.checked = true
+    constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
+    previewDefinition(true)
+  })
+  checkContainer.appendChild(defaultCheckbox)
+
+  const defaultCheckboxLabel = document.createElement('label')
+  defaultCheckboxLabel.classList = 'form-check-label'
+  defaultCheckboxLabel.setAttribute('for', 'defaultCheckbox_' + code)
+  defaultCheckboxLabel.innerHTML = 'Default language'
+  checkContainer.appendChild(defaultCheckboxLabel)
 
   // Create the flag input
   const flagImgCol = document.createElement('div')

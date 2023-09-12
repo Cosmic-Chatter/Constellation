@@ -59,7 +59,11 @@ function loadDefinition (def) {
   if (langs.length === 0) return
 
   constCommon.createLanguageSwitcher(def, localize)
-  defaultLang = langs[0]
+
+  // Find the default language
+  Object.keys(def.languages).forEach((lang) => {
+    if (def.languages[lang].default === true) defaultLang = lang
+  })
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
   constCommon.makeHelperRequest({

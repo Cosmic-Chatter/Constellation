@@ -165,10 +165,8 @@ time {
   font-weight: bold;
   font-family: var(--Title-font);
 }
-
-#langToggleButton {
-    background-color: var(--toolbarButtonColor);
-    color: var(--textColor);
+.langSwitch-entry {
+  font-size: 3vmin;
 }
 
 /* EFFECTS

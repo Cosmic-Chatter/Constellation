@@ -279,7 +279,6 @@ function loadDefinition (def) {
   if (langs.length === 0) return
 
   constCommon.createLanguageSwitcher(def, localize)
-  defaultLang = langs[0]
 
   // Configure the attractor
   if ('inactivity_timeout' in def) {
@@ -408,6 +407,11 @@ function loadDefinition (def) {
   Object.keys(def.style.text_size).forEach((key) => {
     const value = def.style.text_size[key]
     root.style.setProperty('--' + key + '-font-adjust', value)
+  })
+
+  // Find the default language
+  Object.keys(def.languages).forEach((lang) => {
+    if (def.languages[lang].default === true) defaultLang = lang
   })
 
   // Load the CSV file containing the items ad build the results row
@@ -610,7 +614,7 @@ let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, credi
 const currentContent = []
 let currentPage = 0
 let cardsPerPage, numCols, numRows
-let defaultLang
+let defaultLang = ''
 
 constCommon.configureApp({
   name: 'media_browser',

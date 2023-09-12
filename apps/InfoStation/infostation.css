@@ -161,6 +161,9 @@ li {
 .image {
   width: 100%;
 }
+.langSwitch-entry {
+  font-size: 3vmin;
+}
 .tabButton {
   font-size: calc(2.5vmax + var(--tab-button-font-size-adjust) * 1vmax);
   font-family: var(--button-font);
