@@ -1,4 +1,4 @@
-/* global Coloris */
+/* global bootstrap, Coloris */
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
@@ -305,6 +305,11 @@ function createLanguageTab (code, displayName) {
     label.classList = 'form-label'
     label.setAttribute('for', langKey)
     label.innerHTML = inputFields[key].name
+
+    if ('hint' in inputFields[key]) {
+      label.innerHTML += ' ' + `<span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="${inputFields[key].hint}" style="font-size: 0.55em;">?</span>`
+    }
+
     col.appendChild(label)
 
     let input
@@ -331,6 +336,12 @@ function createLanguageTab (code, displayName) {
   if (keyList != null) {
     populateKeySelects(keyList)
   }
+
+  // Activate tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
 
   // Switch to this new tab
   $(tabButton).click()
@@ -765,27 +776,28 @@ const inputFields = {
     property: 'header_text'
   },
   keyTimeSelect: {
-    name: 'Time key',
+    name: 'Time column',
     kind: 'select',
     property: 'time_key'
   },
   keyTitleSelect: {
-    name: 'Title key',
+    name: 'Title column',
     kind: 'select',
     property: 'title_key'
   },
   keyLevelSelect: {
-    name: 'Level key',
+    name: 'Level column',
     kind: 'select',
-    property: 'level_key'
+    property: 'level_key',
+    hint: 'A number from 1 - 4 giving the importance of the event.'
   },
   keyShortSelect: {
-    name: 'Short text key',
+    name: 'Short text column',
     kind: 'select',
     property: 'short_text_key'
   },
   keyImageSelect: {
-    name: 'Image key',
+    name: 'Image column',
     kind: 'select',
     property: 'image_key'
   }
