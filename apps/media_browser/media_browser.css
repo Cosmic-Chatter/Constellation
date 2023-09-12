@@ -80,10 +80,10 @@ body {
     outline: none;
 }
 
-.imageLightboxImageShort {
+.mediaLightboxImageShort {
     max-height: 60%;
 }
-.imageLightboxImageTall {
+.mediaLightboxImageTall {
     max-height: 85%;
 }
 .input {
@@ -152,7 +152,7 @@ body {
     height: 100%;
         align-items: flex-end;
 }
-#imageLightbox {
+#mediaLightbox {
     position: absolute;
     height: 100vh;
     width: 100vw;
@@ -164,28 +164,28 @@ body {
     align-items: center;
     opacity: 0;
 }
-#imageLightboxCaption {
+#mediaLightboxCaption {
     font-size: calc(2vmax + var(--Lightbox_caption-font-adjust)*1vmax);
     color: white;
     overflow-y: auto;
     height: 15%;
     font-family: var(--Lightbox_caption-font);
 }
-#imageLightboxCredit {
+#mediaLightboxCredit {
     font-size: calc(1.5vmax + var(--Lightbox_credit-font-adjust)*1vmax);
     color: white;
     padding-top: 10px;
     height: 6%;
     font-family: var(--Lightbox_credit-font);
 }
-#imageLightboxImage {
+.lightboxMedia {
     width: 100%;
     height: 70%;
     object-fit: contain;
     display: block;
     margin: auto;
 }
-#imageLightboxTitle {
+#mediaLightboxTitle {
     text-align: center;
     font-size: calc(3vmax + var(--Lightbox_title-font-adjust)*1vmax);
     color: white;

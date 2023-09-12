@@ -346,6 +346,10 @@ function createLanguageTab (code, displayName) {
     label.setAttribute('for', langKey)
     label.innerHTML = inputFields[key].name
 
+    if ('hint' in inputFields[key]) {
+      label.innerHTML += ' ' + `<span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="${inputFields[key].hint}" style="font-size: 0.55em;">?</span>`
+    }
+
     if ('tooltip' in inputFields[key]) {
       const tooltip = '\n<span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="' + inputFields[key].tooltip + '" style="font-size: 0.55em;">?</span>'
       label.innerHTML += tooltip
@@ -375,17 +379,17 @@ function createLanguageTab (code, displayName) {
     col.appendChild(input)
   })
 
-  // Activate tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-  })
-
   // If we have already loaded a spreadhseet, populate the key options
   const keyList = $('#spreadsheetSelect').data('availableKeys')
   if (keyList != null) {
     populateKeySelects(keyList)
   }
+
+  // Activate tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
 
   // Switch to this new tab
   $(tabButton).click()
@@ -814,30 +818,31 @@ const inputFields = {
   //   property: 'header_text'
   // },
   keyTitleSelect: {
-    name: 'Title key',
+    name: 'Title column',
     kind: 'select',
     property: 'title_key'
   },
   keyCaptionSelect: {
-    name: 'Caption key',
+    name: 'Caption column',
     kind: 'select',
     property: 'caption_key'
   },
   keyCreditSelect: {
-    name: 'Credit key',
+    name: 'Credit column',
     kind: 'select',
     property: 'credit_key'
   },
   keyMediaSelect: {
-    name: 'Media key',
+    name: 'Media column',
     kind: 'select',
     property: 'media_key'
+  },
+  keyThumbnailSelect: {
+    name: 'Thumbnail column',
+    kind: 'select',
+    property: 'thumbnail_key',
+    hint: 'An optional column to provide a separate thumbnail image from the main image or video.'
   }
-  // keyThumbnailSelect: {
-  //   name: 'Thumbnail key',
-  //   kind: 'select',
-  //   property: 'thumbnail_key'
-  // }
   // keySearchSelect: {
   //   name: 'Search keys',
   //   kind: 'select',
