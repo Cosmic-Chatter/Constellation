@@ -1,11 +1,37 @@
 # **Constellation 3.3**
+__*Constellation*__ 3.3 expands configuration options for many apps and further streamlines the user experience on Windows.
 
-## <ins>New features</ins>
+## Control Server
+
+### Schedule
 - Create date-specific schedules as far in the future as you want.
 - Make your schedules easier to understand by adding notes.
-
-## <ins>Updated features</ins>
 - Multiple schedule targets can now be selected for certain actions.
+
+## Constellation Apps
+
+### General
+- New first-time setup wizard for Windows.
+- Select and delete many files from the file picker.
+- Customize the default language for apps that support multiple languages.
+
+### InfoStation
+- Configure InfoStation using a new graphical setup tool.
+
+### Media Browser
+- Support videos.
+- Improve quality and performance with a new optimize content tool.
+- Optionally choose thumbnails that are different from the main media file.
+- Automatically detect some errors in user-provided spreadsheets.
+
+### Timeline Explorer
+- Improve quality and performance with a new optimize content tool. 
+- Automatically detect some errors in user-provided spreadsheets.
+
+### Word Cloud
+- Configure Word Cloud using a new graphical setup tool.
+- Set the Word Cloud text color to a user-specified color.
+- Format the cloud in shapes other than a rectangle.
 
 # **Constellation 3.2**
 __*Constellation*__ 3.2 introduces a new, more seamless way of running __*Constellation*__. It also includes a powerful and flexible tool for managing DMX lighting systems, and continues to extend the new setup experience to more apps.

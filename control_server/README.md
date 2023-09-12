@@ -123,7 +123,6 @@ The system status area, located at the top, provides a summary of the performanc
 Note that CPU usage is not properly reported for PCs running Windows.
 
 #### Definitions pane
-_Note: The definitions pane is only shown when an app that supports the new definition model is loaded._
 
 The definition pane allows you to select the app definition that you want to display. A given `component` can have only one active definition. If the definition you selected belongs to an app other than the one that is currently active, the app will be changed before the new definition is applied.
 

@@ -1,31 +1,31 @@
 # Constellation Apps
 A collection of visitor-facing apps to help you create rich digital experiences, connected by **_Constellation_**.
 
-## Philosophy
-Constellation Apps is focused on flexibility. To that end, it uses the web browser to display its visitor-facing content. That means any device that can display a website can turn into a digital exhibit component.
-
-However, web browsers are limited in their ability to interact with the underlying computer. Your browser can't, for instance, reboot your PC—probably a good thing! Because of this, Apps uses a secondary program (the _helper_) running outside the browser to store your content and interact with the PC itself.
-
-As mentioned, the interface can be anything with a web browser. But the helper must be a PC running Windows, macOS, or Linux. Thus, the easiest way to use Constellation Apps is on a PC. If you want to, for instance, collect word cloud input from an iPad, you'll need both a PC and the iPad.
-
 ## First-time setup
 Constellation Apps must be hosted by a PC running Windows, macOS, or Linux, even if the user-facing interface is a mobile device such as an iPad.
 
 ### Installation
 Download the version appropriate for your operating system [here](https://cosmicchatter.org/constellation/constellation.html) and place the file in the location you would like to run Apps from. Then, launch the file.
 
-A command-line setup window will launch, asking you a few basic questions. Once you use the keyboard to answer, Apps will launch and open a graphical interface in your default web browser.
+On Windows, a wizard will launch to begin setup. On Linux, a command-line setup window will launch, asking you a few basic questions. Once you use the keyboard to answer, Apps will launch and open a graphical interface.
 
-### Local vs. remote `BETA`
-During the first-time setup, you may be asked if Constellation Apps will be displayed on a remote device or on the installation PC. Choosing `local` will configure the app to run as a self-contained GUI. Choosing `remote` will launch the app in the terminal, as was standard prior to **_Constellation 3.2_**.
+## Configuration
 
-**The self-contained, local way of running the app is currently supported only on Windows.**
+### Using a remote display
+By default, Constellation Apps will run as self-contained app when using Windows. If you are using a Windows PC as your exhibit computer, you're done!
+
+If you wish to use an iPad or other remote device as your guest-facing interface, or if you are using Linux, Constellation Apps needs to run with a remote display. When using a remote display, Constellation Apps will launch as a command-line window. You then access the app using a regular web browser. For example, if your PC has a static IP address of `192.168.1.122` and you are using port `8000`, access Constellation Apps from `http://192.168.1.122:8000`.
 
 ## Deploying Constellation Apps
 When configuring the app for use in production (i.e., on the museum floor), it is strongly recommended to set it up in kiosk mode. This will lock users into the application and supress many pop-ups.
 
 ### Disabling gestures
-If the device has a touchscreen, it is important to disable any system gestures that allow a user to escape the application. This can be done on Windows 10/11 using [these instructions](https://support.honeywellaidc.com/s/article/How-to-disable-touchscreen-edge-swipes-in-Windows-10) and on Ubuntu 22.04 using these commands:
+
+#### Windows 11
+Using Windows 11, you can disable touchscreen gestures from the settings menu.
+
+#### Linux (Ubuntu)
+To disable gestures on Ubuntu 22.04 using these commands:
 
 ```commandline
 wget "https://extensions.gnome.org/extension-data/disable-gestures-2021verycrazydog.gmail.com.v4.shell-extension.zip"
@@ -35,24 +35,21 @@ gnome-extensions install disable-gestures-2021verycrazydog.gmail.com.v4.shell-ex
 reboot
 ```
 
+#### macOS
 On macOS, it is not possible to hide the dock and menu bar permanently, so macOS is not recommended for use with a touchscreen.
 
-### Local mode
-If you are running Constellation Apps in local mode, launching as a kiosk is very easy.
+### Configuring fullscreen
+To launch Constellation Apps in fullscreen mode, follow the directions below.
 
 #### Windows 
 
 <img src="_static/fullscreen_shortcut.jpg" style="width: 300px; float: right; border: 2px solid gray; margin: 5px;"></img>
-On Windows, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target.
 
-#### Linux
-On Linux, simply use this command to launch the app:
+When using the default, self-contained Windows app, create a shortcut for Constellation_Apps.exe, open the properties of the shortcut, and add the word `fullscreen` to the end of the target.
 
-```commandline
-./Constellation_Apps fullscreen
-```
 
-### Remote mode
-If you are running Constellation Apps in remote mode, you must configure your browser of choice to open in Kiosk mode. Follow the linked instructions for [Firefox](https://support.mozilla.org/en-US/kb/firefox-enterprise-kiosk-mode) and [Edge](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-configure-kiosk-mode).
+
+#### Linux and remote devices
+If you are running Constellation Apps in remote display mode, you must configure your browser of choice to open in Kiosk mode. Follow the linked instructions for [Firefox](https://support.mozilla.org/en-US/kb/firefox-enterprise-kiosk-mode) and [Edge](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-configure-kiosk-mode).
 
 For iOS or iPadOS, first add the app to the home screen following the section _Add a website icon to your Home Screen_ [here](https://support.apple.com/guide/iphone/bookmark-favorite-webpages-iph42ab2f3a7/ios). Then, configure Guided Access by following [these instructions](https://support.apple.com/en-us/HT202612).
