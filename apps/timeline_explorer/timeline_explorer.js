@@ -113,11 +113,11 @@ function adjustFontSize (increment) {
 function localize (lang) {
   // Use the spreadhseet and defintion to set the content to the given language
 
-  const spreadhseet = $(document).data('spreadsheet')
+  const spreadsheet = $(document).data('spreadsheet')
   const definition = $(document).data('timelineDefinition')
 
   $('#timelineContainer').empty()
-  spreadhseet.forEach((entry) => {
+  spreadsheet.forEach((entry) => {
     createTimelineEntry(entry, lang)
   })
   $('#headerText').html(definition.languages[lang].header_text || '')
@@ -228,16 +228,22 @@ function setAttractor (filename, fileType) {
   }
 }
 
+function resetInactivityTimer () {
+  // Cancel any existing timer and restart it.
+
+  clearTimeout(attractorTimer)
+  attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+}
+
 function hideAttractor () {
   // Hide the attractor and begin a timer to reinstate it.
 
   document.getElementById('attractorOverlay').style.display = 'none'
   document.getElementById('attractorVideo').pause()
 
-  clearTimeout(attractorTimer)
   constCommon.config.currentInteraction = true
 
-  attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+  resetInactivityTimer()
 }
 
 function showAttractor () {
@@ -267,6 +273,8 @@ $('#fontSizeIncreaseButton').click(function () {
   adjustFontSize(0.1)
 })
 document.getElementById('attractorOverlay').addEventListener('click', hideAttractor)
+document.addEventListener('touchstart', resetInactivityTimer)
+document.addEventListener('click', resetInactivityTimer)
 
 // Attractor
 let attractorAvailable = false
