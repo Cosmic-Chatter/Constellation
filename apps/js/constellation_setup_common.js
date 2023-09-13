@@ -2,6 +2,19 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 
+$.fn.visibleHeight = function () {
+  // JQuery function to calculate the visible height of an element
+  // From https://stackoverflow.com/a/29944927
+
+  const scrollTop = $(window).scrollTop()
+  const scrollBot = scrollTop + $(window).height()
+  const elTop = this.offset().top
+  const elBottom = elTop + this.outerHeight()
+  const visibleTop = elTop < scrollTop ? scrollTop : elTop
+  const visibleBottom = elBottom > scrollBot ? scrollBot : elBottom
+  return Math.max(visibleBottom - visibleTop, 0)
+}
+
 export const config = {
   availableDefinitions: {},
   loadDefinition: null
@@ -169,6 +182,7 @@ function createEventListeners () {
   // Preview frame
   window.addEventListener('load', resizePreview)
   window.addEventListener('resize', resizePreview)
+  window.addEventListener('scroll', resizePreview)
 
   // Activate tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -201,12 +215,37 @@ function rotatePreview () {
 
   document.getElementById('previewFrame').classList.toggle('preview-landscape')
   document.getElementById('previewFrame').classList.toggle('preview-portrait')
+  resizePreview()
 }
 
 function resizePreview () {
+  // Resize the preview so that it always fits the view.
+
+  // Size of things above view area
+  const headerHeight = $('#setupHeader').visibleHeight()
+  const toolsHeight = $('#setupTools').visibleHeight()
+  const viewportHeight = window.innerHeight
+
+  // First, set the height of the area available for the preview
+  $('#previewPane').css('height', viewportHeight - headerHeight - toolsHeight)
+
+  // Size of available area
   const paneWidth = $('#previewPane').width()
+  const paneHeight = $('#previewPane').height()
+
+  // Size of frame (this will be 1920x1080 or 1080x1920)
   const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
+  const frameHeight = $('#previewFrame').height()
+  const frameAspect = frameWidth / frameHeight
+
+  let transformRatio
+  if (frameAspect <= 1) {
+    // Handle portrait (constraint should be height)
+    transformRatio = 0.95 * paneHeight / frameHeight
+  } else {
+    // Handle landscape (constraint should be width)
+    transformRatio = 1.0 * paneWidth / frameWidth
+  }
 
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
