@@ -66,9 +66,9 @@ app.mount("/dmx_control",
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
-app.mount("/other",
-          StaticFiles(directory=helper_files.get_path(["other"])),
-          name="other")
+# app.mount("/other",
+#           StaticFiles(directory=helper_files.get_path(["other"])),
+#           name="other")
 app.mount("/media_browser",
           StaticFiles(directory=helper_files.get_path(["media_browser"])),
           name="media_browser")

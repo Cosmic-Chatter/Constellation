@@ -126,7 +126,7 @@ function editDefinition (uuid = '') {
   $('#languagePane_' + first).addClass('active')
 
   // Configure the preview frame
-  document.getElementById('previewFrame').src = '../InfoStation.html?standalone=true&definition=' + def.uuid
+  document.getElementById('previewFrame').src = '../infostation.html?standalone=true&definition=' + def.uuid
 }
 
 function addLanguage () {
@@ -620,7 +620,7 @@ function previewDefinition (automatic = false) {
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Configure the preview frame
-        document.getElementById('previewFrame').src = '../InfoStation.html?standalone=true&definition=__previewInfoStation'
+        document.getElementById('previewFrame').src = '../infostation.html?standalone=true&definition=__previewInfoStation'
       }
     })
 }
