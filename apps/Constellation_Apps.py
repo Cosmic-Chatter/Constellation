@@ -1112,14 +1112,16 @@ if __name__ == "__main__":
         # Create a GUI window and then start the server
         option_fullscreen = "fullscreen" in sys.argv
 
+        if "port" not in const_config.defaults['system']:
+            const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
+
         app_window = webview.create_window('Constellation Apps',
                                            confirm_close=False,
                                            fullscreen=option_fullscreen,
                                            height=720,
                                            width=1280,
                                            min_size=(1280, 720),
-                                           url='http://localhost:' + str(
-                                               const_config.defaults["system"]["port"]) + '/app.html')
+                                           url='http://localhost:' + str(const_config.defaults["system"]["port"]) + '/app.html')
 
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed

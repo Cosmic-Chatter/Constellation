@@ -29,7 +29,13 @@ function pageForward (current) {
     }
   } else if (current === 'remote-display') {
     document.getElementById('remote-display').style.display = 'none'
-    document.getElementById('basic-settings').style.display = 'block'
+    if (document.getElementById('useControlServerToggle').checked === true) {
+      document.getElementById('basic-settings').style.display = 'block'
+    } else {
+      // Skip basic settings if we're not using Control Server
+      populateSummary()
+      document.getElementById('summary').style.display = 'block'
+    }
   } else if (current === 'basic-settings') {
     let moveOn = false
     const IDInput = document.getElementById('IDInput')
@@ -42,37 +48,45 @@ function pageForward (current) {
       warning.style.display = 'none'
     }
     if (moveOn === true) {
-      // Populate the summary
-
-      // Control Server
-      if (document.getElementById('useControlServerToggle').checked === true) {
-        document.getElementById('summaryControlServerIP').innerHTML = document.getElementById('controlServerIPInput').value.trim()
-        document.getElementById('summaryControlServerPort').innerHTML = document.getElementById('controlServerPortInput').value.trim()
-
-        document.getElementById('summaryNoControlCenter').style.display = 'none'
-        document.getElementById('summaryControlServerDetails').style.display = 'block'
-      } else {
-        document.getElementById('summaryNoControlCenter').style.display = 'block'
-        document.getElementById('summaryControlServerDetails').style.display = 'none'
-      }
-      // Remote display
-      if (document.getElementById('useRemoteDisplayToggle').checked === true) {
-        document.getElementById('summaryPort').innerHTML = document.getElementById('remoteDisplayPortInput').value.trim()
-        document.getElementById('summaryNoRemoteDisplay').style.display = 'none'
-        document.getElementById('summaryRemoteDisplayDetails').style.display = 'block'
-      } else {
-        document.getElementById('summaryNoRemoteDisplay').style.display = 'block'
-        document.getElementById('summaryRemoteDisplayDetails').style.display = 'none'
-      }
-      // Basic settings
-      document.getElementById('summaryID').innerHTML = document.getElementById('IDInput').value.trim()
-      document.getElementById('summaryGroup').innerHTML = document.getElementById('groupInput').value.trim()
-
+      populateSummary()
       document.getElementById('basic-settings').style.display = 'none'
       document.getElementById('summary').style.display = 'block'
     }
   } else if (current === 'summary') {
     submitSettings()
+  }
+}
+
+function populateSummary () {
+  // Use the settings on the various pages to populate a summary of selected settings.
+
+  // Control Server
+  if (document.getElementById('useControlServerToggle').checked === true) {
+    document.getElementById('summaryControlServerIP').innerHTML = document.getElementById('controlServerIPInput').value.trim()
+    document.getElementById('summaryControlServerPort').innerHTML = document.getElementById('controlServerPortInput').value.trim()
+
+    document.getElementById('summaryNoControlCenter').style.display = 'none'
+    document.getElementById('summaryControlServerDetails').style.display = 'block'
+  } else {
+    document.getElementById('summaryNoControlCenter').style.display = 'block'
+    document.getElementById('summaryControlServerDetails').style.display = 'none'
+  }
+  // Remote display
+  if (document.getElementById('useRemoteDisplayToggle').checked === true) {
+    document.getElementById('summaryPort').innerHTML = document.getElementById('remoteDisplayPortInput').value.trim()
+    document.getElementById('summaryNoRemoteDisplay').style.display = 'none'
+    document.getElementById('summaryRemoteDisplayDetails').style.display = 'block'
+  } else {
+    document.getElementById('summaryNoRemoteDisplay').style.display = 'block'
+    document.getElementById('summaryRemoteDisplayDetails').style.display = 'none'
+  }
+  // Basic settings
+  document.getElementById('summaryID').innerHTML = document.getElementById('IDInput').value.trim()
+  document.getElementById('summaryGroup').innerHTML = document.getElementById('groupInput').value.trim()
+  if (document.getElementById('useControlServerToggle').checked === false) {
+    document.getElementById('summaryBasicSettings').style.display = 'none'
+  } else {
+    document.getElementById('summaryBasicSettings').style.display = 'block'
   }
 }
 
@@ -90,7 +104,13 @@ function pageBack (current) {
     document.getElementById('remote-display').style.display = 'block'
   } else if (current === 'summary') {
     document.getElementById('summary').style.display = 'none'
-    document.getElementById('basic-settings').style.display = 'block'
+    if (document.getElementById('useControlServerToggle').checked === true) {
+      // Goto basic settings
+      document.getElementById('basic-settings').style.display = 'block'
+    } else {
+      // Skip back to remote display
+      document.getElementById('remote-display').style.display = 'block'
+    }
   }
 }
 
@@ -119,26 +139,23 @@ function onUseRemoteDisplayToggle () {
 function submitSettings () {
   // Collect the settings configured by the wizard and send them to the helper.
   const settings = {
-    app: {
-      group: document.getElementById('groupInput').value.trim(),
-      id: document.getElementById('IDInput').value.trim()
-    },
-    control_server: {
-      ip_address: document.getElementById('controlServerIPInput').value.trim(),
-      port: parseInt(document.getElementById('controlServerPortInput').value.trim()) || 8082
-    },
+    app: {},
+    control_server: {},
     permissions: {},
-    system: {
-      port: parseInt(document.getElementById('remoteDisplayPortInput').value.trim()) || 8000
-    }
+    system: {}
   }
   if (document.getElementById('useControlServerToggle').checked === true) {
     settings.system.standalone = false
+    settings.app.group = document.getElementById('groupInput').value.trim()
+    settings.app.id = document.getElementById('IDInput').value.trim()
+    settings.control_server.ip_address = document.getElementById('controlServerIPInput').value.trim()
+    settings.control_server.port = parseInt(document.getElementById('controlServerPortInput').value.trim()) || 8082
   } else {
     settings.system.standalone = true
   }
   if (document.getElementById('useRemoteDisplayToggle').checked === true) {
     settings.system.remote_display = true
+    settings.system.port = parseInt(document.getElementById('remoteDisplayPortInput').value.trim()) || 8000
   } else {
     settings.system.remote_display = false
   }
