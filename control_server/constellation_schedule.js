@@ -603,7 +603,7 @@ export function sendScheduleUpdateFromModal () {
   let target = $('#scheduleTargetSelector').val()
   let value
   if (action === 'note') {
-    value = [$('#scheduleNoteInput').val()]
+    value = $('#scheduleNoteInput').val()
     target = ''
     console.log(time, action, target)
   } else {
