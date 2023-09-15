@@ -62,6 +62,7 @@ function showAppHelpMOdal (app) {
     infostation: '/InfoStation/',
     media_browser: '/media_browser/',
     media_player: '/media_player/',
+    other: '/other/',
     timelapse_viewer: '/timelapse_viewer/',
     timeline_explorer: '/timeline_explorer/',
     voting_kiosk: '/voting_kiosk/',

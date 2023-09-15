@@ -66,9 +66,9 @@ app.mount("/dmx_control",
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
-# app.mount("/other",
-#           StaticFiles(directory=helper_files.get_path(["other"])),
-#           name="other")
+app.mount("/other",
+          StaticFiles(directory=helper_files.get_path(["other"])),
+          name="other")
 app.mount("/media_browser",
           StaticFiles(directory=helper_files.get_path(["media_browser"])),
           name="media_browser")
@@ -1156,6 +1156,9 @@ if __name__ == "__main__":
                                               webview_menu.MenuAction('Media Player',
                                                                       partial(helper_webview.show_webview_window,
                                                                               'media_player_setup')),
+                                              webview_menu.MenuAction('Other App',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'other_setup')),
                                               webview_menu.MenuAction('Timelapse Viewer',
                                                                       partial(helper_webview.show_webview_window,
                                                                               'timelapse_viewer_setup')),
