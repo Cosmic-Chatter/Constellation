@@ -345,8 +345,6 @@ def convert_defaults_ini():
         result = update_dictionary(result, {"system": {"active_hours": {"start": defaults_dict["active_hours_start"]}}})
     if "active_hours_end" in defaults_dict:
         result = update_dictionary(result, {"system": {"active_hours": {"end": defaults_dict["active_hours_end"]}}})
-    if "anydesk_id" in defaults_dict:
-        result = update_dictionary(result, {"system": {"remote_viewers": {"anydesk": defaults_dict["anydesk_id"]}}})
     if "smart_restart_interval" in defaults_dict:
         result = update_dictionary(result, {"smart_restart": {"interval": int(defaults_dict["smart_restart_interval"])}})
     if "smart_restart_threshold" in defaults_dict:

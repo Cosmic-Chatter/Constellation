@@ -348,7 +348,6 @@ async def send_update(config: const_config = Depends(get_config)):
 
     response_dict = {
         "permissions": config.defaults["permissions"],
-        "anydesk_id": config.defaults["system"].get("remote_viewers", {}).get("anydesk_id", ""),
         "commands": config.commandList,
         "missingContentWarnings": config.missingContentWarningList
     }

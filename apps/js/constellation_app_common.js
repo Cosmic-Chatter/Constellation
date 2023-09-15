@@ -2,7 +2,6 @@
 
 export const config = {
   allowedActionsDict: { refresh: 'true' },
-  AnyDeskID: '',
   autoplayAudio: false,
   connectionChecker: null, // A function to check the connection with Control Server and act on it
   constellationAppID: '',
@@ -144,7 +143,6 @@ export function sendPing () {
       allowed_actions: config.allowedActionsDict,
       constellation_app_id: config.constellationAppID,
       platform_details: config.platformDetails,
-      AnyDeskID: config.AnyDeskID,
       currentInteraction: config.currentInteraction,
       autoplay_audio: config.autoplayAudio
     }
@@ -273,9 +271,6 @@ function readServerUpdate (update) {
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
-  if ('anydesk_id' in update) {
-    config.AnyDeskID = update.anydesk_id
-  }
   if ('other_app_path' in update) {
     config.otherAppPath = update.other_app_path
   }
@@ -392,11 +387,6 @@ function readHelperUpdate (update, changeApp = true) {
   if ('system' in update) {
     if ('remote_display' in update.system) {
       config.remoteDisplay = update.system.remote_display
-    }
-    if ('remote_viewers' in update.system) {
-      if ('anydesk_id' in update.system.remote_viewers) {
-        config.AnyDeskID = update.system.remote_viewers.anydesk_id
-      }
     }
     if ('standalone' in update.system) {
       config.standalone = update.system.standalone

@@ -637,8 +637,6 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
 
     component.update_last_contact_datetime(interaction=data.get("currentInteraction", False))
 
-    if "AnyDeskID" in data:
-        component.config["AnyDeskID"] = data["AnyDeskID"]
     if "autoplay_audio" in data:
         component.config["autoplay_audio"] = data["autoplay_audio"]
     if "allowed_actions" in data:

@@ -226,7 +226,6 @@ class ExhibitComponent extends BaseComponent {
     this.type = 'exhibit_component'
     this.helperAddress = null
     this.state = {}
-    this.AnyDeskID = ''
     this.constellationAppId = ''
     this.platformDetails = {}
   }
@@ -242,9 +241,6 @@ class ExhibitComponent extends BaseComponent {
 
     super.updateFromServer(update)
 
-    if ('AnyDeskID' in update) {
-      this.AnyDeskID = update.AnyDeskID
-    }
     if ('autoplay_audio' in update) {
       this.autoplay_audio = update.autoplay_audio
     }
@@ -648,18 +644,6 @@ export function showExhibitComponentInfo (id) {
   document.getElementById('definitionTabThumbnailsCheckbox').checked = true
   $('#componentInfoModalDefinitionSaveButton').hide()
 
-  if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
-    $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
-    $('#AnyDeskLabel').prop('href', 'anydesk:' + obj.AnyDeskID)
-    $('#AnyDeskLabel').html('AnyDesk ID: ' + obj.AnyDeskID)
-    $('#AnyDeskButton').prop('title', String(obj.AnyDeskID))
-    $('#AnyDeskButton').addClass('d-sm-none d-none d-md-inline').show()
-    $('#AnyDeskLabel').addClass('d-sm-inline d-md-none').show()
-  } else {
-    $('#AnyDeskButton').removeClass('d-sm-none d-none d-md-inline').hide()
-    $('#AnyDeskLabel').removeClass('d-sm-inline d-md-none').hide()
-  }
-
   // Configure the settings page with the current settings
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
@@ -667,11 +651,7 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
   $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
   $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
-  if ('AnyDeskID' in obj) {
-    $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
-  } else {
-    $('#componentInfoModalSettingsAnyDeskID').val('')
-  }
+
   if ('autoplay_audio' in obj) {
     $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
   } else {
@@ -1283,11 +1263,6 @@ export function submitComponentSettingsChange () {
   const imageDuration = $('#componentInfoModalSettingsImageDuration').val().trim()
   if (imageDuration !== '') {
     settings.image_duration = parseFloat(imageDuration)
-  }
-
-  const AnyDeskID = $('#componentInfoModalSettingsAnyDeskID').val().trim()
-  if (AnyDeskID !== '') {
-    settings.anydesk_id = AnyDeskID
   }
 
   constTools.makeRequest({

@@ -1045,7 +1045,7 @@ $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
 $('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSettingsChange)
-$('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID').on('input', function () {
+$('#componentInfoModalSettingsImageDuration').on('input', function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
 document.getElementById('definitionTabAppFilterSelect').addEventListener('change', (event) => {
