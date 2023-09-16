@@ -49,7 +49,6 @@ else:
     const_config.application_path = const_config.exec_path
 
 helper_files.check_directory_structure()
-helper_utilities.convert_defaults_ini()
 
 app = FastAPI()
 
