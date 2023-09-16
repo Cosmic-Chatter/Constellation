@@ -1045,9 +1045,6 @@ $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
 $('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSettingsChange)
-$('#componentInfoModalSettingsImageDuration').on('input', function () {
-  $('#componentInfoModalSettingsSaveButton').show()
-})
 document.getElementById('definitionTabAppFilterSelect').addEventListener('change', (event) => {
   constExhibit.filterDefinitionListByApp()
 })

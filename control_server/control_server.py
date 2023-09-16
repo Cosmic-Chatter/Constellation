@@ -100,8 +100,6 @@ def send_webpage_update():
             temp["allowed_actions"] = item.config["allowed_actions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        if "image_duration" in item.config:
-            temp["image_duration"] = item.config["image_duration"]
         if "autoplay_audio" in item.config:
             temp["autoplay_audio"] = item.config["autoplay_audio"]
         component_dict_list.append(temp)

@@ -253,9 +253,6 @@ class ExhibitComponent extends BaseComponent {
     if ('helperAddress' in update) {
       this.helperAddress = update.helperAddress
     }
-    if ('image_duration' in update) {
-      this.image_duration = update.image_duration
-    }
     if ('platform_details' in update) {
       this.platformDetails = update.platform_details
     }
@@ -656,14 +653,6 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
   } else {
     $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
-  }
-  if (obj.constellationAppId === 'media_player') {
-    $('#componentInfoModalSettingsImageDuration').parent().parent().show()
-    if ('image_duration' in obj) {
-      $('#componentInfoModalSettingsImageDuration').val(obj.image_duration)
-    }
-  } else {
-    $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
   }
 
   // If this is a projector, populate the status pane
@@ -1259,11 +1248,6 @@ export function submitComponentSettingsChange () {
   settings.allow_shutdown = $('#componentInfoModalSettingsAllowShutdown').prop('checked')
   settings.allow_sleep = $('#componentInfoModalSettingsAllowSleep').prop('checked')
   settings.autoplay_audio = $('#componentInfoModalSettingsAutoplayAudio').prop('checked')
-
-  const imageDuration = $('#componentInfoModalSettingsImageDuration').val().trim()
-  if (imageDuration !== '') {
-    settings.image_duration = parseFloat(imageDuration)
-  }
 
   constTools.makeRequest({
     method: 'POST',
