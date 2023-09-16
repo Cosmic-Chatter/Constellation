@@ -652,6 +652,7 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalDescription').html(obj.description)
     $('#componentInfoModalDescription').show()
   }
+
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
   $('#componentInfoConnectingNotice').show()
@@ -719,6 +720,8 @@ export function showExhibitComponentInfo (id) {
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
     $('#componentInfoModalDefinitionsTabButton').hide()
+    $('#componentInfoModalDMXTabButton').hide()
+    $('#contentUploadSystemStatsView').hide()
 
     // This static component will defintely have no content.
     $('#componentInfoConnectionStatusFailed').show()

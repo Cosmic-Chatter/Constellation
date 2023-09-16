@@ -1010,6 +1010,19 @@ function updateDescriptionsConfigurationFromModal () {
     })
 }
 
+function loadVersion () {
+  // Load version.txt and update the GUI with the current version
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/version.txt',
+    rawResponse: true
+  })
+    .then((response) => {
+      $('#versionSpan').html(response)
+    })
+}
+
 // Bind event listeners
 
 // Components tab
@@ -1255,8 +1268,7 @@ eventSource.addEventListener('end', function (event) {
   eventSource.close()
 })
 
-// askForUpdate()
-// setInterval(askForUpdate, 5000)
+loadVersion()
 populateHelpTab()
 constMaintenance.refreshMaintenanceRecords()
 parseQueryString()
