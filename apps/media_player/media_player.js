@@ -11,15 +11,15 @@ function updateParser (update) {
       })
   }
 
-  if ('autoplay_audio' in update && update.autoplay_audio === 'true') {
-    document.getElementById('fullscreenVideo').muted = false
-    document.getElementById('audioPlayer').muted = false
+  if ('permissions' in update && 'audio' in update.permissions) {
+    document.getElementById('fullscreenVideo').muted = !update.permissions.audio
+    document.getElementById('audioPlayer').muted = !update.permissions.audio
   }
 }
 
 function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
-  console.log(def)
+
   constCommon.config.sourceList = []
   def.content_order.forEach((uuid) => {
     constCommon.config.sourceList.push(def.content[uuid])

@@ -320,7 +320,7 @@
                               New
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                              <a class="dropdown-item disabled defintion-new-option" href="#" data-app="infostation" target="_blank">Infostation</a>
+                              <a class="dropdown-item defintion-new-option" href="#" data-app="InfoStation" target="_blank">Infostation</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="media_browser" target="_blank">Media Browser</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="media_player" target="_blank">Media Player</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="timelapse_viewer" target="_blank">Timelapse Viewer</a>
@@ -437,49 +437,63 @@
                       </div>
                     </div>
                     <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
-                      <div class="row mt-3">
-                        <div class="col-12 mt-1">
-                          <a id='componentInfoModalFullSettingsButton' class="btn btn-primary" target='_blank'>Open full settings</a>
+                      <!-- Full settings -->
+                      <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
+                      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
+                        <!-- Audio permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
+                            Audio
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRefresh">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowRefresh">
-                              Allow refresh
-                            </label>
-                          </div>
+                        <!-- Refresh permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
+                            Refresh
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRestart">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowRestart">
-                              Allow restart
-                            </label>
-                          </div>
+                        <!-- Restart permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowRestart" class="form-label">
+                            Restart
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowShutdown">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowShutdown">
-                              Allow shutdown <span id="componentInfoModalSettingsAllowShutdownWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Shutdown is enabled; ensure Wake on LAN is set up or you have another way to turn the component on.">!</span>
-                            </label>
-                          </div>
+                        <!-- Shutdown permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
+                            Shutdown
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowSleep">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowSleep">
-                              Allow sleep
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAutoplayAudio">
-                            <label class="form-check-label" for="componentInfoModalSettingsAutoplayAudio">
-                              Autoplay audio <span id="componentInfoModalSettingsAutoplayAudioWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Audio autoplay is enabled; ensure it is also enabled in the component's browser.">!</span>
-                            </label>
-                          </div>
+                        <!-- Sleep permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowSleep" class="form-label">
+                            Sleep
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
                       </div>
                       <div class="row mt-3">

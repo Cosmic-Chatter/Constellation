@@ -39,7 +39,7 @@ class BaseComponent:
 
         self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
 
-        self.config = {"allowed_actions": [],
+        self.config = {"permissions": {},
                        "app_name": "",
                        "commands": [],
                        "description": config.componentDescriptions.get(id_, ""),
@@ -134,10 +134,7 @@ class ExhibitComponent(BaseComponent):
         wol = get_wake_on_LAN_component(self.id)
         if wol is not None:
             self.mac_address = wol.mac_address
-            if "power_on" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_on")
-            if "shutdown" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_off")
+            self.config["permissions"]["shutdown"] = True
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
     def __repr__(self):
@@ -237,7 +234,7 @@ class WakeOnLANDevice(BaseComponent):
         self.WOL_broadcast_address = "255.255.255.255"
         self.WOL_port = 9
 
-        self.config["allowed_actions"] = ["power_on"]
+        self.config["permissions"]["power_on"] = True
         self.config["app_name"] = "wol_only"
 
         self.state = {"status": "UNKNOWN"}
@@ -316,7 +313,7 @@ class Projector(BaseComponent):
 
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
 
-        self.config["allowed_actions"] = ["power_on", "power_off"]
+        self.config["permissions"] = {"sleep": True}
         self.config["app_name"] = "projector"
 
         self.state = {"status": "OFFLINE"}
@@ -637,17 +634,11 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
 
     component.update_last_contact_datetime(interaction=data.get("currentInteraction", False))
 
-    if "autoplay_audio" in data:
-        component.config["autoplay_audio"] = data["autoplay_audio"]
-    if "allowed_actions" in data:
-        allowed_actions = data["allowed_actions"]
+    if "permissions" in data:
+        permissions = data["permissions"]
 
-        for key in allowed_actions:
-            if allowed_actions[key] is True:
-                if key not in component.config["allowed_actions"]:
-                    component.config["allowed_actions"].append(key)
-            else:
-                component.config["allowed_actions"] = [x for x in component.config["allowed_actions"] if x != key]
+        for key in permissions:
+            component.config["permissions"][key] = permissions[key]
     if "error" in data:
         component.config["error"] = data["error"]
     else:

@@ -1,7 +1,13 @@
 /* global platform, html2canvas */
 
 export const config = {
-  allowedActionsDict: { refresh: 'true' },
+  permissions: {
+    audio: true,
+    refresh: true,
+    restart: false,
+    shutfown: false,
+    sleep: false
+  },
   autoplayAudio: false,
   connectionChecker: null, // A function to check the connection with Control Server and act on it
   constellationAppID: '',
@@ -140,11 +146,10 @@ export function sendPing () {
       id: config.id,
       group: config.group,
       helperAddress: config.helperAddress,
-      allowed_actions: config.allowedActionsDict,
+      permissions: config.permissions,
       constellation_app_id: config.constellationAppID,
       platform_details: config.platformDetails,
-      currentInteraction: config.currentInteraction,
-      autoplay_audio: config.autoplayAudio
+      currentInteraction: config.currentInteraction
     }
     // See if there is an error to report
     const errorString = JSON.stringify(config.errorDict)
@@ -224,7 +229,7 @@ function readServerUpdate (update) {
       } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
         wakeDisplay()
       } else if (cmd === 'refresh_page') {
-        if ('refresh' in config.allowedActionsDict && stringToBool(config.allowedActionsDict.refresh) === true) {
+        if ('refresh' in config.permissions && config.permissions.refresh === true) {
           location.reload()
         }
       } else if (cmd === 'reloadDefaults') {
@@ -262,11 +267,7 @@ function readServerUpdate (update) {
   }
 
   if ('permissions' in update) {
-    config.allowedActionsDict.sleep = update.permissions.sleep
-    config.allowedActionsDict.refresh = update.permissions.refresh
-    config.allowedActionsDict.restart = update.permissions.restart
-    config.allowedActionsDict.shutdown = update.permissions.shutdown
-    config.autoplayAudio = update.permissions.audio
+    config.permissions = update.permissions
   }
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
@@ -347,7 +348,7 @@ function readHelperUpdate (update, changeApp = true) {
       } else if (cmd === 'wakeDisplay' || cmd === 'power_on') {
         wakeDisplay()
       } else if (cmd === 'refresh_page') {
-        if ('refresh' in config.allowedActionsDict && stringToBool(config.allowedActionsDict.refresh) === true) {
+        if ('refresh' in config.permissions && config.permissions.refresh === true) {
           location.reload()
         }
       } else if (cmd === 'reloadDefaults') {
@@ -375,11 +376,7 @@ function readHelperUpdate (update, changeApp = true) {
     }
   }
   if ('permissions' in update) {
-    config.allowedActionsDict.sleep = update.permissions.sleep
-    config.allowedActionsDict.refresh = update.permissions.refresh
-    config.allowedActionsDict.restart = update.permissions.restart
-    config.allowedActionsDict.shutdown = update.permissions.shutdown
-    config.autoplayAudio = update.permissions.audio
+    config.permissions = update.permissions
   }
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }

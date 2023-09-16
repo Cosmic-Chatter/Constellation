@@ -96,8 +96,8 @@ def send_webpage_update():
             temp["definition"] = item.config["definition"]
         if "error" in item.config:
             temp["error"] = item.config["error"]
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         if "autoplay_audio" in item.config:
@@ -113,8 +113,8 @@ def send_webpage_update():
                 "protocol": item.connection_type,
                 "state": item.state,
                 "status": item.state["status"]}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         component_dict_list.append(temp)
@@ -126,8 +126,8 @@ def send_webpage_update():
                 "ip_address": item.ip_address,
                 "latency": item.latency,
                 "status": item.state["status"]}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         component_dict_list.append(temp)

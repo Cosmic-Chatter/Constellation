@@ -12,7 +12,7 @@ class BaseComponent {
     this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
-    this.allowed_actions = []
+    this.permissions = {}
 
     this.ip_address = null
     this.latency = null
@@ -91,7 +91,7 @@ class BaseComponent {
   }
 
   populateActionMenu (dropdownMenu = null) {
-    // Build out the dropdown menu options based on the this.allowed_actions.
+    // Build out the dropdown menu options based on the this.permissions.
 
     if (dropdownMenu == null) {
       const cleanID = this.id.replaceAll(' ', '_')
@@ -99,47 +99,70 @@ class BaseComponent {
     }
     $(dropdownMenu).empty()
     const thisId = this.id
-
     let numOptions = 0
-    this.allowed_actions.forEach((action) => {
-      const option = document.createElement('a')
-      option.classList = 'dropdown-item handCursor'
 
-      let cmd
+    if ('refresh' in this.permissions && this.permissions.refresh === true) {
       numOptions += 1
-      if (action === 'refresh') {
-        option.innerHTML = 'Refresh Component'
-        cmd = 'refresh_page'
-      } else if (action === 'restart') {
-        option.innerHTML = 'Restart component'
-        numOptions += 1
-        cmd = 'restart'
-      } else if (action === 'shutdown' || action === 'power_off') {
-        option.innerHTML = 'Sleep component'
-        cmd = 'shutdown'
-      } else if (action === 'power_on') {
-        option.innerHTML = 'Wake component'
-        cmd = 'power_on'
-      } else if (action === 'sleep') {
-        option.innerHTML = 'Wake display'
-        cmd = 'wakeDisplay'
-
-        const option2 = document.createElement('a')
-        option2.classList = 'dropdown-item handCursor'
-        option2.innerHTML = 'Sleep display'
-        option2.addEventListener('click', function () {
-          queueCommand(thisId, 'sleepDisplay')
-        }, false)
-        dropdownMenu.appendChild(option2)
-      } else {
-        numOptions -= 1
-      }
-
-      option.addEventListener('click', function () {
-        queueCommand(thisId, cmd)
+      const refreshAction = document.createElement('a')
+      refreshAction.classList = 'dropdown-item handCursor'
+      refreshAction.innerHTML = 'Refresh component'
+      refreshAction.addEventListener('click', function () {
+        queueCommand(thisId, 'refresh')
       }, false)
-      dropdownMenu.appendChild(option)
-    })
+      dropdownMenu.appendChild(refreshAction)
+    }
+
+    if ('sleep' in this.permissions && this.permissions.sleep === true) {
+      numOptions += 2
+      const sleepAction = document.createElement('a')
+      sleepAction.classList = 'dropdown-item handCursor'
+      sleepAction.innerHTML = 'Sleep display'
+      sleepAction.addEventListener('click', function () {
+        queueCommand(thisId, 'sleepDisplay')
+      }, false)
+      dropdownMenu.appendChild(sleepAction)
+
+      const wakeAction = document.createElement('a')
+      wakeAction.classList = 'dropdown-item handCursor'
+      wakeAction.innerHTML = 'Wake display'
+      wakeAction.addEventListener('click', function () {
+        queueCommand(thisId, 'wakeDisplay')
+      }, false)
+      dropdownMenu.appendChild(wakeAction)
+    }
+
+    if ('restart' in this.permissions && this.permissions.restart === true) {
+      numOptions += 1
+      const restartAction = document.createElement('a')
+      restartAction.classList = 'dropdown-item handCursor'
+      restartAction.innerHTML = 'Restart component'
+      restartAction.addEventListener('click', function () {
+        queueCommand(thisId, 'restart')
+      }, false)
+      dropdownMenu.appendChild(restartAction)
+    }
+
+    if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
+      numOptions += 1
+      const shutdownAction = document.createElement('a')
+      shutdownAction.classList = 'dropdown-item handCursor'
+      shutdownAction.innerHTML = 'Power off component'
+      shutdownAction.addEventListener('click', function () {
+        queueCommand(thisId, 'restart')
+      }, false)
+      dropdownMenu.appendChild(shutdownAction)
+    }
+
+    if ('power_on' in this.permissions && this.permissions.power_on === true) {
+      numOptions += 1
+      const powerOnAction = document.createElement('a')
+      powerOnAction.classList = 'dropdown-item handCursor'
+      powerOnAction.innerHTML = 'Power on component'
+      powerOnAction.addEventListener('click', function () {
+        queueCommand(thisId, 'powerOn')
+      }, false)
+      dropdownMenu.appendChild(powerOnAction)
+    }
 
     if (numOptions === 0) {
       const option = document.createElement('a')
@@ -161,10 +184,10 @@ class BaseComponent {
     rebuildComponentInterface()
   }
 
-  setAllowedActions (actions) {
-    // Set the compnent's allowed actions and then rebuild the action list
+  setPermissions (permissions) {
+    // Set the compnent's permisions and then rebuild the action list
 
-    this.allowed_actions = actions
+    this.permissions = permissions
     this.populateActionMenu()
   }
 
@@ -190,9 +213,9 @@ class BaseComponent {
     if ('ip_address' in update) {
       this.ip_address = update.ip_address
     }
-    if ('allowed_actions' in update) {
-      if (constTools.arraysEqual(this.allowed_actions, update.allowed_actions) === false) {
-        this.setAllowedActions(update.allowed_actions)
+    if ('permissions' in update) {
+      if (JSON.stringify(this.permissions) !== JSON.stringify(update.permissions)) {
+        this.setPermissions(update.permissions)
       }
     }
     if ('description' in update) {
@@ -553,6 +576,7 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
+  console.log(obj)
 
   $('#componentInfoModalTitle').html(id)
 
@@ -644,16 +668,11 @@ export function showExhibitComponentInfo (id) {
   // Configure the settings page with the current settings
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
-  $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
-  $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
-  $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
-  $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
-
-  if ('autoplay_audio' in obj) {
-    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
-  } else {
-    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
-  }
+  $('#componentInfoModalSettingsAutoplayAudio').val(String(obj.permissions.audio))
+  $('#componentInfoModalSettingsAllowRefresh').val(String(obj.permissions.refresh))
+  $('#componentInfoModalSettingsAllowRestart').val(String(obj.permissions.restart))
+  $('#componentInfoModalSettingsAllowShutdown').val(String(obj.permissions.shutdown))
+  $('#componentInfoModalSettingsAllowSleep').val(String(obj.permissions.sleep))
 
   // If this is a projector, populate the status pane
   if (obj.type === 'projector') {
@@ -1241,14 +1260,15 @@ export function submitComponentSettingsChange () {
 
   const obj = getExhibitComponent($('#componentInfoModalTitle').html())
 
-  const settings = {}
-
-  settings.allow_refresh = $('#componentInfoModalSettingsAllowRefresh').prop('checked')
-  settings.allow_restart = $('#componentInfoModalSettingsAllowRestart').prop('checked')
-  settings.allow_shutdown = $('#componentInfoModalSettingsAllowShutdown').prop('checked')
-  settings.allow_sleep = $('#componentInfoModalSettingsAllowSleep').prop('checked')
-  settings.autoplay_audio = $('#componentInfoModalSettingsAutoplayAudio').prop('checked')
-
+  const settings = {
+    permissions: {
+      audio: constTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
+      refresh: constTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
+      restart: constTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
+      shutdown: constTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
+      sleep: constTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
+    }
+  }
   constTools.makeRequest({
     method: 'POST',
     url: obj.getHelperURL(),
@@ -1262,24 +1282,6 @@ export function submitComponentSettingsChange () {
         }
       }
     })
-
-  const app = $('#componentInfoModalSettingsAppName').val()
-  if (app !== obj.constellationAppId) {
-    $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(app))
-    obj.constellationAppId = app
-    updateComponentInfoModalFromHelper(obj.id)
-
-    constTools.makeServerRequest({
-      method: 'POST',
-      endpoint: '/exhibit/setComponentApp',
-      params: {
-        component: {
-          id: obj.id
-        },
-        app_name: app
-      }
-    })
-  }
 }
 
 export function getExhibitComponent (id) {

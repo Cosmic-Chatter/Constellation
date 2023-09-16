@@ -270,6 +270,10 @@ function updateParser (update) {
         loadDefinition(result.definition)
       })
   }
+
+  if ('permissions' in update && 'audio' in update.permissions) {
+    document.getElementById('mediaLightboxVideo').muted = !update.permissions.audio
+  }
 }
 
 function loadDefinition (def) {

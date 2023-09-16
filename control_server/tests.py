@@ -78,7 +78,7 @@ class TestHelperMethods(unittest.TestCase):
             "helperAddress": "192.168.1.2",
             "autoplay_audio": True,
             "currentInteraction": True,
-            "allowed_actions": {
+            "permissions": {
                 "shutdown": True,
             },
             "constellation_app_id": "media_player"
@@ -89,7 +89,7 @@ class TestHelperMethods(unittest.TestCase):
         self.assertEqual(test.helperAddress, "192.168.1.2")
         self.assertEqual(test.config["autoplay_audio"], True)
         self.assertEqual(test.lastInteractionDateTime == datetime.datetime(2020, 1, 1), False)
-        self.assertEqual("shutdown" in test.config["allowed_actions"], True)
+        self.assertEqual("shutdown" in test.config["permissions"], True)
         self.assertEqual(test.config["app_name"], "media_player")
 
         # Create component from update
