@@ -35,7 +35,7 @@ body {
 }
 #promptText {
   font-size: calc(10vmin + var(--prompt-font-adjust)*1vmin);
-  width: 95vw;
+  width: 100vw;
   text-align: center;
   font-weight: bold;
   font-family: var(--prompt-font);
