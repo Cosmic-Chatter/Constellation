@@ -162,6 +162,9 @@ async def get_available_content(config: const_config = Depends(get_config)):
 async def get_video_details(filename: str = Body(description='The filename of the file.', embed=True)):
     """Return a dictionary of useful information about a video file in the content directory."""
 
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "details": "Invalid character in filename"}
+
     success, details = helper_files.get_video_file_details(filename)
     return {"success": success, "details": details}
 
@@ -170,6 +173,9 @@ async def get_video_details(filename: str = Body(description='The filename of th
 async def convert_video_to_frames(filename: str = Body(description='The filename of the file.'),
                                   file_type: str = Body(description='The output filetype to use.', default='jpg')):
     """Convert the given file to a set of frames."""
+
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "reason": "Invalid character in filename"}
 
     success = helper_files.convert_video_to_frames(filename, file_type)
 
@@ -182,6 +188,9 @@ async def create_thumbnail_video_from_frames(
         frames: list[str] = Body(description='A list of the files to include'),
         duration: float = Body(description='The length of the output video in seconds.', default=5)):
     """Create a video thumbnail out of the given files."""
+
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "reason": "Invalid character in filename"}
 
     success = helper_files.create_thumbnail_video_from_frames(frames, filename, duration)
     return {"success": success}
@@ -226,6 +235,10 @@ def upload_thumbnail(files: list[UploadFile] = File(),
 
     for file in files:
         filename = file.filename
+
+        if not helper_files.filename_safe(filename):
+            continue
+
         temp_path = helper_files.get_path(["content", filename], user_file=True)
         with config.content_file_lock:
             # First write the file to content
@@ -418,6 +431,9 @@ async def rename_file(current_name: str = Body(description="The file to be renam
                       new_name: str = Body(description="The new name of the file.")):
     """Rename a file in the content directory."""
 
+    if not helper_files.filename_safe(current_name) or not helper_files.filename_safe(new_name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
     return helper_files.rename_file(current_name, new_name)
 
 
@@ -425,6 +441,9 @@ async def rename_file(current_name: str = Body(description="The file to be renam
 async def write_data(data: dict[str, Any] = Body(description="A dictionary of data to be written to file as JSON."),
                      name: str = Body(description="The name of the file to write,")):
     """Record the submitted data to file as JSON."""
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
 
     file_path = helper_files.get_path(["data", name + ".txt"], user_file=True)
     success, reason = helper_files.write_json(data, file_path, append=True, compact=True)
@@ -441,6 +460,9 @@ async def write_raw_text(text: str = Body(description='The data to write.'),
     Set mode == 'a' to append or 'w' to overwrite the file.
     """
 
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
     if mode != "a" and mode != "w":
         response = {"success": False,
                     "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
@@ -454,6 +476,9 @@ async def write_raw_text(text: str = Body(description='The data to write.'),
 async def read_raw_text(name: str = Body(description='The name of the file to read.')):
     """Load the given file and return the raw text."""
 
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
     result, success, reason = helper_files.get_raw_text(name)
 
     response = {"success": success, "reason": reason, "text": result}
@@ -463,6 +488,9 @@ async def read_raw_text(name: str = Body(description='The name of the file to re
 @app.post("/data/getCSV")
 async def get_tracker_data_csv(name: str = Body(description='The name of the filename to return as a CSV', embed=True)):
     """Return the requested data file as a CSV string."""
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
 
     if not name.lower().endswith(".txt"):
         name += ".txt"
@@ -524,6 +552,11 @@ def upload_content(files: list[UploadFile] = File(),
 
     for file in files:
         filename = file.filename
+
+        if not helper_files.filename_safe(filename):
+            print("upload_content: error: invalid filename: ", filename)
+            continue
+
         file_path = helper_files.get_path(
             ["content", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")

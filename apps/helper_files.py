@@ -38,6 +38,23 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
     return _path
 
 
+def filename_safe(filename: str) -> bool:
+    """Ensure the filename doesn't escape to another directory or is malformed.
+
+    Note that this should not be used on paths, which will obviously include some
+    of these cases.
+    """
+
+    if not isinstance(filename, str):
+        return False
+    for char in ['/', '\\', '<', '>', ':', '"', '|', '?', '*']:
+        if char in filename:
+            return False
+    if filename.strip() in ['', '.', '..']:
+        return False
+    return True
+
+
 def load_json(path: str):
     """Load the requested JSON file from disk and return it as a dictionary."""
 
@@ -94,6 +111,9 @@ def write_json(data: dict, path: str | os.PathLike, append: bool = False, compac
 def write_raw_text(data: str, name: str, mode: str = "a") -> tuple[bool, str]:
     """Write an un-formatted string to file"""
 
+    if not filename_safe(name):
+        return False, "Invalid character in filename"
+
     file_path = get_path(["data", name], user_file=True)
     success = True
     reason = ""
@@ -117,6 +137,9 @@ def write_raw_text(data: str, name: str, mode: str = "a") -> tuple[bool, str]:
 
 def get_raw_text(name: str) -> tuple[str, bool, str]:
     """Return the contents of a text file."""
+
+    if not filename_safe(name):
+        return "", False, "Invalid character in filename"
 
     file_path = get_path(["data", name], user_file=True)
     success = True
