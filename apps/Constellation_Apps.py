@@ -1086,7 +1086,7 @@ def _start_server(port=None):
 
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
-                host="localhost",
+                host="",
                 port=port,
                 reload=False, workers=1)
 
