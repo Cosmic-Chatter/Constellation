@@ -800,8 +800,14 @@ function populateManageSettingsModal () {
       $('#manageSettingsModalIPInput').val(config.ip_address)
       $('#manageSettingsModalPortInput').val(config.port)
       $('#manageSettingsModalGalleryNameInput').val(config.gallery_name)
-
-      const staffString = config.assignable_staff.join(', ')
+      
+      let staffString
+      try {
+        staffString = config.assignable_staff.join(', ')
+      } catch {
+        staffString = ''
+      }
+      
       $('#manageSettingsModalAssignableStaffInput').val(staffString)
       $('#manageSettingsModalDebugSelect').val(String(config.debug))
     })
@@ -818,7 +824,13 @@ function updateManageSettingsModal () {
   } else {
     $('#manageSettingsModalRestartRequiredWarning').hide()
   }
-  const staffString = config.assignable_staff.join(', ')
+  let staffString
+  try {
+    staffString = config.assignable_staff.join(', ')
+  } catch {
+    staffString = ''
+  }
+  
   if ($('#manageSettingsModalGalleryNameInput').val().trim() !== config.gallery_name || constTools.stringToBool($('#manageSettingsModalDebugSelect').val()) !== config.debug || $('#manageSettingsModalAssignableStaffInput').val().trim() !== staffString) {
     $('#manageSettingsModalSaveButton').show()
   }
