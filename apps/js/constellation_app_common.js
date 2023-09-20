@@ -19,7 +19,6 @@ export const config = {
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
-  otherAppPath: '', // Path to an optional HTML file that can be seleted from the web console
   platformDetails: {
     operating_system: String(platform.os),
     browser: platform.name + ' ' + platform.version
@@ -272,54 +271,30 @@ function readServerUpdate (update) {
   if ('software_update' in update) {
     if (update.software_update.update_available === true) { config.errorDict.software_update = update.software_update }
   }
-  if ('other_app_path' in update) {
-    config.otherAppPath = update.other_app_path
-  }
   if (sendUpdate) {
     sendConfigUpdate(update)
   }
 
-  // After we have saved any updates, see if we should change the app
-  if (stringToBool(parseQueryString().get('showSettings')) === false && config.constellationAppID !== 'dmx_control') {
-    if ('app_name' in update &&
-        ('definition' in update === false || update.definition === '') &&
-        update.app_name !== config.constellationAppID &&
-        update.app_name !== '') {
-      if (update.app_name === 'other') {
-        if (config.otherAppPath !== '') {
-          gotoApp('other', config.otherAppPath)
-        }
-      } else {
-        gotoApp(update.app_name)
-      }
-    }
-
-    // Also check the definition file for a changed app.
-    if (config.constellationAppID !== 'dmx_control' && 'definition' in update && update.definition !== config.currentDefinition) {
-      config.currentDefinition = update.definition
-      makeHelperRequest({
-        method: 'GET',
-        endpoint: '/definitions/' + update.definition + '/load'
-      })
-        .then((result) => {
-          if ('success' in result && result.success === false) return
-          const def = result.definition
-          console.log(def)
-          if ('app' in def &&
+  // Check the definition file for a changed app.
+  if (config.constellationAppID !== 'dmx_control' && 'definition' in update && update.definition !== config.currentDefinition) {
+    config.currentDefinition = update.definition
+    makeHelperRequest({
+      method: 'GET',
+      endpoint: '/definitions/' + update.definition + '/load'
+    })
+      .then((result) => {
+        if ('success' in result && result.success === false) return
+        const def = result.definition
+        console.log(def)
+        if ('app' in def &&
           def.app !== config.constellationAppID &&
           def.app !== '') {
-            console.log(def, config.constellationAppID)
-            if (def.app === 'other') {
-              if (config.otherAppPath !== '') {
-                gotoApp('other', config.otherAppPath)
-              }
-            } else {
-              console.log('Switching to app', def.app)
-              gotoApp(def.app)
-            }
-          }
-        })
-    }
+          console.log('Switching to app', def.app)
+          let otherPath = ''
+          if (def.app === 'other') otherPath = def.path
+          gotoApp(def.app, otherPath)
+        }
+      })
   }
 
   // Call the updateParser, if provided, to parse actions for the specific app
@@ -389,9 +364,6 @@ function readHelperUpdate (update, changeApp = true) {
       config.standalone = update.system.standalone
     }
   }
-  if ('other_app_path' in update) {
-    config.otherAppPath = update.other_app_path
-  }
   if (sendUpdate) {
     sendConfigUpdate(update)
   }
@@ -416,15 +388,10 @@ function readHelperUpdate (update, changeApp = true) {
         if ('app' in def &&
         def.app !== config.constellationAppID &&
         def.app !== '') {
-          console.log(def, config.constellationAppID)
-          if (def.app === 'other') {
-            if (config.otherAppPath !== '') {
-              gotoApp('other', config.otherAppPath)
-            }
-          } else {
-            console.log('Switching to app', def.app)
-            gotoApp(def.app)
-          }
+          console.log('Switching to app', def.app)
+          let otherPath = ''
+          if (def.app === 'other') otherPath = def.path
+          gotoApp(update.app, otherPath)
         }
       })
   }
@@ -674,7 +641,7 @@ export function gotoApp (app, other = '') {
   }
   console.log(config, app, other)
   if (other !== '') {
-    window.location = config.helperAddress + other
+    window.location = config.helperAddress + '/' + other
   } else {
     window.location = config.helperAddress + appLocations[app]
   }
