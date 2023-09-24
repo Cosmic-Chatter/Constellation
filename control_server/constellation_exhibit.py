@@ -39,7 +39,7 @@ class BaseComponent:
 
         self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
 
-        self.config = {"allowed_actions": [],
+        self.config = {"permissions": {},
                        "app_name": "",
                        "commands": [],
                        "description": config.componentDescriptions.get(id_, ""),
@@ -119,7 +119,6 @@ class ExhibitComponent(BaseComponent):
         self.helperAddress: str = ""  # full IP and port of helper
         self.platform_details: dict = {}
 
-        self.config["content"] = []
         self.config["definition"] = ""
 
         self.status_manager = component_helpers.ComponentStatusManager(category)
@@ -135,10 +134,7 @@ class ExhibitComponent(BaseComponent):
         wol = get_wake_on_LAN_component(self.id)
         if wol is not None:
             self.mac_address = wol.mac_address
-            if "power_on" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_on")
-            if "shutdown" not in self.config["allowed_actions"]:
-                self.config["allowed_actions"].append("power_off")
+            self.config["permissions"]["shutdown"] = True
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
     def __repr__(self):
@@ -178,9 +174,6 @@ class ExhibitComponent(BaseComponent):
         try:
             component_config = ([x for x in config.exhibit_configuration if x["id"] == self.id])[0]
 
-            if "content" in component_config and self.config["content"] != component_config["content"]:
-                self.config["content"] = component_config["content"]
-                update_made = True
             if "definition" in component_config and self.config["definition"] != component_config["definition"]:
                 self.config["definition"] = component_config["definition"]
                 update_made = True
@@ -189,7 +182,6 @@ class ExhibitComponent(BaseComponent):
                 update_made = True
         except IndexError:
             # This component is not specified in the current exhibit configuration
-            self.config["content"] = []
             self.config["definition"] = ""
 
         self.config["current_exhibit"] = os.path.splitext(config.current_exhibit)[0]
@@ -242,7 +234,7 @@ class WakeOnLANDevice(BaseComponent):
         self.WOL_broadcast_address = "255.255.255.255"
         self.WOL_port = 9
 
-        self.config["allowed_actions"] = ["power_on"]
+        self.config["permissions"]["power_on"] = True
         self.config["app_name"] = "wol_only"
 
         self.state = {"status": "UNKNOWN"}
@@ -321,7 +313,7 @@ class Projector(BaseComponent):
 
         self.last_contact_datetime = datetime.datetime(2020, 1, 1)
 
-        self.config["allowed_actions"] = ["power_on", "power_off"]
+        self.config["permissions"] = {"sleep": True}
         self.config["app_name"] = "projector"
 
         self.state = {"status": "OFFLINE"}
@@ -642,20 +634,11 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
 
     component.update_last_contact_datetime(interaction=data.get("currentInteraction", False))
 
-    if "AnyDeskID" in data:
-        component.config["AnyDeskID"] = data["AnyDeskID"]
-    if "autoplay_audio" in data:
-        component.config["autoplay_audio"] = data["autoplay_audio"]
-    if "imageDuration" in data:
-        component.config["image_duration"] = data["imageDuration"]
-    if "allowed_actions" in data:
-        allowed_actions = data["allowed_actions"]
-        for key in allowed_actions:
-            if allowed_actions[key] is True or allowed_actions[key].lower() in ["true", "yes", "1"]:
-                if key not in component.config["allowed_actions"]:
-                    component.config["allowed_actions"].append(key)
-            else:
-                component.config["allowed_actions"] = [x for x in component.config["allowed_actions"] if x != key]
+    if "permissions" in data:
+        permissions = data["permissions"]
+
+        for key in permissions:
+            component.config["permissions"][key] = permissions[key]
     if "error" in data:
         component.config["error"] = data["error"]
     else:

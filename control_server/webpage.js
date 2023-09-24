@@ -9,128 +9,76 @@ import * as constSchedule from './constellation_schedule.js'
 import * as constTools from './constellation_tools.js'
 import * as constTracker from './constellation_tracker.js'
 
-function onUploadContentChange () {
-  // When we select a file for uploading, check against the existing files
-  // (as defined by their buttons) and warn if we will overwrite. Also
-  // check if the filename contains an =, which is not allowed
+function showManageExhibitsModal () {
+  // Configure the manageExhibitsModal and show it.
 
-  // Show the upload button (we may hide it later)
-  $('#contentUploadSubmitButton').show()
-
-  const fileInput = $('#componentContentUpload')[0]
-
-  // Check for filename collision and = sign in filename
-  const currentFiles = $('.componentContentButton').map(function () { return $(this).find('span').html() }).toArray()
-  let collision = false
-  let equals = false
-  for (let i = 0; i < fileInput.files.length; i++) {
-    const file = fileInput.files[i]
-    if (currentFiles.includes(file.name)) {
-      collision = true
-    }
-    if (file.name.includes('=')) {
-      equals = true
-    }
-  }
-  // Format button text
-  if (fileInput.files.length === 1) {
-    $('#componentContentUploadfilename').html('File: ' + fileInput.files[0].name)
-  } else {
-    $('#componentContentUploadfilename').html('Files: ' + fileInput.files[0].name + ` + ${fileInput.files.length - 1} more`)
-  }
-  if (collision) {
-    $('#uploadOverwriteWarning').show()
-  } else {
-    $('#uploadOverwriteWarning').hide()
-  }
-  if (equals) {
-    $('#contentUploadEqualSignWarning').show()
-    $('#contentUploadSubmitButton').hide()
-  } else {
-    $('#contentUploadEqualSignWarning').hide()
-  }
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/exhibit/getAvailable'
+  })
+    .then((result) => {
+      populateManageExhibitsExhibitList(result.available_exhibits)
+    })
+  $('#manageExhibitsModal').modal('show')
 }
 
-function uploadComponentContentFile () {
-  // Handle uploading files to the FastAPI-based system helper
-  const fileInput = $('#componentContentUpload')[0]
+function populateManageExhibitsExhibitList (exhibits) {
+  // Take a list of exhibits and create a GUI representation for each
 
-  if (fileInput.files[0] != null) {
-    const id = $('#componentInfoModalTitle').html().trim()
+  const exhibitRow = document.getElementById('manageExhibitsModalExhibitList')
+  exhibitRow.innerHTML = ''
 
-    const component = constExhibit.getExhibitComponent(id)
+  exhibits.forEach((exhibit) => {
+    const col = document.createElement('div')
+    col.classList = 'col-12 mt-2'
+    exhibitRow.appendChild(col)
 
-    $('#contentUploadSubmitButton').prop('disabled', true)
-    $('#contentUploadSubmitButton').html('Working...')
-
-    const formData = new FormData()
-
-    for (let i = 0; i < fileInput.files.length; i++) {
-      const file = fileInput.files[i]
-      formData.append('files', file)
-    }
-
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', component.getHelperURL() + '/uploadContent', true)
-
-    xhr.onreadystatechange = function () {
-      if (this.readyState !== 4) return
-      if (this.status === 200) {
-        const response = JSON.parse(this.responseText)
-
-        if ('success' in response) {
-          constExhibit.queueCommand(id, 'reloadDefaults')
-          constExhibit.showExhibitComponentInfo('')
-        }
-      } else if (this.status === 422) {
-        console.log(JSON.parse(this.responseText))
-      }
-    }
-
-    xhr.upload.addEventListener('progress', function (evt) {
-      if (evt.lengthComputable) {
-        let percentComplete = evt.loaded / evt.total
-        percentComplete = parseInt(percentComplete * 100)
-        $('#contentUploadProgressBar').width(String(percentComplete) + '%')
-        if (percentComplete > 0) {
-          $('#contentUploadProgressBarContainer').show()
-        } else if (percentComplete === 100) {
-          $('#contentUploadProgressBarContainer').hide()
-        }
-      }
-    }, false)
-
-    xhr.send(formData)
-  }
+    const button = document.createElement('button')
+    button.classList = 'btn btn-info w-100 manageExhibitListButton'
+    button.innerHTML = exhibit
+    button.addEventListener('click', (event) => {
+      Array.from(exhibitRow.querySelectorAll('.manageExhibitListButton')).forEach((el) => {
+        el.classList.replace('btn-success', 'btn-info')
+      })
+      event.target.classList.replace('btn-info', 'btn-success')
+      populateManageExhibitsExhibitContent(exhibit)
+    })
+    col.appendChild(button)
+  })
 }
 
-function submitComponentContentChange () {
-  // Collect the new information from the componentInfoModal and pass it
-  // back to the server to be changed.
+function populateManageExhibitsExhibitContent (exhibit) {
+  // Create a GUI representation of the given exhibit that shows the defintion for each component.
 
-  const id = $('#componentInfoModalTitle').html().trim()
-  const selectedButtons = $('.componentContentButton.btn-primary').find('.contentFilenameContainer')
-
-  const contentList = []
-  for (let i = 0; i < selectedButtons.length; i++) {
-    const content = selectedButtons[i].innerHTML.trim()
-    contentList.push(content)
-  }
-
-  sendComponentContentChangeRequest(id, contentList)
-
-  // Hide the modal
-  $('#componentInfoModal').modal('hide')
-}
-
-function sendComponentContentChangeRequest (id, content) {
-  // Send a request to the server to initiate a content change
+  const contentList = document.getElementById('manageExhibitsModalExhibitContentList')
+  contentList.innerHTML = ''
 
   constTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/component/' + id + '/setContent',
-    params: { content }
+    endpoint: '/exhibit/getDetails',
+    params: { name: exhibit }
   })
+    .then((result) => {
+      console.log(result.exhibit)
+      result.exhibit.forEach((component) => {
+        const col = document.createElement('div')
+        col.classList = 'col-6 mt-2'
+        contentList.appendChild(col)
+
+        const row = document.createElement('div')
+        row.classList = 'row px-1'
+        col.appendChild(row)
+
+        const header = document.createElement('div')
+        header.classList = 'col-12 bg-primary rounded-top'
+        header.innerHTML = component.id
+        row.appendChild(header)
+
+        const body = document.createElement('div')
+        body.classList = 'col-12 bg-secondary'
+        row.appendChild(body)
+      })
+    })
 }
 
 function setCurrentExhibitName (name) {
@@ -852,8 +800,14 @@ function populateManageSettingsModal () {
       $('#manageSettingsModalIPInput').val(config.ip_address)
       $('#manageSettingsModalPortInput').val(config.port)
       $('#manageSettingsModalGalleryNameInput').val(config.gallery_name)
-
-      const staffString = config.assignable_staff.join(', ')
+      
+      let staffString
+      try {
+        staffString = config.assignable_staff.join(', ')
+      } catch {
+        staffString = ''
+      }
+      
       $('#manageSettingsModalAssignableStaffInput').val(staffString)
       $('#manageSettingsModalDebugSelect').val(String(config.debug))
     })
@@ -870,7 +824,13 @@ function updateManageSettingsModal () {
   } else {
     $('#manageSettingsModalRestartRequiredWarning').hide()
   }
-  const staffString = config.assignable_staff.join(', ')
+  let staffString
+  try {
+    staffString = config.assignable_staff.join(', ')
+  } catch {
+    staffString = ''
+  }
+  
   if ($('#manageSettingsModalGalleryNameInput').val().trim() !== config.gallery_name || constTools.stringToBool($('#manageSettingsModalDebugSelect').val()) !== config.debug || $('#manageSettingsModalAssignableStaffInput').val().trim() !== staffString) {
     $('#manageSettingsModalSaveButton').show()
   }
@@ -1062,6 +1022,19 @@ function updateDescriptionsConfigurationFromModal () {
     })
 }
 
+function loadVersion () {
+  // Load version.txt and update the GUI with the current version
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/version.txt',
+    rawResponse: true
+  })
+    .then((response) => {
+      $('#versionSpan').html(response)
+    })
+}
+
 // Bind event listeners
 
 // Components tab
@@ -1080,21 +1053,12 @@ $('#componentsTabSettingsShowStatic').change(function () {
   constExhibit.rebuildComponentInterface()
 })
 // Component info modal
-$('#componentSaveConfirmationButton').click(submitComponentContentChange)
-$('#contentUploadSubmitButton').click(uploadComponentContentFile)
 $('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)
 $('#componentInfoModalMaintenanceSaveButton').click(function () {
   constMaintenance.submitComponentMaintenanceStatusChange('component')
 })
-$('#componentContentUpload').change(onUploadContentChange)
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
-})
-$('#componentInfoModalThumbnailCheckbox').change(function () {
-  constExhibit.updateComponentInfoModalContentButtonState()
-})
-$('#componentInfoModalHideIncompatibleCheckbox').change(function () {
-  constExhibit.updateComponentInfoModalContentButtonState()
 })
 $('#componentInfoModalSettingsAutoplayAudio').change(function () {
   constExhibit.toggleExhibitComponentInfoSettingWarnings()
@@ -1106,9 +1070,6 @@ $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
 $('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSettingsChange)
-$('#componentInfoModalSettingsImageDuration,#componentInfoModalSettingsAnyDeskID').on('input', function () {
-  $('#componentInfoModalSettingsSaveButton').show()
-})
 document.getElementById('definitionTabAppFilterSelect').addEventListener('change', (event) => {
   constExhibit.filterDefinitionListByApp()
 })
@@ -1126,14 +1087,41 @@ document.getElementById('componentInfoModalEditDMXButton').addEventListener('cli
 })
 // Schedule tab
 // =========================
+document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
+document.getElementById('manageFutureDateCalendarInput').addEventListener('change', constSchedule.populateFutureDateCalendarInput)
+document.getElementById('manageFutureDateAddActionButton').addEventListener('click', (event) => {
+  const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
+  constSchedule.scheduleConfigureEditModal(scheduleName, 'date-specific')
+})
+document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', constSchedule.convertFutureScheduleFromModal)
+document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
+  // const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
+  // constSchedule.deleteSchedule(scheduleName)
+  event.target.focus()
+})
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
-$('#refreshScheduleButton').click(constSchedule.askForScheduleRefresh)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
 $('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector)
+// This event detects when the delete button has been clicked inside a popover to delete a date-specific schedule.
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('schedule-delete') === false) return
+  if ($('#manageFutureDateModal').hasClass('show')) {
+    // This popover is from the future dates edit modal
+    constSchedule.deleteSchedule(document.getElementById('manageFutureDateCalendarInput').value)
+  } else {
+    // This popover is from the main schedule page
+    constSchedule.deleteSchedule(event.target.getAttribute('id').slice(7))
+  }
+})
 
 // Issues tab
 // =========================
+// This event detects when the delete button has been clicked inside a popover to delete an issue.
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('issue-delete') === false) return
+  constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
+})
 $('#issueMediaViewFromModal').click(function () {
   constTools.openMediaInNewTab('issues/media/' + $('#issueMediaViewFromModal').data('filename'))
 })
@@ -1159,6 +1147,7 @@ $('#componentInfoModalMaintenanceNote').on('input', function () {
 // Settings tab
 // =========================
 // Exhibits
+// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
 $('#exhibitSelect').change(function () {
   changeExhibit(false)
 })
@@ -1273,6 +1262,11 @@ $('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalD
 $('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
 $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
 
+// Activate all popovers
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})
+
 constConfig.serverAddress = location.origin
 
 // Subscribe to updates from the control server
@@ -1286,8 +1280,7 @@ eventSource.addEventListener('end', function (event) {
   eventSource.close()
 })
 
-// askForUpdate()
-// setInterval(askForUpdate, 5000)
+loadVersion()
 populateHelpTab()
 constMaintenance.refreshMaintenanceRecords()
 parseQueryString()

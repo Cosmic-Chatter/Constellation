@@ -47,7 +47,7 @@ function countText (text) {
 }
 
 function createWordCloud () {
-  wc = WordCloud(divForWC, wc_options)
+  WordCloud(divForWC, WordCloudOptions)
 }
 
 function createWordList (textDict) {
@@ -72,94 +72,88 @@ function getTextUpdateFromServer () {
   // Ask the server to send the latest raw text, then trigger the wordcloud
   // to rebuild
 
-  constCommon.makeServerRequest(
-    {
-      method: 'POST',
-      endpoint: '/tracker/flexible-tracker/getRawText',
-      params: { name: 'Word_Cloud_' + collectionNmae }
-    })
-    .then((result) => {
-      if ('success' in result && result.success == true) {
-        if ('text' in result && result.text !== '') {
-          wc_options.list = createWordList(countText(cleanText(result.text)))
-        }
-      }
+  if (constCommon.config.standalone === false) {
+    // If this app is running ina preview frame for setup, we won't have a valid
+    // server IP address. Default to the built-in word list for testing.
+    if (constCommon.config.serverAddress === '') {
+      WordCloudOptions.list = createWordList(animalDict)
       createWordCloud()
-    })
+      return
+    }
+
+    constCommon.makeServerRequest(
+      {
+        method: 'POST',
+        endpoint: '/tracker/flexible-tracker/getRawText',
+        params: { name: 'Word_Cloud_' + collectionName }
+      })
+      .then((result) => {
+        if ('success' in result && result.success === true) {
+          if ('text' in result && result.text !== '') {
+            WordCloudOptions.list = createWordList(countText(cleanText(result.text)))
+          }
+        }
+        createWordCloud()
+      })
+  } else {
+    constCommon.makeHelperRequest(
+      {
+        method: 'POST',
+        endpoint: '/data/getRawText',
+        params: { name: 'Word_Cloud_' + collectionName }
+      })
+      .then((result) => {
+        if ('success' in result && result.success === true) {
+          if ('text' in result && result.text !== '') {
+            WordCloudOptions.list = createWordList(countText(cleanText(result.text)))
+          }
+        }
+        createWordCloud()
+      })
+  }
 }
 
 function updateFunc (update) {
   // Read updates for word cloud-specific actions and act on them
 
-  // This should be last to make sure the path has been updated
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      constCommon.makeHelperRequest(
-        {
-          method: 'GET',
-          endpoint: '/content/' + definition,
-          rawResponse: true
-        })
-        .then((response) => {
-          updateContent(definition, constCommon.parseINIString(response))
-        })
-    }
+  if ('definition' in update && update.definition !== currentDefinition) {
+    currentDefinition = update.definition
+    constCommon.loadDefinition(currentDefinition)
+      .then((result) => {
+        loadDefinition(result.definition)
+      })
   }
 }
 
-function updateContent (name, definition) {
-  // Clean up the old survey, then create the new one.
-
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
+function loadDefinition (definition) {
+  // Clean up the old word cloud, then create the new one.
 
   // Parse the settings and make the appropriate changes
-  if ('prompt' in definition.SETTINGS) {
-    document.getElementById('promptText').innerHTML = definition.SETTINGS.prompt
-    $('#promptText').addClass('promptText-full').removeClass('promptText-none')
-    $('#wordCloudContainer').addClass('wordCloudContainer-small').removeClass('wordCloudContainer-full')
+  const promptText = document.getElementById('promptText')
+  const wordCloudContainer = document.getElementById('wordCloudContainer')
+
+  if ('prompt' in definition.content) {
+    promptText.innerHTML = definition.content.prompt
+    promptText.classList.replace('promptText-none', 'promptText-full')
+    wordCloudContainer.classList.add('wordCloudContainer-small')
+    wordCloudContainer.classList.remove('wordCloudContainer-full')
   } else {
-    document.getElementById('promptText').innerHTML = ''
-    $('#promptText').removeClass('promptText-full').addClass('promptText-none')
-    $('#wordCloudContainer').addClass('wordCloudContainer-full').removeClass('wordCloudContainer-small')
+    promptText.innerHTML = ''
+    promptText.classList.replace('promptText-full', 'promptText-none')
+    wordCloudContainer.classList.add('wordCloudContainer-full')
+    wordCloudContainer.classList.remove('wordCloudContainer-small')
   }
-  if ('collection_name' in definition.SETTINGS) {
-    collectionNmae = definition.SETTINGS.collection_name
+
+  if ('collection_name' in definition.behavior) {
+    collectionName = definition.behavior.collection_name
   } else {
-    collectionNmae = 'default'
+    collectionName = 'default'
   }
-  if ('prompt_size' in definition.SETTINGS) {
-    document.getElementById('promptText').style.fontSize = definition.SETTINGS.prompt_size + 'vh'
-  } else {
-    document.getElementById('promptText').style.fontSize = '10vh'
-  }
-  if ('prompt_color' in definition.SETTINGS) {
-    document.getElementById('promptText').style.color = definition.SETTINGS.prompt_color
-  } else {
-    document.getElementById('promptText').style.color = 'black'
-  }
-  if ('background_color' in definition.SETTINGS) {
-    document.body.style.backgroundColor = definition.SETTINGS.background_color
-    wc_options.backgroundColor = definition.SETTINGS.background_color
-  } else {
-    document.body.style.backgroundColor = 'white'
-    wc_options.backgroundColor = 'white'
-  }
-  if ('word_colors' in definition.SETTINGS) {
-    setCustomColors(definition.SETTINGS.word_colors)
-  } else {
-    wc_options.color = 'random-dark'
-  }
-  if ('refresh_rate' in definition.SETTINGS) {
-    if (parseFloat(definition.SETTINGS.refresh_rate) !== textUpdateRate) {
-      textUpdateRate = parseFloat(definition.SETTINGS.refresh_rate)
+
+  if ('refresh_rate' in definition.behavior) {
+    const newRate = parseFloat(definition.behavior.refresh_rate)
+    if (newRate !== textUpdateRate) {
+      textUpdateRate = newRate
       clearInterval(textUpdateTimer)
       textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
     }
@@ -169,35 +163,87 @@ function updateContent (name, definition) {
       textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
     }
   }
-}
 
-function setCustomColors (colorStr) {
-  // Parse a string taken from the INI file and use it to set colors
-  console.log(colorStr)
-  const split = colorStr.split(',')
-
-  if (split.length === 1) {
-    // Assume this is the color we want
-    wc_options.color = split[0].trim()
-  } else if (split.length > 1) {
-    // Build a simple function to return colors, per the WordCloud2 spec
-    const colorList = []
-    split.forEach(item => {
-      colorList.push(item.trim())
-    })
-    const colorFunc = function (word, weight, fontSize, distance, theta) {
-      // Return a random color each time
-      return colorList[Math.floor(Math.random() * colorList.length)]
+  if ('rotation' in definition.appearance) {
+    if (definition.appearance.rotation === 'horizontal') {
+      WordCloudOptions.minRotation = 0
+      WordCloudOptions.maxRotation = 0
+    } else if (definition.appearance.rotation === 'right_angles') {
+      WordCloudOptions.minRotation = 1.5708
+      WordCloudOptions.maxRotation = 1.5708
+      WordCloudOptions.rotationSteps = 2
+    } else {
+      WordCloudOptions.minRotation = -1.5708
+      WordCloudOptions.maxRotation = 1.5708 // 6.2821
+      WordCloudOptions.rotationSteps = 100
+      WordCloudOptions.rotateRatio = 0.5
     }
-    wc_options.color = colorFunc
   } else {
-    wc_options.color = 'random-dark'
+    // Set horizontal only
+    WordCloudOptions.minRotation = 0
+    WordCloudOptions.maxRotation = 0
   }
+
+  if ('cloud_shape' in definition.appearance) {
+    WordCloudOptions.shape = definition.appearance.cloud_shape
+  } else {
+    WordCloudOptions.shape = 'circle'
+  }
+
+  const root = document.querySelector(':root')
+
+  // Color settings
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--background-color', '#ffffff')
+  WordCloudOptions.backgroundColor = '#ffffff'
+  root.style.setProperty('--prompt-color', '#000')
+
+  // Then, apply the definition settings
+  if ('color' in definition.appearance) {
+    if ('prompt' in definition.appearance.color) {
+      root.style.setProperty('--prompt-color', definition.appearance.color.prompt)
+    }
+    if ('background' in definition.appearance.color) {
+      root.style.setProperty('--background-color', definition.appearance.color.background)
+      WordCloudOptions.backgroundColor = definition.appearance.color.background
+    }
+    if ('words' in definition.appearance.color) {
+      WordCloudOptions.color = definition.appearance.color.words
+    } else {
+      WordCloudOptions.color = 'random-dark'
+    }
+  }
+
+  // Font settings
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--prompt-font', 'prompt-default')
+  WordCloudOptions.fontFamily = 'words-default'
+
+  // Then, apply the definition settings
+  if ('font' in definition.appearance) {
+    if ('prompt' in definition.appearance.font) {
+      const font = new FontFace('prompt', 'url(' + encodeURI(definition.appearance.font.prompt) + ')')
+      document.fonts.add(font)
+      root.style.setProperty('--prompt-font', 'prompt')
+    }
+    if ('words' in definition.appearance.font) {
+      const font = new FontFace('words', 'url(' + encodeURI(definition.appearance.font.words) + ')')
+      document.fonts.add(font)
+      WordCloudOptions.fontFamily = 'words'
+    }
+  }
+
+  if ('text_size' in definition.appearance && 'prompt' in definition.appearance.text_size) {
+    root.style.setProperty('--prompt-font-adjust', definition.appearance.text_size.prompt)
+  } else {
+    root.style.setProperty('--prompt-font-adjust', 0)
+  }
+
+  getTextUpdateFromServer()
 }
 
 const divForWC = document.getElementById('wordCloudContainer')
-let wc = null // This will hold the reference to the wc generator
-var wc_options = {
+const WordCloudOptions = {
   color: 'random-dark',
   gridSize: Math.round(16 * $(divForWC).width() / 1024),
   list: createWordList({ test: 1 }),
@@ -211,22 +257,55 @@ var wc_options = {
   rotateRatio: 0.125,
   shrinkToFit: true,
   shuffle: true,
-  backgroundColor: 'white'
+  backgroundColor: 'white',
+  fontFamily: 'words-default'
 }
 
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'word_cloud_viewer'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
-
-let currentContent = {}
-let collectionNmae = 'default'
+let currentDefinition = ''
+let collectionName = 'default'
 let textUpdateRate = 15
 
-constCommon.askForDefaults()
-  .then(() => {
-    setTimeout(getTextUpdateFromServer, 1000)
-  })
-setInterval(constCommon.sendPing, 5000)
+constCommon.configureApp({
+  name: 'word_cloud_viewer',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
 
 let textUpdateTimer = setInterval(getTextUpdateFromServer, textUpdateRate * 1000)
+
+const animalDict = {
+  dog: 108,
+  cat: 94,
+  pony: 71,
+  horse: 63,
+  butterfly: 62,
+  moose: 61,
+  penguin: 51,
+  dolphin: 46,
+  fox: 40,
+  elk: 39,
+  lion: 37,
+  tiger: 35,
+  deer: 35,
+  leopard: 34,
+  turtle: 28,
+  snake: 25,
+  robin: 19,
+  seagull: 19,
+  parrot: 18,
+  jellyfish: 16,
+  kangaroo: 15,
+  coyote: 15,
+  rabbit: 11,
+  moth: 7,
+  snail: 6,
+  zebra: 5,
+  beetle: 5,
+  bear: 4,
+  hare: 4,
+  lizard: 3,
+  tuna: 2,
+  donkey: 1,
+  slug: 1
+}

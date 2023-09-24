@@ -74,8 +74,6 @@ def read_update(update: dict):
     if "helperSoftwareUpdateAvailable" in update:
         if update["helperSoftwareUpdateAvailable"] == "true":
             config.error_dict["helperSoftwareUpdateAvailable"] = "true"
-    if "anydesk_id" in update:
-        config.AnyDesk_id = update["anydesk_id"]
 
 
 def send_command(command: str):
@@ -117,8 +115,7 @@ def send_ping():
                     "helperAddress": config.helper_address,
                     "allowed_actions": config.allowed_actions,
                     "constellation_app_id": "heartbeat",
-                    "platform_details": {"operating_system": get_platform()},
-                    "AnyDeskID": config.AnyDesk_id}
+                    "platform_details": {"operating_system": get_platform()}}
 
     headers = {'Content-type': 'application/json'}
 

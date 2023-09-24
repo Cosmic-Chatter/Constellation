@@ -1,10 +1,12 @@
 # Media Browser
-Media Browser provides a touch-screen interface for browsing large sets of images.
+Media Browser provides a touch-screen interface for browsing large sets of images and videos.
 
 ## Configuration
 
 ### Describing your media
-Using Media Browser requires creating a simple spreadsheet that describes your files. This spreadsheet will guide the app in arranging the content you wish to display. It must be saved in comma-separated value (`CSV`) format and placed in your standard **_Constellation_** `content` directory. Microsoft Excel, Apple Numbers, LibreOffice Calc, and other apps can save `CSV` files.
+Using Media Browser requires creating a simple spreadsheet that describes your files. This spreadsheet will guide the app in arranging the content you wish to display. It must be saved in _comma-separated value_ (`CSV`) format and uploaded to the standard **_Constellation_** `content` directory. 
+
+Microsoft Excel, Apple Numbers, LibreOffice Calc, and other apps can save `CSV` files. If you are using Microsoft Excel, you can easily create this file by choosing _File_ > _Save As..._ and selecting _CSV UTF-8 (Comma delimited) (.csv)_ from the File Format options.
 
 A simple spreadsheet might look like this:
 
@@ -20,7 +22,10 @@ A simple spreadsheet might look like this:
 | Neptune.jpg      | Neptune | NASA         | Neptune is the farthest planet in the solar system.                       |
  | Pluto.jpg        | Pluto   | NASA         | Pluto is the best-studied Kuiper belt object.                             |
 
-Each line in the spreadsheet will represent one item in the browser. The name of each column is called its `key`. The media files (listed here under the `File` key) should be placed in the standard **_Constellation_** `content` directory.
+Each line in the spreadsheet will represent one item in the browser. The media files (listed in the `File` column in this example). need to be uploaded to **_Constellation_** as content.
 
-#### Thumbnails
-The thumbnail is the first representation of the item that your user will see. If you upload your files through the web interface, **_Constellation_** will create a thumbnail for you. For more control over the thumbnails, you may provide your own. To do this, place these files in the `thumbnails` directory. They must have the same filename as the main image, and use the JPEG extension `.jpg`.
+### Thumbnails
+By default, **_Constellation_** will generate a thumbnail for each of your media files. For images, the thumbnail will look the same as the image. For videos, the thumbnail will be the middle frame of the video. If you'd like to provide separate thumbnails (for example, to have all square thumbnails), you can upload these to the content directory and include a thumbnail column in your spreadsheet.
+
+### Optimizing media
+Media Browser is designed to handle hundreds or even thousands of media files in an efficient way. To balance performance and quality, you should use the `Optimize content` tool. This will smartly resize the thumbnail images for maximum perceived quality while retaining the best performance. This process does not alter the original content file, which will always be displayed at full quality.

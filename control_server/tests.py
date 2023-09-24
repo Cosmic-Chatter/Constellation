@@ -76,11 +76,9 @@ class TestHelperMethods(unittest.TestCase):
             "id": "Test 1",
             "group": "Test Group 1",
             "helperAddress": "192.168.1.2",
-            "AnyDeskID": "123456789",
             "autoplay_audio": True,
-            "imageDuration": 10,
             "currentInteraction": True,
-            "allowed_actions": {
+            "permissions": {
                 "shutdown": True,
             },
             "constellation_app_id": "media_player"
@@ -89,11 +87,9 @@ class TestHelperMethods(unittest.TestCase):
         c_exhibit.update_exhibit_component_status(update, "::1")
         self.assertEqual(test.ip_address, "localhost")
         self.assertEqual(test.helperAddress, "192.168.1.2")
-        self.assertEqual(test.config["AnyDeskID"], "123456789")
         self.assertEqual(test.config["autoplay_audio"], True)
-        self.assertEqual(test.config["image_duration"], 10)
         self.assertEqual(test.lastInteractionDateTime == datetime.datetime(2020, 1, 1), False)
-        self.assertEqual("shutdown" in test.config["allowed_actions"], True)
+        self.assertEqual("shutdown" in test.config["permissions"], True)
         self.assertEqual(test.config["app_name"], "media_player")
 
         # Create component from update

@@ -12,7 +12,7 @@ class BaseComponent {
     this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
-    this.allowed_actions = []
+    this.permissions = {}
 
     this.ip_address = null
     this.latency = null
@@ -91,7 +91,7 @@ class BaseComponent {
   }
 
   populateActionMenu (dropdownMenu = null) {
-    // Build out the dropdown menu options based on the this.allowed_actions.
+    // Build out the dropdown menu options based on the this.permissions.
 
     if (dropdownMenu == null) {
       const cleanID = this.id.replaceAll(' ', '_')
@@ -99,47 +99,70 @@ class BaseComponent {
     }
     $(dropdownMenu).empty()
     const thisId = this.id
-
     let numOptions = 0
-    this.allowed_actions.forEach((action) => {
-      const option = document.createElement('a')
-      option.classList = 'dropdown-item handCursor'
 
-      let cmd
+    if ('refresh' in this.permissions && this.permissions.refresh === true) {
       numOptions += 1
-      if (action === 'refresh') {
-        option.innerHTML = 'Refresh Component'
-        cmd = 'refresh_page'
-      } else if (action === 'restart') {
-        option.innerHTML = 'Restart component'
-        numOptions += 1
-        cmd = 'restart'
-      } else if (action === 'shutdown' || action === 'power_off') {
-        option.innerHTML = 'Sleep component'
-        cmd = 'shutdown'
-      } else if (action === 'power_on') {
-        option.innerHTML = 'Wake component'
-        cmd = 'power_on'
-      } else if (action === 'sleep') {
-        option.innerHTML = 'Wake display'
-        cmd = 'wakeDisplay'
-
-        const option2 = document.createElement('a')
-        option2.classList = 'dropdown-item handCursor'
-        option2.innerHTML = 'Sleep display'
-        option2.addEventListener('click', function () {
-          queueCommand(thisId, 'sleepDisplay')
-        }, false)
-        dropdownMenu.appendChild(option2)
-      } else {
-        numOptions -= 1
-      }
-
-      option.addEventListener('click', function () {
-        queueCommand(thisId, cmd)
+      const refreshAction = document.createElement('a')
+      refreshAction.classList = 'dropdown-item handCursor'
+      refreshAction.innerHTML = 'Refresh component'
+      refreshAction.addEventListener('click', function () {
+        queueCommand(thisId, 'refresh')
       }, false)
-      dropdownMenu.appendChild(option)
-    })
+      dropdownMenu.appendChild(refreshAction)
+    }
+
+    if ('sleep' in this.permissions && this.permissions.sleep === true) {
+      numOptions += 2
+      const sleepAction = document.createElement('a')
+      sleepAction.classList = 'dropdown-item handCursor'
+      sleepAction.innerHTML = 'Sleep display'
+      sleepAction.addEventListener('click', function () {
+        queueCommand(thisId, 'sleepDisplay')
+      }, false)
+      dropdownMenu.appendChild(sleepAction)
+
+      const wakeAction = document.createElement('a')
+      wakeAction.classList = 'dropdown-item handCursor'
+      wakeAction.innerHTML = 'Wake display'
+      wakeAction.addEventListener('click', function () {
+        queueCommand(thisId, 'wakeDisplay')
+      }, false)
+      dropdownMenu.appendChild(wakeAction)
+    }
+
+    if ('restart' in this.permissions && this.permissions.restart === true) {
+      numOptions += 1
+      const restartAction = document.createElement('a')
+      restartAction.classList = 'dropdown-item handCursor'
+      restartAction.innerHTML = 'Restart component'
+      restartAction.addEventListener('click', function () {
+        queueCommand(thisId, 'restart')
+      }, false)
+      dropdownMenu.appendChild(restartAction)
+    }
+
+    if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
+      numOptions += 1
+      const shutdownAction = document.createElement('a')
+      shutdownAction.classList = 'dropdown-item handCursor'
+      shutdownAction.innerHTML = 'Power off component'
+      shutdownAction.addEventListener('click', function () {
+        queueCommand(thisId, 'restart')
+      }, false)
+      dropdownMenu.appendChild(shutdownAction)
+    }
+
+    if ('power_on' in this.permissions && this.permissions.power_on === true) {
+      numOptions += 1
+      const powerOnAction = document.createElement('a')
+      powerOnAction.classList = 'dropdown-item handCursor'
+      powerOnAction.innerHTML = 'Power on component'
+      powerOnAction.addEventListener('click', function () {
+        queueCommand(thisId, 'powerOn')
+      }, false)
+      dropdownMenu.appendChild(powerOnAction)
+    }
 
     if (numOptions === 0) {
       const option = document.createElement('a')
@@ -161,10 +184,10 @@ class BaseComponent {
     rebuildComponentInterface()
   }
 
-  setAllowedActions (actions) {
-    // Set the compnent's allowed actions and then rebuild the action list
+  setPermissions (permissions) {
+    // Set the compnent's permisions and then rebuild the action list
 
-    this.allowed_actions = actions
+    this.permissions = permissions
     this.populateActionMenu()
   }
 
@@ -190,9 +213,9 @@ class BaseComponent {
     if ('ip_address' in update) {
       this.ip_address = update.ip_address
     }
-    if ('allowed_actions' in update) {
-      if (constTools.arraysEqual(this.allowed_actions, update.allowed_actions) === false) {
-        this.setAllowedActions(update.allowed_actions)
+    if ('permissions' in update) {
+      if (JSON.stringify(this.permissions) !== JSON.stringify(update.permissions)) {
+        this.setPermissions(update.permissions)
       }
     }
     if ('description' in update) {
@@ -224,10 +247,8 @@ class ExhibitComponent extends BaseComponent {
     super(id, group)
 
     this.type = 'exhibit_component'
-    this.content = null
     this.helperAddress = null
     this.state = {}
-    this.AnyDeskID = ''
     this.constellationAppId = ''
     this.platformDetails = {}
   }
@@ -243,26 +264,17 @@ class ExhibitComponent extends BaseComponent {
 
     super.updateFromServer(update)
 
-    if ('AnyDeskID' in update) {
-      this.AnyDeskID = update.AnyDeskID
-    }
     if ('autoplay_audio' in update) {
       this.autoplay_audio = update.autoplay_audio
     }
     if ('constellation_app_id' in update) {
       this.constellationAppId = update.constellation_app_id
     }
-    if ('content' in update) {
-      this.content = update.content
-    }
     if ('definition' in update) {
       this.definition = update.definition
     }
     if ('helperAddress' in update) {
       this.helperAddress = update.helperAddress
-    }
-    if ('image_duration' in update) {
-      this.image_duration = update.image_duration
     }
     if ('platform_details' in update) {
       this.platformDetails = update.platform_details
@@ -564,6 +576,7 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
+  console.log(obj)
 
   $('#componentInfoModalTitle').html(id)
 
@@ -639,24 +652,13 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalDescription').html(obj.description)
     $('#componentInfoModalDescription').show()
   }
+
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
-  $('#componentAvailableContentList').empty()
-  $('#contentUploadSubmitButton').prop('disabled', false)
-  $('#contentUploadSubmitButton').html('Upload')
-  $('#componentContentUploadfilename').html('Choose file')
-  $('#componentContentUpload').val(null)
-  $('#contentUploadSubmitButton').hide()
-  $('#contentUploadEqualSignWarning').hide()
-  $('#uploadOverwriteWarning').hide()
-  $('#contentUploadProgressBarContainer').hide()
-  $('#contentUploadSystemStatsView').hide()
   $('#componentInfoConnectingNotice').show()
   $('#componentInfoConnectionStatusFailed').hide()
   $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
-  $('#componentAvailableContentRow').hide()
-  $('#componentcontentUploadInterface').hide()
   constMaint.setComponentInfoModalMaintenanceStatus(id)
 
   // Definition tab
@@ -664,43 +666,14 @@ export function showExhibitComponentInfo (id) {
   document.getElementById('definitionTabThumbnailsCheckbox').checked = true
   $('#componentInfoModalDefinitionSaveButton').hide()
 
-  if ('AnyDeskID' in obj && obj.AnyDeskID !== '') {
-    $('#AnyDeskButton').prop('href', 'anydesk:' + obj.AnyDeskID)
-    $('#AnyDeskLabel').prop('href', 'anydesk:' + obj.AnyDeskID)
-    $('#AnyDeskLabel').html('AnyDesk ID: ' + obj.AnyDeskID)
-    $('#AnyDeskButton').prop('title', String(obj.AnyDeskID))
-    $('#AnyDeskButton').addClass('d-sm-none d-none d-md-inline').show()
-    $('#AnyDeskLabel').addClass('d-sm-inline d-md-none').show()
-  } else {
-    $('#AnyDeskButton').removeClass('d-sm-none d-none d-md-inline').hide()
-    $('#AnyDeskLabel').removeClass('d-sm-inline d-md-none').hide()
-  }
-
   // Configure the settings page with the current settings
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
-  $('#componentInfoModalSettingsAllowRefresh').prop('checked', obj.allowed_actions.includes('refresh'))
-  $('#componentInfoModalSettingsAllowRestart').prop('checked', obj.allowed_actions.includes('restart'))
-  $('#componentInfoModalSettingsAllowShutdown').prop('checked', obj.allowed_actions.includes('shutdown'))
-  $('#componentInfoModalSettingsAllowSleep').prop('checked', obj.allowed_actions.includes('sleep'))
-  if ('AnyDeskID' in obj) {
-    $('#componentInfoModalSettingsAnyDeskID').val(obj.AnyDeskID)
-  } else {
-    $('#componentInfoModalSettingsAnyDeskID').val('')
-  }
-  if ('autoplay_audio' in obj) {
-    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', constTools.stringToBool(obj.autoplay_audio))
-  } else {
-    $('#componentInfoModalSettingsAutoplayAudio').prop('checked', false)
-  }
-  if (obj.constellationAppId === 'media_player') {
-    $('#componentInfoModalSettingsImageDuration').parent().parent().show()
-    if ('image_duration' in obj) {
-      $('#componentInfoModalSettingsImageDuration').val(obj.image_duration)
-    }
-  } else {
-    $('#componentInfoModalSettingsImageDuration').parent().parent().hide()
-  }
+  $('#componentInfoModalSettingsAutoplayAudio').val(String(obj.permissions.audio))
+  $('#componentInfoModalSettingsAllowRefresh').val(String(obj.permissions.refresh))
+  $('#componentInfoModalSettingsAllowRestart').val(String(obj.permissions.restart))
+  $('#componentInfoModalSettingsAllowShutdown').val(String(obj.permissions.shutdown))
+  $('#componentInfoModalSettingsAllowSleep').val(String(obj.permissions.sleep))
 
   // If this is a projector, populate the status pane
   if (obj.type === 'projector') {
@@ -735,15 +708,10 @@ export function showExhibitComponentInfo (id) {
       })
       .catch((error) => {
         document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+        console.log(error)
       })
-      
-    if (['dmx_control', 'media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(obj.constellationAppId) === false) {
-      $('#componentInfoModalContentTabButton').show()
-      $('#componentInfoModalContentTabButton').tab('show')
-    } else {
-      $('#componentInfoModalContentTabButton').hide()
-      $('#componentInfoModalDefinitionsTabButton').tab('show')
-    }
+
+    $('#componentInfoModalDefinitionsTabButton').tab('show')
 
     // This component may be accessible over the network.
     updateComponentInfoModalFromHelper(obj.id)
@@ -751,8 +719,9 @@ export function showExhibitComponentInfo (id) {
   } else {
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
     $('#componentInfoModalSettingsTabButton').hide()
-    $('#componentInfoModalContentTabButton').hide()
     $('#componentInfoModalDefinitionsTabButton').hide()
+    $('#componentInfoModalDMXTabButton').hide()
+    $('#contentUploadSystemStatsView').hide()
 
     // This static component will defintely have no content.
     $('#componentInfoConnectionStatusFailed').show()
@@ -882,7 +851,13 @@ function configureNewDefinitionOptions (obj) {
 
   Array.from(document.querySelectorAll('.defintion-new-option')).forEach((el) => {
     const app = el.getAttribute('data-app')
-    el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+    if (app === 'word_cloud_input') {
+      el.href = obj.getHelperURL() + '/word_cloud/setup_input.html'
+    } else if (app === 'word_cloud_viewer') {
+      el.href = obj.getHelperURL() + '/word_cloud/setup_viewer.html'
+    } else {
+      el.href = obj.getHelperURL() + '/' + app + '/setup.html'
+    }
   })
 }
 
@@ -1172,22 +1147,11 @@ function updateComponentInfoModalFromHelper (id) {
   })
     .then((availableContent) => {
       // Good connection, so show the interface elements
-      $('#componentAvailableContentRow').show()
-      $('#componentcontentUploadInterface').show()
       $('#componentInfoConnectingNotice').hide()
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
         populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails)
-      }
-
-      // If available, configure for multiple file upload
-      if ('multiple_file_upload' in availableContent) {
-        $('#componentContentUpload').prop('multiple', true)
-        $('#componentContentUploadfilename').html('Choose files')
-      } else {
-        $('#componentContentUpload').prop('multiple', false)
-        $('#componentContentUploadfilename').html('Choose file')
       }
 
       // If it is provided, show the system stats
@@ -1240,298 +1204,7 @@ function updateComponentInfoModalFromHelper (id) {
       } else {
         $('#contentUploadSystemStatsView').hide()
       }
-
-      // Build buttons for each file in all exhibits
-      populateComponentContent(availableContent, 'all_exhibits', id, obj.constellationAppId, 'componentAvailableContentList')
-
-      // Attach an event handler to change the button's color when clicked
-      $('.componentContentButton').on('click', function (e) {
-        const id = $(this).attr('id')
-        $(this).toggleClass('btn-primary').toggleClass('btn-secondary')
-
-        $('#' + id + 'Dropdown').toggleClass('btn-secondary').toggleClass('btn-primary')
-
-        if ($('.componentContentButton.btn-primary').length === 0) {
-          $('#componentSaveConfirmationButton').hide() // Can't save a state with no selected content.
-        } else {
-          $('#componentSaveConfirmationButton').show()
-        }
-      })
     })
-}
-
-function populateComponentContent (availableContent, key, id, appName, div) {
-  // Get filenames listed under key in availableContent and add
-  // the resulting buttons to the div given by div
-
-  const activeContent = availableContent.active_content
-  const contentList = availableContent[key].sort(function (a, b) { return a.localeCompare(b) })
-  let thumbnailList = availableContent.thumbnails
-  if (thumbnailList == null) {
-    thumbnailList = []
-  }
-
-  $('#' + div).empty()
-
-  for (let i = 0; i < contentList.length; i++) {
-    const container = document.createElement('div')
-    container.classList = 'col-6 col-md-4 mt-1'
-
-    // Check if this file type is supported by the current app
-    const file = contentList[i]
-    const fileExt = contentList[i].split('.').pop().toLowerCase()
-    const supportedTypes = getAllowableContentTypes(appName)
-
-    if (!supportedTypes.includes(fileExt)) {
-      container.classList += ' incompatible-content'
-    }
-    if (activeContent.includes(contentList[i])) {
-      container.classList += ' active-content'
-    }
-
-    const btnGroup = document.createElement('div')
-    btnGroup.classList = 'btn-group w-100 h-100'
-    container.appendChild(btnGroup)
-
-    const button = document.createElement('button')
-    const cleanFilename = contentList[i].split('.').join('').split(')').join('').split('(').join('').split(/[\\/]/).join('').replace(/\s/g, '')
-    button.setAttribute('type', 'button')
-    button.setAttribute('id', cleanFilename + 'Button')
-    button.classList = 'btn componentContentButton'
-
-    const fileName = document.createElement('span')
-    fileName.classList = 'contentFilenameContainer'
-    fileName.setAttribute('id', cleanFilename + 'NameField')
-    fileName.innerHTML = contentList[i]
-    button.appendChild(fileName)
-
-    const fileNameEditGroup = document.createElement('div')
-    fileNameEditGroup.setAttribute('id', cleanFilename + 'NameEditGroup')
-    fileNameEditGroup.classList = 'row'
-    button.appendChild(fileNameEditGroup)
-    $(fileNameEditGroup).hide() // Will be shown when editing the filename
-
-    const fileNameEditCol = document.createElement('div')
-    fileNameEditCol.classList = 'col-9 mr-0 pr-0'
-    fileNameEditGroup.appendChild(fileNameEditCol)
-
-    const fileNameEditCloseCol = document.createElement('div')
-    fileNameEditCloseCol.classList = 'col-3 ml-0 pl-0'
-    fileNameEditGroup.appendChild(fileNameEditCloseCol)
-
-    const fileNameEditCloseButton = document.createElement('button')
-    fileNameEditCloseButton.classList = 'btn btn-none px-0'
-    fileNameEditCloseButton.innerHTML = '&#x2715'
-    fileNameEditCloseButton.addEventListener('click', function (event) {
-      cancelFileRename(cleanFilename)
-      event.stopPropagation()
-    })
-    fileNameEditCloseCol.appendChild(fileNameEditCloseButton)
-
-    const fileNameEditField = document.createElement('input')
-    fileNameEditField.setAttribute('id', cleanFilename + 'NameEditField')
-    $(fileNameEditField).data('filename', file)
-    fileNameEditField.classList = 'form-control'
-    fileNameEditField.addEventListener('keyup', function (e) {
-      if (e.key === 'Enter') {
-        submitFileRename(cleanFilename)
-      }
-    })
-    fileNameEditCol.appendChild(fileNameEditField)
-
-    const fileNameEditErrorMessageCol = document.createElement('div')
-    fileNameEditErrorMessageCol.classList = 'col-12'
-    fileNameEditGroup.appendChild(fileNameEditErrorMessageCol)
-
-    const fileNameEditErrorMessage = document.createElement('span')
-    fileNameEditErrorMessage.setAttribute('id', cleanFilename + 'NameEditErrorMessage')
-    fileNameEditErrorMessage.classList = 'text-danger mt-1'
-    fileNameEditErrorMessage.innerHTML = 'A file with this name already exists!'
-    $(fileNameEditErrorMessage).hide()
-    fileNameEditErrorMessageCol.appendChild(fileNameEditErrorMessage)
-
-    let thumbName
-    const mimetype = constTools.guessMimetype(contentList[i])
-    if (mimetype === 'image') {
-      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.jpg'
-      if (thumbnailList.includes(thumbName)) {
-        const thumb = document.createElement('img')
-        thumb.classList = 'contentThumbnail mt-1'
-        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-        button.appendChild(thumb)
-      }
-    } else if (mimetype === 'video') {
-      thumbName = contentList[i].replace(/\.[^/.]+$/, '') + '.mp4'
-      if (thumbnailList.includes(thumbName)) {
-        const thumb = document.createElement('video')
-        thumb.classList = 'contentThumbnail mt-1'
-        thumb.src = getExhibitComponent(id).helperAddress + '/thumbnails/' + thumbName
-        thumb.setAttribute('loop', true)
-        thumb.setAttribute('autoplay', true)
-        thumb.setAttribute('disablePictureInPicture', true)
-        thumb.setAttribute('webkit-playsinline', true)
-        thumb.setAttribute('playsinline', true)
-        button.appendChild(thumb)
-      }
-    }
-
-    btnGroup.appendChild(button)
-
-    const dropdownButton = document.createElement('button')
-    dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('id', cleanFilename + 'ButtonDropdown')
-    dropdownButton.setAttribute('data-toggle', 'dropdown')
-    dropdownButton.setAttribute('aria-haspopup', true)
-    dropdownButton.setAttribute('aria-expanded', false)
-    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split componentContentDropdownButton'
-    // Color the button and dropdown button depending on the status of the content
-    if (activeContent.includes(contentList[i])) {
-      dropdownButton.classList += ' btn-primary'
-      button.classList += ' btn-primary'
-    } else {
-      dropdownButton.classList += ' btn-secondary'
-      button.classList += ' btn-secondary'
-    }
-    dropdownButton.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
-    btnGroup.appendChild(dropdownButton)
-
-    const dropdownMenu = document.createElement('div')
-    dropdownMenu.classList = 'dropdown-menu'
-
-    const renameFileButton = document.createElement('a')
-    renameFileButton.classList = 'dropdown-item'
-    renameFileButton.addEventListener('click', function () {
-      showFileRenameField(id, cleanFilename)
-    })
-    renameFileButton.innerHTML = 'Rename'
-    dropdownMenu.appendChild(renameFileButton)
-
-    const deleteFileButton = document.createElement('a')
-    deleteFileButton.classList = 'dropdown-item text-danger'
-    deleteFileButton.addEventListener('click', function () {
-      deleteRemoteFile(id, file)
-    })
-    deleteFileButton.innerHTML = 'Delete'
-    dropdownMenu.appendChild(deleteFileButton)
-    btnGroup.appendChild(dropdownMenu)
-
-    $('#' + div).append(container)
-  }
-  updateComponentInfoModalContentButtonState()
-}
-
-function showFileRenameField (id, cleanID) {
-  // Begin the process of editing a filename in the componentInfoModal
-
-  const filename = $('#' + cleanID + 'NameEditField').data('filename')
-  const fileNameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename
-  $('#' + cleanID + 'NameEditGroup').show()
-  $('#' + cleanID + 'NameEditErrorMessage').hide()
-
-  // Pass the filename to the edit field, and save it for later use
-  $('#' + cleanID + 'NameEditField')
-    .val(filename)
-    .data('id', id)
-  const el = $('#' + cleanID + 'NameEditField')[0]
-  el.setSelectionRange(0, fileNameWithoutExt.length)
-  el.focus()
-  $('#' + cleanID + 'NameField').hide()
-}
-
-function cancelFileRename (cleanID) {
-  // Called when the X button is clicked to close the file edit dialog without saving
-
-  $('#' + cleanID + 'NameField').show()
-  $('#' + cleanID + 'NameEditGroup').hide()
-}
-
-function submitFileRename (cleanID) {
-  // Called when the user submits the input field to send to the helper.
-
-  const input = $('#' + cleanID + 'NameEditField')
-  const currentName = input.data('filename')
-  const newName = input.val().trim()
-  const id = input.data('id')
-  const obj = getExhibitComponent(id)
-
-  // If the new name is actually the current name, just put things back how they were
-  if (currentName.trim() === newName.trim()) {
-    $('#' + cleanID + 'NameField').html(newName).show()
-    $('#' + cleanID + 'NameEditGroup').hide()
-    $('#' + cleanID + 'NameEditErrorMessage').hide()
-    return
-  }
-
-  // If the new name contains an equals sign, reject it
-  if (newName.includes('=')) {
-    $('#' + cleanID + 'NameEditErrorMessage').html('Filename cannot contain an equals sign.').show()
-    return
-  }
-
-  constTools.makeRequest({
-    method: 'POST',
-    url: obj.getHelperURL(),
-    endpoint: '/renameFile',
-    params: {
-      current_name: currentName,
-      new_name: newName
-    }
-  })
-    .then((result) => {
-      if (result.success === true) {
-        $('#' + cleanID + 'NameField').html(newName).show()
-        $('#' + cleanID + 'NameEditGroup').hide()
-        $('#' + cleanID + 'NameEditErrorMessage').hide()
-        input.data('filename', newName)
-      } else {
-        if (result.error === 'file_exists') {
-          $('#' + cleanID + 'NameEditErrorMessage').html('A file with this name already exists!').show()
-        }
-      }
-    })
-}
-
-export function updateComponentInfoModalContentButtonState () {
-  // Use the state of the filter checkboxes to show/hide the appropriate buttons
-
-  const showThumbs = $('#componentInfoModalThumbnailCheckbox').prop('checked')
-  if (showThumbs) {
-    $('.contentThumbnail').show()
-  } else {
-    $('.contentThumbnail').hide()
-  }
-
-  const hideIncompatible = $('#componentInfoModalHideIncompatibleCheckbox').prop('checked')
-  if (hideIncompatible) {
-    $('.incompatible-content').hide()
-    $('.active-content').show()
-  } else {
-    $('.incompatible-content').show()
-  }
-}
-
-function getAllowableContentTypes (appID) {
-  // Return a list of file extensions supported by the given appID
-
-  const supportedTypes = {
-    heartbeat: ['ini'],
-    infostation: ['ini'],
-    media_browser: ['const'],
-    media_player: ['const'],
-    media_player_kiosk: ['ini'],
-    sos_kiosk: ['ini'],
-    sos_screen_player: ['ini'],
-    timelapse_viewer: ['const'],
-    timeline_explorer: ['const'],
-    voting_kiosk: ['const'],
-    word_cloud_input: ['ini'],
-    word_cloud_viewer: ['ini']
-  }
-  if (appID in supportedTypes) {
-    return supportedTypes[appID]
-  }
-
-  return []
 }
 
 export function onDefinitionTabThumbnailsCheckboxChange () {
@@ -1590,24 +1263,15 @@ export function submitComponentSettingsChange () {
 
   const obj = getExhibitComponent($('#componentInfoModalTitle').html())
 
-  const settings = {}
-
-  settings.allow_refresh = $('#componentInfoModalSettingsAllowRefresh').prop('checked')
-  settings.allow_restart = $('#componentInfoModalSettingsAllowRestart').prop('checked')
-  settings.allow_shutdown = $('#componentInfoModalSettingsAllowShutdown').prop('checked')
-  settings.allow_sleep = $('#componentInfoModalSettingsAllowSleep').prop('checked')
-  settings.autoplay_audio = $('#componentInfoModalSettingsAutoplayAudio').prop('checked')
-
-  const imageDuration = $('#componentInfoModalSettingsImageDuration').val().trim()
-  if (imageDuration !== '') {
-    settings.image_duration = parseFloat(imageDuration)
+  const settings = {
+    permissions: {
+      audio: constTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
+      refresh: constTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
+      restart: constTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
+      shutdown: constTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
+      sleep: constTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
+    }
   }
-
-  const AnyDeskID = $('#componentInfoModalSettingsAnyDeskID').val().trim()
-  if (AnyDeskID !== '') {
-    settings.anydesk_id = AnyDeskID
-  }
-
   constTools.makeRequest({
     method: 'POST',
     url: obj.getHelperURL(),
@@ -1621,31 +1285,6 @@ export function submitComponentSettingsChange () {
         }
       }
     })
-
-  const app = $('#componentInfoModalSettingsAppName').val()
-  if (app !== obj.constellationAppId) {
-    $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(app))
-    obj.constellationAppId = app
-    updateComponentInfoModalFromHelper(obj.id)
-
-    // If we have a modern definition-based app, hide the content tab
-    if (['media_browser', 'media_player', 'timelapse_viewer', 'timeline_explorer', 'voting_kiosk'].includes(app) === true) {
-      $('#componentInfoModalContentTabButton').hide()
-    } else {
-      $('#componentInfoModalContentTabButton').show()
-    }
-
-    constTools.makeServerRequest({
-      method: 'POST',
-      endpoint: '/exhibit/setComponentApp',
-      params: {
-        component: {
-          id: obj.id
-        },
-        app_name: app
-      }
-    })
-  }
 }
 
 export function getExhibitComponent (id) {
@@ -1656,59 +1295,6 @@ export function getExhibitComponent (id) {
   })
 
   return result
-}
-
-function deleteRemoteFile (id, file, warn = true) {
-  // If called with warn=True, show a modal asking to delete the file.
-  // Otherwise, send the command to delete.
-
-  const model = $('#fileDeleteModal')
-
-  if (warn === true) {
-    $('#fileDeleteModalText').html(`Delete ${file} from ${id}?`)
-    // Remove any previous event handler and then add one to actually do the deletion.
-    $('#fileDeleteConfirmationButton').show()
-    $('#fileDeleteConfirmationButton').off()
-    $('#fileDeleteConfirmationButton').on('click', function () {
-      deleteRemoteFile(id, file, warn = false)
-    })
-    model.modal('show')
-  } else {
-    $('#fileDeleteModalText').html(`Deleting ${file}...`)
-    $('#fileDeleteConfirmationButton').hide()
-
-    const fileSplit = file.split(/[\\/]/) // regex to split on forward and back slashes
-    let exhibit
-    let fileToDelete
-    if (fileSplit.length > 1) {
-      // our file is of form "exhibit/file"
-      exhibit = fileSplit[0]
-      fileToDelete = fileSplit[1]
-    } else {
-      exhibit = constConfig.currentExhibit.split('.')[0]
-      fileToDelete = file
-    }
-    const obj = getExhibitComponent(id)
-    const requestDict = {
-      file: fileToDelete,
-      fromExhibit: exhibit
-    }
-
-    constTools.makeRequest({
-      method: 'POST',
-      url: obj.getHelperURL(),
-      endpoint: '/deleteFile',
-      params: requestDict
-    })
-      .then((response) => {
-        if ('success' in response) {
-          if (response.success === true) {
-            model.modal('hide')
-            showExhibitComponentInfo(id)
-          }
-        }
-      })
-  }
 }
 
 export function rebuildComponentInterface () {

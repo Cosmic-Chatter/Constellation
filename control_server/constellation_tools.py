@@ -1,8 +1,6 @@
 """"""
 
 # Standard imports
-import configparser
-from functools import partial
 import json
 import logging
 import os

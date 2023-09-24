@@ -58,8 +58,12 @@ function loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
-  createLanguageSwitcher(def)
-  defaultLang = langs[0]
+  constCommon.createLanguageSwitcher(def, localize)
+
+  // Find the default language
+  Object.keys(def.languages).forEach((lang) => {
+    if (def.languages[lang].default === true) defaultLang = lang
+  })
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
   constCommon.makeHelperRequest({
@@ -69,7 +73,7 @@ function loadDefinition (def) {
   })
     .then((response) => {
       $('#timelineContainer').empty()
-      const csvAsJSON = constCommon.csvToJSON(response)
+      const csvAsJSON = constCommon.csvToJSON(response).json
       $(document).data('spreadsheet', csvAsJSON)
       localize(defaultLang)
     })
@@ -106,63 +110,14 @@ function adjustFontSize (increment) {
   root.style.setProperty('--fontModifier', fontModifier)
 }
 
-function createLanguageSwitcher (def) {
-  // Take a definition file and use the language entries to make an appropriate language switcher.
-
-  const langs = Object.keys(def.languages)
-
-  if (langs.length === 1) {
-    // No switcher necessary
-    $('#langSwitchDropdown').hide()
-    return
-  }
-
-  $('#langSwitchDropdown').show()
-  // Cycle the languagse and build an entry for each
-  $('#langSwitchOptions').empty()
-  langs.forEach((code) => {
-    const name = def.languages[code].display_name
-
-    const li = document.createElement('li')
-
-    const button = document.createElement('button')
-    button.classList = 'dropdown-item'
-    button.addEventListener('click', function () {
-      localize(code)
-    })
-    li.appendChild(button)
-
-    const flag = document.createElement('img')
-    const customImg = def.languages[code].custom_flag
-    if (customImg != null) {
-      flag.src = '../content/' + customImg
-    } else {
-      flag.src = '../_static/flags/' + code + '.svg'
-    }
-    flag.style.width = '30%'
-    flag.addEventListener('error', function () {
-      this.src = '../_static/icons/translation-icon_black.svg'
-    })
-    button.appendChild(flag)
-
-    const span = document.createElement('span')
-    span.classList = 'ps-2'
-    span.style.verticalAlign = 'middle'
-    span.innerHTML = name
-    button.appendChild(span)
-
-    $('#langSwitchOptions').append(li)
-  })
-}
-
 function localize (lang) {
   // Use the spreadhseet and defintion to set the content to the given language
 
-  const spreadhseet = $(document).data('spreadsheet')
+  const spreadsheet = $(document).data('spreadsheet')
   const definition = $(document).data('timelineDefinition')
 
   $('#timelineContainer').empty()
-  spreadhseet.forEach((entry) => {
+  spreadsheet.forEach((entry) => {
     createTimelineEntry(entry, lang)
   })
   $('#headerText').html(definition.languages[lang].header_text || '')
@@ -223,7 +178,7 @@ function createTimelineEntry (entry, langCode) {
 
     const image = document.createElement('img')
     image.style.width = '100%'
-    image.src = 'content/' + imageName
+    image.src = 'thumbnails/' + imageName
     flex2.appendChild(image)
   }
 
@@ -273,16 +228,22 @@ function setAttractor (filename, fileType) {
   }
 }
 
+function resetInactivityTimer () {
+  // Cancel any existing timer and restart it.
+
+  clearTimeout(attractorTimer)
+  attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+}
+
 function hideAttractor () {
   // Hide the attractor and begin a timer to reinstate it.
 
   document.getElementById('attractorOverlay').style.display = 'none'
   document.getElementById('attractorVideo').pause()
 
-  clearTimeout(attractorTimer)
   constCommon.config.currentInteraction = true
 
-  attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+  resetInactivityTimer()
 }
 
 function showAttractor () {
@@ -311,7 +272,9 @@ $('#fontSizeDecreaseButton').click(function () {
 $('#fontSizeIncreaseButton').click(function () {
   adjustFontSize(0.1)
 })
-document.getElementById('attractorOverlay').addEventListener('touchstart', hideAttractor)
+document.getElementById('attractorOverlay').addEventListener('click', hideAttractor)
+document.addEventListener('touchstart', resetInactivityTimer)
+document.addEventListener('click', resetInactivityTimer)
 
 // Attractor
 let attractorAvailable = false
@@ -322,31 +285,14 @@ let inactivityTimeout = 30
 let defaultLang
 
 // Constellation stuff
+constCommon.configureApp({
+  name: 'timeline_explorer',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
+
 let currentDefintion = ''
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'timeline_explorer'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
 
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
 adjustFontSize(-100) // Make sure the font modifier is at 1 to start
 hideAttractor()

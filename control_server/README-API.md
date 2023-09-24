@@ -12,8 +12,7 @@ Control Server does not search for new `component`s. Rather, each `component` mu
 | -----   | --------- |--------- | --------- | --------- |
 | id | String | A unique, user-defined value| Yes | - |
 | type | String | A user-defined value | Yes | - |
-| AnyDeskID | String | The ID corresponding to an AnyDesk entry running on the host PC | No | - |
-| allowed_actions | array of strings | Any subset of ["restart", "shutdown", "sleep"] | No | Sending these values indicates that the `component` is able and willing to respond to their corresponding commands. Don't send an action if you have not implemented a method of responding to it. |
+| permissions | dictionary with string keys and boolean values |  | No | Sending these values indicates that the `component` is able and willing to respond to their corresponding commands. Don't send an action if you have not implemented a method of responding to it. |
 | currentInteraction | String | "true" or "false" | No | Send "true" if the `component` has been interacted with in the last 30 seconds. Send "false" if it has not. For a `component` with an attractor, you can also send "true" if the attractor is not displayed. |
 | error | JSON object | The keys of the stringified object should be the names of the errors, with the values being a short error message | No | This field allows you to report errors or warnings, which will be displayed on the web console. |
 | helperAddress | String | An HTTP address, including the port, of a server capable of responding to requests | No | This is required for the `component` to respond to certain commands, such as shutting down or restarting. |
@@ -23,7 +22,7 @@ Control Server does not search for new `component`s. Rather, each `component` mu
 
 Your system should implement as many of these commands as makes sense for your use case. These actions enable **_Constellation_** to remotely control your `component` and integrate it into schedules.
 
-Commands are passed to the `component` as responses to a ping. The returned JSON object will have a `commands` field containing a list of string commands. If you implement any of `power_on`, `power_off`, `restart`, `shutdown`, or `sleepDisplays`, make sure you have indicated this in the `allowed_actions` field of every ping.
+Commands are passed to the `component` as responses to a ping. The returned JSON object will have a `commands` field containing a list of string commands. If you implement any of `power_on`, `power_off`, `restart`, `shutdown`, or `sleepDisplays`, make sure you have indicated this in the `permissions` field of every ping.
 
 | Command                      | Intended action                                                  | Notes |
 |------------------------------|------------------------------------------------------------------| ----- |
@@ -51,8 +50,10 @@ To send a ping, you create a JSON object as shown below and send it to the IP ad
   "id": "YOUR_ID",
   "type": "YOUR_TYPE",
   "helperAddress": "10.8.0.12:8082",
-  "allowed_actions": ["sleep", "restart"],
-  "AnyDeskID": "123456678"
+  "permissions": {
+    "shutdown": false,
+    "sleep": true
+  }
  }
 ```
 

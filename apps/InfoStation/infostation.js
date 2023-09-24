@@ -2,71 +2,100 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 
-function updateContent (definition) {
-  // Parse the current content file and build the interface correspondingly.
+function loadDefinition (definition) {
+  // Parse the current definition and build the interface correspondingly.
 
-  if (!('SETTINGS' in definition)) {
-    console.log('Error: The INI file must include a [SETTINGS] section!')
-    return
-  }
+  const root = document.querySelector(':root')
 
+  $(document).data('definition', definition)
   // Clear the existing content
   fontSizeReset()
-  $('#nav-tabContent').empty()
-  $('#buttonRow').empty()
+  document.getElementById('nav-tabContent').innerHTML = ''
+  document.getElementById('buttonRow').innerHTML = ''
   textTabs = []
-  imageTabs = []
-  videoTabs = []
 
   // Set up the available languages
-  const langDef = { default: '' }
-  const headerDict = {}
-  if ('languages' in definition.SETTINGS) {
-    const langs = definition.SETTINGS.languages.split(',')
-    langs.forEach((val, i) => {
-      const lang = val.trim()
-      langDef[lang] = definition.SETTINGS['language_' + lang]
-      headerDict[lang] = definition.SETTINGS['title_' + lang]
-      if (i === 0) {
-        langDef.default = val
-      }
-    })
-  }
-  setLanguages(langDef)
-  setMasthead(headerDict)
+  constCommon.createLanguageSwitcher(definition, localize)
 
   // Configure the attractor
-  if ('attractor' in definition.SETTINGS) {
-    const fileType = getFileType(definition.SETTINGS.attractor)
+  attractorAvailable = false
+  if ('attractor' in definition) {
+    const fileType = constCommon.guessMimetype(definition.attractor)
     if (['image', 'video'].includes(fileType)) {
-      setAttractor(definition.SETTINGS.attractor, fileType)
+      setAttractor(definition.attractor, fileType)
     }
   }
-  if ('timeout' in definition.SETTINGS) {
-    timeoutDuration = parseFloat(definition.SETTINGS.timeout) * 1000
+  if ('inactivity_timeout' in definition) {
+    timeoutDuration = parseFloat(definition.inactivity_timeout) * 1000
+  } else {
+    timeoutDuration = 30000
   }
 
-  // Extract tab order
-  const tabsToCreate = definition.SETTINGS.order.split(',')
-  tabsToCreate.forEach((val, i, theArray) => {
-    theArray[i] = val.trim()
+  // Modify the style
+  // Color
+
+  // First, reset to defaults (in case a style option doesn't exist in the definition)
+  root.style.setProperty('--background-color', '#719abf')
+  root.style.setProperty('--header-color', '#706F8E')
+  root.style.setProperty('--footer-color', '#706F8E')
+  root.style.setProperty('--section-header-color', 'white')
+  root.style.setProperty('--section-background-color', '#393A5A')
+  root.style.setProperty('--section-border-color', '#E9E9E9')
+  root.style.setProperty('--section-shadow-color', 'RGBA(34,34,46, .5)')
+  root.style.setProperty('--text-color', 'white')
+  root.style.setProperty('--toolbarButton-color', '#393A5A')
+  root.style.setProperty('--header-font', 'header-default')
+  root.style.setProperty('--body-font', 'body-default')
+  root.style.setProperty('--section-header-font', 'section-header-default')
+  root.style.setProperty('--header-font-size-adjust', '0')
+  root.style.setProperty('--section-header-font-size-adjust', '0')
+  root.style.setProperty('--body-font-size-adjust', '0')
+  root.style.setProperty('--tab-button-font-size-adjust', '0')
+
+  // Then, apply the definition settings
+  Object.keys(definition.style.color).forEach((key) => {
+    document.documentElement.style.setProperty('--' + key + '-color', definition.style.color[key])
   })
 
+  Object.keys(definition.style.font).forEach((key) => {
+    const font = new FontFace(key, 'url(' + encodeURI(definition.style.font[key]) + ')')
+    document.fonts.add(font)
+    document.documentElement.style.setProperty('--' + key + '-font', key)
+  })
+
+  Object.keys(definition.style.text_size).forEach((key) => {
+    document.documentElement.style.setProperty('--' + key + '-font-size-adjust', definition.style.text_size[key])
+  })
+
+  // Find the default language
+  Object.keys(definition.languages).forEach((lang) => {
+    if (definition.languages[lang].default === true) defaultLang = lang
+  })
+  if (defaultLang !== '') localize(defaultLang)
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
+}
+
+function localize (lang) {
+  // Use the given language code to build the GUI
+
+  const fullDefinition = $(document).data('definition')
+  const definition = fullDefinition.languages[lang]
+
+  document.getElementById('buttonRow').innerHTML = ''
+  document.getElementById('nav-tabContent').innerHTML = ''
+
+  if (definition.header != null) {
+    document.getElementById('masthead').innerHTML = definition.header
+  } else {
+    document.getElementById('masthead').innerHTML = ''
+  }
+
   // Create the tabs
-  tabsToCreate.forEach((val, i) => {
-    if (!(val in definition)) {
-      console.log('Error, no deinintion found for', val)
-      return
-    }
-    let tabId
-    const tabType = definition[val].type
-    if (tabType === 'text') {
-      tabId = createTextTab(definition[val])
-    } else if (tabType === 'image') {
-      tabId = createImageTab(definition[val])
-    } else if (tabType === 'video') {
-      tabId = createVideoTab(definition[val])
-    }
+  definition.tab_order.forEach((uuid, i) => {
+    const tabDef = definition.tabs[uuid]
+    const tabId = createTextTab(tabDef)
     if (i === 0) {
       firstTab = tabId
     }
@@ -74,52 +103,14 @@ function updateContent (definition) {
   gotoTab(firstTab)
 }
 
-function getFileType (filename) {
-  // Return one of ['image', 'video', 'other'] for a given filename based on its extension
-
-  const ext = filename.split('.').slice(-1)[0].toLowerCase()
-
-  if (['mp4', 'mov', 'm4v', 'avi', 'webm', 'mpeg', 'mpg'].includes(ext)) {
-    return 'video'
-  }
-  if (['jpeg', 'jpg', 'png', 'bmp', 'tiff', 'tif', 'webp'].includes(ext)) {
-    return 'image'
-  }
-  return 'other'
-}
-
 function createButton (title, id) {
   // Create a button in the bottom bar that shows the pane with the given id
 
-  const existingButton = $('#' + id + 'ButtonCol')
-  let col
-  if (existingButton.length === 0) {
-    // Create a new button
-    col = document.createElement('div')
-    col.setAttribute('class', 'col-2 tabButtonCol')
-    col.setAttribute('id', id + 'ButtonCol')
-    $('#buttonRow').append(col)
-
-    // Adjust the column size based on the number of buttons that have been added
-    const nButtons = $('#buttonRow').children().length
-    const allButtons = $('.tabButtonCol')
-    if (nButtons === 1) {
-      allButtons.removeClass('col-1 col-2 col-3 col-4 col-6').addClass('col-12')
-    } else if (nButtons === 2) {
-      allButtons.removeClass('col-1 col-2 col-3 col-4 col-12').addClass('col-6')
-    } else if (nButtons === 3) {
-      allButtons.removeClass('col-1 col-2 col-3 col-6 col-12').addClass('col-4')
-    } else if (nButtons === 4) {
-      allButtons.removeClass('col-1 col-2 col-4 col-6 col-12').addClass('col-3')
-    } else if (nButtons > 4) {
-      allButtons.removeClass('col-1 col-6 col-3 col-4 col-12').addClass('col-2')
-    }
-  } else {
-    // Update button
-    existingButton.empty()
-    col = existingButton
-    col.empty()
-  }
+  // Create a new button
+  const col = document.createElement('div')
+  col.setAttribute('class', 'col tabButtonCol')
+  col.setAttribute('id', id + 'ButtonCol')
+  $('#buttonRow').append(col)
 
   const button = document.createElement('button')
   button.setAttribute('class', 'btn btn-secondary tabButton w-100 h-100')
@@ -129,189 +120,55 @@ function createButton (title, id) {
   button.setAttribute('id', id + 'Button')
   $(button).html(title)
   col.append(button)
-}
 
-function createCard (content) {
-  // Create a single thumbnail card with the details provided in 'content'
+  // Adjust the number of columns based on the number of buttons that have been added
+  const nButtons = $('#buttonRow').children().length
+  const root = document.querySelector(':root')
+  let rowClass
+  let numRows
 
-  const card = document.createElement('div')
-  card.setAttribute('class', 'card')
-  $(card).data('details', content)
-
-  const img = document.createElement('img')
-  img.setAttribute('class', 'card-img-top')
-  img.src = content.thumb
-  $(card).append(img)
-
-  const body = document.createElement('div')
-  body.setAttribute('class', 'card-body')
-  card.append(body)
-
-  const title = document.createElement('div')
-  title.setAttribute('class', 'card-title text-center')
-  $(title).html(content.title)
-  body.append(title)
-
-  return card
-}
-
-function createImageTab (definition, update = '') {
-  // Create a pane that displays a grid of images.
-  // Set update="" when instantiating the video tab for the first time.
-  // When localizing, set update to the id to be updated
-
-  let tabId
-  if (update === '') {
-    // First, create the pane
-    tabId = 'imageTab_' + String(Date.now())
-    const pane = document.createElement('div')
-    pane.setAttribute('id', tabId)
-    pane.setAttribute('class', 'tab-pane fade show active')
-    $(pane).data('user-definition', definition)
-    $('#nav-tabContent').append(pane)
+  if (nButtons === 1) {
+    rowClass = '1'
+    numRows = 0
+  } else if (nButtons < 4) {
+    rowClass = String(nButtons)
+    numRows = 1
   } else {
-    tabId = update
+    rowClass = '4'
+    numRows = Math.ceil(nButtons / 4)
   }
 
-  // Send a GET request for the content and then build the tab
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/' + definition['content_' + currentLang],
-    rawResponse: true
-  })
-    .then((response) => {
-      _createImageTabContent(tabId, response)
-    })
-
-  // Create button for this tab
-  createButton(definition['title_' + currentLang], tabId)
-
-  if (update === '') {
-    imageTabs.push(tabId)
-  }
-  return tabId
+  root.style.setProperty('--button-rows', numRows)
+  document.getElementById('buttonRow').classList = 'row justify-content-center pt-3 pb-1 mx-1 gx-2 gy-2 row-cols-' + rowClass
 }
 
-function _createImageTabContent (tabId, contentStr) {
-  // Helper function to actually populate the tab with content.
+function createTextTab (definition) {
+  // Create a pane that displays Markdown-formatted text and images
+
+  // First, create the pane
+  const tabId = 'textTab_' + String(definition.uuid)
+  const pane = document.createElement('div')
+  pane.setAttribute('id', tabId)
+  pane.setAttribute('class', 'tab-pane fade show active')
+  $(pane).data('user-definition', definition)
+  $('#nav-tabContent').append(pane)
 
   const row = document.createElement('div')
   row.setAttribute('class', 'row mx-1 align-items-center')
   $('#' + tabId).append(row)
-  const overlayId = tabId + '_overlay'
 
-  const content = constCommon.parseINIString(contentStr)
-  const images = Object.keys(content)
+  const col = document.createElement('div')
+  col.setAttribute('class', 'col-12 textCol mt-3')
+  col.setAttribute('id', tabId + 'Content')
+  row.append(col)
 
-  // Then, iterate through the content and build a card for each image
-  images.forEach((item, i) => {
-    const imageDef = content[item]
-
-    const col = document.createElement('div')
-    col.setAttribute('class', 'col-4 mt-3')
-    row.append(col)
-
-    const card = createCard(imageDef)
-    $(card).click(function () {
-      imageOverlayShow(tabId, this)
-    })
-    col.append(card)
-  })
-
-  // Then, create the overlay that will show the media
-  const overlay = document.createElement('div')
-  overlay.setAttribute('class', 'row overlay mx-0 align-items-center')
-  overlay.setAttribute('id', overlayId)
-  $(overlay).click(function () {
-    imageOverlayHide(tabId)
-  })
-  $('#' + tabId).append(overlay)
-  $(overlay).hide()
-
-  const bigImgCol = document.createElement('div')
-  bigImgCol.setAttribute('class', 'offset-1 col-10 text-center')
-  overlay.append(bigImgCol)
-
-  const bigImg = document.createElement('img')
-  bigImg.setAttribute('class', 'bigImage')
-  bigImg.setAttribute('id', tabId + '_image')
-  bigImg.src = content[images[0]].image
-  bigImgCol.append(bigImg)
-
-  const title = document.createElement('p')
-  title.setAttribute('class', 'overlayTitle text-center')
-  title.setAttribute('id', tabId + '_title')
-  $(title).html(content[images[0]].title)
-  bigImgCol.append(title)
-
-  const caption = document.createElement('p')
-  caption.setAttribute('class', 'overlayCaption text-start')
-  caption.setAttribute('id', tabId + '_caption')
-  $(caption).html(content[images[0]].caption)
-  bigImgCol.append(caption)
-
-  const credit = document.createElement('p')
-  credit.setAttribute('class', 'overlayCredit fst-italic text-start')
-  credit.setAttribute('id', tabId + '_credit')
-  $(credit).html(content[images[0]].credit)
-  bigImgCol.append(credit)
-}
-
-function localizeImageTab (id) {
-  // Use the user-supplied data to supply the content in the current langauge;
-
-  const definition = $('#' + id).data('user-definition')
-
-  // Clear the pane and rebuild
-  document.getElementById(id).innerHTML = ''
-  createImageTab(definition, id)
-}
-
-function createTextTab (definition, update = '') {
-  // Create a pane that displays Markdown-formatted text and images
-  // Set update="" when instantiating the text tab for the first time.
-  // When localizing, set update to the id to be updated
-
-  let tabId, col
-  if (update === '') {
-    // First, create the pane
-    tabId = 'textTab_' + String(Date.now())
-    const pane = document.createElement('div')
-    pane.setAttribute('id', tabId)
-    pane.setAttribute('class', 'tab-pane fade show active')
-    $(pane).data('user-definition', definition)
-    $('#nav-tabContent').append(pane)
-
-    const row = document.createElement('div')
-    row.setAttribute('class', 'row mx-1 align-items-center')
-    $('#' + tabId).append(row)
-
-    col = document.createElement('div')
-    col.setAttribute('class', 'col-12 textCol mt-3')
-    col.setAttribute('id', tabId + 'Content')
-    row.append(col)
-  } else {
-    col = document.getElementById(update + 'Content')
-    tabId = update
-  }
-
-  // Send a GET request for the content and then build the tab
-
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/' + definition['content_' + currentLang],
-    rawResponse: true
-  })
-    .then((response) => {
-      _createTextTabContent(tabId, response)
-    })
+  _createTextTabContent(tabId, definition.text)
 
   // Create button for this tab
-  createButton(definition['title_' + currentLang], tabId)
+  createButton(definition.button_text, tabId)
 
-  if (update === '') {
-    textTabs.push(tabId)
-  }
+  textTabs.push(tabId)
+
   return tabId
 }
 
@@ -380,180 +237,33 @@ function _createTextTabContent (tabId, content) {
     })
     col.append(box)
   })
-  tabsUpdated += 1
 }
 
-function localizeTextTab (id) {
-  // Use the user-supplied data to supply the content in the current langauge;
+function fontSizeDecrease () {
+  // Decrease the CSS --font-size-adjust variable
 
-  const definition = $('#' + id).data('user-definition')
-
-  // Clear the pane and rebuild
-  document.getElementById(id + 'Content').innerHTML = ''
-  createTextTab(definition, id)
-}
-
-function createVideoTab (definition, update = '') {
-  // Create a pane that displays a grid of video.
-  // Set update="" when instantiating the video tab for the first time.
-  // When localizing, set update to the id to be updated
-
-  let tabId
-  if (update === '') {
-    // First, create the pane
-    tabId = 'videoTab_' + String(Date.now())
-    const pane = document.createElement('div')
-    pane.setAttribute('id', tabId)
-    pane.setAttribute('class', 'tab-pane fade show active')
-    $(pane).data('user-definition', definition)
-    $('#nav-tabContent').append(pane)
-  } else {
-    tabId = update
-  }
-
-  // Send a GET request for the content and then build the tab
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/' + definition['content_' + currentLang],
-    rawResponse: true
-  })
-    .then((response) => {
-      _createVideoTabContent(tabId, response)
-    })
-
-  // Create button for this tab
-  createButton(definition['title_' + currentLang], tabId)
-
-  if (update === '') {
-    videoTabs.push(tabId)
-  }
-  return tabId
-}
-
-function _createVideoTabContent (tabId, contentStr) {
-  // Helper function to actually populate the tab with content.
-
-  const row = document.createElement('div')
-  row.setAttribute('class', 'row mx-1 align-items-center')
-  $('#' + tabId).append(row)
-  const overlayId = tabId + '_overlay'
-
-  const content = constCommon.parseINIString(contentStr)
-  const videos = Object.keys(content)
-
-  // Iterate through the content and build a card for each image
-  videos.forEach((item, i) => {
-    const videoDef = content[item]
-
-    const col = document.createElement('div')
-    col.setAttribute('class', 'col-4 mt-3')
-    row.append(col)
-
-    const card = createCard(videoDef)
-    $(card).click(function () {
-      videoOverlayShow(tabId, this)
-    })
-    col.append(card)
-  })
-
-  // Then, create the overlay that will show the media
-  const overlay = document.createElement('div')
-  overlay.setAttribute('class', 'row overlay mx-0 align-items-center')
-  overlay.setAttribute('id', overlayId)
-  $(overlay).click(function () {
-    videoOverlayHide(tabId)
-  })
-  $('#' + tabId).append(overlay)
-  $(overlay).hide()
-
-  const bigVidCol = document.createElement('div')
-  bigVidCol.setAttribute('class', 'offset-1 col-10 text-center')
-  overlay.append(bigVidCol)
-
-  const bigVid = document.createElement('video')
-  bigVid.setAttribute('class', 'bigImage')
-  bigVid.setAttribute('id', tabId + '_video')
-  $(bigVid).on('ended', function () {
-    videoOverlayHide(tabId)
-  })
-  bigVid.src = content[videos[0]].video
-  bigVidCol.append(bigVid)
-
-  const title = document.createElement('p')
-  title.setAttribute('class', 'overlayTitle text-center')
-  title.setAttribute('id', tabId + '_title')
-  $(title).html(content[videos[0]].title)
-  bigVidCol.append(title)
-
-  const caption = document.createElement('p')
-  caption.setAttribute('class', 'overlayCaption text-start')
-  caption.setAttribute('id', tabId + '_caption')
-  $(caption).html(content[videos[0]].caption)
-  bigVidCol.append(caption)
-
-  const credit = document.createElement('p')
-  credit.setAttribute('class', 'overlayCredit fst-italic text-start')
-  credit.setAttribute('id', tabId + '_credit')
-  $(credit).html(content[videos[0]].credit)
-  bigVidCol.append(credit)
-}
-
-function localizeVideoTab (id) {
-  // Use the user-supplied data to supply the content in the current langauge;
-
-  const definition = $('#' + id).data('user-definition')
-
-  // Clear the pane and rebuild
-  document.getElementById(id).innerHTML = ''
-  createVideoTab(definition, id)
-}
-
-function fontSizeDecrease (animate = false) {
-  // Take the given number of font ticks and convert it into the proper
-  // font size for each kind of elements
-
-  let duration = 0
-  if (animate) {
-    duration = 50
-  }
-
-  $('p, h1, h2, h3, h4, h5, h6, button, .card-title, li').animate({ fontSize: '-=3', queue: false }, duration)
-}
-
-function fontSizeDecreaseButtonPressed () {
-  if (fontTicks > 0) {
-    fontTicks -= 1
-    fontSizeDecrease(true)
-  }
+  const root = document.querySelector(':root')
+  const currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--font-size-adjust'))
+  root.style.setProperty('--font-size-adjust', String(Math.max(currentSize - 0.1, 1)))
 }
 
 function fontSizeReset () {
-  while (fontTicks > 0) {
-    fontSizeDecrease()
-    fontTicks -= 1
-  }
+  const root = document.querySelector(':root')
+  root.style.setProperty('--font-size-adjust', '1')
 }
 
-function fontSizeIncrease (animate = false, amount = 3) {
-  // Take the given number of font ticks and convert it into the proper
-  // font size for each kind of elements
+function fontSizeIncrease () {
+  // Increase the CSS --font-size-adjust variable
 
-  let duration = 0
-  if (animate) {
-    duration = 50
-  }
-  $('p, h1, h2, h3, h4, h5, h6, button, .card-title, li').animate({ fontSize: '+=' + String(amount), queue: false }, duration)
-}
-
-function fontSizeIncreaseButtonPressed () {
-  if (fontTicks < 10) {
-    fontTicks += 1
-    fontSizeIncrease(true)
-  }
+  const root = document.querySelector(':root')
+  const currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--font-size-adjust'))
+  root.style.setProperty('--font-size-adjust', String(Math.min(currentSize + 0.1, 1.5)))
 }
 
 function gotoTab (id) {
   // Swap the active tab
+
+  if (id === '') return
 
   // Make sure the tab is scrolled to the top
   $('#nav-tabContent').scrollTop(0)
@@ -579,55 +289,16 @@ function hideAttractor () {
   })
 }
 
-function imageOverlayHide (id) {
-  $('#' + id + '_overlay').fadeOut(100)
-}
-
-function imageOverlayShow (id, card) {
-  // Retreive the details from the card data
-  const details = $(card).data('details')
-
-  // Use the details to fill out the overlay
-  $('#' + id + '_image').attr('src', details.image)
-  if (details.title != null) {
-    $('#' + id + '_title').html(details.title)
-  } else {
-    $('#' + id + '_title').html('')
-  }
-  if (details.caption != null) {
-    $('#' + id + '_caption').html(details.caption)
-  } else {
-    $('#' + id + '_caption').html('')
-  }
-  if (details.credit != null) {
-    $('#' + id + '_credit').html(details.credit)
-  } else {
-    $('#' + id + '_credit').html('')
-  }
-
-  $('#' + id + '_overlay').fadeIn(100)
-}
-
 function updateFunc (update) {
   // Function to read a message from the server and take action based
   // on the contents
 
-  if ('content' in update) {
-    if (!constCommon.arraysEqual(update.content, currentContent)) {
-      currentContent = update.content
-
-      // Get the file from the helper and build the interface
-      const definition = currentContent[0] // Only one INI file at a time
-
-      constCommon.makeHelperRequest({
-        method: 'GET',
-        endpoint: '/content/' + definition,
-        rawResponse: true
+  if ('definition' in update && update.definition !== currentDefintion) {
+    currentDefintion = update.definition
+    constCommon.loadDefinition(currentDefintion)
+      .then((result) => {
+        loadDefinition(result.definition)
       })
-        .then((response) => {
-          updateContent(constCommon.parseINIString(response))
-        })
-    }
   }
 }
 
@@ -639,33 +310,14 @@ function resetActivityTimer () {
   inactivityTimer = setTimeout(showAttractor, timeoutDuration)
 }
 
-function setLanguages (langDict) {
-  languageDict = langDict
-  currentLang = langDict.default
-}
-
-function setMasthead (dataDict) {
-  // Helper function to set the masthead content (usually text)
-
-  $('#masthead').data('user-data', dataDict)
-  $('#masthead').html(dataDict[languageDict.default])
-}
-
-function localizeMasthead () {
-  // Update the masthead with content matching the current language.
-
-  const dataDict = $('#masthead').data('user-data')
-  $('#masthead').html(dataDict[currentLang])
-}
-
 function setAttractor (filename, fileType) {
   attractorAvailable = true
   if (fileType === 'video') {
-    document.getElementById('attractorVideo').src = filename
+    document.getElementById('attractorVideo').src = 'content/' + filename
     document.getElementById('attractorImage').style.display = 'none'
     document.getElementById('attractorVideo').style.display = 'block'
   } else if (fileType === 'image') {
-    document.getElementById('attractorImage').src = filename
+    document.getElementById('attractorImage').src = 'content/' + filename
     document.getElementById('attractorImage').style.display = 'block'
     document.getElementById('attractorVideo').style.display = 'none'
   } else {
@@ -676,12 +328,7 @@ function setAttractor (filename, fileType) {
 function showAttractor () {
   // Make the attractor layer visible
 
-  // We don't want to show the attractor while a video is playing
-  if (videoPlaying) {
-    resetActivityTimer()
-    return
-  }
-
+  const definition = $(document).data('definition')
   constCommon.config.currentInteraction = false
 
   if (attractorAvailable) {
@@ -692,138 +339,45 @@ function showAttractor () {
           $('#attractorOverlay').fadeIn(100)
         }).then(result => {
           fontSizeReset()
-          setLang(languageDict.default)
+          localize(defaultLang)
           gotoTab(firstTab)
           $('#nav-tabContent').scrollTop(0)
         })
     } else {
       $('#attractorOverlay').fadeIn(100)
       fontSizeReset()
-      setLang(languageDict.default)
+      localize(defaultLang)
       gotoTab(firstTab)
       $('#nav-tabContent').scrollTop(0)
     }
   } else {
     $('#attractorOverlay').fadeOut(100)
     fontSizeReset()
-    setLang(languageDict.default)
+    localize(defaultLang)
     $('#nav-tabContent').scrollTop(0)
   }
 }
 
-function setLang (lang) {
-  // Switch the currentLang and rebuild the interface.
-
-  currentLang = lang
-
-  // First, record the current text size and reset everything to the default.
-  const sizeToSet = fontTicks
-  fontSizeReset() // Clear size so all elements are equally affected
-
-  localizeMasthead()
-
-  if (currentLang === 'en') {
-    $('#langToggleButton').html(languageDict.es)
-  } else {
-    $('#langToggleButton').html(languageDict.en)
-  }
-  tabsUpdated = 0
-  textTabs.forEach((item, i) => {
-    localizeTextTab(item)
-  })
-  videoTabs.forEach((item, i) => {
-    localizeVideoTab(item)
-  })
-  imageTabs.forEach((item, i) => {
-    localizeImageTab(item)
-  })
-
-  // Finally, update all elements to the previous text size.
-  // Add a delay since the tabs are built using async requests
-  const tabsToUpdate = textTabs.length + videoTabs.length + imageTabs.length
-
-  const tempFunc = function () {
-    if (tabsUpdated === tabsToUpdate) {
-      fontSizeIncrease(false, 3 * sizeToSet)
-      fontTicks = sizeToSet
-    } else {
-      setTimeout(tempFunc, 5)
-    }
-  }
-  tempFunc()
-}
-
-function toggleLang (lang) {
-  // Toggle to the opposite language
-  if (currentLang === 'en') {
-    setLang('es')
-  } else {
-    setLang('en')
-  }
-}
-
-function videoOverlayHide (id) {
-  videoPlaying = false
-  $('#' + id + '_overlay').fadeOut(100)
-  document.getElementById(id + '_video').pause()
-  document.getElementById(id + '_video').currentTime = 0
-}
-
-function videoOverlayShow (id, card) {
-  videoPlaying = true
-
-  // Retreive the details from the card data
-  const details = $(card).data('details')
-
-  // Use the details to fill out the overlay
-  $('#' + id + '_video').attr('src', details.video)
-  if (details.title != null) {
-    $('#' + id + '_title').html(details.title)
-  } else {
-    $('#' + id + '_title').html('')
-  }
-  if (details.caption != null) {
-    $('#' + id + '_caption').html(details.caption)
-  } else {
-    $('#' + id + '_caption').html('')
-  }
-  if (details.credit != null) {
-    $('#' + id + '_credit').html(details.credit)
-  } else {
-    $('#' + id + '_credit').html('')
-  }
-
-  $('#' + id + '_overlay').fadeIn(100)
-  document.getElementById(id + '_video').play()
-}
-
-constCommon.config.helperAddress = window.location.origin
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'infostation'
-constCommon.config.debug = true
-
-let videoPlaying = false // Is a video currently playing?
 let inactivityTimer = 0
-let fontTicks = 0 // Number of times we have increased the font size
-let languageDict = { default: 'en' }
-let currentLang = 'en'
 let attractorAvailable = false
 let timeoutDuration = 30000 // ms of no activity before the attractor is shown.
+let defaultLang = ''
 let textTabs = [] // Holds ids of textTabs.
-let videoTabs = []
-let imageTabs = []
 let firstTab = ''
-let tabsUpdated = 0 // Async tab updates check in here during setLang()
-let currentContent = []
+let currentDefintion = ''
 
 $(document).bind('touchstart', resetActivityTimer)
-$('#fontSizeDecreaseButton').click(fontSizeDecreaseButtonPressed)
-$('#fontSizeIncreaseButton').click(fontSizeIncreaseButtonPressed)
+$(document).bind('click', resetActivityTimer)
+$('#fontSizeDecreaseButton').click(fontSizeDecrease)
+$('#fontSizeIncreaseButton').click(fontSizeIncrease)
 $('#attractorOverlay').click(hideAttractor)
-$('#langToggleButton').click(toggleLang)
 
-constCommon.askForDefaults()
-constCommon.sendPing()
-setInterval(constCommon.sendPing, 5000)
+// Constellation stuff
+constCommon.configureApp({
+  name: 'infostation',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
 
 hideAttractor()

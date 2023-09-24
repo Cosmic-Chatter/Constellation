@@ -96,14 +96,10 @@ def send_webpage_update():
             temp["definition"] = item.config["definition"]
         if "error" in item.config:
             temp["error"] = item.config["error"]
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
-        if "AnyDeskID" in item.config:
-            temp["AnyDeskID"] = item.config["AnyDeskID"]
-        if "image_duration" in item.config:
-            temp["image_duration"] = item.config["image_duration"]
         if "autoplay_audio" in item.config:
             temp["autoplay_audio"] = item.config["autoplay_audio"]
         component_dict_list.append(temp)
@@ -117,8 +113,8 @@ def send_webpage_update():
                 "protocol": item.connection_type,
                 "state": item.state,
                 "status": item.state["status"]}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         component_dict_list.append(temp)
@@ -130,8 +126,8 @@ def send_webpage_update():
                 "ip_address": item.ip_address,
                 "latency": item.latency,
                 "status": item.state["status"]}
-        if "allowed_actions" in item.config:
-            temp["allowed_actions"] = item.config["allowed_actions"]
+        if "permissions" in item.config:
+            temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
             temp["description"] = item.config["description"]
         component_dict_list.append(temp)
@@ -406,20 +402,10 @@ class ExhibitComponent(BaseModel):
 
 @app.post("/component/{component_id}/setApp")
 async def set_component_app(component_id: str,
-                                app_name: str = Body(description="The app to be set.", embed=True)):
+                            app_name: str = Body(description="The app to be set.", embed=True)):
     """Set the app for the component."""
 
     c_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
-
-    return {"success": True}
-
-
-@app.post("/component/{component_id}/setContent")
-async def set_component_content(component_id: str,
-                                content: list[str] = Body(description="The content to be set.", embed=True)):
-    """Set the content for the component. Setting content clears the definition."""
-
-    c_exhibit.update_exhibit_configuration(component_id, {"content": content, "definition": ""})
 
     return {"success": True}
 
@@ -428,9 +414,9 @@ async def set_component_content(component_id: str,
 async def set_component_definition(component_id: str,
                                    uuid: str = Body(description="The UUID of the definition file to be set.",
                                                     embed=True)):
-    """Set the definition for the component. Setting a definition clears all content."""
+    """Set the definition for the component."""
 
-    c_exhibit.update_exhibit_configuration(component_id, {"content": [], "definition": uuid})
+    c_exhibit.update_exhibit_configuration(component_id, {"definition": uuid})
 
     return {"success": True}
 
@@ -503,6 +489,26 @@ async def set_component_app(component: ExhibitComponent,
     print(f"Changing app for {component.id}:", app_name)
     c_exhibit.update_exhibit_configuration(component.id, {"app_name": app_name})
     return {"success": True, "reason": ""}
+
+
+@app.get("/exhibit/getAvailable")
+async def get_available_exhibits():
+    """Return a list of available exhibits."""
+
+    return {"success": True, "available_exhibits": c_config.exhibit_list}
+
+
+@app.post("/exhibit/getDetails")
+async def get_exhibit_details(name: str = Body(description='The name of the exhibit to fetch.', embed=True)):
+    """Return the JSON for a particular exhibit."""
+
+    if not name.endswith('.json'):
+        name += '.json'
+    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
+    result = c_tools.load_json(exhibit_path)
+    if result is None:
+        return {"success": False, "reason": "Exhibit does not exist."}
+    return {"success": True, "exhibit": result}
 
 
 # Flexible Tracker actions
@@ -611,7 +617,7 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
         name += ".txt"
     data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
     if not os.path.exists(data_path):
-        return {"success": False, "reason": f"File {data['name']}.json does not exist!", "csv": ""}
+        return {"success": False, "reason": f"File {data['name']}.txt does not exist!", "csv": ""}
     result = c_track.create_CSV(data_path)
     return {"success": True, "csv": result}
 
@@ -932,13 +938,31 @@ async def refresh_schedule():
     return response_dict
 
 
+@app.get("/schedule/availableDateSpecificSchedules")
+async def get_date_specific_schedules():
+    """Retrieve a list of available date-specific schedules"""
+
+    return {"success": True, "schedules": c_sched.get_available_date_specific_schedules()}
+
+
+@app.get("/schedule/{schedule_name}/get")
+async def get_specific_schedule(schedule_name: str):
+    """Retrieve the given schedule and return it as a dictionary."""
+
+    if not schedule_name.endswith('.json'):
+        schedule_name += '.json'
+    success, schedule = c_sched.load_json_schedule(schedule_name)
+
+    return {"success": success, "schedule": schedule}
+
+
 @app.post("/schedule/update")
 async def update_schedule(name: str = Body(),
                           time_to_set: str = Body(
                               description="The time of the action to set, expressed in any normal way."),
                           action_to_set: str = Body(description="The action to set."),
-                          target_to_set: str = Body(description="The ID of the component that should be acted upon."),
-                          value_to_set: list = Body(default="", description="A value corresponding to the action."),
+                          target_to_set: list | str = Body(description="The ID(s) of the component(s) that should be acted upon."),
+                          value_to_set: str = Body(default="", description="A value corresponding to the action."),
                           schedule_id: str = Body(
                               description="A unique identifier corresponding to the schedule entry.")):
     """Write a schedule update to disk.
@@ -1023,7 +1047,7 @@ async def get_help_text():
     except PermissionError:
         # For some reason, Pyinstaller insists on placing the README in a directory of the same name on Windows.
         try:
-            readme_path = c_tools.get_path(["README.md","README.md"])
+            readme_path = c_tools.get_path(["README.md", "README.md"])
             with open(readme_path, 'r', encoding='UTF-8') as f:
                 text = f.read()
             response = {"success": True, "text": text}
@@ -1116,11 +1140,11 @@ async def send_update_stream(request: Request):
                 last_update_time = c_config.last_update_time
 
                 yield {
-                        "event": "update",
-                        "id": str(last_update_time),
-                        "retry": 15000,  # milliseconds
-                        "data": json.dumps(send_webpage_update(), default=str)
-                      }
+                    "event": "update",
+                    "id": str(last_update_time),
+                    "retry": 15000,  # milliseconds
+                    "data": json.dumps(send_webpage_update(), default=str)
+                }
             await asyncio.sleep(0.5)  # seconds
 
     return EventSourceResponse(event_generator())

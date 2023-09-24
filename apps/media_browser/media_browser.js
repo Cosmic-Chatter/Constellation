@@ -37,7 +37,8 @@ function createCard (obj) {
   const def = $(document).data('browserDefinition')
   let thumb
 
-  if (thumbnailKey != null && thumbnailKey !== '') {
+  if (thumbnailKey != null && thumbnailKey !== '' && String(obj[thumbnailKey]).trim() !== '') {
+    console.log('here')
     thumb = 'thumbnails/' + String(obj[thumbnailKey])
   } else {
     // Change the file extension to .jpg, since that is the default for Constellation
@@ -104,11 +105,14 @@ function createCard (obj) {
   $('#resultsRow').append(col)
 }
 
-function hideImageLightBox () {
+function hideMediaLightBox () {
   // Fade out the lightbox, and then hide it so it doesn't steal touches
 
-  const temp = function () { $('#imageLightbox').css('display', 'none') }
-  $('#imageLightbox').animate({ opacity: 0, queue: false }, { complete: temp, duration: 100 })
+  const video = document.getElementById('mediaLightboxVideo')
+  video.pause()
+
+  const temp = function () { $('#mediaLightbox').css('display', 'none') }
+  $('#mediaLightbox').animate({ opacity: 0, queue: false }, { complete: temp, duration: 100 })
 }
 
 function onFilterOptionChange () {
@@ -252,7 +256,8 @@ function displayMedia (id) {
   if (creditKey != null && creditKey !== '') {
     credit = obj[creditKey]
   }
-  showImageInLightBox(String(obj[mediaKey]), title, caption, credit)
+  const media = String(obj[mediaKey])
+  showMediaInLightbox(media, title, caption, credit)
 }
 
 function updateParser (update) {
@@ -264,6 +269,10 @@ function updateParser (update) {
       .then((result) => {
         loadDefinition(result.definition)
       })
+  }
+
+  if ('permissions' in update && 'audio' in update.permissions) {
+    document.getElementById('mediaLightboxVideo').muted = !update.permissions.audio
   }
 }
 
@@ -279,7 +288,6 @@ function loadDefinition (def) {
   if (langs.length === 0) return
 
   constCommon.createLanguageSwitcher(def, localize)
-  defaultLang = langs[0]
 
   // Configure the attractor
   if ('inactivity_timeout' in def) {
@@ -337,24 +345,24 @@ function loadDefinition (def) {
   numRows = Math.ceil(cardsPerPage / numCols)
 
   if ('lightbox_title_height' in def.style.layout) {
-    document.getElementById('imageLightboxTitle').style.height = String(def.style.layout.lightbox_title_height) + '%'
+    document.getElementById('mediaLightboxTitle').style.height = String(def.style.layout.lightbox_title_height) + '%'
   } else {
-    document.getElementById('imageLightboxTitle').style.height = '9%'
+    document.getElementById('mediaLightboxTitle').style.height = '9%'
   }
   if ('lightbox_caption_height' in def.style.layout) {
-    document.getElementById('imageLightboxCaption').style.height = String(def.style.layout.lightbox_caption_height) + '%'
+    document.getElementById('mediaLightboxCaption').style.height = String(def.style.layout.lightbox_caption_height) + '%'
   } else {
-    document.getElementById('imageLightboxCaption').style.height = '15%'
+    document.getElementById('mediaLightboxCaption').style.height = '15%'
   }
   if ('lightbox_credit_height' in def.style.layout) {
-    document.getElementById('imageLightboxCredit').style.height = String(def.style.layout.lightbox_credit_height) + '%'
+    document.getElementById('mediaLightboxCredit').style.height = String(def.style.layout.lightbox_credit_height) + '%'
   } else {
-    document.getElementById('imageLightboxCredit').style.height = '6%'
+    document.getElementById('mediaLightboxCredit').style.height = '6%'
   }
   if ('lightbox_image_height' in def.style.layout) {
-    document.getElementById('imageLightboxImage').style.height = String(def.style.layout.lightbox_image_height) + '%'
+    document.getElementById('mediaLightboxImage').style.height = String(def.style.layout.lightbox_image_height) + '%'
   } else {
-    document.getElementById('imageLightboxImage').style.height = '70%'
+    document.getElementById('mediaLightboxImage').style.height = '70%'
   }
 
   // Modify the style
@@ -410,6 +418,11 @@ function loadDefinition (def) {
     root.style.setProperty('--' + key + '-font-adjust', value)
   })
 
+  // Find the default language
+  Object.keys(def.languages).forEach((lang) => {
+    if (def.languages[lang].default === true) defaultLang = lang
+  })
+
   // Load the CSV file containing the items ad build the results row
   constCommon.makeHelperRequest({
     method: 'GET',
@@ -418,7 +431,7 @@ function loadDefinition (def) {
   })
     .then((response) => {
       const csvAsJSON = constCommon.csvToJSON(response)
-      spreadsheet = csvAsJSON // Global property
+      spreadsheet = csvAsJSON.json // Global property
       localize(defaultLang)
 
       // Send a thumbnail to the helper
@@ -497,22 +510,28 @@ function localize (lang) {
 function showAttractor () {
   // Make the attractor layer visible
 
+  // Don't show the attractor if a video is playing
+  if (videoPlaying === true) {
+    resetActivityTimer()
+    return
+  }
+
   constCommon.config.currentInteraction = false
   if (attractorAvailable) {
     if (attractorType === 'video') {
       document.getElementById('attractorVideo').play()
         .then(result => {
           $('#attractorOverlay').fadeIn()
-          hideImageLightBox()
+          hideMediaLightBox()
           clear()
         })
     } else {
       $('#attractorOverlay').fadeIn()
-      hideImageLightBox()
+      hideMediaLightBox()
       clear()
     }
   } else {
-    hideImageLightBox()
+    hideMediaLightBox()
     clear()
   }
 }
@@ -536,35 +555,38 @@ function resetActivityTimer () {
   inactivityTimer = setTimeout(showAttractor, inactivityTimeout)
 }
 
-function showImageInLightBox (image, title = '', caption = '', credit = '') {
-  // Set the img source to the provided image, set the caption, and reveal
-  // the light box. The desired image must be located in the media directory
+function showMediaInLightbox (media, title = '', caption = '', credit = '') {
+  // Set the img or video source to the provided media, set the caption, and reveal
+  // the light box.
 
   // Hide elements until image is loaded
-  $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCaption, #imageLightboxCredit').hide()
+  $('#mediaLightboxImage, #mediaLightboxVideo, #mediaLightboxTitle, #mediaLightboxCaption, #mediaLightboxCredit').hide()
 
-  document.getElementById('imageLightboxTitle').innerHTML = title
-  document.getElementById('imageLightboxCaption').innerHTML = caption
+  document.getElementById('mediaLightboxTitle').innerHTML = title
+  document.getElementById('mediaLightboxCaption').innerHTML = caption
 
   if (credit !== '' && credit != null) {
-    document.getElementById('imageLightboxCredit').innerHTML = 'Credit: ' + credit
+    document.getElementById('mediaLightboxCredit').innerHTML = 'Credit: ' + credit
   } else {
-    document.getElementById('imageLightboxCredit').innerHTML = ''
+    document.getElementById('mediaLightboxCredit').innerHTML = ''
   }
 
-  // Load the image with a callback to fade it in when it is loaded
-  $('#imageLightboxImage').one('load', function () {
-    $('#imageLightboxImage, #imageLightboxTitle, #imageLightboxCredit, #imageLightboxCaption').fadeIn()
-    // if (caption === '') {
-    //   $('#imageLightboxImage').addClass('imageLightboxImageTall').removeClass('imageLightboxImageShort')
-    //   $('#imageLightboxCaption').hide()
-    // } else {
-    //   $('#imageLightboxImage').removeClass('imageLightboxImageTall').addClass('imageLightboxImageShort')
-    //   $('#imageLightboxCaption').fadeIn()
-    // }
-  }).attr('src', 'content/' + image)
+  // Load the media with a callback to fade it in when it is loaded
+  const mimetype = constCommon.guessMimetype(media)
+  if (mimetype === 'image') {
+    $('#mediaLightboxImage').one('load', function () {
+      $('#mediaLightboxImage, #mediaLightboxTitle, #mediaLightboxCredit, #mediaLightboxCaption').fadeIn()
+    }).attr('src', 'content/' + media)
+  } else if (mimetype === 'video') {
+    videoPlaying = true
+    const video = document.getElementById('mediaLightboxVideo')
+    video.src = 'content/' + media
+    video.load()
+    video.play()
+    $('#mediaLightboxVideo, #mediaLightboxTitle, #mediaLightboxCredit, #mediaLightboxCaption').fadeIn()
+  }
 
-  $('#imageLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)
+  $('#mediaLightbox').css('display', 'flex').animate({ opacity: 1, queue: false }, 100)
 }
 
 // const Keyboard = window.SimpleKeyboard.default
@@ -610,40 +632,22 @@ let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, credi
 const currentContent = []
 let currentPage = 0
 let cardsPerPage, numCols, numRows
-let defaultLang
+let defaultLang = ''
 
-// Constellation stuff
-constCommon.config.helperAddress = window.location.origin
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_browser'
-constCommon.config.debug = true
+constCommon.configureApp({
+  name: 'media_browser',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
+
 let currentDefintion = ''
 
 let inactivityTimer = null
 let inactivityTimeout = 30000
 let attractorAvailable = false
 let attractorType = 'image'
-
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
+let videoPlaying = false
 
 // Attach event listeners
 $('#previousPageButton').click(function () {
@@ -654,4 +658,8 @@ $('#nextPageButton').click(function () {
 })
 $('body').click(resetActivityTimer)
 $('#attractorOverlay').click(hideAttractor)
-$('.hideLightboxTrigger').click(hideImageLightBox)
+$('.hideLightboxTrigger').click(hideMediaLightBox)
+document.getElementById('mediaLightboxVideo').addEventListener('ended', (event) => {
+  resetActivityTimer()
+  videoPlaying = false
+})

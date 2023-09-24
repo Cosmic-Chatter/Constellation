@@ -56,6 +56,7 @@ body {
 .card-title {
     font-size: calc(3vmax + var(--button-font-adjust)*1vmax);
     text-align: center;
+    color: var(--button-text-color);
 }
 
 .noselect {

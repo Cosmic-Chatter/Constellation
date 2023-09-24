@@ -403,9 +403,6 @@ function hideAttractor () {
   attractorTimer = setTimeout(showAttractor, attractorTimeout)
 }
 
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'timelapse_viewer'
-
 let touchStartX = null
 let lastTouchX = null // X cordinate of the last touchmove event
 let currentClick = false
@@ -430,31 +427,12 @@ const viewerList = [document.getElementById('img1'), document.getElementById('im
 let activeViewerIndex = 0 // Index of the <img> instance that is currently being used
 const enableAnalytics = false
 
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
-let standalone = false
-
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  standalone = true
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-  // Hide the cursor
-  document.body.style.cursor = 'none'
-}
+constCommon.configureApp({
+  name: 'timelapse_viewer',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateFunc
+})
 
 // Create event listeners
 $('body')

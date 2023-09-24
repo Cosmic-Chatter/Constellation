@@ -264,9 +264,6 @@
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModalDMXTabButton" data-toggle="tab" href="#componentInfoModalDMXTab" role="tab" aria-controls="DMX" aria-selected="false">DMX</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link px-3 px-sm-4" id="componentInfoModalContentTabButton" data-toggle="tab" href="#componentInfoModalContentTab" role="tab" aria-controls="Content" aria-selected="false">Content</a>
-                    </li>
-                    <li class="nav-item">
                       <a class="nav-link px-3 px-sm-4" id="componentInfoModaProejctorTabButton" data-toggle="tab" href="#componentInfoModaProejctorTab" role="tab" aria-controls="Status" aria-selected="false">Status</a>
                     </li>
                     <li class="nav-item d-none d-sm-block">
@@ -323,16 +320,25 @@
                               New
                             </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                              <a class="dropdown-item disabled defintion-new-option" href="#" data-app="infostation" target="_blank">Infostation</a>
+                              <a class="dropdown-item defintion-new-option" href="#" data-app="InfoStation" target="_blank">Infostation</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="media_browser" target="_blank">Media Browser</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="media_player" target="_blank">Media Player</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="timelapse_viewer" target="_blank">Timelapse Viewer</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="timeline_explorer" target="_blank">Timeline Explorer</a>
                               <a class="dropdown-item defintion-new-option" href="#" data-app="voting_kiosk" target="_blank">Voting Kiosk</a>
-                              <a class="dropdown-item disabled defintion-new-option" href="#" data-app="word_cloud_input" target="_blank">Word Cloud Input</a>
-                              <a class="dropdown-item disabled defintion-new-option" href="#" data-app="word_cloud_viewer" target="_blank">Word Cloud Viewer</a>
+                              <a class="dropdown-item defintion-new-option" href="#" data-app="word_cloud_input" target="_blank">Word Cloud Input</a>
+                              <a class="dropdown-item defintion-new-option" href="#" data-app="word_cloud_viewer" target="_blank">Word Cloud Viewer</a>
+                              <a class="dropdown-item defintion-new-option" href="#" data-app="other" target="_blank">Other</a>
                             </div>
                           </div>
+                        </div>
+                      </div>
+                      <div class="row mt-3" id="componentInfoConnectingNotice">
+                        <div class='col-8 offset-2'>
+                          <center>
+                            <H5 id="componentInfoConnectionStatusInPrograss">Connecting to component...</H5>
+                            <H5 id="componentInfoConnectionStatusFailed">Unable to connect to component</H5>
+                          </center>
                         </div>
                       </div>
                       <div id="componentInfoModalDefinitionList" class="row mx-1">
@@ -349,62 +355,6 @@
                         </div>
                         <div class="col-12">
                           <div  id="componentInfoModalDMXSceneList" class="row"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- Content pane -->
-                    <div class="tab-pane fade" id="componentInfoModalContentTab" role="tabpanel" aria-labelledby="componentInfoModalContentTabButton">
-                      <div class="row mt-3" id="componentInfoConnectingNotice">
-                        <div class='col-8 offset-2'>
-                          <center>
-                            <H5 id="componentInfoConnectionStatusInPrograss">Connecting to component...</H5>
-                            <H5 id="componentInfoConnectionStatusFailed">Unable to connect to component</H5>
-                          </center>
-                        </div>
-                      </div>
-                      <div id="componentAvailableContentRow" class="row">
-                        <div class="col-6 mt-3">
-                          <H5>Available content</H5>
-                        </div>
-                        <div class="col-6 mt-3 d-flex justify-content-end">
-                          <div class="form-group form-check pr-3">
-                            <input type="checkbox" class="form-check-input" id="componentInfoModalHideIncompatibleCheckbox" checked>
-                            <label class="form-check-label" for="componentInfoModalHideIncompatibleCheckbox">Compatible</label>
-                          </div>
-                          <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="componentInfoModalThumbnailCheckbox" checked>
-                            <label class="d-none d-sm-block form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbnails</label>
-                            <label class="d-block d-sm-none form-check-label" for="componentInfoModalThumbnailCheckbox">Thumbs</label>
-                          </div>
-                        </div>
-                        <div class="col-12 w-100">
-                          <div class="row" id="componentAvailableContentList"></div>
-                        </div>
-                        <div class='col-12'>
-                          <button type="button" class="btn btn-primary mt-2" id="componentSaveConfirmationButton">Save changes</button>
-                        </div>
-                      </div>
-
-                      <div id="componentcontentUploadInterface" class="form-group mt-3 mb-0">
-                        <label for="componentContentUpload"><H5>Upload new content</H5></label>
-                        <div class="row align-middle d-flex align-items-center">
-                          <div class="col-8">
-                            <label class="btn btn-outline-secondary mw-100">
-                              <span id="componentContentUploadfilename" style="overflow-wrap: break-word!important;">Choose file</span>
-                              <input hidden type="file" class="form-control-file" id="componentContentUpload">
-                            </label>
-                          </div>
-                          <div class="col-4">
-                            <button id="contentUploadSubmitButton" class='btn btn-block btn-outline-primary'>Upload</button>
-                          </div>
-
-                          <div class='col-12 mt-3' id='contentUploadProgressBarContainer'>
-                            <div class="progress" style="height: 25px;">
-                              <div id='contentUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                          </div>
-                          <div class='col-12 text-danger mt-2' id='uploadOverwriteWarning'>Warning: this upload will overwrite a file of the same name.</div>
-                          <div class='col-12 text-danger mt-2' id='contentUploadEqualSignWarning'>Filenames cannot contain the equal sign (=).</div>
                         </div>
                       </div>
                     </div>
@@ -458,8 +408,6 @@
                     <div class="tab-pane fade" id="componentInfoModalMaintenanceTab" role="tabpanel" aria-labelledby="componentInfoModalMaintenanceTabButton">
                       <div class="row mt-3">
                         <div class='col-12 col-md-6'>
-                          <a id='AnyDeskButton' href="" class='btn btn-primary d-sm-none d-none d-md-inline'>Anydesk</a>
-                          <a id='AnyDeskLabel' href="" class='btn btn-primary d-sm-inline d-md-none'>Anydesk</a>
                           <div class="form-group mt-2">
                             <label for="componentInfoModalMaintenanceStatusSelector">Maintenance status</label>
                             <select class="form-control" id="componentInfoModalMaintenanceStatusSelector">
@@ -489,80 +437,63 @@
                       </div>
                     </div>
                     <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
-                      <div class="row mt-3">
-                        <div class="col-6 mt-1">
-                          <select id="componentInfoModalSettingsAppName" class="form-control componentInfoSetting">
-                            <option value="dmx_control">DMX Control</option>
-                            <option value="infostation">InfoStation</option>
-                            <option value="media_browser">Media Browser</option>
-                            <option value="media_player">Media Player</option>
-                            <option value="timelapse_viewer">Timelapse Viewer</option>
-                            <option value="timeline_explorer">Timeline Explorer</option>
-                            <option value="voting_kiosk">Voting Kiosk</option>
-                            <option value="word_cloud_input">Word Cloud Input</option>
-                            <option value="word_cloud_viewer">Word Cloud Viewer</option>
-                            <option value="other">Other</option>
+                      <!-- Full settings -->
+                      <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
+                      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
+                        <!-- Audio permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
+                            Audio
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
                           </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <a id='componentInfoModalFullSettingsButton' class="btn btn-primary" target='_blank'>Open full settings</a>
+                        <!-- Refresh permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
+                            Refresh
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRefresh">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowRefresh">
-                              Allow refresh
-                            </label>
-                          </div>
+                        <!-- Restart permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowRestart" class="form-label">
+                            Restart
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowRestart">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowRestart">
-                              Allow restart
-                            </label>
-                          </div>
+                        <!-- Shutdown permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
+                            Shutdown
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowShutdown">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowShutdown">
-                              Allow shutdown <span id="componentInfoModalSettingsAllowShutdownWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Shutdown is enabled; ensure Wake on LAN is set up or you have another way to turn the component on.">!</span>
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAllowSleep">
-                            <label class="form-check-label" for="componentInfoModalSettingsAllowSleep">
-                              Allow sleep
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-6 mt-1">
-                          <div class="form-check">
-                            <input class="form-check-input componentInfoSetting" type="checkbox" value="" id="componentInfoModalSettingsAutoplayAudio">
-                            <label class="form-check-label" for="componentInfoModalSettingsAutoplayAudio">
-                              Autoplay audio <span id="componentInfoModalSettingsAutoplayAudioWarning" class="badge badge-warning ml-1" data-toggle="tooltip" data-placement="top" title="Audio autoplay is enabled; ensure it is also enabled in the component's browser.">!</span>
-                            </label>
-                          </div>
-                        </div>
-                        <div class="col-8 col-sm-6 mt-1">
-                          <div class="form-group row mb-0">
-                            <div class="col-5 pr-0">
-                              <input type="text" class="form-control form-control-sm componentInfoSetting" id="componentInfoModalSettingsAnyDeskID" placeholder="12345678">
-                            </div>
-                            <label for="componentInfoModalSettingsAnyDeskID" class="col col-form-label pl-1">AnyDesk ID</label>
-                            
-                          </div>
-                        </div>
-                        <div class="col-8 col-sm-6 mt-1">
-                          <div class="form-group row mb-0">
-                            <div class="col-3 pr-0">
-                              <input type="text" class="form-control form-control-sm componentInfoSetting" id="componentInfoModalSettingsImageDuration" placeholder="10">
-                            </div>
-                            <label for="componentInfoModalSettingsImageDuration" class="col col-form-label pl-1">Image duration (sec)</label>
-                          </div>
+                        <!-- Sleep permission -->
+                        <div class="col mt-2">
+                          <label for="componentInfoModalSettingsAllowSleep" class="form-label">
+                            Sleep
+                            <span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <select class="form-control componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
+                            <option value="true">Allow</option>
+                            <option value="false">Disallow</option>
+                          </select>
                         </div>
                       </div>
                       <div class="row mt-3">
@@ -678,7 +609,51 @@
         </div>
 
         <div class="tab-pane fade" id="nav-schedule" role="tabpanel" aria-labelledby="nav-schedule-tab">
+          
+          <!-- Manage future date modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageFutureDateModal">
+            <div class="modal-dialog constellation-dialog modal-dialog-centered" role="document">
+              <div class="modal-content"  style="height: max(80vh, 100px);">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage a future date</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <div class="row h-100">
+                    <div class="col-12 col-sm-5 h-100">
+                      <div>
+                        <label for="manageFutureDateCalendarInput" class="sr-only sr-only-focusable">Date</label>
+                        <input id="manageFutureDateCalendarInput" type="date" class="form-control mb-3">
+                      </div>
+                      <div id="manageFutureDateAvailableSchedulesList" style="max-height: 50vh; overflow-y: auto;"></div>
+                    </div>
+                    <div class="col-12 col-sm-7">
+                      <div class="row">
+                        <div id="manageFutureDateCreateScheduleButtonContainer" class="col-12 text-center mt-auto">
+                          <button id="manageFutureDateCreateScheduleButton" class="btn btn-primary">Create date-specific schedule</button>
+                        </div>
+                        <div class="col-6">
+                          <button id="manageFutureDateAddActionButton" class="btn btn-primary w-100" style="display: none;">Add action</button>
+                        </div>
+                        <div class="col-6">
+                          <button id="manageFutureDateDeleteScheduleButton" type="button" class="btn btn-danger w-100" data-toggle="popover" title="Are you sure?" data-content="<a id='manageFutureDateDeleteScheduleButtonPopover' class='btn btn-danger w-100 schedule-delete'>Confirm</a>" data-trigger="focus" data-html="true"  style="display: none;">Delete schedule</button>
+                        </div>
+                      </div>
+                      <div id="manageFutureDateEntryList" class="mt-3" style="max-height: 50vh; overflow-y: auto; overflow-x: hidden;"></div>
+                    </div>
+                  </div>
+                  
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- Add action modal -->
           <div class="modal" tabindex="-1" role="dialog" id="scheduleEditModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
@@ -704,11 +679,10 @@
                             <option value="power_off">Power off</option>
                             <option value="refresh_page">Refresh components</option>
                             <option value="restart">Restart components</option>
-                            <option value="set_app">Set app</option>
-                            <option value="set_content">Set content</option>
                             <option value="set_definition">Set defintion</option>
                             <option value="set_dmx_scene">Set DMX scene</option>
                             <option value="set_exhibit">Set exhibit</option>
+                            <option value="note">Add note</option>
                           </select>
                         </div>
                         <div class="col-6 col-md-4">
@@ -718,8 +692,11 @@
                         </div>
                         <div class="col-6">
                           <label id="scheduleValueSelectorLabel" for="scheduleValueSelector">Value</label>
-                          <select multiple class="form-control" id="scheduleValueSelector">
+                          <select class="form-control" id="scheduleValueSelector">
                           </select>
+                        </div>
+                        <div class="col-12 mt-2">
+                          <input id="scheduleNoteInput" class="form-control" type="text" placeholder="Type short comment here.">
                         </div>
                       </div>
                     </div>
@@ -739,8 +716,8 @@
             <div class='col-12'>
               <h4><b>Next scheduled action: </b><span id="Schedule_next_event"></span></h4>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-md-2 mb-2'>
-              <button id='refreshScheduleButton' class='btn btn-primary w-100'>Refresh schedule</button>
+            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
+              <button id='manageFutureDateButton' class='btn btn-primary w-100'>Manage future date</button>
             </div>
             <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto" role="alert">
               Date-specific schedule
@@ -1401,6 +1378,33 @@
             </div>
           </div>
 
+          <!-- Modal for managing exhibits -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage Exhibits</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <!-- Exhibit list -->
+                    <div class="col-4 border-right">
+                      <div id="manageExhibitsModalExhibitList" class="row"></div>
+                      <button id="manageExhibitsCreateExhibitButton" class="btn btn-primary w-100 mt-3">Create new</button>
+                    </div>
+                    <!-- Exhibit content -->
+                    <div class="col-8">
+                      <div id="manageExhibitsModalExhibitContentList" class="row"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <H3 class='mt-4'>Configuration</H3>
           <div class="row mt-1">
             <div class="col-6 col-md-3 col-lg-2 mt-2">
@@ -1420,7 +1424,7 @@
             </div>
           </div>
           <H3 class='mt-4'>Exhibits</H3>
-          <i>Exhibits enable you to define a set of content and apps for your gallery.</i>
+          <i>Exhibits match each component in your gallery with one of its definitions.</i>
           <div class="row mt-3">
             <div class="col-6 col-md-4 col-lg-3">
               <div class="form-group">
@@ -1428,6 +1432,9 @@
                 <select class="form-control" id="exhibitSelect"></select>
               </div>
             </div>
+            <!-- <div class="col-3">
+              <button id="manageExhibitsButton" class="btn btn-primary">Manage exhibits</button>
+            </div> -->
             <div class="col-12 col-md-8">
               <div class="form-group">
                 <label for="createExhibitNameInput">Create new exhibit</label>
@@ -1465,7 +1472,11 @@
         
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
           <div class="row mt-4">
-            <div id='helpTextDiv' class='col-auto'>
+            <div class="col-12">
+              <span class="alert alert-secondary">Version: <span id="versionSpan"></span></span>
+            </div>
+            
+            <div id='helpTextDiv' class='col-auto mt-3'>
             </div>
           </div>
         </div>

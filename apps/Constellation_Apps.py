@@ -1,8 +1,9 @@
 # Standard modules
-from functools import lru_cache
+from functools import lru_cache, partial
 import io
 import mimetypes
 import os
+import platform
 import shutil
 import sys
 import threading
@@ -16,8 +17,6 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import logging
 import uvicorn
-import webview
-import webview.menu as webview_menu
 
 # Constellation modules
 import config as const_config
@@ -25,7 +24,13 @@ import helper_dmx
 import helper_files
 import helper_system
 import helper_utilities
-import helper_webview
+
+# If we're not on Linux, prepare to use the webview
+if sys.platform != 'linux':
+    import webview
+    import webview.menu as webview_menu
+
+    import helper_webview
 
 # Set up log file
 log_path: str = helper_files.get_path(["apps.log"], user_file=True)
@@ -44,9 +49,6 @@ else:
     const_config.application_path = const_config.exec_path
 
 helper_files.check_directory_structure()
-helper_utilities.convert_defaults_ini()
-
-helper_utilities.read_default_configuration()
 
 app = FastAPI()
 
@@ -63,6 +65,9 @@ app.mount("/dmx_control",
 app.mount("/InfoStation",
           StaticFiles(directory=helper_files.get_path(["InfoStation"])),
           name="InfoStation")
+app.mount("/other",
+          StaticFiles(directory=helper_files.get_path(["other"])),
+          name="other")
 app.mount("/media_browser",
           StaticFiles(directory=helper_files.get_path(["media_browser"])),
           name="media_browser")
@@ -145,17 +150,10 @@ async def serve_readme():
 async def get_available_content(config: const_config = Depends(get_config)):
     """Return a list of all files in the content directory, plus some useful system info."""
 
-    if "content" in config.defaults_dict:
-        active_content = [s.strip()
-                          for s in config.defaults_dict["content"].split(",")]
-    else:
-        active_content = ""
     response = {"all_exhibits": helper_files.get_all_directory_contents(),
                 "definitions": helper_files.get_available_definitions(),
                 "thumbnails": helper_files.get_directory_contents("thumbnails"),
-                "active_content": active_content,
-                "system_stats": helper_utilities.get_system_stats(),
-                "multiple_file_upload": True}
+                "system_stats": helper_utilities.get_system_stats()}
 
     return response
 
@@ -163,6 +161,9 @@ async def get_available_content(config: const_config = Depends(get_config)):
 @app.post('/files/getVideoDetails')
 async def get_video_details(filename: str = Body(description='The filename of the file.', embed=True)):
     """Return a dictionary of useful information about a video file in the content directory."""
+
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "details": "Invalid character in filename"}
 
     success, details = helper_files.get_video_file_details(filename)
     return {"success": success, "details": details}
@@ -172,6 +173,9 @@ async def get_video_details(filename: str = Body(description='The filename of th
 async def convert_video_to_frames(filename: str = Body(description='The filename of the file.'),
                                   file_type: str = Body(description='The output filetype to use.', default='jpg')):
     """Convert the given file to a set of frames."""
+
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "reason": "Invalid character in filename"}
 
     success = helper_files.convert_video_to_frames(filename, file_type)
 
@@ -185,19 +189,57 @@ async def create_thumbnail_video_from_frames(
         duration: float = Body(description='The length of the output video in seconds.', default=5)):
     """Create a video thumbnail out of the given files."""
 
+    if not helper_files.filename_safe(filename):
+        return {"success": False, "reason": "Invalid character in filename"}
+
     success = helper_files.create_thumbnail_video_from_frames(frames, filename, duration)
     return {"success": success}
 
 
+@app.post('/files/generateThumbnail')
+def generate_thumbnail(source: str | list[str] = Body(description='The file(s) in content to generate thumbnails for'),
+                       mimetype: str | list[str] = Body(description='One of [image | video] that gives the mimetype of the file. Must have the same length as source.'),
+                       width: int = Body(description="The pixel width of the thumbnails.",
+                                         default=400)):
+    """Generate new thumbnail(s) from files in teh content directory"""
+
+    if isinstance(source, str):
+        source = [source]
+    if isinstance(mimetype, str):
+        mimetype = [mimetype]
+
+    if len(source) != len(mimetype):
+        return {"success": False, "reason": "source and mimetype must have the same length."}
+
+    request_success = True
+    request_reason = ""
+    for i in range(len(source)):
+        file = source[i]
+        file_mime = mimetype[i]
+
+        success, reason = helper_files.create_thumbnail(file, file_mime, block=True, width=width)
+        if success is False and reason == "ImportError":
+            request_success = False
+            request_reason = "FFmpeg not found"
+
+    result = {"success": request_success}
+    if request_reason != "":
+        result["reason"] = request_reason
+    return result
+
+
 @app.post('/files/uploadThumbnail')
 def upload_thumbnail(files: list[UploadFile] = File(),
-                           config: const_config = Depends(get_config)):
+                     config: const_config = Depends(get_config)):
     """Save uploaded files as thumbnails, formatting them appropriately."""
 
     for file in files:
         filename = file.filename
+
+        if not helper_files.filename_safe(filename):
+            continue
+
         temp_path = helper_files.get_path(["content", filename], user_file=True)
-        final_path = helper_files.get_path(["thumbnails", filename], user_file=True)
         with config.content_file_lock:
             # First write the file to content
             try:
@@ -210,6 +252,25 @@ def upload_thumbnail(files: list[UploadFile] = File(),
             # Finally, delete the source file
             os.remove(temp_path)
     return {"success": True}
+
+
+@app.get('/system/getPlatformDetails')
+async def get_platform_details():
+    """Return details on the current operating system."""
+
+    details = {
+        "architecture": platform.architecture()[0],
+        "os_version": platform.release()
+    }
+
+    os = sys.platform
+    if os == "darwin":
+        os = 'macOS'
+    elif os == "win32":
+        os = "Windows"
+    details["os"] = os
+
+    return details
 
 
 @app.get('/system/getScreenshot', responses={200: {"content": {"image/png": {}}}}, response_class=Response)
@@ -275,33 +336,14 @@ async def send_clip_list(config: const_config = Depends(get_config)):
 
 @app.get("/getDefaults")
 async def send_defaults(config: const_config = Depends(get_config)):
-    config_to_send = config.defaults_dict.copy()
-    if "allow_restart" not in config_to_send:
-        config_to_send["allow_restart"] = "true"
+    config_to_send = config.defaults.copy()
 
     # Add the current update availability to pass to the control server
     config_to_send["software_update"] = config.software_update
 
-    # Reformat this content list as an array
-    if "content" in config_to_send:
-        config_to_send['content'] = \
-            [s.strip() for s in config_to_send['content'].split(",")]
-
-    if config.dictionary_object is not None:
-        # If there are multiple sections, build a meta-dictionary
-        if len(config.dictionary_object.items()) > 1:
-            meta_dict = {"meta": True}
-            for item in config.dictionary_object.items():
-                name = item[0]
-                meta_dict[name] = dict(config.dictionary_object.items(name))
-            config_to_send["dictionary"] = meta_dict
-        else:
-            config_to_send["dictionary"] = \
-                dict(config.dictionary_object.items("CURRENT"))
     config_to_send["availableContent"] = \
         {"all_exhibits": helper_files.get_all_directory_contents()}
 
-    config_to_send["contentPath"] = "content"
     return config_to_send
 
 
@@ -317,14 +359,8 @@ async def send_update(config: const_config = Depends(get_config)):
     """Get some key info for updating the component and web console."""
 
     response_dict = {
-        "allow_refresh": config.defaults_dict.get("allow_refresh", "true"),
-        "allow_restart": config.defaults_dict.get("allow_restart", "false"),
-        "allow_shutdown": config.defaults_dict.get("allow_shutdown", "false"),
-        "allow_sleep": config.defaults_dict.get("allow_sleep", "false"),
-        "anydesk_id": config.defaults_dict.get("anydesk_id", ""),
-        "autoplay_audio": config.defaults_dict.get("autoplay_audio", "false"),
+        "permissions": config.defaults["permissions"],
         "commands": config.commandList,
-        "image_duration": config.defaults_dict.get("image_duration", "10"),
         "missingContentWarnings": config.missingContentWarningList
     }
     return response_dict
@@ -377,17 +413,17 @@ async def write_definition(definition: dict[str, Any] = Body(description="The JS
     return {"success": True, "uuid": definition["uuid"]}
 
 
-@app.post("/deleteFile")
-async def delete_file(data: dict[str, Any], config: const_config = Depends(get_config)):
-    """Delete the specified file from the content directory"""
+@app.post("/file/delete")
+async def delete_file(file: str | list[str] = Body(description="The file(s) to delete", embed=True)):
+    """Delete the specified file(s) from the content directory"""
 
-    if "file" in data:
-        helper_files.delete_file(data["file"])
-        response = {"success": True}
+    if isinstance(file, list):
+        for entry in file:
+            helper_files.delete_file(entry)
     else:
-        response = {"success": False,
-                    "reason": "Request missing field 'file'"}
-    return response
+        helper_files.delete_file(file)
+
+    return {"success": True}
 
 
 @app.post("/renameFile")
@@ -395,7 +431,81 @@ async def rename_file(current_name: str = Body(description="The file to be renam
                       new_name: str = Body(description="The new name of the file.")):
     """Rename a file in the content directory."""
 
+    if not helper_files.filename_safe(current_name) or not helper_files.filename_safe(new_name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
     return helper_files.rename_file(current_name, new_name)
+
+
+@app.post("/data/write")
+async def write_data(data: dict[str, Any] = Body(description="A dictionary of data to be written to file as JSON."),
+                     name: str = Body(description="The name of the file to write,")):
+    """Record the submitted data to file as JSON."""
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
+    file_path = helper_files.get_path(["data", name + ".txt"], user_file=True)
+    success, reason = helper_files.write_json(data, file_path, append=True, compact=True)
+    response = {"success": success, "reason": reason}
+    return response
+
+
+@app.post("/data/writeRawText")
+async def write_raw_text(text: str = Body(description='The data to write.'),
+                         mode: str = Body(description="Pass 'a' to append or 'w' or overwrite.", default='a'),
+                         name: str = Body(description='The name of the file to write.')):
+    """Write the raw text to file.
+
+    Set mode == 'a' to append or 'w' to overwrite the file.
+    """
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
+    if mode != "a" and mode != "w":
+        response = {"success": False,
+                    "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
+        return response
+    success, reason = helper_files.write_raw_text(text, name + ".txt", mode=mode)
+    response = {"success": success, "reason": reason}
+    return response
+
+
+@app.post("/data/getRawText")
+async def read_raw_text(name: str = Body(description='The name of the file to read.')):
+    """Load the given file and return the raw text."""
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
+    result, success, reason = helper_files.get_raw_text(name)
+
+    response = {"success": success, "reason": reason, "text": result}
+    return response
+
+
+@app.post("/data/getCSV")
+async def get_tracker_data_csv(name: str = Body(description='The name of the filename to return as a CSV', embed=True)):
+    """Return the requested data file as a CSV string."""
+
+    if not helper_files.filename_safe(name):
+        return {"success": False, "reason": "Invalid character in filename"}
+
+    if not name.lower().endswith(".txt"):
+        name += ".txt"
+    data_path = helper_files.get_path(["data", name], user_file=True)
+    if not os.path.exists(data_path):
+        return {"success": False, "reason": f"File {name}.txt does not exist!", "csv": ""}
+    result = helper_files.create_csv(data_path)
+    return {"success": True, "csv": result}
+
+
+@app.get("/data/getAvailable")
+async def get_available_data():
+    """Return a list of files in the /data directory."""
+
+    return {"success": True, "files": helper_files.get_available_data()}
 
 
 @app.post("/gotoClip")
@@ -442,6 +552,11 @@ def upload_content(files: list[UploadFile] = File(),
 
     for file in files:
         filename = file.filename
+
+        if not helper_files.filename_safe(filename):
+            print("upload_content: error: invalid filename: ", filename)
+            continue
+
         file_path = helper_files.get_path(
             ["content", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
@@ -461,27 +576,12 @@ def upload_content(files: list[UploadFile] = File(),
 
 
 @app.post("/setDefaults")
-async def set_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
+async def set_defaults(defaults: dict = Body(description="A dictionary matching the structure of config.json."),
+                       cull: bool = Body(description="Whether to replace the existing defaults with the provided ones.",
+                                         default=False)):
     """Update the given defaults with the specified values"""
 
-    if "defaults" not in data:
-        raise HTTPException(
-            status_code=400, detail="Must include field 'defaults'")
-
-    helper_utilities.update_defaults(data["defaults"], force=True)
-
-    return {"success": True}
-
-
-@app.post("/rewriteDefaults")
-async def rewrite_defaults(data: dict, force: bool = False, config: const_config = Depends(get_config)):
-    """Replace all defaults with only the given values."""
-
-    if "defaults" not in data:
-        raise HTTPException(
-            status_code=400, detail="Must include field 'defaults'")
-
-    helper_utilities.update_defaults(data["defaults"], cull=True, force=True)
+    helper_utilities.update_defaults(defaults, cull=cull)
 
     return {"success": True}
 
@@ -546,7 +646,7 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     new_fixture = helper_dmx.get_universe(uuid_str=universe).create_fixture(name, start_channel, channels)
     helper_dmx.write_dmx_configuration()
 
@@ -583,7 +683,7 @@ async def set_dmx_fixture_to_brightness(fixture_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_brightness(value, duration)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -598,11 +698,11 @@ async def set_dmx_fixture_channel(fixture_uuid: str,
                                   duration: float = Body(description="How long the transition should take.",
                                                          default=0)):
     """Set the given channel of the given fixture to the given value."""
-    
+
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     fixture.set_channel(channel_name, value)
     return {"success": True, "configuration": fixture.get_dict()}
@@ -619,7 +719,7 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     fixture = helper_dmx.get_fixture(fixture_uuid)
     if fixture is None:
         return {"success": False, "reason": "Figure does not exist."}
@@ -630,11 +730,10 @@ async def set_dmx_fixture_to_color(fixture_uuid: str,
 @app.post("/DMX/group/create")
 async def create_dmx_group(name: str = Body(description="The name of the group to create."),
                            fixture_list: list[str] = Body(description="The UUIDs of the fixtures to include.")):
-    
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     new_group = helper_dmx.create_group(name)
 
     fixtures = []
@@ -651,7 +750,6 @@ async def edit_dmx_group(group_uuid: str,
                          name: str = Body(description="The new name for the group", default=""),
                          fixture_list: list[str] = Body(
                              description="A list of UUIDs for fixtures that should be included.", default=[])):
-    
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
@@ -687,11 +785,10 @@ async def edit_dmx_group(group_uuid: str,
 
 @app.get("/DMX/group/{group_uuid}/delete")
 async def delete_dmx_group(group_uuid: str):
-
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_group(group_uuid).delete()
     helper_dmx.write_dmx_configuration()
     return {"success": True}
@@ -707,7 +804,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     uuid_str = group.create_scene(name, values, duration=duration)
     helper_dmx.write_dmx_configuration()
@@ -725,7 +822,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
 
     scene = group.get_scene(uuid_str=uuid)
@@ -746,7 +843,7 @@ async def create_dmx_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.delete_scene(uuid)
 
@@ -766,7 +863,7 @@ async def set_dmx_fixture_to_brightness(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_brightness(value, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -781,7 +878,7 @@ async def set_dmx_group_channel(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_channel(channel, value)
     return {"success": True, "configuration": group.get_dict()}
@@ -798,7 +895,7 @@ async def set_dmx_group_to_color(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.set_color(color, duration)
     return {"success": True, "configuration": group.get_dict()}
@@ -866,7 +963,7 @@ async def set_dmx_scene(scene_uuid: str):
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     _, group = helper_dmx.get_scene(scene_uuid)
     group.show_scene(scene_uuid)
 
@@ -883,7 +980,7 @@ async def set_dmx_group_scene(group_uuid: str,
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     group = helper_dmx.get_group(group_uuid)
     group.show_scene(uuid)
 
@@ -903,7 +1000,7 @@ async def create_dmx_universe(name: str = Body(description="The name of the univ
                                               device_details=device_details)
     helper_dmx.write_dmx_configuration()
     const_config.dmx_active = True
-    
+
     return {"success": True, "universe": new_universe.get_dict()}
 
 
@@ -915,63 +1012,139 @@ async def create_dmx_universe(uuid: str = Body(description="The UUID of the univ
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_universe(uuid_str=uuid).name = new_name
     helper_dmx.write_dmx_configuration()
 
     return {"success": True}
 
+
 @app.get("/DMX/universe/{universe_uuid}/delete")
 async def delete_dmx_universe(universe_uuid: str):
-
     success, reason = helper_dmx.activate_dmx()
     if not success:
         return {"success": False, "reason": reason}
-    
+
     helper_dmx.get_universe(uuid_str=universe_uuid).delete()
 
     return {"success": True}
 
-def start_app(with_webview: bool = True):
+
+@app.get('/app/closeSetupWizard')
+def close_setup_wizard():
+    """Destroy the setup wizard webview"""
+
+    for window in webview.windows:
+        if window.title == 'Constellation Apps Setup':
+            window.destroy()
+
+
+@app.post('/app/showWindow/{window}')
+def show_webview_window(window: str,
+                        reload: bool = Body(description="Should the window be reloaded if it already exists?",
+                                            embed=True,
+                                            default=False)):
+    """Show the requested webview window"""
+
+    helper_webview.show_webview_window(window, reload=reload)
+
+
+@app.post('/app/saveFile')
+def save_file_from_webview(data: str = Body(description='The string data to save to file'),
+                           filename: str = Body(description="The default filename to provide",
+                                                default="download.txt")):
+    """Ask the webview to create a file save dialog."""
+
+    helper_webview.save_file(data, filename)
+
+
+def bootstrap_app(port):
+    """Start the app without a config.json file.
+
+    Need this stub to work around a limitation in pywebview (no kwargs)
+    """
+
+    start_app(port=port)
+
+
+def start_app(port=None, with_webview: bool = True):
     """Start the webserver.
 
     If with_webview == True, start as a daemon thread so that when the webview closes, the app shuts down.
     """
 
     if with_webview is True:
-        const_config.server_process = threading.Thread(target=_start_server, daemon=True)
+        const_config.server_process = threading.Thread(target=_start_server, daemon=True, kwargs={"port": port})
         const_config.server_process.start()
     else:
         _start_server()
 
 
-def _start_server():
+def _start_server(port=None):
+    if port is None:
+        port = int(const_config.defaults["system"]["port"])
+
     # Must use only one worker, since we are relying on the config module being in global)
     uvicorn.run(app,
-                host="0.0.0.0",
-                port=int(const_config.defaults_dict["helper_port"]),
+                host="",
+                port=port,
                 reload=False, workers=1)
 
 
 if __name__ == "__main__":
-    # Check for missing content thumbnails and create them
-    helper_files.create_missing_thumbnails()
 
-    # Check the GitHub server for an available software update
-    helper_utilities.check_for_software_update()
+    defaults_path = helper_files.get_path(['configuration', 'config.json'], user_file=True)
+    if os.path.exists(defaults_path):
+        helper_utilities.read_defaults()
 
-    # Activate Smart Restart
-    helper_system.smart_restart_check()
+        # Check for missing content thumbnails and create them
+        helper_files.create_missing_thumbnails()
 
-    print(
-        f"Starting Constellation Apps for ID {const_config.defaults_dict['id']} of group {const_config.defaults_dict['group']} on port {const_config.defaults_dict['helper_port']}.")
+        # Check the GitHub server for an available software update
+        helper_utilities.check_for_software_update()
 
-    if const_config.defaults_dict.get("remote_display", "True") == "True":
+        # Activate Smart Restart
+        helper_system.smart_restart_check()
+
+        # Make sure we have a port available
+        if "port" not in const_config.defaults['system']:
+            const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
+
+        if const_config.defaults['system']['standalone'] is True:
+            print(f"Starting Constellation Apps on port {const_config.defaults['system']['port']}.")
+        else:
+            print(
+                f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
+    else:
+        # We need to create a config.json file based on user input.
+
+        if sys.platform == 'linux' :
+            # Linux apps can't use the GUI
+            helper_utilities.handle_missing_defaults_file()
+        else:
+            print('config.json file not found! Bootstrapping server.')
+
+            available_port = helper_utilities.find_available_port()
+
+            webview.create_window('Constellation Apps Setup',
+                                  confirm_close=False,
+                                  height=720,
+                                  width=720,
+                                  min_size=(720, 720),
+                                  url='http://localhost:' + str(
+                                      available_port) + '/first_time_setup.html')
+
+            webview.start(func=bootstrap_app, args=available_port)
+
+    if const_config.defaults["system"].get("remote_display", True) is True:
         # Start the server but don't create a GUI window
         start_app(with_webview=False)
     else:
         # Create a GUI window and then start the server
         option_fullscreen = "fullscreen" in sys.argv
+
+        if "port" not in const_config.defaults['system']:
+            const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
 
         app_window = webview.create_window('Constellation Apps',
                                            confirm_close=False,
@@ -979,8 +1152,7 @@ if __name__ == "__main__":
                                            height=720,
                                            width=1280,
                                            min_size=(1280, 720),
-                                           url='http://localhost:' + str(
-                                               const_config.defaults_dict["helper_port"]) + '/media_player.html')
+                                           url='http://localhost:' + str(const_config.defaults["system"]["port"]) + '/app.html')
 
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed
@@ -1000,7 +1172,40 @@ if __name__ == "__main__":
                 webview_menu.Menu(
                     'Settings',
                     [
-                        webview_menu.MenuAction('Show settings', helper_webview.show_webview_settings)
+                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings')),
+                        webview_menu.Menu('Configure',
+                                          [
+                                              webview_menu.MenuAction('DMX Control',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'dmx_control')),
+                                              webview_menu.MenuAction('InfoStation',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'infostation_setup')),
+                                              webview_menu.MenuAction('Media Browser',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'media_browser_setup')),
+                                              webview_menu.MenuAction('Media Player',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'media_player_setup')),
+                                              webview_menu.MenuAction('Other App',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'other_setup')),
+                                              webview_menu.MenuAction('Timelapse Viewer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'timelapse_viewer_setup')),
+                                              webview_menu.MenuAction('Timeline Explorer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'timeline_explorer_setup')),
+                                              webview_menu.MenuAction('Voting Kiosk',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'voting_kiosk_setup')),
+                                              webview_menu.MenuAction('Word Cloud Input',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'word_cloud_input_setup')),
+                                              webview_menu.MenuAction('Word Cloud Viewer',
+                                                                      partial(helper_webview.show_webview_window,
+                                                                              'word_cloud_viewer_setup')),
+                                          ])
                     ]
                 )
             ]

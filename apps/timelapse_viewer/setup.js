@@ -301,6 +301,63 @@ function retrieveMatchingFilesCount () {
   })
 }
 
+function convertVideo () {
+  // Ask the helper to convert the video to frames and track the progress.
+
+  const filename = document.getElementById('selectConversionVideoButton').getAttribute('data-filename')
+  if (filename == null || filename.trim() === '') {
+    return
+  }
+  const button = document.getElementById('videoConversionModalSubmitButton')
+  button.innerHTML = 'Working...'
+  button.classList.add('btn-info')
+  button.classList.remove('btn-primary')
+  document.getElementById('conversionProgressBarDiv').style.display = 'flex'
+
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/files/convertVideoToFrames',
+    params: {
+      filename,
+      file_type: 'jpg'
+    },
+    timeout: 3.6e6 // 1 hr
+  })
+
+  const numFiles = parseInt(document.getElementById('outputFileCountField').value)
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  }).then((result) => {
+    trackConversionProgress(numFiles, result.all_exhibits.length)
+  })
+}
+
+function trackConversionProgress (total, starting) {
+  // Track the progress of the video conversion.
+  // total is the estimated number of frames to be converted
+  // starting is the number of files when the conversion started
+  // The number completed = current total - now
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  }).then((result) => {
+    const numComplete = result.all_exhibits.length - starting
+    const percent = Math.round(100 * (numComplete / total))
+    document.getElementById('conversionProgressBarDiv').setAttribute('aria-valuenow', percent)
+    document.getElementById('conversionProgressBar').style.width = String(percent) + '%'
+    if (numComplete < total - 5) {
+      // Add a little slop (5) in case the estimated number of files is wrong.
+      setTimeout(() => {
+        trackConversionProgress(total, starting)
+      }, 1000)
+    } else {
+      videoConversionModal.hide()
+    }
+  })
+}
+
 // Set up the color pickers
 function setUpColorPickers () {
   Coloris({
@@ -354,6 +411,9 @@ document.getElementById('showConvertVideoModal').addEventListener('click', (even
   document.getElementById('selectConversionVideoButton').setAttribute('data-filename', null)
   document.getElementById('fileConversionVideoPreview').src = null
   document.getElementById('outputFileCountField').value = null
+  document.getElementById('conversionProgressBarDiv').style.display = 'none'
+  document.getElementById('conversionProgressBarDiv').setAttribute('aria-valuenow', 0)
+  document.getElementById('conversionProgressBar').style.width = '0%'
 
   convertButton.innerHTML = 'Convert'
   convertButton.classList.remove('btn-info')
@@ -387,29 +447,7 @@ document.getElementById('selectConversionVideoButton').addEventListener('click',
 })
 
 document.getElementById('videoConversionModalSubmitButton').addEventListener('click', (event) => {
-  const filename = document.getElementById('selectConversionVideoButton').getAttribute('data-filename')
-  if (filename == null || filename.trim() === '') {
-    return
-  }
-  const button = document.getElementById('videoConversionModalSubmitButton')
-  button.innerHTML = 'Working...'
-  button.classList.add('btn-info')
-  button.classList.remove('btn-primary')
-
-  constCommon.makeHelperRequest({
-    method: 'POST',
-    endpoint: '/files/convertVideoToFrames',
-    params: {
-      filename,
-      file_type: 'jpg'
-    },
-    timeout: 3.6e6 // 1 hr
-  })
-    .then((response) => {
-      if ('success' in response && response.success === true) {
-        videoConversionModal.hide()
-      }
-    })
+  convertVideo()
 })
 
 // Pattern generation

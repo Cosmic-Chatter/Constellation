@@ -10,10 +10,10 @@ Control Server coordinates communication between **_Constellation_** components 
 ## Terminology
 
 * `gallery`: A physical space in which exhibits take place.
-* `exhibit`: The particular configuration of a `gallery`, including the inclusion or exclusion of specific components and the content displayed by each component.
+* `exhibit`: A configuration for a `gallery` that assigns a `definition` to each `component`.
 * `component`: A single display element within a `gallery`. This could be a projector, a screen, an iPad, or a hands-on mechanical interactive.
-* `content`: The information being used by a `component`, such as text, images, video, and local configurations. Content specifies the file(s) on the component machine that should be used.
-* `definition`: The specific configuration of a given `component`.
+* `content`: Files such as text, images, videos, or spreadsheets that make up part of a `definition`.
+* `definition`: The specific configuration of a given `component`, made up of `content` and settings.
 * `id`: A unique identifier for a given `component`. No two components can have the same `id`.
 * `group`: A user-defined grouping of components. For example, if you have multiple screens each displaying similar information, you might assign them all the group of "INFO SCREEN". Groups allow you to send the same command to multiple devices. Every component must have a group.
 
@@ -114,7 +114,7 @@ The _Components_ tab lists every managed component and projector. Each receives 
 
 <img src="images/component_status_page.jpg" style="width: 40%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-Clicking on a component opens its status view. Here, you can see a snapshot of the remote system's performance; manipulate its content and settings; and add maintenance details.
+Clicking on a component opens its status view. Here, you can see a snapshot of the remote system's performance, select a definition, change settings, and add maintenance details.
 
 #### System status
 
@@ -123,28 +123,8 @@ The system status area, located at the top, provides a summary of the performanc
 Note that CPU usage is not properly reported for PCs running Windows.
 
 #### Definitions pane
-_Note: The definitions pane is only shown when an app that supports the new definition model is loaded._
 
 The definition pane allows you to select the app definition that you want to display. A given `component` can have only one active definition. If the definition you selected belongs to an app other than the one that is currently active, the app will be changed before the new definition is applied.
-
-#### Content pane
-_Note: The content pane is only shown for apps that have not yet been upgraded to the new definition model._
-
-##### Content management
-
-The content management area allows you to manipulate the displayed content for components that support it. Note that this panel only shows files managed by _**Constellation**_, including all content uploaded through the web console.
-
-Content highlighted in blue is currently selected. To add or remove a piece of content, click it to toggle it. These changes are not saved until the _Save changes_ button is pressed.
-
-By default, only content compatible with your _**Constellation**_ app is displayed. Uncheck the _Compatible_ box to see all the stored content.
-
-Content can also be deleted from the system using the item's dropdown menu. Note that deleting content takes effect immediately and cannot be undone.
-
-##### Content upload
-
-New content can be uploaded using the bottom part of the Content pane. Click _Choose files_ and select one or more files that you wish to upload.
-
-**Note that uploaded filenames cannot contain an equals sign (=).** If you upload a file with the same filename as a piece of existing content, the old file will be overwritten. The name of the file on your device will be carried over to the client.
 
 #### Maintenance pane
 
@@ -176,7 +156,9 @@ The _Schedule_ tab allows you to set recurring or one-off events within the gall
 * Send power on, power off, and restart commands
 * Refresh components
 * Set the exhibit
-* Set content for a single component
+* Set the definition for a component
+* Set a DMX scene for a component
+* Add an explanatory note
 
 Note that sending power off and power on commands may affect different components differently. For projectors, this will sleep or wake them. For Wake on LAN devices with shutdown permitted, the machine will be shutdown.
 
@@ -211,7 +193,7 @@ Use the _Set current exhibit_ dropdown box to change the exhibit being displayed
 
 #### Creating and deleting exhibits
 
-You can create and delete exhibits from the settings tab. When creating an exhibit, you can either create an empty exhibit (no content for any component), or you can clone the existing exhibit.
+You can create and delete exhibits from the settings tab. When creating an exhibit, you can either create an empty exhibit (no definition for any component), or you can clone the existing exhibit.
 
 ### Hiding tabs
 

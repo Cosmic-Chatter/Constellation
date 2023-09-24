@@ -2,11 +2,11 @@
 
 Media Player provides a simple and flexible digital signage platform for displaying collections of audio, images, and videos.
 
-## Conifguation
-When creating a definition, you specify a display duration for images. Audio and video always play for their full duration.
+## Configuration
+When creating a definition, you can specify a display duration for each image. Audio and video always play for their full duration.
 
 ## Supported media types
-Constellatin Apps recognizes the following media file formats, however, the browser you are using must also support the format. Most common formats should be supported in every browser.
+Constellation Apps recognizes the following media file formats:
 
 | Type | Recognized formats |
 | ---- | ------------------ |

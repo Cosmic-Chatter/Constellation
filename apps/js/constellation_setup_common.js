@@ -1,6 +1,19 @@
-/* global bootstrap */
+/* global bootstrap, showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
+
+$.fn.visibleHeight = function () {
+  // JQuery function to calculate the visible height of an element
+  // From https://stackoverflow.com/a/29944927
+
+  const scrollTop = $(window).scrollTop()
+  const scrollBot = scrollTop + $(window).height()
+  const elTop = this.offset().top
+  const elBottom = elTop + this.outerHeight()
+  const visibleTop = elTop < scrollTop ? scrollTop : elTop
+  const visibleBottom = elBottom > scrollBot ? scrollBot : elBottom
+  return Math.max(visibleBottom - visibleTop, 0)
+}
 
 export const config = {
   availableDefinitions: {},
@@ -34,8 +47,51 @@ export function configure (options) {
       configureFromQueryString()
     })
 
+  document.getElementById('helpButton').addEventListener('click', (event) => {
+    showAppHelpMOdal(config.app)
+  })
   createDefinitionDeletePopup()
   createEventListeners()
+}
+
+function showAppHelpMOdal (app) {
+  // Ask the helper to send the relavent README.md file and display it in the modal
+
+  const endpointStems = {
+    dmx_control: '/dmx_control/',
+    infostation: '/InfoStation/',
+    media_browser: '/media_browser/',
+    media_player: '/media_player/',
+    other: '/other/',
+    timelapse_viewer: '/timelapse_viewer/',
+    timeline_explorer: '/timeline_explorer/',
+    voting_kiosk: '/voting_kiosk/',
+    word_cloud: '/word_cloud/',
+    word_cloud_input: '/word_cloud/',
+    word_cloud_viewer: '/word_cloud/'
+  }
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: endpointStems[app] + 'README.md',
+    rawResponse: true
+  })
+    .then((result) => {
+      const formattedText = markdownConverter.makeHtml(result)
+      // Add the formatted text
+      $('#helpTextDiv').html(formattedText)
+      // Then, search the children for images and fix the links with the right endpoints
+      $('#helpTextDiv').find('img').each((i, img) => {
+        // Strip off the http://localhost:8000/ porition
+        const src = img.src.split('/').slice(3).join('/')
+        // Rebuild the correct path
+        img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
+        img.style.maxWidth = '100%'
+      })
+      $('#helpTextDiv').parent().parent().scrollTop(0)
+    })
+
+  $('#appHelpModal').modal('show')
 }
 
 export function populateAvailableDefinitions (definitions) {
@@ -127,6 +183,7 @@ function createEventListeners () {
   // Preview frame
   window.addEventListener('load', resizePreview)
   window.addEventListener('resize', resizePreview)
+  window.addEventListener('scroll', resizePreview)
 
   // Activate tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -159,12 +216,40 @@ function rotatePreview () {
 
   document.getElementById('previewFrame').classList.toggle('preview-landscape')
   document.getElementById('previewFrame').classList.toggle('preview-portrait')
+  resizePreview()
 }
 
 function resizePreview () {
+  // Resize the preview so that it always fits the view.
+
+  // Size of things above view area
+  const headerHeight = $('#setupHeader').visibleHeight()
+  const toolsHeight = $('#setupTools').visibleHeight()
+  const viewportHeight = window.innerHeight
+
+  // First, set the height of the area available for the preview
+  $('#previewPane').css('height', viewportHeight - headerHeight - toolsHeight)
+
+  // Size of available area
   const paneWidth = $('#previewPane').width()
+  const paneHeight = $('#previewPane').height()
+
+  // Size of frame (this will be 1920x1080 or 1080x1920)
   const frameWidth = $('#previewFrame').width()
-  const transformRatio = paneWidth / frameWidth
+  const frameHeight = $('#previewFrame').height()
+  const frameAspect = frameWidth / frameHeight
+
+  let transformRatio
+  if (frameAspect <= 1) {
+    // Handle portrait (constraint should be height)
+    transformRatio = 0.95 * paneHeight / frameHeight
+  } else {
+    // Handle landscape (constraint should be width)
+    transformRatio = 1.0 * paneWidth / frameWidth
+  }
 
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
+
+const markdownConverter = new showdown.Converter()
+markdownConverter.setFlavor('github')

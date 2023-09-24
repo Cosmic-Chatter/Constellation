@@ -25,8 +25,8 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
 def reboot():
     """Send an OS-appropriate command to restart the computer"""
 
-    reboot_allowed = config.defaults_dict.get("allow_restart", "true")
-    if reboot_allowed.lower() in ["true", "yes", '1', 1]:
+    reboot_allowed = config.defaults["permissions"].get("restart", True)
+    if reboot_allowed:
         print("Rebooting...")
         if sys.platform == "darwin":  # MacOS
             os.system("osascript -e 'tell app \"System Events\" to restart'")
@@ -43,10 +43,10 @@ def shutdown():
 
     If shutdown is not allowed, call sleep_display() to put the display to sleep"""
 
-    shutdown_allowed = config.defaults_dict.get("allow_shutdown", "false")
-    sleep_allowed = config.defaults_dict.get("allow_sleep", "false")
+    shutdown_allowed = config.defaults["permissions"].get("shutdown", False)
+    sleep_allowed = config.defaults["permissions"].get("sleep", False)
 
-    if shutdown_allowed.lower() in ["true", "yes", '1', 1]:
+    if shutdown_allowed:
         print("Shutting down...")
         if sys.platform == "darwin":  # MacOS
             os.system("osascript -e 'tell app \"System Events\" to shutdown'")
@@ -54,16 +54,15 @@ def shutdown():
             os.system("systemctl shutdown -i")
         elif sys.platform == "win32":
             os.system("shutdown -t 0 -s")
-    elif sleep_allowed.lower() in ["true", "yes", '1', 1]:
+    elif sleep_allowed:
         print("Shutdown requested but not permitted. Sleeping displays...")
         sleep_display()
     else:
-        print(
-            "Shutdown requested but not permitted by defaults.ini. Set allow_shutdown = true to enable or set allow_sleep to enable turning off the displays")
+        logging.info( "Shutdown requested but not permitted by configuration.")
 
 
 def sleep_display():
-    if helper_utilities.str_to_bool(config.defaults_dict.get("allow_sleep", True)):
+    if config.defaults["permissions"].get("sleep", False):
         if sys.platform == "darwin":  # MacOS
             os.system("pmset displaysleepnow")
         elif sys.platform == "linux":
@@ -71,6 +70,8 @@ def sleep_display():
         elif sys.platform == "win32":
             nircmd_path = helper_files.get_path(["nircmd.exe"])
             os.system(nircmd_path + " monitor async_off")
+    else:
+        logging.info("Sleep requested but not permitted by configuration.")
 
 
 def smart_restart_act():
@@ -109,10 +110,13 @@ def smart_restart_check():
     timer.daemon = True
     timer.start()
 
+    if config.defaults["system"]["standalone"] is True:
+        return
+
     # Then, ping the server
     headers = {'Content-type': 'application/json'}
 
-    server_address = f'http://{config.defaults_dict["server_ip_address"]}:{config.defaults_dict["server_port"]}'
+    server_address = f'http://{config.defaults["control_server"]["ip_address"]}:{config.defaults["control_server"]["port"]}'
     error = False
     try:
         _ = requests.get(server_address + '/system/checkConnection', headers=headers, timeout=5)

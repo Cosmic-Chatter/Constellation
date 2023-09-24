@@ -1,7 +1,7 @@
 import * as constCommon from '../js/constellation_app_common.js'
 
 function updateParser (update) {
-  // Read updates specific to the media browser
+  // Read updates specific to the media player
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
@@ -10,15 +10,16 @@ function updateParser (update) {
         loadDefinition(result.definition)
       })
   }
-  if ('autoplay_audio' in update && update.autoplay_audio.toLowerCase() === 'true') {
-    document.getElementById('fullscreenVideo').muted = false
-    document.getElementById('audioPlayer').muted = false
+
+  if ('permissions' in update && 'audio' in update.permissions) {
+    document.getElementById('fullscreenVideo').muted = !update.permissions.audio
+    document.getElementById('audioPlayer').muted = !update.permissions.audio
   }
 }
 
 function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
-  console.log(def)
+
   constCommon.config.sourceList = []
   def.content_order.forEach((uuid) => {
     constCommon.config.sourceList.push(def.content[uuid])
@@ -68,7 +69,7 @@ function changeMedia (source) {
   const image = document.getElementById('fullscreenImage')
   const imageContainer = document.getElementById('imageOverlay')
   const audio = document.getElementById('audioPlayer')
-  const filename = constCommon.config.contentPath + '/' + source.filename
+  const filename = 'content/' + source.filename
 
   // Split off the extension
   const split = source.filename.split('.')
@@ -133,38 +134,17 @@ function changeMedia (source) {
     }
   }
 }
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'media_player'
-let currentDefintion = ''
-
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
 constCommon.config.sourceList = []
-let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.
-constCommon.config.waitingForSynchronization = false
 constCommon.config.autoplayEnabled = true
 constCommon.config.allowAudio = false
 
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
+constCommon.configureApp({
+  name: 'media_player',
+  debug: true,
+  loadDefinition,
+  parseUpdate: updateParser
+})
 
-const searchParams = constCommon.parseQueryString()
-if (searchParams.has('standalone')) {
-  // We are displaying this inside of a setup iframe
-  if (searchParams.has('definition')) {
-    constCommon.loadDefinition(searchParams.get('definition'))
-      .then((result) => {
-        loadDefinition(result.definition)
-      })
-  }
-} else {
-  // We are displaying this for real
-  constCommon.askForDefaults()
-    .then(() => {
-      constCommon.sendPing()
-
-      setInterval(constCommon.sendPing, 5000)
-    })
-}
-
-// Hide the cursor
-document.body.style.cursor = 'none'
+let currentDefintion = ''
+let sourceAdvanceTimer = null // Will hold reference to a setTimeout instance to move to the next media.

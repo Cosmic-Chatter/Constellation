@@ -1,4 +1,4 @@
-/* global Coloris */
+/* global bootstrap, Coloris */
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
@@ -146,7 +146,15 @@ function addLanguage () {
   })
   if (error) return
 
-  workingDefinition.languages[code] = { display_name: displayName, code }
+  // If this is the first language added, make it the default
+  let defaultLang = false
+  if (Object.keys(workingDefinition.languages).length === 0) defaultLang = true
+
+  workingDefinition.languages[code] = {
+    display_name: displayName,
+    code,
+    default: defaultLang
+  }
   createLanguageTab(code, displayName)
 
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
@@ -157,6 +165,8 @@ function addLanguage () {
 function createLanguageTab (code, displayName) {
   // Create a new language tab for the given details.
   // Set first=true when creating the first tab
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
   // Create the tab button
   const tabButton = document.createElement('button')
@@ -180,6 +190,39 @@ function createLanguageTab (code, displayName) {
   const row = document.createElement('div')
   row.classList = 'row gy-2 mt-2 mb-3'
   tabPane.appendChild(row)
+
+  // Create default language checkbox
+  const defaultCol = document.createElement('div')
+  defaultCol.classList = 'col-12'
+  row.appendChild(defaultCol)
+
+  const checkContainer = document.createElement('div')
+  checkContainer.classList = 'form-check'
+  defaultCol.appendChild(checkContainer)
+
+  const defaultCheckbox = document.createElement('input')
+  defaultCheckbox.classList = 'form-check-input default-lang-checkbox'
+  defaultCheckbox.setAttribute('id', 'defaultCheckbox_' + code)
+  defaultCheckbox.setAttribute('data-lang', code)
+  defaultCheckbox.setAttribute('type', 'radio')
+  defaultCheckbox.checked = workingDefinition.languages[code].default
+  defaultCheckbox.addEventListener('change', (event) => {
+    // If the checkbox is checked, uncheck all the others and save to the working definition.
+    Array.from(document.querySelectorAll('.default-lang-checkbox')).forEach((el) => {
+      el.checked = false
+      constSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
+    })
+    event.target.checked = true
+    constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
+    previewDefinition(true)
+  })
+  checkContainer.appendChild(defaultCheckbox)
+
+  const defaultCheckboxLabel = document.createElement('label')
+  defaultCheckboxLabel.classList = 'form-check-label'
+  defaultCheckboxLabel.setAttribute('for', 'defaultCheckbox_' + code)
+  defaultCheckboxLabel.innerHTML = 'Default language'
+  checkContainer.appendChild(defaultCheckboxLabel)
 
   // Create the flag input
   const flagImgCol = document.createElement('div')
@@ -262,6 +305,11 @@ function createLanguageTab (code, displayName) {
     label.classList = 'form-label'
     label.setAttribute('for', langKey)
     label.innerHTML = inputFields[key].name
+
+    if ('hint' in inputFields[key]) {
+      label.innerHTML += ' ' + `<span class="badge bg-info ml-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="${inputFields[key].hint}" style="font-size: 0.55em;">?</span>`
+    }
+
     col.appendChild(label)
 
     let input
@@ -288,6 +336,12 @@ function createLanguageTab (code, displayName) {
   if (keyList != null) {
     populateKeySelects(keyList)
   }
+
+  // Activate tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
 
   // Switch to this new tab
   $(tabButton).click()
@@ -321,7 +375,7 @@ function deleteLanguageFlag (lang) {
   // Delete from server
   constCommon.makeHelperRequest({
     method: 'POST',
-    endpoint: '/deleteFile',
+    endpoint: '/file/delete',
     params: {
       file: flag
     }
@@ -475,7 +529,14 @@ function onSpreadsheetFileChange () {
     rawResponse: true
   })
     .then((result) => {
-      const spreadsheet = constCommon.csvToJSON(result)
+      const csvAsJSON = constCommon.csvToJSON(result)
+      if (csvAsJSON.error === true) {
+        document.getElementById('badSpreadsheetWarningLineNumber').innerHTML = csvAsJSON.error_index + 2
+        document.getElementById('badSpreadsheetWarning').style.display = 'block'
+      } else {
+        document.getElementById('badSpreadsheetWarning').style.display = 'none'
+      }
+      const spreadsheet = csvAsJSON.json
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
@@ -488,10 +549,7 @@ function checkContentExists () {
 
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
   const imageKeys = []
-
-  const checkContentButton = document.getElementById('checkContentButton')
-  checkContentButton.setAttribute('disabled', true)
-  checkContentButton.innerHTML = 'Checking...'
+  document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Loop through the defintion and collect any unique image keys
   Object.keys(workingDefinition.languages).forEach((lang) => {
@@ -517,7 +575,7 @@ function checkContentExists () {
         rawResponse: true
       })
         .then((raw) => {
-          const spreadsheet = constCommon.csvToJSON(raw)
+          const spreadsheet = constCommon.csvToJSON(raw).json
           spreadsheet.forEach((row) => {
             imageKeys.forEach((key) => {
               if (row[key].trim() === '') return
@@ -539,8 +597,6 @@ function checkContentExists () {
             html += '</ul>'
             missingContentField.innerHTML = html
           }
-          checkContentButton.removeAttribute('disabled')
-          checkContentButton.innerHTML = 'Check content'
         })
     })
 }
@@ -631,6 +687,83 @@ function populateKeySelects (keyList) {
   })
 }
 
+function showOptimizeContentModal () {
+  // Show the modal for optimizing the content and thumbnails.
+
+  document.getElementById('optimizeContentProgressBarDiv').style.display = 'none'
+  $('#optimizeContentModal').modal('show')
+}
+
+function optimizeMediaFromModal () {
+  // Collect the necessary information and then optimize the media.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const resolution = document.getElementById('resolutionSelect').value
+  const width = parseInt(resolution.split('_')[0])
+  const height = parseInt(resolution.split('_')[1])
+  let thumbRes
+  if (width > height) {
+    thumbRes = Math.round(width * 0.25)
+  } else {
+    thumbRes = Math.round(width * 0.5)
+  }
+
+  // Loop through the defintion and collect any unique image keys
+  const imageKeys = []
+
+  Object.keys(workingDefinition.languages).forEach((lang) => {
+    if (imageKeys.includes(workingDefinition.languages[lang].image_key) === false) {
+      imageKeys.push(workingDefinition.languages[lang].image_key)
+    }
+  })
+
+  // Retrieve the spreadsheet and collect all images
+  const toOptimize = []
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/content/' + workingDefinition.spreadsheet,
+    rawResponse: true
+  })
+    .then((raw) => {
+      const spreadsheet = constCommon.csvToJSON(raw).json
+      spreadsheet.forEach((row) => {
+        imageKeys.forEach((key) => {
+          if (row[key].trim() === '') return
+          toOptimize.push(row[key])
+        })
+      })
+      const total = toOptimize.length
+      let numComplete = 0
+
+      // Show the progress bar
+      document.getElementById('optimizeContentProgressBarDiv').style.display = 'flex'
+      document.getElementById('optimizeContentProgressBar').style.width = '0%'
+      document.getElementById('optimizeContentProgressBarDiv').setAttribute('aria-valuenow', 0)
+
+      toOptimize.forEach((file) => {
+        constCommon.makeHelperRequest({
+          method: 'POST',
+          endpoint: '/files/generateThumbnail',
+          params: {
+            source: file,
+            mimetype: 'image',
+            width: thumbRes
+          }
+        })
+          .then((result) => {
+            if (result.success === true) {
+              numComplete += 1
+              const percent = Math.round(100 * numComplete / total)
+              document.getElementById('optimizeContentProgressBar').style.width = String(percent) + '%'
+              document.getElementById('optimizeContentProgressBarDiv').setAttribute('aria-valuenow', percent)
+            }
+          })
+      })
+    })
+}
+
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
@@ -643,27 +776,28 @@ const inputFields = {
     property: 'header_text'
   },
   keyTimeSelect: {
-    name: 'Time key',
+    name: 'Time column',
     kind: 'select',
     property: 'time_key'
   },
   keyTitleSelect: {
-    name: 'Title key',
+    name: 'Title column',
     kind: 'select',
     property: 'title_key'
   },
   keyLevelSelect: {
-    name: 'Level key',
+    name: 'Level column',
     kind: 'select',
-    property: 'level_key'
+    property: 'level_key',
+    hint: 'A number from 1 - 4 giving the importance of the event.'
   },
   keyShortSelect: {
-    name: 'Short text key',
+    name: 'Short text column',
     kind: 'select',
     property: 'short_text_key'
   },
   keyImageSelect: {
-    name: 'Image key',
+    name: 'Image column',
     kind: 'select',
     property: 'image_key'
   }
@@ -707,7 +841,13 @@ $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true })
 })
+document.getElementById('showCheckContentButton').addEventListener('click', () => {
+  document.getElementById('missingContentWarningField').innerHTML = ''
+  $('#checkContentModal').modal('show')
+})
 document.getElementById('checkContentButton').addEventListener('click', checkContentExists)
+document.getElementById('optimizeContentButton').addEventListener('click', showOptimizeContentModal)
+document.getElementById('optimizeContentBeginButton').addEventListener('click', optimizeMediaFromModal)
 
 // Definition fields
 document.getElementById('spreadsheetSelect').addEventListener('click', (event) => {

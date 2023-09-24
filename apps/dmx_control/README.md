@@ -15,6 +15,18 @@ To interface with a DMX universe, you need a hardware DMX controller. DMX Contro
 If you plan to edit the DMX configuration from the device connected to the DMX controller, the network does not matter. However, if you plan to do configuration from a remote device (accessed, for instance, from Control Server), a fast, low-latency connection is important. To enable realtime lighting control, DMX Control sends many commands over the network during configuration. This works much more smoothly with a wired Ethernet connection.
 
 ### Operating system
+
+#### Windows
+To install the correct driver, download [Zadig](https://zadig.akeo.ie/) and follow these steps:
+1. Ensure your DMX controller is plugged into a USB port
+2. Launch Zadig
+3. Click _Options_ > _List All Devices_
+4. From the list, select `FT232R USB UART` or whichever device appears most similar to that.
+5. From the box to the right of the green arrow, select the `libusbK` driver.
+6. Click the _Reinstall Driver_ button
+7. Once the installation is complete, restart your PC.
+
+
 #### Linux
 DMX Control has been tested on Ubuntu 20.04 and 22.04. To communicate with the DMX controller, you must enable access to `USBtty` devices using the command line. First, add your user account to the `dialout` group by running:
 
@@ -33,12 +45,3 @@ Press `Ctrl-s` then `Ctrl-x` to save, reboot your computer, and the DMX controll
 #### macOS
 macOS is not recommended for DMX Control, as it does not play very nicely with the necessary low-level drivers for FTDI devices. 
 
-#### Windows
-To install the correct driver, download [Zadig](https://zadig.akeo.ie/) and follow these steps:
-1. Ensure your DMX controller is plugged into a USB port
-2. Launch Zadig
-3. Click _Options_ > _List All Devices_
-4. From the list, select `FT232R USB UART` or whichever device appears most similar to that.
-5. From the box to the right of the green arrow, select the `libusbK` driver.
-6. Click the _Reinstall Driver_ button
-7. Once the installation is complete, restart your PC.

@@ -1,12 +1,15 @@
 """System Helper functions for managing files"""
 
 # Standard modules
+import csv
 import glob
+import io
 import json
 import logging
 import os
 import subprocess
 import sys
+import threading
 from typing import Any, Union
 
 # Non-standard imports
@@ -15,10 +18,10 @@ import mimetypes
 ffmpeg_path: str
 try:
     import pyffmpeg
+
     ffmpeg_path = pyffmpeg.FFmpeg().get_ffmpeg_bin()
 except ModuleNotFoundError:
     ffmpeg_path = 'ffmpeg'
-
 
 # Constellation modules
 import config
@@ -33,6 +36,23 @@ def get_path(path_list: list[str], user_file: bool = False) -> str:
         _path = os.path.join(config.exec_path, *path_list)
 
     return _path
+
+
+def filename_safe(filename: str) -> bool:
+    """Ensure the filename doesn't escape to another directory or is malformed.
+
+    Note that this should not be used on paths, which will obviously include some
+    of these cases.
+    """
+
+    if not isinstance(filename, str):
+        return False
+    for char in ['/', '\\', '<', '>', ':', '"', '|', '?', '*']:
+        if char in filename:
+            return False
+    if filename.strip() in ['', '.', '..']:
+        return False
+    return True
 
 
 def load_json(path: str):
@@ -52,17 +72,178 @@ def load_json(path: str):
             return result
 
 
-def write_json(data, path: str, append: bool = False) -> None:
-    """Take the given object and try to write it to a JSON file."""
+def write_json(data: dict, path: str | os.PathLike, append: bool = False, compact: bool = False) -> tuple[bool, str]:
+    """Take the given object and try to write it to a JSON file.
+
+    Setting compact=True will print the dictionary on one line.
+    """
+
+    success = True
+    reason = ""
 
     if append:
         mode = 'a'
     else:
         mode = 'w'
 
-    with config.content_file_lock:
-        with open(path, mode, encoding='UTF-8') as f:
-            json.dump(data, f, indent=2, sort_keys=True)
+    try:
+        with config.content_file_lock:
+            with open(path, mode, encoding='UTF-8') as f:
+                if compact:
+                    json_str = json.dumps(data, sort_keys=True)
+                    f.write(json_str + "\n")
+                else:
+                    json_str = json.dumps(data, indent=2, sort_keys=True)
+                    f.write(json_str + "\n")
+    except TypeError:
+        success = False
+        reason = "Data is not JSON serializable"
+    except FileNotFoundError:
+        success = False
+        reason = f"File {path} does not exist"
+    except PermissionError:
+        success = False
+        reason = f"You do not have write permission for the file {path}"
+
+    return success, reason
+
+
+def write_raw_text(data: str, name: str, mode: str = "a") -> tuple[bool, str]:
+    """Write an un-formatted string to file"""
+
+    if not filename_safe(name):
+        return False, "Invalid character in filename"
+
+    file_path = get_path(["data", name], user_file=True)
+    success = True
+    reason = ""
+
+    if mode != "a" and mode != "w":
+        return False, "Mode must be either 'a' (append, [default]) or 'w' (overwrite)"
+
+    try:
+        with config.content_file_lock:
+            with open(file_path, mode, encoding="UTF-8") as f:
+                f.write(data + "\n")
+    except FileNotFoundError:
+        success = False
+        reason = f"File {file_path} does not exist"
+    except PermissionError:
+        success = False
+        reason = f"You do not have write permission for the file {file_path}"
+
+    return success, reason
+
+
+def get_raw_text(name: str) -> tuple[str, bool, str]:
+    """Return the contents of a text file."""
+
+    if not filename_safe(name):
+        return "", False, "Invalid character in filename"
+
+    file_path = get_path(["data", name], user_file=True)
+    success = True
+    reason = ""
+    result = ""
+
+    try:
+        with config.content_file_lock:
+            with open(file_path, "r", encoding='UTF-8') as f:
+                result = f.read()
+    except FileNotFoundError:
+        success = False
+        reason = f"File {file_path} not found."
+    except PermissionError:
+        success = False
+        reason = f"You do not have read permission for the file {file_path}"
+
+    return result, success, reason
+
+
+def create_csv(file_path: str | os.PathLike, filename: str = "") -> str:
+    """Load a data file and convert it to a CSV"""
+
+    dict_list = []
+    try:
+        with open(file_path, 'r', encoding="UTF-8") as f:
+            for line in f.readlines():
+                dict_list.append(json.loads(line))
+    except FileNotFoundError:
+        return ""
+    return json_list_to_csv(dict_list, filename=filename)
+
+
+def json_list_to_csv(dict_list: list, filename: str = "") -> str:
+    """Convert a list JSON dicts to a comma-separated string"""
+
+    # First, identify any keys that have lists as their value
+    all_keys = {}
+    keys = get_unique_keys(dict_list)
+    for key in keys:
+        # This function will return an empty list if the value is not a list,
+        # and a list of all unique values if it is.
+        unique_keys = get_unique_values(dict_list, key)
+        if len(unique_keys) > 0:
+            all_keys[key] = unique_keys
+        else:
+            all_keys[key] = None
+
+    # Next, reformat the dict_list so that keys with a list have those values
+    # flattened into the main dict level
+    reformed_dict_list = []
+    for this_dict in dict_list:
+        new_dict = {}
+        for key, value in this_dict.items():
+            if all_keys[key] is None:  # Simple key
+                value_to_write = this_dict[key]
+                if isinstance(value_to_write, str):
+                    value_to_write = value_to_write.replace("\n", " ")
+                new_dict[key] = value_to_write
+            else:
+                for sub_key in all_keys[key]:
+                    new_dict[key + " - " + sub_key] = sub_key in this_dict[key]
+        reformed_dict_list.append(new_dict)
+
+    # Build the CSV, optionally write it to disk, and then return it
+    try:
+        with io.StringIO(newline='') as f:
+            csv_writer = csv.DictWriter(f, get_unique_keys(reformed_dict_list))
+            csv_writer.writeheader()
+            csv_writer.writerows(reformed_dict_list)
+            result = f.getvalue()
+    except IndexError:
+        print("JSON_list_to_CSV: Error: Nothing to write")
+        result = ""
+
+    if filename != "":
+        with open(filename, 'w', encoding="UTF-8", newline="") as f:
+            f.write(result)
+    return result
+
+
+def get_unique_keys(dict_list: list) -> list:
+    """Return a set of unique keys from a list of dicts, sorted for consistency."""
+
+    return sorted(list(set().union(*(d.keys() for d in dict_list))))
+
+
+def get_unique_values(dict_list: list, key: str) -> list:
+    """For a given key, search the list of dicts for all unique values, expanding lists."""
+
+    unique_values = set()
+
+    for this_dict in dict_list:
+        if key in this_dict and isinstance(this_dict[key], list):
+            for value in this_dict[key]:
+                unique_values.add(value)
+
+    return list(unique_values)
+
+
+def get_available_data() -> list[str]:
+    """Return a list of files in the /data directory."""
+
+    return os.listdir(get_path(['data'], user_file=True))
 
 
 def get_available_definitions(app_id: str = "all") -> dict[str, Any]:
@@ -154,18 +335,26 @@ def rename_file(old_name: str, new_name: str, absolute: bool = False):
     return {"success": True}
 
 
-def create_thumbnail(filename: str, mimetype: str):
+def create_thumbnail(filename: str, mimetype: str, block: bool = False, width: int = 400) -> tuple[bool, str]:
     """Create a thumbnail from the given media file and add it to the thumbnails directory.
 
     If the input is an image, a jpg is created. If the input is a video, a short preview mp4 and a
-    jpg are created."""
+    jpg are created.
+
+    Set block=True to block the calling thread when creating thumbnails.
+    """
 
     try:
         if mimetype == "image":
-            subprocess.call([ffmpeg_path, "-y",
-                             "-i", get_path(['content', filename], user_file=True),
-                             "-vf", "scale=400:-1",
-                             get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            proc = subprocess.Popen([ffmpeg_path, "-y",
+                                     "-i", get_path(['content', filename], user_file=True),
+                                     "-vf", f"scale={width}:-1",
+                                     get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
         elif mimetype == "video":
             # First, find the length of the video
             _, video_details = get_video_file_details(filename)
@@ -173,32 +362,48 @@ def create_thumbnail(filename: str, mimetype: str):
             file_path = get_path(['content', filename], user_file=True)
 
             # Then, create the video thumbnail
-            subprocess.Popen([ffmpeg_path, "-y", "-i", file_path,
-                              "-filter:v", f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale=400:-2',
-                              "-an",
-                              get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
-
+            proc = subprocess.Popen([ffmpeg_path, "-y", "-i", file_path,
+                                     "-filter:v",
+                                     f'fps=1,setpts=({min(duration_sec, 10)}/{duration_sec})*PTS,scale={width}:-2',
+                                     "-an",
+                                     get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
             # Finally, create the image thumbnail from the halfway point
-            subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec/2)), '-i', file_path,
-                              '-vframes', '1', "-vf", "scale=400:-1",
-                              get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
-
+            proc = subprocess.Popen([ffmpeg_path, "-y", '-ss', str(round(duration_sec / 2)), '-i', file_path,
+                                     '-vframes', '1', "-vf", f"scale={width}:-1",
+                                     get_path(['thumbnails', with_extension(filename, 'jpg')], user_file=True)])
+            if block:
+                try:
+                    proc.communicate(timeout=3600)  # 1 hour
+                except subprocess.TimeoutExpired:
+                    proc.kill()
     except OSError as e:
         print("create_thumbnail: error:", e)
+        return False, 'OSError'
     except ImportError as e:
         print("create_thumbnail: error loading FFmpeg: ", e)
+        return False, 'ImportError'
+
+    return True, ""
 
 
 def create_thumbnail_video_from_frames(frames: list, filename: str, duration: float = 5) -> bool:
     """Take a list of image filenames and use FFmpeg to turn it into a video thumbnail."""
 
     output_path = get_path(['thumbnails', with_extension(filename, 'mp4')], user_file=True)
-    fps = len(frames)/duration
+    fps = len(frames) / duration
 
     # First, render each file in a consistent format
     for i, frame in enumerate(frames):
         thumb_path, _ = get_thumbnail(frame, force_image=True)
-        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1', '-pix_fmt', 'yuv420p', get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True)]
+        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf',
+                   'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1',
+                   '-pix_fmt', 'yuv420p',
+                   get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True)]
         process = subprocess.Popen(command)
         process.communicate()
 
@@ -211,7 +416,7 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
 
     # Finally, delete the temp files
     for i in range(len(frames)):
-        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4,'0') + '.png'], user_file=True))
+        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True))
 
     return True
 
@@ -267,7 +472,7 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
         raise ValueError('file_type must be one of "jpg", "png", "webp"')
     try:
         input_path = get_path(['content', filename], user_file=True)
-        output_path = '.'.join(input_path.split('.')[0:-1]) + '_%06d.' + file_type
+        output_path = '.'.join(input_path.split('.')[0:-1]).replace(" ", "_") + '_%06d.' + file_type
         if file_type == 'jpg':
             args = [ffmpeg_path, "-i", input_path, "-qscale:v", "4", output_path]
         elif file_type == 'png':
@@ -276,9 +481,9 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
             args = [ffmpeg_path, "-i", input_path, "-quality", "90", output_path]
 
         process = subprocess.Popen(args, stderr=subprocess.PIPE, encoding="UTF-8")
-        process.communicate(timeout=3600)
-        if process.returncode != 0:
-            success = False
+        th = threading.Thread(target=_create_thumbnails_for_converted_video, args=[process], daemon=True)
+        th.start()
+
     except OSError as e:
         print("convert_video_to_frame: error:", e)
         success = False
@@ -289,9 +494,18 @@ def convert_video_to_frames(filename: str, file_type: str = 'jpg'):
         print("convert_video_to_frame: conversion timed out: ", e)
         success = False
 
-    create_missing_thumbnails()
-
     return success
+
+
+def _create_thumbnails_for_converted_video(process: subprocess.Popen):
+    """Join the given process and create thumbnails when it is complete."""
+
+    try:
+        process.communicate(timeout=3600)
+    except subprocess.TimeoutExpired as e:
+        print("convert_video_to_frame: conversion timed out: ", e)
+        pass
+    create_missing_thumbnails()
 
 
 def get_thumbnail_name(filename: str, force_image=False) -> str:
@@ -382,7 +596,7 @@ def get_directory_contents(directory: str, absolute: bool = False) -> list:
 def check_directory_structure():
     """Make sure the appropriate content directories are present and create them if they are not."""
 
-    dir_list = ["configuration", "content", "definitions", "static", "thumbnails"]
+    dir_list = ["configuration", "content", "data", "definitions", "static", "thumbnails"]
 
     for directory in dir_list:
         content_path = get_path([directory], user_file=True)

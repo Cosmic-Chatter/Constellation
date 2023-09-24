@@ -1,265 +1,198 @@
-/* global showdown */
+/* global bootstrap, showdown */
 
 import * as constCommon from './constellation_app_common.js'
 import * as constFileSelectModal from './constellation_file_select_modal.js'
 
-function submitAddDefaultModal () {
-  if (!$('.settingValueInputField.visible').val().includes('=')) {
-    addDefaultFromModal()
-    $('#addSettingModal').modal('hide')
-  } else {
-    $('#modalEqualSignWarning').show()
-  }
-}
-
-function showAddDefaultModal () {
-  $('#settingKeyInputField').val('')
-  $('.settingValueInputField').val('').removeClass('visible').hide()
-  $('#settingValueInputTextField').addClass('visible').show()
-  $('#settingValueInputTip').show()
-  $('#modalEqualSignWarning').hide()
-  $('#modalSettingDescriptionField').hide()
-
-  // Update the select with any unused/available keys
-  $('#availableKeys').empty()
-  const blank = document.createElement('option')
-  blank.value = ''
-  blank.innerHTML = ''
-  $('#availableKeys').append(blank)
-  const currentKeys = getExistingKeys()
-  knownKeys.forEach(function (key, identifies) {
-    if (!currentKeys.includes(key.key)) {
-      const option = document.createElement('option')
-      option.value = key.key
-      option.innerHTML = key.key
-      $('#availableKeys').append(option)
-    }
-  })
-
-  $('#addSettingModal').modal('show')
-}
-
-function populateDefaultFromOptionList () {
-  // When the user selects a option from the available keys, configure the modal for that data type
-
-  const key = $('#availableKeys').val()
-  const keyInfo = lookupKnownKey(key)
-  $('#settingKeyInputField').val(key)
-  if (keyInfo.description !== '') {
-    $('#modalSettingDescriptionField').html(keyInfo.description)
-    $('#modalSettingDescriptionField').show()
-  } else {
-    $('#modalSettingDescriptionField').hide()
-  }
-
-  $('.settingValueInputField').val('').removeClass('visible').hide()
-  if (keyInfo.type === 'text') {
-    $('#settingValueInputTextField').addClass('visible').show()
-    $('#settingValueInputTip').show()
-  } else if (keyInfo.type === 'number') {
-    $('#settingValueInputNumericField').addClass('visible').show()
-    $('#settingValueInputTip').hide()
-  } else if (keyInfo.type === 'bool') {
-    $('#settingValueInputOptionField').addClass('visible').show()
-    $('#settingValueInputTip').hide()
-
-    $('#settingValueInputOptionField').empty()
-    const optionTrue = document.createElement('option')
-    optionTrue.value = 'true'
-    optionTrue.innerHTML = 'True'
-    const optionFalse = document.createElement('option')
-    optionFalse.value = 'false'
-    optionFalse.innerHTML = 'False'
-    $('#settingValueInputOptionField').append(optionTrue).append(optionFalse)
-  } else if (keyInfo.type === 'option') {
-    $('#settingValueInputOptionField').addClass('visible').show()
-    $('#settingValueInputTip').hide()
-
-    $('#settingValueInputOptionField').empty()
-    keyInfo.options.forEach((option) => {
-      const optionEl = document.createElement('option')
-      optionEl.value = option
-      optionEl.innerHTML = option
-      $('#settingValueInputOptionField').append(optionEl)
-    })
-  }
-}
-
-function addDefaultFromModal () {
-  // Gather the input from the modal and create a defaultCard
-
-  const key = $('#settingKeyInputField').val().toLowerCase()
-  const value = $('.settingValueInputField.visible').val()
-  createDefaultCard(key, value)
-
-  // Clear the data so we don't double-add the default
-  $('#settingKeyInputField').val('')
-  $('.settingValueInputField').val('')
-}
-
-function createDefaultCard (key, value) {
-  // Create the HTML element corresponding to the given default and add it to
-  // the cardRowCurrent
-
-  // Look up and see if we know this key
-  const keyInfo = lookupKnownKey(key)
-
-  let resetFunction = null // The function to reset the date to what was passed.
-
-  const col = document.createElement('div')
-  col.classList.add('defaultsCol', 'col-12', 'col-sm-6', 'col-md-4', 'col-lg-3', 'col-xl-2', 'my-2', 'py-3', 'px-1')
-  col.setAttribute('data-key', key)
-
-  const title = document.createElement('div')
-  title.classList.add('bg-secondary', 'w-100', 'px-1', 'py-1', 'rounded-top')
-  const name = document.createElement('span')
-  name.classList.add('h4', 'pe-2', 'align-middle')
-  name.innerHTML = key
-  title.append(name)
-  col.append(title)
-
-  const card = document.createElement('div')
-  card.classList.add('defaultCard', 'px-2', 'py-2', 'border', 'rounded-bottom', 'border-secondary', 'h-100', 'd-flex', 'flex-column')
-  col.append(card)
-
-  const description = document.createElement('div')
-  description.classList.add('mt-1')
-  description.innerHTML = keyInfo.description
-  card.append(description)
-
-  if (['text', 'number'].includes(keyInfo.type)) {
-    const input = document.createElement('input')
-    input.setAttribute('type', keyInfo.type)
-    input.setAttribute('value', value)
-    resetFunction = function () { $(input).val(value) }
-    input.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-control')
-    card.append(input)
-  } else if (keyInfo.type === 'bool') {
-    const select = document.createElement('select')
-    select.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-select')
-    const optionTrue = document.createElement('option')
-    optionTrue.value = 'true'
-    optionTrue.text = 'True'
-    select.appendChild(optionTrue)
-    const optionFalse = document.createElement('option')
-    optionFalse.value = 'false'
-    optionFalse.text = 'False'
-    select.appendChild(optionFalse)
-    select.value = value.toLowerCase()
-    resetFunction = function () { $(select).val(value.toLowerCase()) }
-    card.append(select)
-  } else if (keyInfo.type === 'option') {
-    const select = document.createElement('select')
-    select.classList.add('defaultsValue', 'w-100', 'mt-3', 'form-select')
-
-    keyInfo.options.forEach((option) => {
-      const optionEl = document.createElement('option')
-      optionEl.value = option
-      optionEl.innerHTML = option
-      select.appendChild(optionEl)
-    })
-    select.value = value
-    resetFunction = function () { $(select).val(value) }
-    card.append(select)
-  }
-
-  const buttonRow = document.createElement('div')
-  buttonRow.classList.add('row', 'mt-auto')
-  card.append(buttonRow)
-
-  const buttonCol1 = document.createElement('div')
-  buttonCol1.classList.add('col-6')
-  buttonRow.append(buttonCol1)
-
-  const resetButton = document.createElement('button')
-  resetButton.classList.add('btn', 'btn-warning', 'w-100')
-  resetButton.innerHTML = 'Reset'
-  resetButton.addEventListener('click', resetFunction)
-  buttonCol1.append(resetButton)
-
-  const buttonCol2 = document.createElement('div')
-  buttonCol2.classList.add('col-6')
-  buttonRow.append(buttonCol2)
-
-  const deleteButton = document.createElement('button')
-  deleteButton.classList.add('btn', 'btn-danger', 'w-100')
-  deleteButton.innerHTML = 'Delete'
-  deleteButton.addEventListener('click', function () { $(this).closest('.defaultsCol').remove() })
-  buttonCol2.append(deleteButton)
-
-  if (keyInfo.required) {
-    deleteButton.innerHTML = 'Required'
-    deleteButton.disabled = true
-  }
-
-  $('#cardRowCurrent').append(col)
-}
-
-function lookupKnownKey (key) {
-  // Search through the known keys and return a matching one, if it exists.
-
-  let keyInfo = knownKeys.filter(function (knownKey) {
-    return key === knownKey.key
-  })[0]
-  if (keyInfo == null) {
-    keyInfo = { key, type: 'text', description: '' }
-  }
-  return keyInfo
-}
-
-function getExistingKeys () {
-  // Return the keys for all the currently-created cards
-
-  const currentKeys = []
-
-  $('.defaultsCol').each(function (i) {
-    if ($(this).find('.defaultsValue').val() === '') {
-      $(this).find('.defaultsValue').val('null')
-    }
-    currentKeys.push($(this).data('key'))
-  })
-  return currentKeys
-}
-
-function updateParser (defaultsList) {
+function updateParser (update) {
   // Take a list of defaults and build the interface for editing them.
 
-  // Remove keys that don't go into defaults.ini
-  const keysToIgnore = ['availableContent',
-    'content',
-    'contentPath',
-    'dictionary',
-    'helperAddress',
-    'helperSoftwareUpdateAvailable',
-    'software_update']
-  keysToIgnore.forEach((key) => {
-    delete defaultsList[key]
-  })
-
-  const defaultsKeys = Object.keys(defaultsList)
-  defaultsKeys.forEach((key, i) => {
-    createDefaultCard(key, defaultsList[key])
-  })
+  if ('app' in update) {
+    if ('id' in update.app) {
+      document.getElementById('IDInput').value = update.app.id
+    }
+    if ('group' in update.app) {
+      document.getElementById('groupInput').value = update.app.group
+    }
+  }
+  if ('control_server' in update) {
+    if ('ip_address' in update.control_server) {
+      document.getElementById('controlServerIPInput').value = update.control_server.ip_address
+    }
+    if ('port' in update.control_server) {
+      document.getElementById('controlServerPortInput').value = update.control_server.port
+    }
+  }
+  if ('permissions' in update) {
+    if ('audio' in update.permissions) {
+      document.getElementById('permissionsAudioInput').value = String(update.permissions.audio)
+    }
+    if ('refresh' in update.permissions) {
+      document.getElementById('permissionsRefreshInput').value = String(update.permissions.refresh)
+    }
+    if ('restart' in update.permissions) {
+      document.getElementById('permissionsRestartInput').value = String(update.permissions.restart)
+    }
+    if ('shutdown' in update.permissions) {
+      document.getElementById('permissionsShutdownInput').value = String(update.permissions.shutdown)
+    } else {
+      document.getElementById('permissionsShutdownInput').value = 'false'
+    }
+    if ('sleep' in update.permissions) {
+      document.getElementById('permissionsSleepInput').value = String(update.permissions.sleep)
+    }
+  }
+  if ('smart_restart' in update) {
+    if ('state' in update.smart_restart) {
+      document.getElementById('smartRestartStateSelect').value = update.smart_restart.state
+    }
+    if ('interval' in update.smart_restart) {
+      document.getElementById('smartRestartIntervalInput').value = update.smart_restart.interval
+    }
+    if ('threshold' in update.smart_restart) {
+      document.getElementById('smartRestartThresholdInput').value = update.smart_restart.threshold
+    }
+  }
+  if ('system' in update) {
+    if ('active hours' in update.system) {
+      document.getElementById('activeHoursStartInput').value = update.system.active_hours.start
+      document.getElementById('activeHoursEndInput').value = update.system.active_hours.end
+    }
+    if ('port' in update.system) {
+      document.getElementById('remoteDisplayPortInput').value = update.system.port
+    }
+    if ('remote_display' in update.system) {
+      document.getElementById('useRemoteDisplayToggle').checked = update.system.remote_display
+    }
+    if ('standalone' in update.system) {
+      document.getElementById('useControlServerToggle').checked = !update.system.standalone
+    }
+  }
+  configureInterface()
 }
 
-function updateDefaults () {
-  // Iterate through the defaultCards and collect the new defaults.
+function saveConfiguration () {
+  // Construct an object from the user seetings and send it to the helper for saving.
 
-  const newDefaults = {}
-
-  $('.defaultsCol').each(function (i) {
-    if ($(this).find('.defaultsValue').val() === '') {
-      $(this).find('.defaultsValue').val('null')
+  const defaults = {
+    app: {},
+    system: {
+      remote_display: document.getElementById('useRemoteDisplayToggle').checked,
+      standalone: !document.getElementById('useControlServerToggle').checked
     }
-    newDefaults[$(this).data('key')] = $(this).find('.defaultsValue').val()
-  })
+  }
 
-  // Send the new defaults back to the helper for committing.
+  if (defaults.system.standalone === false) {
+    // We are using Control Server, so update relevant defaults
+    defaults.app.id = document.getElementById('IDInput').value.trim()
+    defaults.app.group = document.getElementById('groupInput').value.trim()
+    defaults.control_server = {
+      ip_address: document.getElementById('controlServerIPInput').value.trim(),
+      port: parseInt(document.getElementById('controlServerPortInput').value)
+    }
+    defaults.permissions = {
+      audio: constCommon.stringToBool(document.getElementById('permissionsAudioInput').value),
+      refresh: constCommon.stringToBool(document.getElementById('permissionsRefreshInput').value),
+      restart: constCommon.stringToBool(document.getElementById('permissionsRestartInput').value),
+      shutdown: constCommon.stringToBool(document.getElementById('permissionsShutdownInput').value),
+      sleep: constCommon.stringToBool(document.getElementById('permissionsSleepInput').value)
+    }
+    defaults.smart_restart = {
+      state: document.getElementById('smartRestartStateSelect').value,
+      interval: parseInt(document.getElementById('smartRestartIntervalInput').value),
+      threshold: parseInt(document.getElementById('smartRestartThresholdInput').value)
+    }
+    defaults.system.active_hours = {
+      start: document.getElementById('activeHoursStartInput').value.trim(),
+      end: document.getElementById('activeHoursEndInput').value.trim()
+    }
+  } else {
+    // We are not using Control Server
+    defaults.app.definition = document.getElementById('definitionSelect').value
+  }
+
+  if (defaults.system.remote_display === true) {
+    defaults.system.port = parseInt(document.getElementById('remoteDisplayPortInput').value)
+  }
+
   constCommon.makeHelperRequest({
     method: 'POST',
-    endpoint: '/rewriteDefaults',
-    params: { defaults: newDefaults }
+    endpoint: '/setDefaults',
+    params: { defaults }
   })
+    .then((result) => {
+      const el = document.getElementById('saveDefaultsButton')
+      el.classList.add('btn-success')
+      el.classList.remove('btn-primary')
+      el.innerHTML = 'Saved!'
+      setTimeout(() => {
+        console.log('here')
+        el.classList.remove('btn-success')
+        el.classList.add('btn-primary')
+        el.innerHTML = 'Save changes'
+      }, 2000)
+    })
+    .catch((result) => {
+      const el = document.getElementById('saveDefaultsButton')
+      el.classList.add('btn-danger')
+      el.classList.remove('btn-primary')
+      el.innerHTML = 'Error'
+      setTimeout(() => {
+        console.log('here')
+        el.classList.remove('btn-danger')
+        el.classList.add('btn-primary')
+        el.innerHTML = 'Save changes'
+      }, 2000)
+    })
+  console.log(defaults)
+}
+
+function configureInterface () {
+  // Check the state of various toggles and show/hide interface elements as appropriate.
+
+  // Control Server
+  if (document.getElementById('useControlServerToggle').checked === true) {
+    document.getElementById('IDInputGroup').style.display = 'block'
+    document.getElementById('groupInputGroup').style.display = 'block'
+    document.getElementById('definitionSelectGroup').style.display = 'none'
+    document.getElementById('controlServerIPInputGroup').style.display = 'block'
+    document.getElementById('controlServerPortInputGroup').style.display = 'block'
+    document.getElementById('smartRestartPane').style.display = 'block'
+    document.getElementById('permissionsPane').style.display = 'block'
+  } else {
+    document.getElementById('IDInputGroup').style.display = 'none'
+    document.getElementById('groupInputGroup').style.display = 'none'
+    document.getElementById('definitionSelectGroup').style.display = 'block'
+    document.getElementById('controlServerIPInputGroup').style.display = 'none'
+    document.getElementById('controlServerPortInputGroup').style.display = 'none'
+    document.getElementById('smartRestartPane').style.display = 'none'
+    document.getElementById('permissionsPane').style.display = 'none'
+  }
+  // Remote display
+  if (document.getElementById('useRemoteDisplayToggle').checked === true) {
+    document.getElementById('remoteDisplayPortInputGroup').style.display = 'block'
+  } else {
+    document.getElementById('remoteDisplayPortInputGroup').style.display = 'none'
+  }
+  constCommon.makeHelperRequest({
+    method: "GET",
+    endpoint: "/system/getPlatformDetails"
+  })
+    .then((result) => {
+      if (result.os === 'linux') {
+        document.getElementById('useRemoteDisplayToggle').setAttribute('disabled', true)
+      }
+    })
+
+  // Smart Restart
+  if (document.getElementById('smartRestartStateSelect').value === 'off') {
+    Array.from(document.querySelectorAll('.smart-restart-options-div')).forEach((el) => {
+      el.style.display = 'none'
+    })
+  } else {
+    Array.from(document.querySelectorAll('.smart-restart-options-div')).forEach((el) => {
+      el.style.display = 'block'
+    })
+  }
 }
 
 function loadVersion () {
@@ -275,41 +208,59 @@ function loadVersion () {
     })
 }
 
-function showAppHelpMOdal (app) {
-  // Ask the helper to send the relavent README.md file and display it in the modal
-
-  const endpointStems = {
-    dmx_control: '/dmx_control/',
-    infostation: '/InfoStation/',
-    media_browser: '/media_browser/',
-    media_player: '/media_player/',
-    timelapse_viewer: '/timelapse_viewer/',
-    timeline_explorer: '/timeline_explorer/',
-    voting_kiosk: '/voting_kiosk/',
-    word_cloud: '/word_cloud/'
-  }
+function populateAvailableData () {
+  // Get a list of available data files and populate the voting kiosk download select
 
   constCommon.makeHelperRequest({
     method: 'GET',
-    endpoint: endpointStems[app] + 'README.md',
-    rawResponse: true
+    endpoint: '/data/getAvailable'
   })
     .then((result) => {
-      const formattedText = markdownConverter.makeHtml(result)
-      // Add the formatted text
-      $('#helpTextDiv').html(formattedText)
-      // Then, search the children for images and fix the links with the right endpoints
-      $('#helpTextDiv').find('img').each((i, img) => {
-        // Strip off the http://localhost:8000/ porition
-        const src = img.src.split('/').slice(3).join('/')
-        // Rebuild the correct path
-        img.src = constCommon.config.helperAddress + endpointStems[app] + '/' + src
-        img.style.maxWidth = '100%'
-      })
-      $('#helpTextDiv').parent().parent().scrollTop(0)
-    })
+      const select = document.getElementById('votingKioskCSVDownloadSelect')
+      select.innerHTML = ''
 
-  $('#appHelpModal').modal('show')
+      result.files.forEach((file) => {
+        const split = file.split('.')
+        const noExt = split.slice(0, -1).join('.')
+        const option = new Option(noExt)
+        select.appendChild(option)
+      })
+    })
+}
+
+function downloadDataAsCSV () {
+  // Download the currently selected data file as a CSV file.
+
+  const name = document.getElementById('votingKioskCSVDownloadSelect').value
+  constCommon.makeHelperRequest({
+    method: 'POST',
+    endpoint: '/data/getCSV',
+    params: { name }
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        if (constCommon.config.remoteDisplay === false) {
+          // Ask the app to create a save dialog
+          constCommon.makeHelperRequest({
+            method: 'POST',
+            endpoint: '/app/saveFile',
+            params: {
+              data: result.csv,
+              filename: name + '.csv'
+            }
+          })
+        } else {
+          // Ask the browser to initiate a download
+          const fileBlob = new Blob([result.csv], {
+            type: 'text/plain'
+          })
+          const a = document.createElement('a')
+          a.href = window.URL.createObjectURL(fileBlob)
+          a.download = name + '.csv'
+          a.click()
+        }
+      }
+    })
 }
 
 function populateHelpTab () {
@@ -322,92 +273,119 @@ function populateHelpTab () {
   })
     .then((result) => {
       const formattedText = markdownConverter.makeHtml(result)
+
       // Add the formatted text
       $('#mainHelpTextDiv').html(formattedText)
     })
+}
+
+function populateAvailableDefinitions () {
+  // Get a list of available definitions and format it for the select.
+
+  const definitionSelect = document.getElementById('definitionSelect')
+  definitionSelect.innerHTML = ''
+
+  const optionsByApp = {}
+
+  constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getAvailableContent'
+  })
+    .then((result) => {
+      // First, create option elements and sort them into catefories by app
+      Object.keys(result.definitions).forEach((key) => {
+        const def = result.definitions[key]
+        if (def.uuid.slice(0, 9) === '__preview') return
+
+        const option = new Option(def.name, def.uuid)
+        if (def.app in optionsByApp) {
+          optionsByApp[def.app].push(option)
+        } else {
+          optionsByApp[def.app] = [option]
+        }
+      })
+      // Then, sort the categories and add them with header entries
+      Object.keys(optionsByApp).sort().forEach((app) => {
+        const header = new Option(constCommon.appNameToDisplayName(app))
+        header.setAttribute('disabled', true)
+        definitionSelect.appendChild(header)
+
+        optionsByApp[app].sort().forEach((option) => definitionSelect.appendChild(option))
+      })
+    })
+}
+
+function gotoAppLink (el) {
+  // Navigate to the link given by element el, either in the browser or in the webview
+
+  if (constCommon.config.remoteDisplay === true) {
+    // Switch webpages in the browser
+
+    const endpoint = el.getAttribute('data-web-link')
+    window.open(window.location.origin + endpoint, '_blank').focus()
+  } else {
+    // Launch the appropriate webview page in the app
+
+    const page = el.getAttribute('data-app-link')
+    let reload = false
+    if (page === 'app') {
+      reload = true
+    }
+    constCommon.makeHelperRequest({
+      method: 'POST',
+      endpoint: '/app/showWindow/' + page,
+      params: { reload }
+    })
+  }
 }
 
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'settings'
 
-// For known keys, define their options
-const knownKeys = [
-  { key: 'active_hours_end', type: 'text', required: false, description: "Some actions, such as Smart Restart, will be blocked before this time (e.g., '9 pm')." },
-  { key: 'active_hours_start', type: 'text', required: false, description: "Some actions, such as Smart Restart, will be blocked after this time (e.g., '6 am')." },
-  { key: 'allow_refresh', type: 'bool', required: false, description: 'Allow Control Server to refresh the webpage.' },
-  { key: 'allow_restart', type: 'bool', required: false, description: 'Allow the component to restart the PC.' },
-  { key: 'allow_shutdown', type: 'bool', required: false, description: 'Allow the component to shutdown the PC. This should only be enabled in Wake on LAN is set up.' },
-  { key: 'allow_sleep', type: 'bool', required: false, description: 'Allow the component to sleep the screen. This may not work on all devices.' },
-  { key: 'anydesk_id', type: 'text', required: false, description: 'If AnyDesk is configured for this device, you can add its ID, which enables a button in the web console.' },
-  { key: 'autoplay_audio', type: 'bool', required: false, description: 'Allow audio to play automatically. If this is set to true, you must have set up your web browser to allow automatic audio.' },
-  { key: 'current_exhibit', type: 'text', required: true, description: 'This will be managed automatically by Constellation.' },
-  { key: 'group', type: 'text', required: true, description: 'A user-defined grouping for this component.' },
-  { key: 'helper_port', type: 'text', required: true, description: 'The port on which this helper is operating.' },
-  { key: 'id', type: 'text', required: true, description: 'A unique name that identifies this component.' },
-  { key: 'image_duration', type: 'number', required: false, description: 'The number of seconds that each image will be shown.' },
-  { key: 'kiosk_id', type: 'text', required: false, description: 'A unique name that identifies the kiosk. Must be unique from the main component.' },
-  { key: 'kiosk_type', type: 'text', required: false, description: 'A user-defined grouping for this component.' },
-  { key: 'other_app_path', type: 'text', required: false, description: 'Set to the path to a non-standard Constellation app that you want to open from the web console. Should have the form /static/XXX.html .' },
-  { key: 'server_ip_address', type: 'text', required: true, description: 'The IP address of the Constellation Control Server that this component should connect to.' },
-  { key: 'server_port', type: 'number', required: true, description: 'The port of the Constellation Control Server that this component should connect to.' },
-  { key: 'smart_restart', type: 'option', options: ['off', 'patient', 'aggressive'], required: false, description: 'Smart Restart mode' },
-  { key: 'smart_restart_interval', type: 'number', required: false, description: 'Time in seconds to poll Control Server.' },
-  { key: 'smart_restart_threshold', type: 'number', required: false, description: 'Time in seconds since last connection before reboot should be triggered.' },
-  { key: 'sos_ip_address', type: 'text', required: false, description: 'The IP address of the Science ona Sphere control computer.' }
-]
+// Activate tooltips
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+})
 
 const markdownConverter = new showdown.Converter()
 markdownConverter.setFlavor('github')
 
-constCommon.askForDefaults()
+constCommon.askForDefaults(false)
 loadVersion()
 populateHelpTab()
-
-// showSettings == true means this was opened from the Control Server web console
-// showSettings == false means we should check-in in order to switch to a selected app
-// if (constCommon.stringToBool(constCommon.parseQueryString().get('showSettings')) === false) {
-//   constCommon.sendPing()
-//   setInterval(constCommon.sendPing, 5000)
-// }
+populateAvailableData()
+populateAvailableDefinitions()
 
 // Add event handlers
+
+// Activate app links
+Array.from(document.querySelectorAll('.app-link')).forEach((el) => {
+  el.addEventListener('click', (event) => {
+    gotoAppLink(event.target)
+  })
+})
+
 // Settings page
-$('#submitAddDefaultFromModal').click(submitAddDefaultModal)
-$('#saveDefaultButton').click(updateDefaults)
-$('#addDefaultButton').click(showAddDefaultModal)
+document.getElementById('saveDefaultsButton').addEventListener('click', (event) => {
+  saveConfiguration()
+})
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelectModal.createFileSelectionModal({ manage: true })
 })
-$('#availableKeys').change(function () {
-  populateDefaultFromOptionList()
+Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {
+  el.addEventListener('change', configureInterface)
+})
+document.getElementById('smartRestartStateSelect').addEventListener('change', (event) => {
+  configureInterface()
+})
+document.getElementById('useRemoteDisplayToggle').addEventListener('change', (event) => {
+  document.getElementById('remoteDisplayRestartRequiredWarning').style.display = 'block'
 })
 
 // Apps page
-$('#DMXControlHelpButton').click(function () {
-  showAppHelpMOdal('dmx_control')
-})
-$('#InfoStationHelpButton').click(function () {
-  showAppHelpMOdal('infostation')
-})
-$('#mediaBrowserHelpButton').click(function () {
-  showAppHelpMOdal('media_browser')
-})
-$('#mediaPlayerHelpButton').click(function () {
-  showAppHelpMOdal('media_player')
-})
-$('#timelapseViewerHelpButton').click(function () {
-  showAppHelpMOdal('timelapse_viewer')
-})
-$('#votingKioskHelpButton').click(function () {
-  showAppHelpMOdal('voting_kiosk')
-})
-$('#timelineExplorerHelpButton').click(function () {
-  showAppHelpMOdal('timeline_explorer')
-})
-$('#wordCloudHelpButton').click(function () {
-  showAppHelpMOdal('word_cloud')
-})
+document.getElementById('votingKioskCSVDownloadButton').addEventListener('click', downloadDataAsCSV)
 
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
