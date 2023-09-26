@@ -233,6 +233,7 @@ function resetInactivityTimer () {
 
   clearTimeout(attractorTimer)
   attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
+  constCommon.config.currentInteraction = true
 }
 
 function hideAttractor () {
@@ -240,8 +241,6 @@ function hideAttractor () {
 
   document.getElementById('attractorOverlay').style.display = 'none'
   document.getElementById('attractorVideo').pause()
-
-  constCommon.config.currentInteraction = true
 
   resetInactivityTimer()
 }
@@ -251,11 +250,10 @@ function showAttractor () {
 
   if (attractorAvailable) {
     document.getElementById('attractorVideo').play()
-    document.getElementById('attractorOverlay').style.opacity = 1
+    document.getElementById('attractorOverlay').style.display = 'block'
   } else {
-    document.getElementById('attractorOverlay').style.opacity = 0
+    document.getElementById('attractorOverlay').style.display = 'none'
   }
-  document.getElementById('attractorOverlay').style.display = 'block'
   adjustFontSize(-100)
   localize(defaultLang)
 
