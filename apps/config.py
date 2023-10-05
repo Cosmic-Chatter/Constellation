@@ -22,7 +22,7 @@ debug: bool = True
 
 # DMX resources
 dmx_universes: list = []
-dmx_groups: dict = []
+dmx_groups: list = []
 dmx_fixtures = []
 dmx_active: bool = False
 

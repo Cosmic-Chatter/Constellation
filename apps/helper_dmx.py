@@ -8,7 +8,6 @@ from PyDMXControl.controllers import OpenDMXController, TransmittingController, 
 from PyDMXControl.profiles.defaults import Fixture
 from pyftdi.ftdi import Ftdi
 
-
 # Constellation modules
 import config
 import helper_files
@@ -17,12 +16,12 @@ import helper_files
 class DMXUniverse:
     """A DMX controller and up to 32 fixtures."""
 
-    def __init__(self, name: str, 
-                       controller: str = "OpenDMX",
-                       device_details: dict[str, Any] = {},
-                       dynamic_frame = True,
-                       uuid_str: str = ""):
-        
+    def __init__(self, name: str,
+                 controller: str = "OpenDMX",
+                 device_details: dict[str, Any] = {},
+                 dynamic_frame=True,
+                 uuid_str: str = ""):
+
         self.name: str = name
         self.fixtures: dict[str, DMXFixture] = {}
         self.controller: TransmittingController
@@ -53,7 +52,7 @@ class DMXUniverse:
 
     def __str__(self, *args, **kwargs):
         return f"[DMXUniverse: '{self.name}' with controller '{self.controller_type}']"
-    
+
     def delete(self):
         """Remove the universe."""
 
@@ -68,8 +67,9 @@ class DMXUniverse:
 
         # Stop the controller
         self.controller.close()
-    
-    def create_fixture(self, name: str, start_channel: int, channel_list: list[str], uuid_str: str = "") -> 'DMXFixture':
+
+    def create_fixture(self, name: str, start_channel: int, channel_list: list[str],
+                       uuid_str: str = "") -> 'DMXFixture':
         """Create a fixture and add it to the universe."""
 
         if len(self.fixtures) == 32:
@@ -122,9 +122,9 @@ class DMXUniverse:
 class DMXFixture(Fixture):
     """Constellation object for a DMX fixture"""
 
-    def __init__(self, 
-                 name: str, 
-                 start_channel: int, 
+    def __init__(self,
+                 name: str,
+                 start_channel: int,
                  channel_list: list[str],
                  channel_visibility: Union[dict[str, bool], None] = None,
                  uuid_str: str = ""):
@@ -154,7 +154,7 @@ class DMXFixture(Fixture):
 
     def delete(self):
         """Remove the fixture from all its groups, then its universe."""
-        
+
         # Remove from config
         config.dmx_fixtures = [x for x in config.dmx_fixtures if x.uuid != self.uuid]
 
@@ -220,7 +220,7 @@ class DMXFixtureGroup:
         for key in self.fixtures:
             fixture = self.fixtures[key]
             fixture.groups.remove(self.uuid)
-    
+
     def add_fixtures(self, fixture_list: list[DMXFixture]):
         """Add one or more DMXFixtures to the group."""
 
@@ -261,7 +261,7 @@ class DMXFixtureGroup:
             fixture = self.fixtures[key]
             fixture.set_color(color, duration, *args, **kwargs)
 
-    def create_scene(self, name: str, values: dict[str, Any], duration:float = 0, uuid_str:str = ""):
+    def create_scene(self, name: str, values: dict[str, Any], duration: float = 0, uuid_str: str = ""):
         """Create a new scene and add it to the list."""
 
         self.scenes.append(DMXScene(name, values, duration=duration, uuid_str=uuid_str))
@@ -272,13 +272,12 @@ class DMXFixtureGroup:
         """Remove the given scene."""
 
         self.scenes = [scene for scene in self.scenes if scene.uuid != uuid_str]
-    
+
     def get_scene(self, uuid_str: str) -> Union['DMXScene', None]:
 
         for scene in self.scenes:
             if scene.uuid == uuid_str:
                 return scene
-            
 
     def show_scene(self, uuid_str: str):
         """Find the given scene and set it."""
@@ -312,7 +311,6 @@ class DMXFixtureGroup:
         fixture_list = []
         for fixture_uuid in self.fixtures:
             fixture_list.append(fixture_uuid)
-
 
         the_dict = {
             "name": self.name,
@@ -367,19 +365,19 @@ def create_group(name: str, uuid_str: str = '') -> DMXFixtureGroup:
     return new_group
 
 
-def create_universe(name: str, 
-                    controller: str = "OpenDMX", 
-                    device_details: dict[str, Any] = {}, 
+def create_universe(name: str,
+                    controller: str = "OpenDMX",
+                    device_details: dict[str, Any] = {},
                     dynamic_frame: bool = True,
                     uuid_str: str = "") -> Union[DMXUniverse, None]:
     """Create a new DMXUniverse and add it to config.dmx_universes."""
 
     try:
-        new_universe = DMXUniverse(name, 
-                                controller = controller, 
-                                device_details = device_details,
-                                dynamic_frame = dynamic_frame,
-                                uuid_str=uuid_str)
+        new_universe = DMXUniverse(name,
+                                   controller=controller,
+                                   device_details=device_details,
+                                   dynamic_frame=dynamic_frame,
+                                   uuid_str=uuid_str)
 
         config.dmx_universes.append(new_universe)
     except IOError as e:
@@ -393,7 +391,7 @@ def create_universe(name: str,
 
 def get_fixture(uuid_str: str) -> Union[DMXFixture, None]:
     """Return the matched DMXFixture, if it exists."""
-    
+
     for fixture in config.dmx_fixtures:
         if fixture.uuid == uuid_str:
             return fixture
@@ -405,11 +403,11 @@ def get_fixture(uuid_str: str) -> Union[DMXFixture, None]:
 
 
 def get_group(uuid_str: str) -> Union[DMXFixtureGroup, None]:
-    """Return the matching DMXFixtureGroupo."""
+    """Return the matching DMXFixtureGroup."""
 
     for group in config.dmx_groups:
-       if group.uuid == uuid_str:
-           return group 
+        if group.uuid == uuid_str:
+            return group
 
 
 def get_scene(uuid_str: str) -> tuple[DMXScene | None, DMXFixtureGroup | None]:
@@ -420,6 +418,7 @@ def get_scene(uuid_str: str) -> tuple[DMXScene | None, DMXFixtureGroup | None]:
             if scene.uuid == uuid_str:
                 return scene, group
     return None, None
+
 
 def get_universe(uuid_str: str) -> Union[DMXUniverse, None]:
     """Return the matching DMXUniverse."""
@@ -432,7 +431,6 @@ def get_universe(uuid_str: str) -> Union[DMXUniverse, None]:
 def write_dmx_configuration() -> None:
     """Use config.dmx_universes and config.dmx_groups to write dmx.json."""
 
-    config_dict = {}
     universe_list = []
     group_list = []
 
@@ -472,17 +470,17 @@ def read_dmx_configuration() -> tuple[bool, str]:
             "bus": entry['bus'],
             "serial_number": entry["serial_number"]
         }
-        uni = create_universe(entry["name"], 
-                              controller = entry["controller"], 
-                              device_details = details,
-                              uuid_str = entry["uuid"])
+        uni = create_universe(entry["name"],
+                              controller=entry["controller"],
+                              device_details=details,
+                              uuid_str=entry["uuid"])
         if uni is None:
             return False, "device_not_found"
-        
+
         for fix in entry["fixtures"]:
             uni.create_fixture(
                 fix["name"], fix["start_channel"], fix["channels"], uuid_str=fix["uuid"])
-            
+
     # Then, create any groups
     config.dmx_groups = []
     group_config = config_dict["groups"]
@@ -534,5 +532,5 @@ def get_available_controllers() -> tuple[bool, str, list[dict[str, Any]]]:
         elif device.vid == 5824 and device.pid == 1500:
             device_dict["model"] = "uDMX"
         device_list.append(device_dict)
-    
+
     return True, "", device_list
