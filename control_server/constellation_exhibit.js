@@ -576,7 +576,6 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
-  console.log(obj)
 
   $('#componentInfoModalTitle').html(id)
 
@@ -702,7 +701,6 @@ export function showExhibitComponentInfo (id) {
       endpoint: '/DMX/getScenes'
     })
       .then((result) => {
-        console.log(result)
         constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
         document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
       })
@@ -978,7 +976,18 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
   $('#componentInfoModalDefinitionList').empty()
 
-  Object.keys(definitions).forEach((uuid) => {
+  const sortedByName = Object.keys(definitions).sort((a, b) => {
+    try {
+      const aName = definitions[a].name.toLowerCase()
+      const bName = definitions[b].name.toLowerCase()
+      if (aName > bName) return 1
+      if (aName < bName) return -1
+    } catch {
+
+    }
+    return 0
+  })
+  sortedByName.forEach((uuid) => {
     if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
 
     const definition = definitions[uuid]

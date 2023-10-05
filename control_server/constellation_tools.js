@@ -322,3 +322,20 @@ export function arraysEqual (a, b) {
   }
   return true
 }
+
+export function sortComponentsByGroup () {
+  // Return an object where the keys are group names and values are the list
+  // of components matching that group
+
+  const result = {}
+
+  constConfig.exhibitComponents.forEach((component) => {
+    if (component.group in result) {
+      result[component.group].push(component)
+    } else {
+      result[component.group] = [component]
+    }
+  })
+
+  return result
+}

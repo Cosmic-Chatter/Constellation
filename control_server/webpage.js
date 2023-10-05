@@ -94,22 +94,42 @@ function setCurrentExhibitName (name) {
 }
 
 function updateAvailableExhibits (exhibitList) {
-  for (let i = 0; i < exhibitList.length; i++) {
-    // Check if exhibit already exists as an option. If not, add it
-    if ($(`#exhibitSelect option[value='${exhibitList[i]}']`).length === 0) {
-      $('#exhibitSelect').append(new Option(exhibitList[i], exhibitList[i]))
-      $('#exhibitDeleteSelector').append(new Option(exhibitList[i], exhibitList[i]))
-    }
-  }
-  $('#exhibitSelect').children().toArray().forEach((item, i) => {
-    if (!exhibitList.includes(item.value)) {
-      // Remove item from exhibit selecetor
-      $(item).remove()
+  // Rebuild the list of available exhibits on the settings tab
 
-      // Remove item from exhibit delete selector
-      $(`#exhibitDeleteSelector option[value="${item.value}"]`).remove()
-    }
+  const exhibitSelect = document.getElementById('exhibitSelect')
+  const exhibitDeleteSelect = document.getElementById('exhibitDeleteSelector')
+  exhibitSelect.innerHTML = ''
+  exhibitDeleteSelect.innerHTML = ''
+
+  const sortedExhibitList = exhibitList.sort((a, b) => {
+    const aVal = a.toLowerCase()
+    const bVal = b.toLowerCase()
+    if (aVal > bVal) return 1
+    if (aVal < bVal) return -1
+    return 0
   })
+  sortedExhibitList.forEach((exhibit) => {
+    exhibitSelect.appendChild(new Option(exhibit, exhibit))
+    exhibitDeleteSelect.appendChild(new Option(exhibit, exhibit))
+  })
+
+  exhibitSelect.value = constConfig.currentExhibit
+  // for (let i = 0; i < exhibitList.length; i++) {
+  //   // Check if exhibit already exists as an option. If not, add it
+  //   if ($(`#exhibitSelect option[value='${exhibitList[i]}']`).length === 0) {
+  //     $('#exhibitSelect').append(new Option(exhibitList[i], exhibitList[i]))
+  //     $('#exhibitDeleteSelector').append(new Option(exhibitList[i], exhibitList[i]))
+  //   }
+  // }
+  // $('#exhibitSelect').children().toArray().forEach((item, i) => {
+  //   if (!exhibitList.includes(item.value)) {
+  //     // Remove item from exhibit selecetor
+  //     $(item).remove()
+
+  //     // Remove item from exhibit delete selector
+  //     $(`#exhibitDeleteSelector option[value="${item.value}"]`).remove()
+  //   }
+  // })
   checkDeleteSelection()
 }
 
@@ -142,7 +162,16 @@ function populateTrackerDataSelect (data) {
   const trackerDataSelect = $('#trackerDataSelect')
   trackerDataSelect.empty()
 
-  data.sort().forEach(item => {
+  const sortedList = data.sort((a, b) => {
+    const aVal = a.toLowerCase()
+    const bVal = b.toLowerCase()
+
+    if (aVal > bVal) return 1
+    if (aVal < bVal) return -1
+    return 0
+  })
+
+  sortedList.forEach(item => {
     const name = item.split('.').slice(0, -1).join('.')
     const html = `<option value="${name}">${name}</option>`
     trackerDataSelect.append(html)
@@ -800,14 +829,14 @@ function populateManageSettingsModal () {
       $('#manageSettingsModalIPInput').val(config.ip_address)
       $('#manageSettingsModalPortInput').val(config.port)
       $('#manageSettingsModalGalleryNameInput').val(config.gallery_name)
-      
+
       let staffString
       try {
         staffString = config.assignable_staff.join(', ')
       } catch {
         staffString = ''
       }
-      
+
       $('#manageSettingsModalAssignableStaffInput').val(staffString)
       $('#manageSettingsModalDebugSelect').val(String(config.debug))
     })
@@ -830,7 +859,7 @@ function updateManageSettingsModal () {
   } catch {
     staffString = ''
   }
-  
+
   if ($('#manageSettingsModalGalleryNameInput').val().trim() !== config.gallery_name || constTools.stringToBool($('#manageSettingsModalDebugSelect').val()) !== config.debug || $('#manageSettingsModalAssignableStaffInput').val().trim() !== staffString) {
     $('#manageSettingsModalSaveButton').show()
   }
@@ -1144,6 +1173,50 @@ $('#refreshMaintenanceRecordsBUtton').click(constMaintenance.refreshMaintenanceR
 $('#componentInfoModalMaintenanceNote').on('input', function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
+
+// Analytics tab
+// =========================
+$('#createTrackerTemplateButton').click(function () {
+  createTrackerTemplate()
+})
+$('#launchTrackerButton').click(launchTracker)
+$('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
+$('#deleteTrackerTemplateButton').click(function () {
+  $('#deleteTrackerTemplateModal').modal('show')
+})
+$('#deleteTrackerTemplateFromModalButton').click(function () {
+  deleteTrackerTemplate()
+})
+$('#getAvailableTrackerDataButton').click(function () {
+  constTracker.getAvailableTrackerData(populateTrackerDataSelect)
+})
+$('#downloadTrackerDataButton').click(function () {
+  constTracker.downloadTrackerData($('#trackerDataSelect').val())
+})
+$('#showDeleteTrackerDataModalButton').click(showDeleteTrackerDataModal)
+$('#deleteTrackerDataFromModalButton').click(deleteTrackerDataFromModal)
+$('#editTrackerTemplateModalAddCounterButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Counter', 'counter')
+})
+$('#editTrackerTemplateModalAddDropdownButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Dropdown', 'dropdown')
+})
+$('#editTrackerTemplateModalAddNumberButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Number', 'number')
+})
+$('#editTrackerTemplateModalAddSliderButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Slider', 'slider')
+})
+$('#editTrackerTemplateModalAddTextButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Text', 'text')
+})
+$('#editTrackerTemplateModalAddTimerButton').click(function () {
+  editTrackerTemplateModalAddWidget('New Timer', 'timer')
+})
+$('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalDeleteWidget)
+$('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
+$('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
+
 // Settings tab
 // =========================
 // Exhibits
@@ -1220,47 +1293,6 @@ $('#manageStaticComponentsAddBUtton').click(function () {
 $('.manageStaticComponentsEditField').on('input', constExhibit.manageStaticComponentsUpdateConfigFromEdit).change(constExhibit.manageStaticComponentsUpdateConfigFromEdit)
 $('#manageStaticComponentsDeleteButton').click(constExhibit.manageStaticComponentsDeleteComponentEntry)
 $('#manageStaticComponentsModalSaveButton').click(constExhibit.updateStaticComponentsConfigurationFromModal)
-// Tracker
-$('#createTrackerTemplateButton').click(function () {
-  createTrackerTemplate()
-})
-$('#launchTrackerButton').click(launchTracker)
-$('#showEditTrackerTemplateButton').click(showEditTrackerTemplateModal)
-$('#deleteTrackerTemplateButton').click(function () {
-  $('#deleteTrackerTemplateModal').modal('show')
-})
-$('#deleteTrackerTemplateFromModalButton').click(function () {
-  deleteTrackerTemplate()
-})
-$('#getAvailableTrackerDataButton').click(function () {
-  constTracker.getAvailableTrackerData(populateTrackerDataSelect)
-})
-$('#downloadTrackerDataButton').click(function () {
-  constTracker.downloadTrackerData($('#trackerDataSelect').val())
-})
-$('#showDeleteTrackerDataModalButton').click(showDeleteTrackerDataModal)
-$('#deleteTrackerDataFromModalButton').click(deleteTrackerDataFromModal)
-$('#editTrackerTemplateModalAddCounterButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Counter', 'counter')
-})
-$('#editTrackerTemplateModalAddDropdownButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Dropdown', 'dropdown')
-})
-$('#editTrackerTemplateModalAddNumberButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Number', 'number')
-})
-$('#editTrackerTemplateModalAddSliderButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Slider', 'slider')
-})
-$('#editTrackerTemplateModalAddTextButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Text', 'text')
-})
-$('#editTrackerTemplateModalAddTimerButton').click(function () {
-  editTrackerTemplateModalAddWidget('New Timer', 'timer')
-})
-$('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalDeleteWidget)
-$('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
-$('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
 
 // Activate all popovers
 $(function () {

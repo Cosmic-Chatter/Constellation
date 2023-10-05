@@ -246,11 +246,38 @@
               <h3 class="mt-2">Appearance</h3>
               <h4>Colors</h4>
               <div class="row gy-2 mb-3">
-                <div class="col-12 col-sm-6 col-lg-4">
-                  <label for="colorPicker_background-color" class="form-label">Background</label>
-                  <div>
-                    <input id="colorPicker_background-color" type="text" class="coloris form-control" value="#22222E" data-property="background-color" data-default="#22222E">
+                <div class="col-12 col-lg-8">
+                  <div class="border rounded px-2 py-2">
+                    <label for="colorPicker_background-color" class="form-label">Background</label>
+                    <div class="row">
+                      <div class="col-6">
+                        <select class="form-select">
+                          <option value="color">Solid color</option>
+                          <option value="gradient">Color gradient</option>
+                          <option value="image">Image</option>
+                        </select>
+                      </div>
+                      <div class="col-6 d-none">
+                        <input id="colorPicker_background-color" type="text" class="coloris form-control" value="#22222E" data-property="background-color" data-default="#22222E">
+                      </div>
+                      <div class="col-3 pe-1">
+                        <div class="row gy-1">
+                          <div class="col-12">
+                            <input id="colorPicker_background-gradient1" type="text" class="coloris form-control" value="#22222E" data-property="background-gradient1" data-default="#22222E">
+                          </div>
+                          <div class="col-12">
+                            <input id="colorPicker_background-gradient2" type="text" class="coloris form-control" value="#22222E" data-property="background-gradient2" data-default="#22222E">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-3 ps-1">
+                        <label for="anglePicker" class="form-label">Angle</label>
+                        <input class="form-control" type="number" min="0", max="359">
+                      </div>
+                      
+                    </div>
                   </div>
+                  
                 </div>
                 <div class="col-12 col-sm-6 col-lg-4">
                   <label for="colorPicker_button-color" class="form-label">Buttons</label>

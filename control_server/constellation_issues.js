@@ -148,10 +148,32 @@ export function showIssueEditModal (issueType, target) {
 
   // Make sure we have all the current components listed as objections for
   // the issueRelatedComponentsSelector
+  const issueRelatedComponentsSelector = document.getElementById('issueRelatedComponentsSelector')
+  issueRelatedComponentsSelector.innerHTML = ''
+
+  const components = constTools.sortComponentsByGroup()
+  console.log(components)
+  Object.keys(components).sort().forEach((group) => {
+    const header = new Option(group)
+    header.setAttribute('disabled', true)
+    issueRelatedComponentsSelector.appendChild(header)
+    const sortedGroup = components[group].sort((a, b) => {
+      const aID = a.id.toLowerCase()
+      const bID = b.id.toLowerCase()
+      if (aID > bID) return 1
+      if (aID < bID) return -1
+      return 0
+    })
+    sortedGroup.forEach((component) => {
+      const option = new Option(component.id, component.id)
+      issueRelatedComponentsSelector.appendChild(option)
+    })
+  })
+
   for (let i = 0; i < constConfig.exhibitComponents.length; i++) {
     // Check if component already exists as an option. If not, add it
     if ($(`#issueRelatedComponentsSelector option[value='${constConfig.exhibitComponents[i].id}']`).length === 0) {
-      $('#issueRelatedComponentsSelector').append(new Option(constConfig.exhibitComponents[i].id, constConfig.exhibitComponents[i].id))
+      $('#issueRelatedComponentsSelector').append()
     }
   }
 
