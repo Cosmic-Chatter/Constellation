@@ -5,6 +5,7 @@ import logging
 import os
 import time
 from typing import Any, Union
+import uuid
 
 # Constellation imports
 import config
@@ -19,7 +20,7 @@ class Issue:
 
         self.details = {}
         now_date = datetime.datetime.now().isoformat()
-        self.details["id"] = details.get("id", str(time.time()).replace(".", ""))
+        self.details["id"] = details.get("id", str(uuid.uuid4()))
         self.details["creationDate"] = details.get("creationDate", now_date)
         self.details["lastUpdateDate"] = details.get("lastUpdateDate", now_date)
         self.details["priority"] = details.get("priority", "medium")
