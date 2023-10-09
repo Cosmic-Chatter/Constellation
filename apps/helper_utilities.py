@@ -13,7 +13,8 @@ from typing import Any, Union
 import webbrowser
 
 # Non-standard modules
-from PIL import ImageGrab, Image
+from PIL import ImageGrab
+from PIL.Image import Image
 from pydantic.utils import deep_update as update_dictionary
 
 # Constellation modules
@@ -145,12 +146,13 @@ def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def capture_screenshot() -> Image.Image | None:
+def capture_screenshot() -> Image | None:
     """Capture a screenshot of the primary display."""
 
     try:
         image = ImageGrab.grab().convert("RGB")
-    except OSError:
+    except Exception as e:
+        print("capture_screenshot: error:", e)
         image = None
     return image
 
