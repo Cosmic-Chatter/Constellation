@@ -391,7 +391,7 @@ function readHelperUpdate (update, changeApp = true) {
           console.log('Switching to app', def.app)
           let otherPath = ''
           if (def.app === 'other') otherPath = def.path
-          gotoApp(update.app, otherPath)
+          gotoApp(def.app, otherPath)
         }
       })
   }
@@ -624,7 +624,7 @@ function splitCsv (str) {
 
 export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
-
+  console.log(app)
   const appLocations = {
     dmx_control: '/dmx_control.html',
     infostation: '/infostation.html',
