@@ -374,6 +374,7 @@ document.getElementById('saveDefaultsButton').addEventListener('click', (event) 
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelectModal.createFileSelectionModal({ manage: true })
 })
+document.getElementById('definitionSelectListRefresh').addEventListener('click', populateAvailableDefinitions)
 Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {
   el.addEventListener('change', configureInterface)
 })

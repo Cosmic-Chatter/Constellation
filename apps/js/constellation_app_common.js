@@ -26,7 +26,7 @@ export const config = {
   remoteDisplay: false, // false == we are using the webview app, true == browser
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 3.3,
+  softwareVersion: 3.31,
   standalone: false, // false == we are using Control Server
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
@@ -391,7 +391,7 @@ function readHelperUpdate (update, changeApp = true) {
           console.log('Switching to app', def.app)
           let otherPath = ''
           if (def.app === 'other') otherPath = def.path
-          gotoApp(update.app, otherPath)
+          gotoApp(def.app, otherPath)
         }
       })
   }
@@ -624,7 +624,7 @@ function splitCsv (str) {
 
 export function gotoApp (app, other = '') {
   // Change the browser location to point to the given app.
-
+  console.log(app)
   const appLocations = {
     dmx_control: '/dmx_control.html',
     infostation: '/infostation.html',
