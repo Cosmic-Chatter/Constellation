@@ -248,7 +248,7 @@ def upload_thumbnail(files: list[UploadFile] = File(),
             finally:
                 file.file.close()
             # Next, generate a thumbnail
-            helper_files.create_thumbnail(filename, 'image')
+            helper_files.create_thumbnail(filename, 'image', block=True)
             # Finally, delete the source file
             os.remove(temp_path)
     return {"success": True}

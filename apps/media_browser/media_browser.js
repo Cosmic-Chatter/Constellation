@@ -435,7 +435,7 @@ function loadDefinition (def) {
       localize(defaultLang)
 
       // Send a thumbnail to the helper
-      setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
+      setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 500)
     })
 }
 

@@ -240,6 +240,9 @@ function loadDefinition (definition) {
   }
 
   getTextUpdateFromServer()
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 3000)
 }
 
 const divForWC = document.getElementById('wordCloudContainer')

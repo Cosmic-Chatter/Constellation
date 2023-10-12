@@ -74,7 +74,7 @@ function loadDefinition (definition) {
   }
   showAttractor()
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 1000)
 }
 
 function updateSourceList (matchString) {

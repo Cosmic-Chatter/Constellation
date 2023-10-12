@@ -67,8 +67,6 @@ function updateFunc (update) {
 function loadDefinition (definition) {
   // Set up a new interface to collect input
 
-  console.log(definition)
-
   // Parse the settings and make the appropriate changes
   if ('prompt' in definition.content) {
     document.getElementById('promptText').innerHTML = definition.content.prompt
@@ -155,6 +153,9 @@ function loadDefinition (definition) {
       root.style.setProperty('--' + key + '-font-adjust', value)
     })
   }
+
+  // Send a thumbnail to the helper
+  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 const Keyboard = window.SimpleKeyboard.default
