@@ -1,5 +1,5 @@
 # Standard modules
-import configparser
+import copy
 import errno
 import functools
 import psutil
@@ -8,14 +8,11 @@ import socket
 import urllib, urllib.request, urllib.error
 import shutil
 import sys
-import threading
 from typing import Any, Union
-import webbrowser
 
 # Non-standard modules
 from PIL import ImageGrab
 from PIL.Image import Image
-from pydantic.utils import deep_update as update_dictionary
 
 # Constellation modules
 import config
@@ -112,17 +109,27 @@ def update_defaults(data: dict[str, Any], cull: bool = False):
     If cull == True, remove any entries not included in 'data'
     """
 
-    prior_defaults = config.defaults.copy()
+    prior_defaults = copy.deepcopy(config.defaults)
 
     if cull is True:
         # Replace the current dictionary with the new one
-        config.defaults = data
+        new_defaults = data
     else:
         # Merge the new dictionary into the current one
-        config.defaults = deep_merge(data, prior_defaults)
+        new_defaults = copy.deepcopy(prior_defaults)
+        deep_merge(data, new_defaults)
 
+    if new_defaults == prior_defaults:
+        if config.debug:
+            print("helper_utilities.update_defaults: no changes to write.")
+        return
+
+    config.defaults = new_defaults
     defaults_path = helper_files.get_path(["configuration", "config.json"], user_file=True)
     helper_files.write_json(config.defaults, defaults_path)
+
+    if config.debug:
+        print("helper_utilities.update_defaults: update written.")
 
 
 def deep_merge(source, destination):
@@ -130,6 +137,7 @@ def deep_merge(source, destination):
 
     From https://stackoverflow.com/questions/20656135/python-deep-merge-dictionary-data/20666342#20666342
     """
+
     for key, value in source.items():
         if isinstance(value, dict):
             # get node or create one
@@ -138,7 +146,6 @@ def deep_merge(source, destination):
         else:
             destination[key] = value
 
-    return destination
 
 def clear_terminal():
     """Clear the terminal"""
