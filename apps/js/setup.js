@@ -158,6 +158,7 @@ function configureInterface () {
     document.getElementById('controlServerPortInputGroup').style.display = 'block'
     document.getElementById('smartRestartPane').style.display = 'block'
     document.getElementById('permissionsPane').style.display = 'block'
+    document.getElementById('votingKioskCSVDownloadDiv').style.display = 'none'
   } else {
     document.getElementById('IDInputGroup').style.display = 'none'
     document.getElementById('groupInputGroup').style.display = 'none'
@@ -166,6 +167,7 @@ function configureInterface () {
     document.getElementById('controlServerPortInputGroup').style.display = 'none'
     document.getElementById('smartRestartPane').style.display = 'none'
     document.getElementById('permissionsPane').style.display = 'none'
+    document.getElementById('votingKioskCSVDownloadDiv').style.display = 'block'
   }
   // Remote display
   if (document.getElementById('useRemoteDisplayToggle').checked === true) {
@@ -174,8 +176,8 @@ function configureInterface () {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'none'
   }
   constCommon.makeHelperRequest({
-    method: "GET",
-    endpoint: "/system/getPlatformDetails"
+    method: 'GET',
+    endpoint: '/system/getPlatformDetails'
   })
     .then((result) => {
       if (result.os === 'linux') {

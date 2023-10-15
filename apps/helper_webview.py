@@ -92,8 +92,8 @@ def show_webview_window(app, reload=False):
 
     # If not, create one
     webview.create_window('Constellation Apps - ' + names[app],
-                          height=600,
-                          width=800,
+                          height=720,
+                          width=1280,
                           url='http://localhost:' + str(config.defaults["system"]["port"]) + endpoints[app])
 
 

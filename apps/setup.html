@@ -391,18 +391,20 @@
                   <h3 class="card-title">Voting Kiosk</h3>
                   <p class="card-text">Collect single-question survey responses and store them on Control Server.</p>
                   <button data-app-link="voting_kiosk_setup" data-web-link="/voting_kiosk/setup.html" class="btn btn-primary mt-1 app-link">Configure</button>
-                  <br>
-                  <label for="votingKioskCSVDownloadSelect" class="form-label mt-2">
-                    Download data as CSV
-                  </label>
-                  <div class="row gy-2">
-                    <div class="col-12">
-                      <select class="form-select" id="votingKioskCSVDownloadSelect"></select>
-                    </div>
-                    <div class="col-12">
-                      <button id="votingKioskCSVDownloadButton" class="btn btn-info w-100">Download</button>
+                  <div id="votingKioskCSVDownloadDiv">
+                    <label for="votingKioskCSVDownloadSelect" class="form-label mt-2">
+                      Download data as CSV
+                    </label>
+                    <div class="row gy-2">
+                      <div class="col-12">
+                        <select class="form-select" id="votingKioskCSVDownloadSelect"></select>
+                      </div>
+                      <div class="col-12">
+                        <button id="votingKioskCSVDownloadButton" class="btn btn-info w-100">Download</button>
+                      </div>
                     </div>
                   </div>
+                  
                 </div>
               </div>
             </div>
