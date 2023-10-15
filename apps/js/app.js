@@ -18,13 +18,20 @@ constCommon.config.helperAddress = window.location.origin
 
 constCommon.askForDefaults()
   .then(() => {
+    console.log(constCommon.config)
     if (constCommon.config.standalone === false) {
       // Using Control Server
+      document.getElementById('standaloneWelcome').style.display = 'none'
+      document.getElementById('controlServerWelcome').style.display = 'block'
+      document.getElementById('controlServerAddress').innerHTML = constCommon.config.serverAddress
+
       constCommon.sendPing()
       setInterval(constCommon.sendPing, 5000)
       if (constCommon.config.connectionChecker != null) setInterval(constCommon.config.connectionChecker, 500)
     } else {
       // Not using Control Server
+      document.getElementById('standaloneWelcome').style.display = 'block'
+      document.getElementById('controlServerWelcome').style.display = 'none'
       constCommon.loadDefinition(constCommon.config.currentDefinition)
     }
   })
