@@ -1,3 +1,13 @@
+# **Constellation 4**
+__*Constellation*__ 4 expands customization for your apps and provides many quality-of-life improvements for Control Server.
+
+## Control Server
+
+## Constellation Apps
+
+### General
+- Constellation Apps now checks for software updates in standalone mode.
+
 # **Constellation 3.3**
 __*Constellation*__ 3.3 expands configuration options for many apps and further streamlines the user experience on Windows.
 
