@@ -16,7 +16,7 @@ port: int = 8000
 ip_address: str = "localhost"
 last_update_time: float = 0  # Will hold time.time() of last change to the server
 
-software_version: float = 3.3
+software_version: float = 4
 software_update_available: bool = False
 software_update_available_version: str = ""
 

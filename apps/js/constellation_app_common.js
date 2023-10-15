@@ -26,7 +26,7 @@ export const config = {
   remoteDisplay: false, // false == we are using the webview app, true == browser
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 3.31,
+  softwareVersion: 4,
   standalone: false, // false == we are using Control Server
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }
@@ -77,7 +77,7 @@ export function configureApp (opt = {}) {
   }
 }
 
-function makeRequest (opt) {
+export function makeRequest (opt) {
   // Function to make a request to a server and return a Promise with the result
   // 'opt' should be an object with all the necessry options
 

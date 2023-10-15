@@ -52,6 +52,11 @@ function updateParser (update) {
       document.getElementById('smartRestartThresholdInput').value = update.smart_restart.threshold
     }
   }
+  if ('software_update' in update && update.software_update.update_available === true) {
+    document.getElementById('showUpdateInfoButtonCol').style.display = 'block'
+  } else {
+    document.getElementById('showUpdateInfoButtonCol').style.display = 'none'
+  }
   if ('system' in update) {
     if ('active hours' in update.system) {
       document.getElementById('activeHoursStartInput').value = update.system.active_hours.start
@@ -68,6 +73,40 @@ function updateParser (update) {
     }
   }
   configureInterface()
+}
+
+function showUpdateInfoModal (details) {
+  // Populate the model with details about the update and show it.
+
+  return constCommon.makeHelperRequest({
+    method: 'GET',
+    endpoint: '/getDefaults'
+  })
+    .then((result) => {
+      console.log(result)
+      const details = result.software_update
+
+      $('#updateInfoModalCurrentVersion').html(details.current_version)
+      $('#updateInfoModalLatestVersion').html(details.available_version)
+      $('#updateInfoModalDownloadButton').attr('href', 'https://github.com/Cosmic-Chatter/Constellation/releases/tag/' + details.available_version)
+
+      // Get the changelog
+      constCommon.makeRequest({
+        method: 'GET',
+        url: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/changelog.md',
+        endpoint: '',
+        rawResponse: true
+      })
+        .then((response) => {
+          const markdownConverter = new showdown.Converter({ headerLevelStart: 4.0 })
+          markdownConverter.setFlavor('github')
+
+          const formattedText = markdownConverter.makeHtml(response)
+          $('#updateInfoModalChangelogContainer').html(formattedText)
+        })
+
+      $('#updateInfoModal').modal('show')
+    })
 }
 
 function saveConfiguration () {
@@ -370,6 +409,9 @@ Array.from(document.querySelectorAll('.app-link')).forEach((el) => {
 })
 
 // Settings page
+document.getElementById('showUpdateInfoButton').addEventListener('click', (event) => {
+  showUpdateInfoModal()
+})
 document.getElementById('saveDefaultsButton').addEventListener('click', (event) => {
   saveConfiguration()
 })
