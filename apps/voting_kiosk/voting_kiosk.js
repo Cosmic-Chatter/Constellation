@@ -235,10 +235,17 @@ function loadDefinition (definition) {
   root.style.setProperty('--button-text-color', 'white')
 
   // Then, apply the definition settings
+
+  // Color settings
   Object.keys(definition.style.color).forEach((key) => {
     const value = definition.style.color[key]
     root.style.setProperty('--' + key, value)
   })
+
+  // Backgorund settings
+  if ('background' in definition.style) {
+    constCommon.setBackground(definition.style.background, root)
+  }
 
   // Font settings
 

@@ -6,7 +6,9 @@ body {
     margin: 0px;
     padding: 0px;
     overflow: hidden;
-    background-color: var(--background-color);
+    background: var(--background-color);
+    background-size: cover;
+    background-position: center;
 }
 
 .button-col {

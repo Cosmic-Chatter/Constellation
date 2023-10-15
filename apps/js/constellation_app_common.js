@@ -832,3 +832,29 @@ export function withExtension (path, ext) {
 
   return path.split('.').slice(0, -1).join('.') + '.' + ext
 }
+
+export function setBackground (details, root) {
+  // Take the 'background' section of a definition and use it to configure the background
+
+  if (details.mode === 'color') {
+    // Solid colors
+    let color = '#22222E'
+    if ('color' in details) color = details.color
+    root.style.setProperty('--background-color', color)
+  } else if (details.mode === 'gradient') {
+    // Gradient
+    let angle = 0
+    if ('gradient_angle' in details) angle = details.gradient_angle
+    let color1 = '#22222E'
+    if ('gradient_color_1' in details) color1 = details.gradient_color_1
+    let color2 = '#22222E'
+    if ('gradient_color_2' in details) color2 = details.gradient_color_2
+
+    const grad = `linear-gradient(${angle}deg, ${color2}, ${color1})`
+    root.style.setProperty('--background-color', grad)
+  } else if (details.mode === 'image') {
+    // Image
+    console.log()
+    root.style.setProperty('--background-color', `url(../content/${details.image})`)
+  }
+}

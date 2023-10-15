@@ -1,6 +1,7 @@
 /* global bootstrap, showdown */
 
 import * as constCommon from '../js/constellation_app_common.js'
+import * as constFileSelect from '../js/constellation_file_select_modal.js'
 
 $.fn.visibleHeight = function () {
   // JQuery function to calculate the visible height of an element
@@ -50,6 +51,7 @@ export function configure (options) {
   document.getElementById('helpButton').addEventListener('click', (event) => {
     showAppHelpMOdal(config.app)
   })
+  createAdvancedColorPickers()
   createDefinitionDeletePopup()
   createEventListeners()
 }
@@ -249,6 +251,127 @@ function resizePreview () {
   }
 
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
+}
+
+function createAdvancedColorPickers () {
+  // Look for advanced-color-picker elements and fill them with the combo widget.
+
+  Array.from(document.querySelectorAll('.advanced-color-picker')).forEach((el) => {
+    const name = el.getAttribute('data-const-name')
+    createAdvancedColorPicker(el, name)
+  })
+}
+
+export function previewDefinition (automatic = false) {
+  // Save the definition to a temporary file and load it into the preview frame.
+  // If automatic == true, we've called this function beceause a definition field
+  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
+
+  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
+    return
+  }
+
+  const def = $('#definitionSaveButton').data('workingDefinition')
+  // Set the uuid to a temp one
+  def.uuid = '__preview_' + config.app
+  constCommon.writeDefinition(def)
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Configure the preview frame
+        document.getElementById('previewFrame').src = '../' + config.app + '.html?standalone=true&definition=' + '__preview_' + config.app
+      }
+    })
+}
+
+function createAdvancedColorPicker (el, name) {
+  // Create the GUI for an advanced color picker
+
+  const id = String(Math.round(Math.random() * 1e10))
+
+  const html = `
+    <div class="border rounded px-2 py-2">
+      <label class="form-label">${name}</label>
+      <div class="row">
+        <div class="col-6">
+          <select id="ACPModeSelect_${id}" class="form-select">
+            <option value="color">Solid color</option>
+            <option value="gradient">Color gradient</option>
+            <option value="image">Image</option>
+          </select>
+        </div>
+        <div id="ACPColorCol_${id}" class="col-6">
+          <input id="ACPColor_${id}" type="text" class="coloris form-control" value="#22222E">
+        </div>
+        <div id="ACPGradientCol_${id}" class="col-6 d-none">
+          <div class="row gy-1">
+            <div class="col-6">
+              <input id="ACPGradient_gradient1_${id}" type="text" class="coloris form-control" value="#22222E">
+              <input id="ACPGradient_gradient2_${id}" type="text" class="coloris form-control" value="#22222E">
+            </div>
+            <div class="col-6">
+              <label for="ACPAnglePicker_${id}" class="form-label">Angle</label>
+              <input id="ACPAnglePicker_${id}" class="form-control" type="number" min="0", max="359" value="0">
+            </div>
+          </div>
+        </div>
+        <div id="ACPImageCol_${id}" class="col-6 d-none">
+          <button id="ACPImage_${id}" class="btn btn-outline-primary w-100 text-break">Select image</button>
+        </div>
+        
+      </div>
+    </div>
+  `
+  el.innerHTML = html
+
+  // Add event listeners
+  document.getElementById(`ACPModeSelect_${id}`).addEventListener('change', (event) => {
+    const colorCol = document.getElementById(`ACPColorCol_${id}`)
+    const gradCol = document.getElementById(`ACPGradientCol_${id}`)
+    const imageCol = document.getElementById(`ACPImageCol_${id}`)
+    if (event.target.value === 'color') {
+      colorCol.classList.remove('d-none')
+      gradCol.classList.add('d-none')
+      imageCol.classList.add('d-none')
+    } else if (event.target.value === 'gradient') {
+      colorCol.classList.add('d-none')
+      gradCol.classList.remove('d-none')
+      imageCol.classList.add('d-none')
+    } else if (event.target.value === 'image') {
+      colorCol.classList.add('d-none')
+      gradCol.classList.add('d-none')
+      imageCol.classList.remove('d-none')
+    }
+    updateWorkingDefinition(['style', 'background', 'mode'], event.target.value)
+    previewDefinition(true)
+  })
+
+  document.getElementById(`ACPColor_${id}`).addEventListener('change', (event) => {
+    updateWorkingDefinition(['style', 'background', 'color'], event.target.value)
+    previewDefinition(true)
+  })
+
+  document.getElementById(`ACPImage_${id}`).addEventListener('click', (event) => {
+    constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
+      .then((result) => {
+        if (result != null && result.length > 0) {
+          updateWorkingDefinition(['style', 'background', 'image'], result[0])
+          event.target.innerHTML = result[0]
+          previewDefinition(true)
+        }
+      })
+  })
+  document.getElementById(`ACPGradient_gradient1_${id}`).addEventListener('change', (event) => {
+    updateWorkingDefinition(['style', 'background', 'gradient_color_1'], event.target.value)
+    previewDefinition(true)
+  })
+  document.getElementById(`ACPGradient_gradient2_${id}`).addEventListener('change', (event) => {
+    updateWorkingDefinition(['style', 'background', 'gradient_color_2'], event.target.value)
+    previewDefinition(true)
+  })
+  document.getElementById(`ACPAnglePicker_${id}`).addEventListener('change', (event) => {
+    updateWorkingDefinition(['style', 'background', 'gradient_angle'], event.target.value % 360)
+    previewDefinition(true)
+  })
 }
 
 const markdownConverter = new showdown.Converter()
