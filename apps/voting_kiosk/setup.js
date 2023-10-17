@@ -142,6 +142,11 @@ function editDefinition (uuid = '') {
     document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
   })
 
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.style) {
+    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+  }
+
   // Set the appropriate values for the font selects
   Object.keys(def.style.font).forEach((key) => {
     $('#fontSelect_' + key).val(def.style.font[key])

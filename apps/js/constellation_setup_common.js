@@ -253,15 +253,6 @@ function resizePreview () {
   $('#previewFrame').css('transform', 'scale(' + transformRatio + ')')
 }
 
-function createAdvancedColorPickers () {
-  // Look for advanced-color-picker elements and fill them with the combo widget.
-
-  Array.from(document.querySelectorAll('.advanced-color-picker')).forEach((el) => {
-    const name = el.getAttribute('data-const-name')
-    createAdvancedColorPicker(el, name)
-  })
-}
-
 export function previewDefinition (automatic = false) {
   // Save the definition to a temporary file and load it into the preview frame.
   // If automatic == true, we've called this function beceause a definition field
@@ -283,39 +274,52 @@ export function previewDefinition (automatic = false) {
     })
 }
 
-function createAdvancedColorPicker (el, name) {
+function createAdvancedColorPickers () {
+  // Look for advanced-color-picker elements and fill them with the combo widget.
+
+  Array.from(document.querySelectorAll('.advanced-color-picker')).forEach((el) => {
+    const name = el.getAttribute('data-constACP-name')
+    const path = el.getAttribute('data-constACP-path').split('>')
+    _createAdvancedColorPicker(el, name, path)
+  })
+}
+
+function _createAdvancedColorPicker (el, name, path) {
   // Create the GUI for an advanced color picker
+  // 'name' is the name of the picker to be displayed in the label
+  // 'path' is the definition path to be prepended to the elements.
 
   const id = String(Math.round(Math.random() * 1e10))
+  el.setAttribute('data-constACP-id', id)
 
   const html = `
     <div class="border rounded px-2 py-2">
       <label class="form-label">${name}</label>
       <div class="row">
         <div class="col-6">
-          <select id="ACPModeSelect_${id}" class="form-select">
+          <select id="ACPModeSelect_${id}" class="form-select constACP-mode">
             <option value="color">Solid color</option>
             <option value="gradient">Color gradient</option>
             <option value="image">Image</option>
           </select>
         </div>
         <div id="ACPColorCol_${id}" class="col-6">
-          <input id="ACPColor_${id}" type="text" class="coloris form-control" value="#22222E">
+          <input id="ACPColor_${id}" type="text" class="coloris form-control constACP-color" value="#22222E">
         </div>
         <div id="ACPGradientCol_${id}" class="col-6 d-none">
           <div class="row gy-1">
             <div class="col-6">
-              <input id="ACPGradient_gradient1_${id}" type="text" class="coloris form-control" value="#22222E">
-              <input id="ACPGradient_gradient2_${id}" type="text" class="coloris form-control" value="#22222E">
+              <input id="ACPGradient_gradient1_${id}" type="text" class="coloris form-control constACP-gradient1" value="#22222E">
+              <input id="ACPGradient_gradient2_${id}" type="text" class="coloris form-control constACP-gradient2" value="#22222E">
             </div>
             <div class="col-6">
               <label for="ACPAnglePicker_${id}" class="form-label">Angle</label>
-              <input id="ACPAnglePicker_${id}" class="form-control" type="number" min="0", max="359" value="0">
+              <input id="ACPAnglePicker_${id}" class="form-control constACP-angle" type="number" min="0", max="359" value="0">
             </div>
           </div>
         </div>
         <div id="ACPImageCol_${id}" class="col-6 d-none">
-          <button id="ACPImage_${id}" class="btn btn-outline-primary w-100 text-break">Select image</button>
+          <button id="ACPImage_${id}" class="btn btn-outline-primary w-100 text-break constACP-image">Select image</button>
         </div>
         
       </div>
@@ -325,28 +329,11 @@ function createAdvancedColorPicker (el, name) {
 
   // Add event listeners
   document.getElementById(`ACPModeSelect_${id}`).addEventListener('change', (event) => {
-    const colorCol = document.getElementById(`ACPColorCol_${id}`)
-    const gradCol = document.getElementById(`ACPGradientCol_${id}`)
-    const imageCol = document.getElementById(`ACPImageCol_${id}`)
-    if (event.target.value === 'color') {
-      colorCol.classList.remove('d-none')
-      gradCol.classList.add('d-none')
-      imageCol.classList.add('d-none')
-    } else if (event.target.value === 'gradient') {
-      colorCol.classList.add('d-none')
-      gradCol.classList.remove('d-none')
-      imageCol.classList.add('d-none')
-    } else if (event.target.value === 'image') {
-      colorCol.classList.add('d-none')
-      gradCol.classList.add('d-none')
-      imageCol.classList.remove('d-none')
-    }
-    updateWorkingDefinition(['style', 'background', 'mode'], event.target.value)
-    previewDefinition(true)
+    _onAdvancedColorPickerModeChange(id, path, event.target.value)
   })
 
   document.getElementById(`ACPColor_${id}`).addEventListener('change', (event) => {
-    updateWorkingDefinition(['style', 'background', 'color'], event.target.value)
+    updateWorkingDefinition([...path, 'color'], event.target.value)
     previewDefinition(true)
   })
 
@@ -354,24 +341,74 @@ function createAdvancedColorPicker (el, name) {
     constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
       .then((result) => {
         if (result != null && result.length > 0) {
-          updateWorkingDefinition(['style', 'background', 'image'], result[0])
+          updateWorkingDefinition([...path, 'image'], result[0])
           event.target.innerHTML = result[0]
           previewDefinition(true)
         }
       })
   })
   document.getElementById(`ACPGradient_gradient1_${id}`).addEventListener('change', (event) => {
-    updateWorkingDefinition(['style', 'background', 'gradient_color_1'], event.target.value)
+    updateWorkingDefinition([...path, 'gradient_color_1'], event.target.value)
     previewDefinition(true)
   })
   document.getElementById(`ACPGradient_gradient2_${id}`).addEventListener('change', (event) => {
-    updateWorkingDefinition(['style', 'background', 'gradient_color_2'], event.target.value)
+    updateWorkingDefinition([...path, 'gradient_color_2'], event.target.value)
     previewDefinition(true)
   })
   document.getElementById(`ACPAnglePicker_${id}`).addEventListener('change', (event) => {
-    updateWorkingDefinition(['style', 'background', 'gradient_angle'], event.target.value % 360)
+    updateWorkingDefinition([...path, 'gradient_angle'], event.target.value % 360)
     previewDefinition(true)
   })
+}
+
+function _onAdvancedColorPickerModeChange (id, path, value) {
+  // Configure the GUI based on the selected value
+
+  const colorCol = document.getElementById(`ACPColorCol_${id}`)
+  const gradCol = document.getElementById(`ACPGradientCol_${id}`)
+  const imageCol = document.getElementById(`ACPImageCol_${id}`)
+
+  if (value === 'color') {
+    colorCol.classList.remove('d-none')
+    gradCol.classList.add('d-none')
+    imageCol.classList.add('d-none')
+  } else if (value === 'gradient') {
+    colorCol.classList.add('d-none')
+    gradCol.classList.remove('d-none')
+    imageCol.classList.add('d-none')
+  } else if (value === 'image') {
+    colorCol.classList.add('d-none')
+    gradCol.classList.add('d-none')
+    imageCol.classList.remove('d-none')
+  }
+  updateWorkingDefinition([...path, 'mode'], value)
+  previewDefinition(true)
+}
+
+function _setAdvancedColorPickerMode (mode) {
+
+}
+
+export function updateAdvancedColorPicker (path, details) {
+  // Update the color picker defined by path using the values in details.
+
+  const el = document.querySelector(`.advanced-color-picker[data-constACP-path="${path}"]`)
+
+  el.querySelector('.constACP-mode').value = details.mode
+  const solidColorPicker = el.querySelector('.constACP-color')
+  solidColorPicker.value = details.color
+  solidColorPicker.dispatchEvent(new Event('input', { bubbles: true }))
+  const gradientPicker1 = el.querySelector('.constACP-gradient1')
+  gradientPicker1.value = details.gradient_color_1
+  gradientPicker1.dispatchEvent(new Event('input', { bubbles: true }))
+  const gradientPicker2 = el.querySelector('.constACP-gradient2')
+  gradientPicker2.value = details.gradient_color_2
+  gradientPicker2.dispatchEvent(new Event('input', { bubbles: true }))
+  el.querySelector('.constACP-angle').value = details.gradient_angle
+  el.querySelector('.constACP-image').innerHTML = details.image
+
+  const id = el.getAttribute('data-constACP-id')
+  _onAdvancedColorPickerModeChange(id, path, details.mode)
 }
 
 const markdownConverter = new showdown.Converter()

@@ -5,6 +5,9 @@
 ### General
 - Add ability to edit exhibits without setting them
 
+### Analytics
+- Record app analytics
+
 ### Flexible Tracker
 - Move to Apps
 - Real-time preview when setting up definition
