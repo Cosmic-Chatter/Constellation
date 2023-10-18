@@ -1,5 +1,0 @@
-{"action": "gotoPage", "target": "home", "idle": "true", "datetime": "2021-09-10T11:04:30.326"}
-{"target": "attractor", "action": "showAttractor", "idle": "true", "datetime": "2021-09-10T11:04:33.313"}
-{"action": "gotoPage", "target": "response", "idle": "false", "datetime": "2021-09-11T08:32:35.062"}
-{"action": "gotoPage", "target": "home", "idle": "true", "datetime": "2021-09-11T08:33:51.357"}
-{"target": "attractor", "action": "showAttractor", "idle": "true", "datetime": "2021-09-11T08:33:54.326"}
