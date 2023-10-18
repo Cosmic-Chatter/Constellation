@@ -203,15 +203,17 @@ function loadDefinition (definition) {
     if ('prompt' in definition.appearance.color) {
       root.style.setProperty('--prompt-color', definition.appearance.color.prompt)
     }
-    if ('background' in definition.appearance.color) {
-      root.style.setProperty('--background-color', definition.appearance.color.background)
-      WordCloudOptions.backgroundColor = definition.appearance.color.background
-    }
     if ('words' in definition.appearance.color) {
       WordCloudOptions.color = definition.appearance.color.words
     } else {
       WordCloudOptions.color = 'random-dark'
     }
+  }
+
+  // Backgorund settings
+  if ('background' in definition.appearance) {
+    constCommon.setBackground(definition.appearance.background, root, '#fff')
+    WordCloudOptions.backgroundColor = 'transparent'
   }
 
   // Font settings

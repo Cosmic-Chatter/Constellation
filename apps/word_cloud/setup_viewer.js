@@ -16,6 +16,10 @@ function clearDefinitionInput (full = true) {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
           appearance: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            },
             text_size: {}
           },
           attractor: {},
@@ -27,6 +31,10 @@ function clearDefinitionInput (full = true) {
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
           appearance: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            },
             text_size: {}
           },
           attractor: {},
@@ -55,11 +63,18 @@ function clearDefinitionInput (full = true) {
   document.getElementById('cloudShapeSelect').value = 'circle'
 
   // Reset color options
-  const colorInputs = ['background', 'prompt']
+  const colorInputs = ['prompt']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+
+  constSetup.updateAdvancedColorPicker('appearance>background', {
+    mode: 'color',
+    color: '#fff',
+    gradient_color_1: '#fff',
+    gradient_color_2: '#fff'
   })
 
   // Font details
@@ -406,5 +421,6 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'word_cloud_viewer',
+  clearDefinition: clearDefinitionInput,
   loadDefinition: editDefinition
 })

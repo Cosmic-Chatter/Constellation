@@ -125,6 +125,11 @@ function loadDefinition (definition) {
     })
   }
 
+  // Backgorund settings
+  if ('background' in definition.appearance) {
+    constCommon.setBackground(definition.appearance.background, root, '#fff')
+  }
+
   // Font settings
   // First, reset to defaults (in case a style option doesn't exist in the definition)
   root.style.setProperty('--prompt-font', 'prompt-default')

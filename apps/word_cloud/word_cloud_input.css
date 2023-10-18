@@ -34,7 +34,9 @@ html {
   body {
     overflow-x: hidden;
     height: 100%;
-    background-color: var(--background-color);
+    background: var(--background-color);
+    background-size: cover;
+    background-position: center
   }
   #inputField {
     font-size: 3vmax;

@@ -15,7 +15,12 @@ function clearDefinitionInput (full = true) {
       .then((response) => {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
-          appearance: {},
+          appearance: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            }
+          },
           attractor: {},
           behavior: {},
           content: {
@@ -24,7 +29,12 @@ function clearDefinitionInput (full = true) {
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
-          appearance: {},
+          appearance: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            }
+          },
           attractor: {},
           behavior: {},
           content: {
@@ -49,11 +59,17 @@ function clearDefinitionInput (full = true) {
   // document.getElementById('attractorInput_attractor_timeout').value = 30
 
   // Reset color options
-  const colorInputs = ['background', 'input', 'input-background', 'submit', 'submit-background', 'clear', 'clear-background', 'prompt', 'keyboard-key', 'keyboard-key-background', 'keyboard-background']
+  const colorInputs = ['input', 'input-background', 'submit', 'submit-background', 'clear', 'clear-background', 'prompt', 'keyboard-key', 'keyboard-key-background', 'keyboard-background']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  constSetup.updateAdvancedColorPicker('appearance>background', {
+    mode: 'color',
+    color: '#fff',
+    gradient_color_1: '#fff',
+    gradient_color_2: '#fff'
   })
 
   // Font details
@@ -106,6 +122,11 @@ function editDefinition (uuid = '') {
     })
   }
 
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.appearance) {
+    constSetup.updateAdvancedColorPicker('appearance>background', def.appearance.background)
+  }
+
   // Fonts
   if ('font' in def.appearance) {
     Object.keys(def.appearance.font).forEach((key) => {
@@ -113,8 +134,10 @@ function editDefinition (uuid = '') {
     })
   }
 
-  if ('prompt' in def.appearance.text_size) {
-    document.getElementById('promptTextSizeSlider').value = def.appearance.text_size.prompt
+  if ('text_size' in def.appearance) {
+    if ('prompt' in def.appearance.text_size) {
+      document.getElementById('promptTextSizeSlider').value = def.appearance.text_size.prompt
+    }
   }
 
   // Configure the preview frame
@@ -350,5 +373,6 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'word_cloud_input',
+  clearDefinition: clearDefinitionInput,
   loadDefinition: editDefinition
 })

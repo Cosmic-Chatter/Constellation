@@ -78,6 +78,10 @@ function clearDefinitionInput (full = true) {
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#22222E'
+  })
 
   // Reset font face options
   const fontInputs = ['header', 'subheader', 'footer', 'subfooter', 'button']

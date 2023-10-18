@@ -18,6 +18,7 @@ $.fn.visibleHeight = function () {
 
 export const config = {
   availableDefinitions: {},
+  clearDefinition: null,
   loadDefinition: null
 }
 
@@ -26,6 +27,7 @@ export function configure (options) {
 
   const defaults = {
     app: null,
+    clearDefinition: null,
     loadDefinition: null
   }
 
@@ -36,7 +38,16 @@ export function configure (options) {
   if (options.loadDefinition == null) throw new Error("The options must include the 'loadDefinition' field referencing the appropriate function.")
 
   config.app = options.app
+  config.clearDefinition = options.clearDefinition
   config.loadDefinition = options.loadDefinition
+
+  document.getElementById('helpButton').addEventListener('click', (event) => {
+    showAppHelpMOdal(config.app)
+  })
+
+  createAdvancedColorPickers()
+  createDefinitionDeletePopup()
+  createEventListeners()
 
   constCommon.getAvailableDefinitions(options.app)
     .then((response) => {
@@ -47,13 +58,6 @@ export function configure (options) {
     .then(() => {
       configureFromQueryString()
     })
-
-  document.getElementById('helpButton').addEventListener('click', (event) => {
-    showAppHelpMOdal(config.app)
-  })
-  createAdvancedColorPickers()
-  createDefinitionDeletePopup()
-  createEventListeners()
 }
 
 function showAppHelpMOdal (app) {
@@ -123,6 +127,8 @@ export function configureFromQueryString () {
   if (searchParams.get('definition') != null) {
     config.loadDefinition(searchParams.get('definition'))
     document.getElementById('availableDefinitionSelect').value = searchParams.get('definition')
+  } else {
+    if (config.clearDefinition != null) config.clearDefinition()
   }
 }
 
@@ -385,27 +391,36 @@ function _onAdvancedColorPickerModeChange (id, path, value) {
   previewDefinition(true)
 }
 
-function _setAdvancedColorPickerMode (mode) {
-
-}
-
 export function updateAdvancedColorPicker (path, details) {
   // Update the color picker defined by path using the values in details.
 
   const el = document.querySelector(`.advanced-color-picker[data-constACP-path="${path}"]`)
+  if (el.childNodes.length === 0) return
 
-  el.querySelector('.constACP-mode').value = details.mode
-  const solidColorPicker = el.querySelector('.constACP-color')
-  solidColorPicker.value = details.color
-  solidColorPicker.dispatchEvent(new Event('input', { bubbles: true }))
-  const gradientPicker1 = el.querySelector('.constACP-gradient1')
-  gradientPicker1.value = details.gradient_color_1
-  gradientPicker1.dispatchEvent(new Event('input', { bubbles: true }))
-  const gradientPicker2 = el.querySelector('.constACP-gradient2')
-  gradientPicker2.value = details.gradient_color_2
-  gradientPicker2.dispatchEvent(new Event('input', { bubbles: true }))
-  el.querySelector('.constACP-angle').value = details.gradient_angle
-  el.querySelector('.constACP-image').innerHTML = details.image
+  if ('mode' in details) {
+    el.querySelector('.constACP-mode').value = details.mode
+  }
+  if ('color' in details) {
+    const solidColorPicker = el.querySelector('.constACP-color')
+    solidColorPicker.value = details.color
+    solidColorPicker.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  if ('gradient_color_1' in details) {
+    const gradientPicker1 = el.querySelector('.constACP-gradient1')
+    gradientPicker1.value = details.gradient_color_1
+    gradientPicker1.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  if ('gradient_color_2' in details) {
+    const gradientPicker2 = el.querySelector('.constACP-gradient2')
+    gradientPicker2.value = details.gradient_color_2
+    gradientPicker2.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  if ('gradient_angle' in details) {
+    el.querySelector('.constACP-angle').value = details.gradient_angle
+  }
+  if ('image' in details) {
+    el.querySelector('.constACP-image').innerHTML = details.image
+  }
 
   const id = el.getAttribute('data-constACP-id')
   _onAdvancedColorPickerModeChange(id, path, details.mode)
