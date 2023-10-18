@@ -9,6 +9,9 @@ __*Constellation*__ 4 expands customization for your apps and provides many qual
 - Constellation Apps now checks for software updates in standalone mode.
 - In addition to a solid color, you can now set app backgrounds to an image or a two-color gradient.
 
+### Word Cloud
+- The cloud can now be displayed in uppercase in addition to lowercase.
+
 # **Constellation 3.3**
 __*Constellation*__ 3.3 expands configuration options for many apps and further streamlines the user experience on Windows.
 

@@ -39,4 +39,3 @@
 ### Word Cloud
 - Ability to append the profanity list
 - Option to refresh the cloud only when a new addition is made
-- Option to show words as all caps, all lower, or preserve capitalization

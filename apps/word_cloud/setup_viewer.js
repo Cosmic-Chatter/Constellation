@@ -20,6 +20,7 @@ function clearDefinitionInput (full = true) {
               mode: 'color',
               color: '#fff'
             },
+            text_case: 'lowercase',
             text_size: {}
           },
           attractor: {},
@@ -35,6 +36,7 @@ function clearDefinitionInput (full = true) {
               mode: 'color',
               color: '#fff'
             },
+            text_case: 'lowercase',
             text_size: {}
           },
           attractor: {},
@@ -61,6 +63,7 @@ function clearDefinitionInput (full = true) {
   // Reset word cloud options
   document.getElementById('wordRotationSelect').value = 'horizontal'
   document.getElementById('cloudShapeSelect').value = 'circle'
+  document.getElementById('textCaseSelect').value = 'lowercase'
 
   // Reset color options
   const colorInputs = ['prompt']
@@ -132,6 +135,11 @@ function editDefinition (uuid = '') {
     document.getElementById('cloudShapeSelect').value = def.appearance.cloud_shape
   } else {
     document.getElementById('cloudShapeSelect').value = 'circle'
+  }
+  if ('text_case' in def.appearance) {
+    document.getElementById('textCaseSelect').value = def.appearance.text_case
+  } else {
+    document.getElementById('textCaseSelect').value = 'lowercase'
   }
 
   // Set the appropriate values for the color pickers
@@ -358,9 +366,14 @@ document.getElementById('wordRotationSelect').addEventListener('change', (event)
   constSetup.updateWorkingDefinition(['appearance', 'rotation'], event.target.value)
   previewDefinition(true)
 })
-
+// Shape
 document.getElementById('cloudShapeSelect').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['appearance', 'cloud_shape'], event.target.value)
+  previewDefinition(true)
+})
+// Text case
+document.getElementById('textCaseSelect').addEventListener('change', (event) => {
+  constSetup.updateWorkingDefinition(['appearance', 'text_case'], event.target.value)
   previewDefinition(true)
 })
 

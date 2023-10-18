@@ -10,7 +10,10 @@ function cleanText (text) {
   const simpleText = text.toLowerCase().replace(/'\B|[^a-z'? ]/g, ' ')
   $('#profanityCheckingDiv').html(simpleText).profanityFilter({ customSwears: swearList, replaceWith: '#' })
   $('#profanityCheckingDiv').html($('#profanityCheckingDiv').html().replace(/#/g, ''))
-  return ($('#profanityCheckingDiv').html().trim())
+
+  let cleanText = $('#profanityCheckingDiv').html().trim()
+  if (textCase === 'uppercase') cleanText = cleanText.toUpperCase()
+  return cleanText
 }
 
 function countText (text) {
@@ -76,7 +79,15 @@ function getTextUpdateFromServer () {
     // If this app is running ina preview frame for setup, we won't have a valid
     // server IP address. Default to the built-in word list for testing.
     if (constCommon.config.serverAddress === '') {
-      WordCloudOptions.list = createWordList(animalDict)
+      let wordDict = {}
+      if (textCase === 'uppercase') {
+        Object.keys(animalDict).forEach((key) => {
+          wordDict[key.toUpperCase()] = animalDict[key]
+        })
+      } else {
+        wordDict = structuredClone(animalDict)
+      }
+      WordCloudOptions.list = createWordList(wordDict)
       createWordCloud()
       return
     }
@@ -189,6 +200,11 @@ function loadDefinition (definition) {
   } else {
     WordCloudOptions.shape = 'circle'
   }
+  if ('text_case' in definition.appearance) {
+    textCase = definition.appearance.text_case
+  } else {
+    textCase = 'lowercase'
+  }
 
   const root = document.querySelector(':root')
 
@@ -269,6 +285,7 @@ const WordCloudOptions = {
 let currentDefinition = ''
 let collectionName = 'default'
 let textUpdateRate = 15
+let textCase = 'lowercase'
 
 constCommon.configureApp({
   name: 'word_cloud_viewer',
