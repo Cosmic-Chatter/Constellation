@@ -24,6 +24,13 @@ function loadDefinition (def) {
   def.content_order.forEach((uuid) => {
     constCommon.config.sourceList.push(def.content[uuid])
   })
+
+  // Backgorund settings
+  const root = document.querySelector(':root')
+  if ('style' in def && 'background' in def.style) {
+    constCommon.setBackground(def.style.background, root, '#000')
+  }
+
   gotoSource(0)
 }
 

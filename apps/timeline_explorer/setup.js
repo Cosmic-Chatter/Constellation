@@ -18,6 +18,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              mode: 'color',
+              color: '#719abf'
+            },
             color: {},
             font: {}
           }
@@ -26,6 +30,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              mode: 'color',
+              color: '#719abf'
+            },
             color: {},
             font: {}
           }
@@ -50,11 +58,18 @@ function clearDefinitionInput (full = true) {
   document.getElementById('missingContentWarningField').innerHTML = ''
 
   // Reset style options
-  const colorInputs = ['backgroundColor', 'textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
+  const colorInputs = ['textColor', 'headerColor', 'footerColor', 'itemColor', 'lineColor']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#719abf',
+    gradient_color_1: '#719abf',
+    gradient_color_2: '#719abf'
   })
 }
 
@@ -89,6 +104,11 @@ function editDefinition (uuid = '') {
     $('#colorPicker_' + key).val(def.style.color[key])
     document.querySelector('#colorPicker_' + key).dispatchEvent(new Event('input', { bubbles: true }))
   })
+
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.style) {
+    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+  }
 
   // Set the appropriate values for the font selects
   Object.keys(def.style.font).forEach((key) => {
@@ -912,5 +932,6 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'timeline_explorer',
+  clearDefinition: clearDefinitionInput,
   loadDefinition: editDefinition
 })

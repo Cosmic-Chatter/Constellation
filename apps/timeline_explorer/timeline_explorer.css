@@ -8,7 +8,7 @@
 
 :root {
   /* Colors */
-  --backgroundColor: #719abf;
+  --background-color: #719abf;
   --headerColor: #22222E;
   --footerColor: #22222E;
   --itemColor: #393A5A;
@@ -49,7 +49,9 @@
 }
 
 body {
-  background: var(--backgroundColor);
+  background: var(--background-color);
+  background-size: cover;
+  background-position: center;
   color: var(--textColor);
   overflow-x: hidden;
   overflow-y: hidden;
@@ -97,7 +99,7 @@ __________________________________________________*/
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
 .timeline ul {
-  background: var(--backgroundColor);
+  background: transparent;
   padding: 50px 0;
 }
 

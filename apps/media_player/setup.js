@@ -1,4 +1,4 @@
-/* global bootstrap */
+/* global bootstrap, Coloris */
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
@@ -17,12 +17,24 @@ function clearDefinitionInput (full = true) {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
           content: {},
-          content_order: []
+          content_order: [],
+          style: {
+            background: {
+              mode: 'color',
+              color: '#000'
+            }
+          }
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
           content: {},
-          content_order: []
+          content_order: [],
+          style: {
+            background: {
+              mode: 'color',
+              color: '#000'
+            }
+          }
         })
         previewDefinition()
       })
@@ -30,6 +42,13 @@ function clearDefinitionInput (full = true) {
 
   // Definition details
   $('#definitionNameInput').val('')
+
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#000',
+    gradient_color_1: '#000',
+    gradient_color_2: '#000'
+  })
 
   document.getElementById('itemList').innerHTML = ''
 }
@@ -51,6 +70,22 @@ function editDefinition (uuid = '') {
 
   $('#definitionNameInput').val(def.name)
   rebuildItemList()
+
+  if ('style' in def === false) {
+    def.style = {
+      background: {
+        mode: 'color',
+        color: '#000'
+      }
+    }
+    constSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
+    constSetup.updateWorkingDefinition(['style', 'background', 'color'], '#000')
+  }
+
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.style) {
+    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+  }
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../media_player.html?standalone=true&definition=' + def.uuid
@@ -394,6 +429,26 @@ tooltipTriggerList.map(function (tooltipTriggerEl) {
   return new bootstrap.Tooltip(tooltipTriggerEl)
 })
 
+// Set up the color pickers
+function setUpColorPickers () {
+  Coloris({
+    el: '.coloris',
+    theme: 'pill',
+    themeMode: 'dark',
+    formatToggle: false,
+    clearButton: false,
+    swatches: [
+      '#000',
+      '#22222E',
+      '#393A5A',
+      '#719abf',
+      '#fff'
+    ]
+  })
+}
+// Call with a slight delay to make sure the elements are loaded
+setTimeout(setUpColorPickers, 100)
+
 // Add event listeners
 // -------------------------------------------------------------
 
@@ -420,5 +475,6 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'media_player',
+  clearDefinition: clearDefinitionInput,
   loadDefinition: editDefinition
 })

@@ -37,8 +37,15 @@ function loadDefinition (def) {
 
   // Then, apply the definition settings
   Object.keys(def.style.color).forEach((key) => {
+    // Fix for change from backgroundColor to background-color in v4
+    if (key === 'backgroundColor') key = 'background-color'
     document.documentElement.style.setProperty('--' + key, def.style.color[key])
   })
+
+  // Backgorund settings
+  if ('background' in def.style) {
+    constCommon.setBackground(def.style.background, root, '#719abf')
+  }
 
   // Font
 

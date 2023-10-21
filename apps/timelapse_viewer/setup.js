@@ -17,12 +17,24 @@ function clearDefinitionInput (full = true) {
         $('#definitionSaveButton').data('initialDefinition', {
           uuid: response.uuid,
           attractor: {},
-          behavior: {}
+          behavior: {},
+          style: {
+            background: {
+              mode: 'color',
+              color: '#22222E'
+            }
+          }
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
           attractor: {},
-          behavior: {}
+          behavior: {},
+          style: {
+            background: {
+              mode: 'color',
+              color: '#22222E'
+            }
+          }
         })
         previewDefinition(false)
       })
@@ -49,6 +61,14 @@ function clearDefinitionInput (full = true) {
   document.getElementById('attractorInput_text_color').value = '#fff'
   document.querySelector('#attractorInput_text_color').dispatchEvent(new Event('input', { bubbles: true }))
   document.getElementById('attractorInput_font').value = '../_fonts/OpenSans-Bold.ttf'
+
+  // Appearance details
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#22222E',
+    gradient_color_1: '#22222E',
+    gradient_color_2: '#22222E'
+  })
 }
 
 function createNewDefinition () {
@@ -92,6 +112,11 @@ function editDefinition (uuid = '') {
     } else {
       el = document.getElementById('attractorInput_' + key)
       el.value = def.attractor[key]
+    }
+
+    // Set the appropriate values for any advanced color pickers
+    if ('background' in def.style) {
+      constSetup.updateAdvancedColorPicker('style>background', def.style.background)
     }
 
     if (['attractor_background', 'text_color'].includes(key)) {
@@ -545,5 +570,6 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'timelapse_viewer',
+  clearDefinition: clearDefinitionInput,
   loadDefinition: editDefinition
 })

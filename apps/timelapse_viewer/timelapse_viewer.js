@@ -72,6 +72,12 @@ function loadDefinition (definition) {
   } else {
     root.style.setProperty('--attractor-text-color', 'white')
   }
+
+  // Backgorund settings
+  if ('background' in definition.style) {
+    constCommon.setBackground(definition.style.background, root, '#22222E')
+  }
+
   showAttractor()
   // Send a thumbnail to the helper
   setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 1000)

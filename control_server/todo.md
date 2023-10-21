@@ -4,6 +4,7 @@
 
 ### General
 - Add ability to edit exhibits without setting them
+- Move static component editing to _Components_ tab
 
 ### Analytics
 - Record app analytics
@@ -15,6 +16,8 @@
 ### Maintenance
 - Add ability to mark issue as resolved
 - Connection status history
+- Ability to add multiple media to an issue
+- See issue history in component info modal
 
 ## Constellation Apps
 
