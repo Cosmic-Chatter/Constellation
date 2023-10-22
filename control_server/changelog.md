@@ -17,6 +17,7 @@ __*Constellation*__ 4 expands customization for your apps and provides many qual
 
 ### Word Cloud
 - The cloud can now be displayed in uppercase in addition to lowercase.
+- Add to the list of words that are removed from the cloud.
 
 # **Constellation 3.3**
 __*Constellation*__ 3.3 expands configuration options for many apps and further streamlines the user experience on Windows.

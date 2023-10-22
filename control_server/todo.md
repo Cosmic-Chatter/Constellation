@@ -29,6 +29,9 @@
 - Rename fixtures
 - *Tap to hide* hint for fixture widgets
 
+### Media Browser
+- Ability to filter results
+
 ### Media Player
 - Option for a watermark
 
@@ -40,5 +43,4 @@
 - Separate definition name and collection name
 
 ### Word Cloud
-- Ability to append the profanity list
 - Option to refresh the cloud only when a new addition is made

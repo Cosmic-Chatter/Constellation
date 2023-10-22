@@ -150,6 +150,11 @@ function editDefinition (uuid = '') {
     })
   }
 
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.appearance) {
+    constSetup.updateAdvancedColorPicker('appearance>background', def.appearance.background)
+  }
+
   // Fonts
   if ('font' in def.appearance) {
     Object.keys(def.appearance.font).forEach((key) => {
@@ -302,6 +307,38 @@ function populateFontSelects () {
     })
 }
 
+function showExcludedWordsModal () {
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const el = document.getElementById('excludedWordsInput')
+  if ('excluded_words_raw' in workingDefinition.behavior) {
+    el.value = workingDefinition.behavior.excluded_words_raw
+  } else {
+    el.value = ''
+  }
+
+  $('#excludedWordsModal').modal('show')
+}
+
+function updateExcludedWordsList () {
+  // Use the input field from the modal to update the working definition.
+
+  const text = document.getElementById('excludedWordsInput').value
+  constSetup.updateWorkingDefinition(['behavior', 'excluded_words_raw'], text)
+
+  const lines = text.split('\n')
+  const words = []
+  lines.forEach((line) => {
+    const wordSplit = line.split(',')
+    wordSplit.forEach((word) => {
+      words.push(word.trim().toLowerCase())
+    })
+  })
+  constSetup.updateWorkingDefinition(['behavior', 'excluded_words'], words)
+
+  $('#excludedWordsModal').modal('hide')
+}
+
 // Set up the color pickers
 function setUpColorPickers () {
   Coloris({
@@ -351,14 +388,8 @@ document.getElementById('promptInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['content', 'prompt'], event.target.value)
   previewDefinition(true)
 })
-
-Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
-  el.addEventListener('change', (event) => {
-    const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['content', 'localization', property], event.target.value)
-    previewDefinition(true)
-  })
-})
+document.getElementById('showExcludedWordsModalButton').addEventListener('click', showExcludedWordsModal)
+document.getElementById('excludedWordsListSaveButton').addEventListener('click', updateExcludedWordsList)
 
 // Appearance
 // Rotation

@@ -13,6 +13,7 @@ function cleanText (text) {
 
   let cleanText = $('#profanityCheckingDiv').html().trim()
   if (textCase === 'uppercase') cleanText = cleanText.toUpperCase()
+
   return cleanText
 }
 
@@ -20,7 +21,7 @@ function countText (text) {
   // Segment the text into words and count word frequency, attempting to
   // combine different variants of the same word.
 
-  const ignoreList = ['a', 'about', 'all', 'also', 'am', 'and', 'as', 'at', 'be',
+  const commonList = ['a', 'about', 'all', 'also', 'am', 'and', 'as', 'at', 'be',
     'because', 'but', 'by', 'can', 'come', 'could', 'even',
     'find', 'for', 'from', 'get', 'go', 'have',
     'here', 'how', 'i', 'if', 'in',
@@ -29,6 +30,8 @@ function countText (text) {
     'only', 'or', 'so', 'some', 'than', 'that', 'the', 'their',
     'them', 'then', 'there', 'these', 'they', 'thing',
     'this', 'those', 'to', 'very', 'with', 'which', 'would']
+
+  const ignoreList = [...excludedWordList, ...commonList]
 
   const result = {}
 
@@ -161,6 +164,10 @@ function loadDefinition (definition) {
     collectionName = 'default'
   }
 
+  if ('excluded_words' in definition.behavior) {
+    excludedWordList = definition.behavior.excluded_words
+  } else excludedWordList = []
+
   if ('refresh_rate' in definition.behavior) {
     const newRate = parseFloat(definition.behavior.refresh_rate)
     if (newRate !== textUpdateRate) {
@@ -286,6 +293,7 @@ let currentDefinition = ''
 let collectionName = 'default'
 let textUpdateRate = 15
 let textCase = 'lowercase'
+let excludedWordList
 
 constCommon.configureApp({
   name: 'word_cloud_viewer',
