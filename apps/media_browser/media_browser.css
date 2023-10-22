@@ -1,6 +1,6 @@
 :root {
     /* Colors */
-    --backgroundColor: white;
+    --background-color: white;
     --titleColor: black;
 
     /* Font faces */
@@ -54,7 +54,10 @@ html {
 }
 body {
     overflow: hidden;
-    background-color: var(--backgroundColor);
+    background: var(--background-color);
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
 }
 .card-body {
 }
@@ -147,6 +150,7 @@ body {
 }
 #displayPane {
     overflow: hidden;
+    height: 100vh;
 }
 #filterRegion {
     height: 100%;

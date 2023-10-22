@@ -18,6 +18,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            },
             color: {},
             font: {},
             layout: {},
@@ -28,6 +32,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              mode: 'color',
+              color: '#fff'
+            },
             color: {},
             font: {},
             layout: {},
@@ -66,11 +74,18 @@ function clearDefinitionInput (full = true) {
   document.getElementById('imageHeightSlider').value = 80
 
   // Reset style options
-  const colorInputs = ['backgroundColor', 'titleColor']
+  const colorInputs = ['titleColor']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
+  })
+
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#fff',
+    gradient_color_1: '#fff',
+    gradient_color_2: '#fff'
   })
 
   // Reset text size options
@@ -118,6 +133,20 @@ function editDefinition (uuid = '') {
   document.getElementById('lightboxTitleHeightSlider').value = def.style.layout.lightbox_title_height
   document.getElementById('lightboxCaptionHeightSlider').value = def.style.layout.lightbox_caption_height
   document.getElementById('lightboxCreditHeightSlider').value = def.style.layout.lightbox_credit_height
+
+  if ('background' in def.style === false) {
+    def.style.background = {
+      mode: 'color',
+      color: '#000'
+    }
+    constSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
+    constSetup.updateWorkingDefinition(['style', 'background', 'color'], '#fff')
+  }
+
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.style) {
+    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+  }
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {

@@ -57,6 +57,11 @@ function loadDefinition (definition) {
     document.documentElement.style.setProperty('--' + key + '-color', definition.style.color[key])
   })
 
+  // Backgorund settings
+  if ('background' in definition.style) {
+    constCommon.setBackground(definition.style.background, root, '#719abf')
+  }
+
   Object.keys(definition.style.font).forEach((key) => {
     const font = new FontFace(key, 'url(' + encodeURI(definition.style.font[key]) + ')')
     document.fonts.add(font)

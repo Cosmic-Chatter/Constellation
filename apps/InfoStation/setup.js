@@ -18,6 +18,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              color: '#719abf',
+              mode: 'color'
+            },
             color: {},
             font: {},
             text_size: {}
@@ -27,6 +31,10 @@ function clearDefinitionInput (full = true) {
           uuid: response.uuid,
           languages: {},
           style: {
+            background: {
+              color: '#719abf',
+              mode: 'color'
+            },
             color: {},
             font: {},
             text_size: {}
@@ -54,6 +62,14 @@ function clearDefinitionInput (full = true) {
     el.value = el.getAttribute('data-default')
     el.dispatchEvent(new Event('input', { bubbles: true }))
   })
+
+  constSetup.updateAdvancedColorPicker('style>background', {
+    mode: 'color',
+    color: '#719abf',
+    gradient_color_1: '#719abf',
+    gradient_color_2: '#719abf'
+  })
+
   Array.from(document.querySelectorAll('.font-select')).forEach((el) => {
     el.value = el.getAttribute('data-default')
   })
@@ -88,6 +104,20 @@ function editDefinition (uuid = '') {
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
   if ('inactivity_timeout' in def) {
     document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+  }
+
+  if ('background' in def.style === false) {
+    def.style.background = {
+      mode: 'color',
+      color: '#719abf'
+    }
+    constSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
+    constSetup.updateWorkingDefinition(['style', 'background', 'color'], '#719abf')
+  }
+
+  // Set the appropriate values for any advanced color pickers
+  if ('background' in def.style) {
+    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
   // Set the appropriate values for the color pickers

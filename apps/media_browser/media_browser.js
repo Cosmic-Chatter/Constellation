@@ -370,16 +370,24 @@ function loadDefinition (def) {
   // Color
 
   // First, reset to defaults (in case a style option doesn't exist in the definition)
-  root.style.setProperty('--backgroundColor', 'white')
+  root.style.setProperty('--background-color', 'white')
   root.style.setProperty('--titleColor', 'black')
 
   // Then, apply the definition settings
   Object.keys(def.style.color).forEach((key) => {
+    // Fix for change from backgroundColor to background-color in v4
+    if (key === 'backgroundColor') key = 'background-color'
+
     document.documentElement.style.setProperty('--' + key, def.style.color[key])
   })
 
+  // Backgorund settings
+  if ('background' in def.style) {
+    constCommon.setBackground(def.style.background, root, '#fff')
+  }
+
   // Set icon colors based on the background color.
-  const backgroundColor = constCommon.getColorAsRGBA(document.body, 'background-color')
+  const backgroundColor = constCommon.getColorAsRGBA(document.body, 'background')
   const backgroundClassification = constCommon.classifyColor(backgroundColor)
   if (backgroundClassification === 'light') {
     document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_black.svg'
