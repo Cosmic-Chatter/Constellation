@@ -1,2 +1,5 @@
 {"Interaction time": 5.727, "Observing time": 0, "Questions asked": 3, "Visitor type": "Child", "Group size": null, "Visitor enjoyment": 3, "Observations": "dsfsdfsd", "Date": "2022-08-27T13:30:13.293"}
 {"Interaction time": 0, "Observing time": 3.428, "Questions asked": 2, "Visitor type": "Adult", "Visitor enjoyment": 5, "Observations": "dsfsd", "Date": "2022-08-27T13:30:57.824"}
+{"Interaction time": 0, "Observing time": 0, "Total time": 0, "Questions asked": 0, "Visitor type": "", "Visitor enjoyment": 3, "Observations": "", "Date": "2023-09-16T16:15:48.012"}
+{"Interaction time": 7.246, "Observing time": 0, "Total time": 0, "Questions asked": 0, "Visitor type": "", "Visitor enjoyment": 3, "Observations": "", "Date": "2023-09-16T16:16:03.846"}
+{"Exclusive Timer 1": 34.858, "Exclusive Timer 2": 17.466, "Non-Exclusive Timer": 32.752, "Counter": 3, "Dropdown": "Option 2", "Number": 3.5, "Slider": 2, "Text": "This guest is having fun.", "Date": "2023-10-14T16:02:23.642"}

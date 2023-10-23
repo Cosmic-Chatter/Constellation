@@ -138,11 +138,11 @@ export function populateSchedule (schedule) {
     deleteButton.classList = 'btn btn-danger w-100'
     deleteButton.setAttribute('type', 'button')
     deleteButton.innerHTML = 'Delete date-specific schedule'
-    deleteButton.setAttribute('data-toggle', 'popover')
+    deleteButton.setAttribute('data-bs-toggle', 'popover')
     deleteButton.setAttribute('title', 'Are you sure?')
-    deleteButton.setAttribute('data-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
-    deleteButton.setAttribute('data-trigger', 'focus')
-    deleteButton.setAttribute('data-html', 'true')
+    deleteButton.setAttribute('data-bs-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
+    deleteButton.setAttribute('data-bs-trigger', 'focus')
+    deleteButton.setAttribute('data-bs-html', 'true')
     // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
     deleteButton.addEventListener('click', function () { deleteButton.focus() })
     deleteButtonCol.appendChild(deleteButton)
@@ -192,11 +192,11 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
 
   if (action === 'note') {
     const eventDescriptionCol = document.createElement('div')
-    eventDescriptionCol.classList = 'col-9 mr-0 pr-0'
+    eventDescriptionCol.classList = 'col-9 me-0 pe-0'
     eventRow.appendChild(eventDescriptionCol)
 
     const eventDescriptionOuterContainer = document.createElement('div')
-    eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pr-1 rounded-left'
+    eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pe-1 rounded-start'
     eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
     const eventDescriptionInnerContainer = document.createElement('div')
@@ -208,11 +208,11 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
     eventDescriptionOuterContainer.appendChild(eventDescription)
   } else {
     const eventTimeCol = document.createElement('div')
-    eventTimeCol.classList = 'col-4 mr-0 pr-0'
+    eventTimeCol.classList = 'col-4 me-0 pe-0'
     eventRow.appendChild(eventTimeCol)
 
     const eventTimeContainer = document.createElement('div')
-    eventTimeContainer.classList = 'rounded-left text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pl-1'
+    eventTimeContainer.classList = 'rounded-start text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 ps-1'
     eventTimeCol.appendChild(eventTimeContainer)
 
     const eventTime = document.createElement('div')
@@ -225,7 +225,7 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
     eventRow.appendChild(eventDescriptionCol)
 
     const eventDescriptionOuterContainer = document.createElement('div')
-    eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pr-1'
+    eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pe-1'
     eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
     const eventDescriptionInnerContainer = document.createElement('div')
@@ -238,11 +238,11 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
   }
 
   const eventEditButtonCol = document.createElement('div')
-  eventEditButtonCol.classList = 'col-3 ml-0 pl-0'
+  eventEditButtonCol.classList = 'col-3 ms-0 ps-0'
   eventRow.appendChild(eventEditButtonCol)
 
   const eventEditButton = document.createElement('button')
-  eventEditButton.classList = 'btn-info w-100 h-100 rounded-right'
+  eventEditButton.classList = 'btn-info w-100 h-100 rounded-end'
   eventEditButton.setAttribute('type', 'button')
   eventEditButton.style.borderStyle = 'solid'
   eventEditButton.style.border = '0px'

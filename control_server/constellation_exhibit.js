@@ -46,11 +46,11 @@ class BaseComponent {
     col.classList = classString
 
     const btnGroup = document.createElement('div')
-    btnGroup.classList = 'btn-group btn-block h-100 w-100'
+    btnGroup.classList = 'btn-group h-100 w-100'
     col.appendChild(btnGroup)
 
     const mainButton = document.createElement('button')
-    mainButton.classList = 'btn btn-block componentStatusButton ' + this.status.colorClass
+    mainButton.classList = 'btn w-100 componentStatusButton ' + this.status.colorClass
     mainButton.setAttribute('type', 'button')
     mainButton.setAttribute('id', cleanId + 'MainButton')
     mainButton.addEventListener('click', function () {
@@ -71,13 +71,13 @@ class BaseComponent {
     dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.status.colorClass
     dropdownButton.setAttribute('id', cleanId + 'DropdownButton')
     dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('data-toggle', 'dropdown')
+    dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
     dropdownButton.setAttribute('aria-haspopup', 'true')
     dropdownButton.setAttribute('aria-expanded', 'false')
     btnGroup.appendChild(dropdownButton)
 
     const dropdownLabel = document.createElement('span')
-    dropdownLabel.classList = 'sr-only'
+    dropdownLabel.classList = 'visually-hidden'
     dropdownLabel.innerHTML = 'Toggle Dropdown'
     dropdownButton.appendChild(dropdownLabel)
 
@@ -435,11 +435,11 @@ class ExhibitComponentGroup {
     col.classList = classString
 
     const btnGroup = document.createElement('div')
-    btnGroup.classList = 'btn-group btn-block'
+    btnGroup.classList = 'btn-group w-100'
     col.appendChild(btnGroup)
 
     const mainButton = document.createElement('button')
-    mainButton.classList = 'btn btn-secondary btn-block btn-lg'
+    mainButton.classList = 'btn btn-secondary w-100 btn-lg'
     mainButton.setAttribute('type', 'button')
     mainButton.innerHTML = this.group
     btnGroup.appendChild(mainButton)
@@ -447,13 +447,13 @@ class ExhibitComponentGroup {
     const dropdownButton = document.createElement('button')
     dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
     dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('data-toggle', 'dropdown')
+    dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
     dropdownButton.setAttribute('aria-haspopup', 'true')
     dropdownButton.setAttribute('aria-expanded', 'false')
     btnGroup.appendChild(dropdownButton)
 
     const srHint = document.createElement('span')
-    srHint.classList = 'sr-only'
+    srHint.classList = 'visually-hidden'
     srHint.innerHTML = 'Toggle Dropdown'
     dropdownButton.appendChild(srHint)
 
@@ -1029,10 +1029,10 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     dropdownBtn.classList = 'btn btn-primary dropdown-toggle dropdown-toggle-split definition-dropdown'
     dropdownBtn.setAttribute('id', 'definitionButtonDropdown_' + uuid)
     dropdownBtn.style.borderBottomRightRadius = '0'
-    dropdownBtn.setAttribute('data-toggle', 'dropdown')
+    dropdownBtn.setAttribute('data-bs-toggle', 'dropdown')
     dropdownBtn.setAttribute('aria-haspopup', 'true')
     dropdownBtn.setAttribute('aria-expanded', 'false')
-    dropdownBtn.innerHTML = '<span class="sr-only">Toggle Dropdown</span>'
+    dropdownBtn.innerHTML = '<span class="visually-hidden">Toggle Dropdown</span>'
     if (component.definition === definition.uuid) {
       dropdownBtn.classList.remove('btn-primary')
       dropdownBtn.classList.add('btn-success')
@@ -1049,7 +1049,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
     if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
-      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
       thumbCol.addEventListener('click', () => {
         handleDefinitionItemSelection(uuid)
       })
@@ -1069,7 +1069,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
       thumbCol.appendChild(thumb)
     } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
-      thumbCol.classList = 'col-12 bg-info pt-2 definition-thumbnail'
+      thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
       thumbCol.addEventListener('click', () => {
         handleDefinitionItemSelection(uuid)
       })
@@ -1084,7 +1084,7 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     }
 
     const app = document.createElement('div')
-    app.classList = 'col-12 bg-info rounded-bottom pb-1'
+    app.classList = 'col-12 bg-secondary text-dark rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
     app.addEventListener('click', () => {
@@ -1251,7 +1251,7 @@ export function toggleExhibitComponentInfoSettingWarnings () {
   // Show or hide the exhibit component setting warnings based on their state
 
   // Enable all tooltips
-  $('[data-toggle="tooltip"]').tooltip()
+  $('[data-bs-toggle="tooltip"]').tooltip()
 
   if ($('#componentInfoModalSettingsAllowShutdown').prop('checked')) {
     $('#componentInfoModalSettingsAllowShutdownWarning').show()
@@ -1486,7 +1486,7 @@ export function manageWakeOnLANUpdateConfigFromEdit () {
   if (inputMAC.replaceAll(':', '').replaceAll('-', '').length !== 12) {
     // Wrong length; show a warning
     $('#manageWakeOnLANEditMACInputWarning').show()
-    $('[data-toggle="tooltip"]').tooltip()
+    $('[data-bs-toggle="tooltip"]').tooltip()
   } else {
     $('#manageWakeOnLANEditMACInputWarning').hide()
   }

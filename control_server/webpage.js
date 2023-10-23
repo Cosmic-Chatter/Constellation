@@ -535,7 +535,7 @@ function populateEditTrackerTemplateCurrentLayout () {
     editCol.classList = 'col-6 mx-0 px-0'
     row2.appendChild(editCol)
     const edit = document.createElement('div')
-    edit.classList = 'text-light bg-info w-100 h-100 justify-content-center d-flex pl-1'
+    edit.classList = 'text-light bg-info w-100 h-100 justify-content-center d-flex ps-1'
     edit.style.borderBottomLeftRadius = '0.25rem'
     edit.innerHTML = 'Edit'
     edit.style.cursor = 'pointer'
@@ -557,7 +557,7 @@ function populateEditTrackerTemplateCurrentLayout () {
     rightCol.classList = 'col-3 mx-0 px-0'
     row2.appendChild(rightCol)
     const right = document.createElement('div')
-    right.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex pr-1'
+    right.classList = 'text-light bg-primary w-100 h-100 justify-content-center d-flex pe-1'
     right.style.borderBottomRightRadius = '0.25rem'
     right.innerHTML = '▶'
     right.style.cursor = 'pointer'
@@ -1296,7 +1296,7 @@ $('#manageStaticComponentsModalSaveButton').click(constExhibit.updateStaticCompo
 
 // Activate all popovers
 $(function () {
-  $('[data-toggle="popover"]').popover()
+  $('[data-bs-toggle="popover"]').popover()
 })
 
 constConfig.serverAddress = location.origin
@@ -1311,6 +1311,13 @@ eventSource.addEventListener('end', function (event) {
   console.log('Handling end....')
   eventSource.close()
 })
+
+// Set color mode
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelector('html').setAttribute('data-bs-theme', 'dark')
+} else {
+  document.querySelector('html').setAttribute('data-bs-theme', 'light')
+}
 
 loadVersion()
 populateHelpTab()

@@ -46,14 +46,14 @@ export function rebuildIssueList () {
 
     issue.relatedComponentIDs.forEach((id, i) => {
       const tag = document.createElement('span')
-      tag.setAttribute('class', 'badge badge-secondary mr-1')
+      tag.setAttribute('class', 'badge badge-secondary me-1')
       tag.innerHTML = id
       body.appendChild(tag)
     })
 
     issue.assignedTo.forEach((name, i) => {
       const tag = document.createElement('span')
-      tag.setAttribute('class', 'badge badge-success mr-1')
+      tag.setAttribute('class', 'badge badge-success me-1')
       tag.innerHTML = name
       body.appendChild(tag)
     })
@@ -66,7 +66,7 @@ export function rebuildIssueList () {
 
     if (issue.media != null) {
       const mediaBut = document.createElement('button')
-      mediaBut.setAttribute('class', 'btn btn-primary mr-1 mt-1')
+      mediaBut.setAttribute('class', 'btn btn-primary me-1 mt-1')
       mediaBut.innerHTML = 'View image'
       mediaBut.addEventListener('click', function () {
         constTools.openMediaInNewTab('issues/media/' + issue.media)
@@ -75,7 +75,7 @@ export function rebuildIssueList () {
     }
 
     const editBut = document.createElement('button')
-    editBut.setAttribute('class', 'btn btn-info mr-1 mt-1')
+    editBut.setAttribute('class', 'btn btn-info me-1 mt-1')
     editBut.innerHTML = 'Edit'
     editBut.addEventListener('click', function () {
       showIssueEditModal('edit', issue.id)
@@ -85,11 +85,11 @@ export function rebuildIssueList () {
     const deleteBut = document.createElement('button')
     deleteBut.setAttribute('type', 'button')
     deleteBut.setAttribute('class', 'btn btn-danger mt-1')
-    deleteBut.setAttribute('data-toggle', 'popover')
+    deleteBut.setAttribute('data-bs-toggle', 'popover')
     deleteBut.setAttribute('title', 'Are you sure?')
-    deleteBut.setAttribute('data-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
-    deleteBut.setAttribute('data-trigger', 'focus')
-    deleteBut.setAttribute('data-html', 'true')
+    deleteBut.setAttribute('data-bs-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
+    deleteBut.setAttribute('data-bs-trigger', 'focus')
+    deleteBut.setAttribute('data-bs-html', 'true')
     // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
     deleteBut.addEventListener('click', function () { deleteBut.focus() })
     deleteBut.innerHTML = 'Delete'

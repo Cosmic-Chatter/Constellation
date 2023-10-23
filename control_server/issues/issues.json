@@ -9,5 +9,18 @@
     "media": null,
     "priority": "low",
     "relatedComponentIDs": []
+  },
+  {
+    "assignedTo": [
+      "Morgan"
+    ],
+    "creationDate": "2023-10-11T19:44:30.406365",
+    "id": "75530f8a-7324-45f3-aeb9-c2591ebad6da",
+    "issueDescription": "",
+    "issueName": "Morgan's task",
+    "lastUpdateDate": "2023-10-11T19:44:40.534444",
+    "media": null,
+    "priority": "low",
+    "relatedComponentIDs": []
   }
 ]
