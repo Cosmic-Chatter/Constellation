@@ -658,6 +658,8 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoConnectionStatusFailed').hide()
   $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
+
+  // Populate maintenance details
   constMaint.setComponentInfoModalMaintenanceStatus(id)
 
   // Definition tab

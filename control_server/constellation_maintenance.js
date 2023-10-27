@@ -1,5 +1,6 @@
 import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
+import * as constIssues from './constellation_issues.js'
 
 export function setComponentInfoModalMaintenanceStatus (id) {
   // Ask the server for the current maintenance status of the given component
@@ -23,6 +24,19 @@ export function setComponentInfoModalMaintenanceStatus (id) {
         $('#componentInfoModalMaintenanceSaveButton').hide()
       }
     })
+
+  // Clear the related issues list and update with any issues
+  const issueList = document.getElementById('componentInfoModalMaintenanceRelatedIssues')
+  issueList.innerHTML = ''
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/issue/list/' + id
+  }).then((response) => {
+    response.issueList.forEach((issue) => {
+      issueList.appendChild(constIssues.createIssueHTML(issue, false))
+    })
+  })
 }
 
 export function submitComponentMaintenanceStatusChange (type = 'component') {

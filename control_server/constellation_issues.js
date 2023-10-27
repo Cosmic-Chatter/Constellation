@@ -7,8 +7,8 @@ export function rebuildIssueList () {
   // Gather the settings for the various filters
   const filterPriority = $('#issueListFilterPrioritySelect').val()
   const filterAssignedTo = $('#issueListFilterAssignedToSelect').val()
-
-  $('#issuesRow').empty()
+  const issueList = document.getElementById('issuesRow')
+  issueList.innerHTML = ''
 
   constConfig.issueList.forEach((issue, i) => {
     // Check against the filters
@@ -19,85 +19,125 @@ export function rebuildIssueList () {
       (filterAssignedTo != null && filterAssignedTo !== 'all' && filterAssignedTo !== 'unassigned' && !issue.assignedTo.includes(filterAssignedTo)) ||
       (filterAssignedTo === 'unassigned' && issue.assignedTo.length > 0)
     ) return
-    const col = document.createElement('div')
-    col.setAttribute('class', 'col-12 col-sm-6 col-lg-4 mt-2')
 
-    const card = document.createElement('div')
-    // Color the border based on the priority
-    let borderColor
-    if (issue.priority === 'low') {
-      borderColor = 'border-primary'
-    } else if (issue.priority === 'medium') {
-      borderColor = 'border-warning'
-    } else {
-      borderColor = 'border-danger'
-    }
-    card.setAttribute('class', `card h-100 border ${borderColor}`)
-    col.appendChild(card)
-
-    const body = document.createElement('div')
-    body.setAttribute('class', 'card-body')
-    card.appendChild(body)
-
-    const title = document.createElement('H5')
-    title.setAttribute('class', 'card-title')
-    title.innerHTML = issue.issueName
-    body.appendChild(title)
-
-    issue.relatedComponentIDs.forEach((id, i) => {
-      const tag = document.createElement('span')
-      tag.setAttribute('class', 'badge badge-secondary me-1')
-      tag.innerHTML = id
-      body.appendChild(tag)
-    })
-
-    issue.assignedTo.forEach((name, i) => {
-      const tag = document.createElement('span')
-      tag.setAttribute('class', 'badge badge-success me-1')
-      tag.innerHTML = name
-      body.appendChild(tag)
-    })
-
-    const desc = document.createElement('p')
-    desc.setAttribute('class', 'card-text')
-    desc.style.whiteSpace = 'pre-wrap' // To preserve new lines
-    desc.innerHTML = issue.issueDescription
-    body.appendChild(desc)
-
-    if (issue.media != null) {
-      const mediaBut = document.createElement('button')
-      mediaBut.setAttribute('class', 'btn btn-primary me-1 mt-1')
-      mediaBut.innerHTML = 'View image'
-      mediaBut.addEventListener('click', function () {
-        constTools.openMediaInNewTab('issues/media/' + issue.media)
-      }, false)
-      body.appendChild(mediaBut)
-    }
-
-    const editBut = document.createElement('button')
-    editBut.setAttribute('class', 'btn btn-info me-1 mt-1')
-    editBut.innerHTML = 'Edit'
-    editBut.addEventListener('click', function () {
-      showIssueEditModal('edit', issue.id)
-    })
-    body.appendChild(editBut)
-
-    const deleteBut = document.createElement('button')
-    deleteBut.setAttribute('type', 'button')
-    deleteBut.setAttribute('class', 'btn btn-danger mt-1')
-    deleteBut.setAttribute('data-bs-toggle', 'popover')
-    deleteBut.setAttribute('title', 'Are you sure?')
-    deleteBut.setAttribute('data-bs-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
-    deleteBut.setAttribute('data-bs-trigger', 'focus')
-    deleteBut.setAttribute('data-bs-html', 'true')
-    // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
-    deleteBut.addEventListener('click', function () { deleteBut.focus() })
-    deleteBut.innerHTML = 'Delete'
-    body.appendChild(deleteBut)
-    $(deleteBut).popover()
-
-    $('#issuesRow').append(col)
+    issueList.append(createIssueHTML(issue))
   })
+}
+
+export function createIssueHTML (issue, full = true) {
+  // Create an HTML representation of an issue
+
+  const col = document.createElement('div')
+  col.setAttribute('class', 'col mt-2')
+
+  const card = document.createElement('div')
+  // Color the border based on the priority
+  let borderColor
+  if (issue.priority === 'low') {
+    borderColor = 'border-primary'
+  } else if (issue.priority === 'medium') {
+    borderColor = 'border-warning'
+  } else {
+    borderColor = 'border-danger'
+  }
+  card.setAttribute('class', `card h-100 border ${borderColor}`)
+  col.appendChild(card)
+
+  const body = document.createElement('div')
+  body.setAttribute('class', 'card-body')
+  card.appendChild(body)
+
+  const title = document.createElement('H5')
+  title.setAttribute('class', 'card-title')
+  title.innerHTML = issue.issueName
+  body.appendChild(title)
+
+  const content = document.createElement('div')
+  content.style.transition = 'all 1s'
+  content.style.overflow = 'hidden'
+  body.appendChild(content)
+
+  issue.relatedComponentIDs.forEach((id, i) => {
+    const tag = document.createElement('span')
+    tag.setAttribute('class', 'badge bg-secondary me-1')
+    tag.innerHTML = id
+    content.appendChild(tag)
+  })
+
+  issue.assignedTo.forEach((name, i) => {
+    const tag = document.createElement('span')
+    tag.setAttribute('class', 'badge bg-success me-1')
+    tag.innerHTML = name
+    content.appendChild(tag)
+  })
+
+  const desc = document.createElement('p')
+  desc.setAttribute('class', 'card-text')
+  desc.style.whiteSpace = 'pre-wrap' // To preserve new lines
+  desc.innerHTML = issue.issueDescription
+  content.appendChild(desc)
+
+  if (issue.media != null) {
+    const mediaBut = document.createElement('button')
+    mediaBut.setAttribute('class', 'btn btn-primary me-1 mt-1')
+    mediaBut.innerHTML = 'View image'
+    mediaBut.addEventListener('click', function () {
+      constTools.openMediaInNewTab('issues/media/' + issue.media)
+    }, false)
+    content.appendChild(mediaBut)
+  }
+
+  const editBut = document.createElement('button')
+  editBut.setAttribute('class', 'btn btn-info me-1 mt-1')
+  editBut.innerHTML = 'Edit'
+  editBut.addEventListener('click', function () {
+    showIssueEditModal('edit', issue.id)
+  })
+  content.appendChild(editBut)
+
+  const deleteBut = document.createElement('button')
+  deleteBut.setAttribute('type', 'button')
+  deleteBut.setAttribute('class', 'btn btn-danger mt-1')
+  deleteBut.setAttribute('data-bs-toggle', 'popover')
+  deleteBut.setAttribute('title', 'Are you sure?')
+  deleteBut.setAttribute('data-bs-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
+  deleteBut.setAttribute('data-bs-trigger', 'focus')
+  deleteBut.setAttribute('data-bs-html', 'true')
+  // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
+  deleteBut.addEventListener('click', function () { deleteBut.focus() })
+  deleteBut.innerHTML = 'Delete'
+  content.appendChild(deleteBut)
+  $(deleteBut).popover()
+
+  const footer = document.createElement('div')
+  footer.classList = 'card-footer text-body-secondary text-center'
+
+  if (full === false) {
+    content.style.height = '0px'
+    footer.innerHTML = 'More'
+  } else {
+    footer.innerHTML = 'Less'
+  }
+  card.appendChild(footer)
+
+  footer.addEventListener('click', (event) => {
+    if (content.style.height === '') {
+      // Nothing set yet
+      content.style.height = String(content.scrollHeight) + 'px'
+    }
+    // Give a frame for the above option to take
+    setTimeout(() => {
+      if (content.style.height === '0px') {
+        content.style.height = String(content.scrollHeight) + 'px'
+        footer.innerHTML = 'Less'
+      } else {
+        content.style.height = '0px'
+        footer.innerHTML = 'More'
+      }
+    }, 1)
+  })
+
+  return col
 }
 
 export function deleteIssue (id) {
@@ -111,26 +151,21 @@ export function deleteIssue (id) {
     .then((result) => {
       if ('success' in result && result.success === true) {
         getIssueList()
+          .then((issueList) => {
+            constConfig.issueList = issueList
+            rebuildIssueList()
+          })
       }
     })
 }
 
-function getIssueList () {
+function getIssueList (id = '__all') {
   // Get a list of all the current issues and rebuild the issue GUI
 
-  constTools.makeServerRequest({
+  return constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/issue/list'
-  })
-    .then((response) => {
-      if ('success' in response) {
-        if (response.success === true) {
-          rebuildIssueList(response.issueList)
-        } else {
-          console.log('Error retrieving issueList: ', response.reason)
-        }
-      }
-    })
+    endpoint: '/issue/list/' + id
+  }).then((response) => response.issueList)
 }
 
 function getIssue (id) {

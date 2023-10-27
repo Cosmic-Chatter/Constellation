@@ -746,13 +746,21 @@ async def edit_issue(details: dict[str, Any] = Body(description="The details to 
     return response_dict
 
 
-@app.get("/issue/list")
-async def get_issue_list():
+@app.get("/issue/list/{match_id}")
+async def get_issue_list(match_id: str):
     """Return a list of open issues."""
+
+    if match_id != "__all":
+        matched_issues = []
+        for issue in c_config.issueList:
+            if match_id in issue.details["relatedComponentIDs"]:
+                matched_issues.append(issue.details)
+    else:
+        matched_issues = [x.details for x in c_config.issueList]
 
     response = {
         "success": True,
-        "issueList": [x.details for x in c_config.issueList]
+        "issueList": matched_issues
     }
     return response
 
