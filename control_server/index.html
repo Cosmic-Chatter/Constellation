@@ -488,9 +488,9 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form id="scheduleEditForm" onsubmit="event.preventDefault();">
+              <form id="scheduleEditForm" class="mb-2" onsubmit="event.preventDefault();">
                 <div class="form-group">
-                  <div class="row">
+                  <div class="row gy-2">
                     <div class="col-8">
                       <label for="issueTitleInput">Title</label>
                       <input type="text" class="form-control" id="issueTitleInput" placeholder="e.g., Fix button">
@@ -503,32 +503,43 @@
                         <option value='high'>High</option>
                       </select>
                     </div>
-                    <div class="col-12 mt-2">
+                    <div class="col-12">
                       <label for="issueDescriptionInput">Description</label>
                       <textarea class="form-control" id="issueDescriptionInput" placeholder="e.g., The red button is loose."></textarea>
                     </div>
-                    <div class="col-6 mt-2">
+                    <div class="col-6">
                       <label for="issueRelatedComponentsSelector">Related components</label>
                       <select class="form-select" id="issueRelatedComponentsSelector" multiple>
                       </select>
                     </div>
-                    <div class="col-6 mt-2">
+                    <div class="col-6">
                       <label for="issueAssignedToSelector">Assigned to</label>
                       <select class="form-select" id="issueAssignedToSelector" multiple>
                       </select>
                     </div>
-                    <div class='col-12 mt-2'>
-                      <label id="issueMediaModalLabel" for="issueMediaUpload">Add image</label>
+                    <div class='col-12'>
+                      <label id="issueMediaModalLabel" for="issueMediaUpload">Add media</label>
                     </div>
                     <div id="issueMediaUploadCol" class='col-8'>
                       <label class="btn btn-outline-secondary text-wrap" style="max-width: 100%;">
                         <span id="issueMediaUploadFilename" class="w-100">Choose file</span>
-                        <input hidden type="file" accept="image/*" class="form-control-file" id="issueMediaUpload">
+                        <input hidden multiple type="file" accept="image/*,video/*" class="form-control-file" id="issueMediaUpload">
                       </label>
                     </div>
-                    <div id="issueMediaViewCol" class='col-8'>
-                      <button id="issueMediaViewFromModal" class='btn btn-outline-secondary'>View image</button>
-                      <button id="issueMediaDeleteButton" class='btn btn-outline-danger'>Remove image</button>
+                    <div id="issueMediaViewCol" class='col-12'>
+                      <div class="row">
+                        <div class="col-6">
+                          <select id="issueMediaViewFromModalSelect" class="form-select"></select>
+                        </div>
+                        <div class="col-3">
+                          <button id="issueMediaViewFromModal" class='btn btn-outline-secondary w-100'>View</button>
+                        </div>
+                        <div class="col-3">
+                          <button id="issueMediaDeleteButton" class='btn btn-outline-danger w-100'>Remove</button>
+                        </div>
+                      </div>
+                      
+                      
                     </div>
                     <div class="col-4">
                       <button id="issueMediaUploadSubmitButton" class='btn w-100 btn-outline-primary'>Upload</button>
@@ -538,7 +549,6 @@
                         <div id='issueMediaUploadProgressBar' class="progress-bar" role="progressbar" style="width: 30%; font-size: large;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
                       </div>
                     </div>
-                    <div class='col-12 text-danger mt-2' id='issueMediaUploadEqualSignWarning'>Filenames cannot contain the equal sign (=).</div>
                     <div class='col-12 text-danger mt-2' id='issueMediaUploadHEICWarning'>HEIC images are not supported. Please convert to JPG or PNG.</div>
                   </div>
                 </div>

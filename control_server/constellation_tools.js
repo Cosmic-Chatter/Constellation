@@ -104,102 +104,87 @@ export function guessMimetype (filename) {
   }
 }
 
-export function openMediaInNewTab (filename, fileType) {
-  // Open the media file given by filename in a new browser tab
-  console.log(filename)
-  if (fileType == null) {
-    fileType = guessMimetype(filename)
+export function openMediaInNewTab (filenames, fileTypes) {
+  // Open the media files given by filename in a new browser tab
+
+  console.log('Opening files in new tab:', filenames)
+
+  let margin
+  if (filenames.length > 1) {
+    margin = '1vmax'
+  } else {
+    margin = 'auto'
   }
-  let html = null
-  if (fileType === 'image') {
-    html = `
-          <html>
-            <head>
-              <style>
-                @media (orientation: landscape) {
-                  .zoomedOut{
-                    display: block;
-                    height: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    cursor: zoom-in;
-                    -webkit-user-select: none;
-                  }
-                }
-                @media (orientation: portrait) {
-                  .zoomedOut{
-                    display: block;
-                    width: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    cursor: zoom-in;
-                    -webkit-user-select: none;
-                  }
-                }
+  let html = `
+  <html>
+    <head>
+      <style>
+        @media (orientation: landscape) {
+          .zoomedOut{
+            display: block;
+            height: 100%;
+            margin: ${margin};
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            cursor: zoom-in;
+            -webkit-user-select: none;
+          }
+        }
+        @media (orientation: portrait) {
+          .zoomedOut{
+            display: block;
+            width: 100%;
+            margin: ${margin};
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            cursor: zoom-in;
+            -webkit-user-select: none;
+          }
+        }
 
-                .zoomedIn{
-                  display: block;
-                  margin: auto;
-                  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                  cursor: zoom-out;
-                  -webkit-user-select: none;
-                }
-              </style>
-            </head>
-            <body style="margin: 0px">
-              <img id="image" class='zoomedOut' src="${filename}" onclick="toggleZoom()">
-            </body>
-            <script>
+        .zoomedIn{
+          display: block;
+          margin: ${margin};
+          padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+          cursor: zoom-out;
+          -webkit-user-select: none;
+        }
+      </style>
+      <title>Control Server Media Viewer</title>
+    </head>
+    <body style="margin: 0px">
+  `
 
-              function toggleZoom() {
-                document.getElementById("image").classList.toggle('zoomedIn');
-                document.getElementById("image").classList.toggle('zoomedOut');
-              }
-            </script>
-          </html>
-    `
-  } else if (fileType === 'video') {
-    html = `
-          <html>
-            <head>
-              <title>${filename}</title>
-              <style>
-                @media (orientation: landscape) {
-                  .zoomedOut{
-                    display: block;
-                    height: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    -webkit-user-select: none;
-                  }
-                }
-                @media (orientation: portrait) {
-                  .zoomedOut{
-                    display: block;
-                    width: 100%;
-                    margin: auto;
-                    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-                    -webkit-user-select: none;
-                  }
-                }
-              </style>
-            </head>
-            <body style="margin: 0px">
-              <video class='zoomedOut' controls>
-                <source src="${filename}">
-                This file is not playing.
-              </video>
-            </body>
-            <script>
-            </script>
-          </html>
-    `
+  for (let i = 0; i < filenames.length; i++) {
+    let fileType
+    if (fileTypes == null) {
+      fileType = guessMimetype(filenames[i])
+    } else {
+      fileType = fileTypes[i]
+    }
+
+    if (fileType === 'image') {
+      html += `<img id="image${String(i)}" class='zoomedOut' src="${filenames[i]}" onclick="toggleZoom(${String(i)})">`
+    } else if (fileType === 'video') {
+      html += `<video class='zoomedOut' controls loop>
+      <source src="${filenames[i]}">
+      This file is not playing.
+    </video>`
+    }
   }
 
-  if (html != null) {
-    const imageWindow = window.open('', '_blank')
-    imageWindow.document.write(html)
-  }
+  html += `
+    </body>
+      <script>
+
+        function toggleZoom(val) {
+          document.getElementById("image" + val).classList.toggle('zoomedIn');
+          document.getElementById("image" + val).classList.toggle('zoomedOut');
+        }
+      </script>
+    </html>
+  `
+
+  const imageWindow = window.open('', '_blank')
+  imageWindow.document.write(html)
 }
 
 function showUpdateInfoModal (id, kind, details) {

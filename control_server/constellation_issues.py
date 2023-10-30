@@ -15,7 +15,7 @@ import constellation_tools as c_tools
 class Issue:
     """Contains information relevant for tracking an issue."""
 
-    def __init__(self, details):
+    def __init__(self, details: dict):
         """Populate the Issue with the information stored in a dictionary"""
 
         self.details = {}
@@ -28,7 +28,10 @@ class Issue:
         self.details["issueDescription"] = details.get("issueDescription", "")
         self.details["relatedComponentIDs"] = details.get("relatedComponentIDs", [])
         self.details["assignedTo"] = details.get("assignedTo", [])
-        self.details["media"] = details.get("media", None)
+        self.details["media"] = details.get("media", [])
+        if isinstance(self.details["media"], str):
+            # Fix in Constellation 4 when transitioning from one media file to multiple
+            self.details["media"] = [self.details["media"]]
 
     def __repr__(self):
         return repr(f"[Issue Name: {self.details['issueName']}]")
@@ -38,28 +41,29 @@ class Issue:
         config.issueList_last_update_date = self.details["lastUpdateDate"]
 
 
-def delete_issue_media_file(file: str, owner: Union[str, None] = None) -> None:
+def delete_issue_media_file(files: list[str], owner: Union[str, None] = None) -> None:
     """Delete a media file from an issue"""
 
-    file_path = c_tools.get_path(["issues", "media", file], user_file=True)
-    print("Deleting issue media file:", file)
-    with config.logLock:
-        logging.info("Deleting issue media file %s", file)
-    with config.issueMediaLock:
-        try:
-            os.remove(file_path)
-        except FileNotFoundError:
-            with config.logLock:
-                logging.error("Cannot delete requested issue media file %s: file not found", file)
-            print(f"Cannot delete requested issue media file {file}: file not found")
+    for file in files:
+        file_path = c_tools.get_path(["issues", "media", file], user_file=True)
+        print("Deleting issue media file:", file)
+        with config.logLock:
+            logging.info("Deleting issue media file %s", file)
+        with config.issueMediaLock:
+            try:
+                os.remove(file_path)
+            except FileNotFoundError:
+                with config.logLock:
+                    logging.error("Cannot delete requested issue media file %s: file not found", file)
+                print(f"Cannot delete requested issue media file {file}: file not found")
 
-    if owner is not None:
-        with config.issueLock:
-            issue = get_issue(owner)
-            issue.details["media"] = None
-            issue.refresh_last_update_date()
-            save_issue_list()
-        config.last_update_time = time.time()
+        if owner is not None:
+            with config.issueLock:
+                issue = get_issue(owner)
+                issue.details["media"] = [x for x in issue.details["media"] if x != file]
+                issue.refresh_last_update_date()
+                save_issue_list()
+            config.last_update_time = time.time()
 
 
 def create_issue(details: dict[str, Any]) -> Issue:
@@ -91,10 +95,10 @@ def get_issue(this_id: str) -> Issue:
 def remove_issue(this_id: str) -> None:
     """Remove an Issue with the given id from the issueList"""
 
-    # First, if there is a media file, delete it
+    # First, if there are media files, delete them
     issue = get_issue(this_id)
     if issue is not None:
-        if "media" in issue.details and issue.details["media"] is not None:
+        if "media" in issue.details and len(issue.details["media"]) > 0:
             delete_issue_media_file(issue.details["media"])
 
         with config.issueLock:

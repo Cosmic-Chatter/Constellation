@@ -1108,7 +1108,7 @@ document.getElementById('definitionTabThumbnailsCheckbox').addEventListener('cha
 $('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
 document.getElementById('componentInfoModalViewScreenshot').addEventListener('click', () => {
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
-  constTools.openMediaInNewTab(component.getHelperURL() + '/system/getScreenshot', 'image')
+  constTools.openMediaInNewTab([component.getHelperURL() + '/system/getScreenshot'], ['image'])
 })
 document.getElementById('componentInfoModalEditDMXButton').addEventListener('click', (event) => {
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
@@ -1152,10 +1152,12 @@ document.addEventListener('click', (event) => {
   constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
 })
 $('#issueMediaViewFromModal').click(function () {
-  constTools.openMediaInNewTab('issues/media/' + $('#issueMediaViewFromModal').data('filename'))
+  const file = document.getElementById('issueMediaViewFromModalSelect').value
+  constTools.openMediaInNewTab(['issues/media/' + file])
 })
 $('#issueMediaDeleteButton').click(function () {
-  constIssues.issueMediaDelete($('#issueMediaViewFromModal').data('filename'))
+  const file = document.getElementById('issueMediaViewFromModalSelect').value
+  constIssues.issueMediaDelete([file])
 })
 $('#issueMediaUploadSubmitButton').click(constIssues.uploadIssueMediaFile)
 $('#issueMediaUpload').change(constIssues.onIssueMediaUploadChange)

@@ -1,7 +1,12 @@
 # **Constellation 4**
-__*Constellation*__ 4 expands customization for your apps and provides many quality-of-life improvements for Control Server.
+__*Constellation*__ 4 expands customization for your apps and significantly expands Control Server's maintenance tracking capabilities.
 
 ## Control Server
+
+### Maintenance
+- When viewing component details, a list of related issues is shown in the maintenance tab.
+- Uploaded issue media files can be videos in addition to images.
+- Multiple media files can be attached to an issue. 
 
 ## Constellation Apps
 
@@ -16,7 +21,7 @@ __*Constellation*__ 4 expands customization for your apps and provides many qual
 - A background can now be set.
 
 ### Word Cloud
-- The cloud can now be displayed in uppercase in addition to lowercase.
+- The cloud can be displayed in uppercase in addition to lowercase.
 - Add to the list of words that are removed from the cloud.
 
 # **Constellation 3.3**

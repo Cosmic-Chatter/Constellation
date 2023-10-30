@@ -7,6 +7,7 @@
 import asyncio
 import datetime
 import threading
+import uuid
 from functools import lru_cache
 import json
 import logging
@@ -721,12 +722,12 @@ async def delete_issue(id_to_delete: str = Body(description="The ID of the issue
 
 
 @app.post("/issue/deleteMedia")
-async def delete_issue_media(filename: str = Body(description="The filename to be deleted."),
+async def delete_issue_media(filenames: list[str] = Body(description="The filenames to be deleted."),
                              owner: Union[str, None] = Body(default=None,
                                                             description="The ID of the Issue this media file belonged to.")):
-    """Delete the media file linked to an issue and remove the reference."""
+    """Delete the media files linked to an issue and remove the reference."""
 
-    c_issues.delete_issue_media_file(filename, owner=owner)
+    c_issues.delete_issue_media_file(filenames, owner=owner)
     return {"success": True}
 
 
@@ -765,21 +766,34 @@ async def get_issue_list(match_id: str):
     return response
 
 
+@app.get("/issue/{issue_id}/getMedia")
+async def get_issue_media(issue_id: str):
+    """Return a list of media files connected to the given ID."""
+
+    issue = c_issues.get_issue(issue_id)
+
+    if issue is None:
+        return {"success": False, "reason": f"Issue does not exist: {issue_id}"}
+
+    return {"success": True, "media": issue.details["media"]}
+
+
 @app.post("/issue/uploadMedia")
 async def upload_issue_media(files: list[UploadFile] = File()):
-    """Upload an issue media file."""
+    """Upload issue media files."""
 
-    filename = None
+    filenames = []
     for file in files:
         ext = os.path.splitext(file.filename)[1]
-        filename = str(round(time.time() * 1e6)) + ext
+        filename = str(uuid.uuid4()) + ext
+        filenames.append(filename)
         file_path = c_tools.get_path(["issues", "media", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
         with c_config.issueMediaLock:
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()  # async read
                 await out_file.write(content)  # async write
-    return {"success": True, "filename": filename}
+    return {"success": True, "filenames": filenames}
 
 
 # Maintenance actions

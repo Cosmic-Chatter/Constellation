@@ -5,6 +5,7 @@
 ### General
 - Add ability to edit exhibits without setting them
 - Move static component editing to _Components_ tab
+- Hide the view screenshot option is screenshot permission is not available
 
 ### Analytics
 - Record app analytics

@@ -40,7 +40,7 @@ export function createIssueHTML (issue, full = true) {
   } else {
     borderColor = 'border-danger'
   }
-  card.setAttribute('class', `card h-100 border ${borderColor}`)
+  card.setAttribute('class', `card border ${borderColor}`)
   col.appendChild(card)
 
   const body = document.createElement('div')
@@ -77,12 +77,17 @@ export function createIssueHTML (issue, full = true) {
   desc.innerHTML = issue.issueDescription
   content.appendChild(desc)
 
-  if (issue.media != null) {
+  if (issue.media.length > 0) {
     const mediaBut = document.createElement('button')
     mediaBut.setAttribute('class', 'btn btn-primary me-1 mt-1')
-    mediaBut.innerHTML = 'View image'
+    mediaBut.innerHTML = 'View media'
+
+    const mediaFiles = []
+    issue.media.forEach((file) => {
+      mediaFiles.push('issues/media/' + file)
+    })
     mediaBut.addEventListener('click', function () {
-      constTools.openMediaInNewTab('issues/media/' + issue.media)
+      constTools.openMediaInNewTab(mediaFiles)
     }, false)
     content.appendChild(mediaBut)
   }
@@ -187,7 +192,7 @@ export function showIssueEditModal (issueType, target) {
   issueRelatedComponentsSelector.innerHTML = ''
 
   const components = constTools.sortComponentsByGroup()
-  console.log(components)
+
   Object.keys(components).sort().forEach((group) => {
     const header = new Option(group)
     header.setAttribute('disabled', true)
@@ -222,8 +227,7 @@ export function showIssueEditModal (issueType, target) {
   }
 
   // Clear file upload interface elements
-  $('#issueMediaUploadFilename').html('Choose file')
-  $('#issueMediaUploadEqualSignWarning').hide()
+  $('#issueMediaUploadFilename').html('Choose files')
   $('#issueMediaUploadHEICWarning').hide()
   $('#issueMediaUploadSubmitButton').hide()
   $('#issueMediaUploadProgressBarContainer').hide()
@@ -243,7 +247,7 @@ export function showIssueEditModal (issueType, target) {
 
     $('#issueEditModal').data('type', 'new')
     $('#issueEditModalTitle').html('Create Issue')
-    issueMediaUploadedFile(false)
+    rebuildIssueMediaUploadedList()
   } else if (target != null) {
     $('#issueEditModal').data('type', 'edit')
     $('#issueEditModal').data('target', target)
@@ -254,10 +258,10 @@ export function showIssueEditModal (issueType, target) {
     $('#issueDescriptionInput').val(targetIssue.issueDescription)
     $('#issueAssignedToSelector').val(targetIssue.assignedTo)
     $('#issueRelatedComponentsSelector').val(targetIssue.relatedComponentIDs)
-    if (targetIssue.media != null) {
-      issueMediaUploadedFile(true, targetIssue.media)
+    if (targetIssue.media.length > 0) {
+      rebuildIssueMediaUploadedList(target)
     } else {
-      issueMediaUploadedFile(false)
+      rebuildIssueMediaUploadedList()
     }
   }
 
@@ -272,13 +276,7 @@ export function onIssueMediaUploadChange () {
   // Show the upload button (we may hide it later)
   const fileInput = $('#issueMediaUpload')[0]
   $('#issueMediaUploadFilename').html('File: ' + fileInput.files[0].name)
-  // Check for = in filename
-  if (fileInput.files[0].name.includes('=')) {
-    $('#issueMediaUploadEqualSignWarning').show()
-    $('#issueMediaUploadSubmitButton').hide()
-  } else {
-    $('#issueMediaUploadEqualSignWarning').hide()
-  }
+
   // Check for HEIC file
   if (fileInput.files[0].type === 'image/heic') {
     $('#issueMediaUploadHEICWarning').show()
@@ -294,9 +292,12 @@ export function uploadIssueMediaFile () {
     $('#issueMediaUploadSubmitButton').prop('disabled', true)
     $('#issueMediaUploadSubmitButton').html('Working...')
 
-    const file = fileInput.files[0]
     const formData = new FormData()
-    formData.append('files', file)
+
+    for (let i = 0; i < fileInput.files.length; i++) {
+      const file = fileInput.files[i]
+      formData.append('files', file)
+    }
 
     const xhr = new XMLHttpRequest()
     xhr.open('POST', constConfig.serverAddress + '/issue/uploadMedia', true)
@@ -307,13 +308,13 @@ export function uploadIssueMediaFile () {
 
         if ('success' in response) {
           if (response.success === true) {
-            issueMediaUploadedFile(true, response.filename)
+            rebuildIssueMediaUploadedList()
             // If we cancel without saving, need to delete this file.
             document.getElementById('issueEditCancelButton').addEventListener('click', function () {
-              issueMediaDelete(response.filename)
+              issueMediaDelete(response.filenames)
             })
           } else {
-            issueMediaUploadedFile(false)
+            rebuildIssueMediaUploadedList()
           }
         }
         $('#issueMediaUploadSubmitButton').prop('disabled', false)
@@ -341,27 +342,82 @@ export function uploadIssueMediaFile () {
   }
 }
 
-function issueMediaUploadedFile (fileExists, filename = null) {
+function rebuildIssueMediaUploadedList (id = '') {
   // Configure the file upload/view interface depending on whether a file has
   // been uploaded.
 
-  $('#issueMediaViewFromModal').data('filename', filename)
+  let filenames
+  if (id === '') {
+    _rebuildIssueMediaUploadedList([])
+  } else {
+    constTools.makeServerRequest({
+      method: 'GET',
+      endpoint: '/issue/' + id + '/getMedia'
+    })
+      .then((result) => {
+        if (result.success === true) {
+          filenames = result.media
+        } else {
+          filenames = []
+        }
+        _rebuildIssueMediaUploadedList(filenames)
+      })
+  }
+}
 
-  if (fileExists) {
+function _rebuildIssueMediaUploadedList (filenames) {
+  // Helper function to format the issue media details based on the supplied filenames
+
+  $('#issueMediaViewFromModal').data('filenames', filenames)
+
+  if (filenames.length > 0) {
     $('#issueMediaUploadCol').hide()
     $('#issueMediaViewCol').show()
-    $('#issueMediaModalLabel').html('Uploaded image')
+    $('#issueMediaModalLabel').html('Uploaded media')
+
+    // Build select entries for each file
+    const mediaSelect = document.getElementById('issueMediaViewFromModalSelect')
+    mediaSelect.innerHTML = ''
+    let imageCounter = 0
+    let videoCounter = 0
+    const imageOptions = []
+    const videoOptions = []
+    filenames.forEach((filename) => {
+      const fileType = constTools.guessMimetype(filename)
+      if (fileType === 'image') {
+        imageCounter += 1
+        imageOptions.push(new Option('Image ' + imageCounter, filename))
+      } else if (fileType === 'video') {
+        videoCounter += 1
+        videoOptions.push(new Option('Video ' + videoCounter, filename))
+      }
+    })
+    if (imageOptions.length > 0) {
+      const imageHeader = new Option('Images')
+      imageHeader.setAttribute('disabled', true)
+      mediaSelect.appendChild(imageHeader)
+      imageOptions.forEach((option) => { mediaSelect.appendChild(option) })
+    }
+
+    if (videoOptions.length > 0) {
+      const videoHeader = new Option('Videos')
+      videoHeader.setAttribute('disabled', true)
+      mediaSelect.appendChild(videoHeader)
+      videoOptions.forEach((option) => { mediaSelect.appendChild(option) })
+    }
   } else {
-    $('#issueMediaModalLabel').html('Add image')
+    $('#issueMediaModalLabel').html('Add media')
     $('#issueMediaUploadCol').show()
     $('#issueMediaViewCol').hide()
   }
 }
 
-export function issueMediaDelete (filename) {
-  // Send a message to the control server, asking for the file to be deleted.
+export function issueMediaDelete (filenames) {
+  // Send a message to the control server, asking for the files to be deleted.
+  // filenames is an array of strings
 
-  const requestDict = { filename }
+  const requestDict = { filenames }
+
   // If this is an existing issue, we need to say what the issue id is
   const issueType = $('#issueEditModal').data('type')
   if (issueType === 'edit') {
@@ -376,7 +432,7 @@ export function issueMediaDelete (filename) {
     .then((response) => {
       if ('success' in response) {
         if (response.success === true) {
-          issueMediaUploadedFile(false)
+          rebuildIssueMediaUploadedList()
         }
       }
     })
@@ -392,8 +448,8 @@ export function submitIssueFromModal () {
   issueDict.relatedComponentIDs = $('#issueRelatedComponentsSelector').val()
   issueDict.assignedTo = $('#issueAssignedToSelector').val()
   issueDict.priority = $('#issuePrioritySelector').val()
-  if ($('#issueMediaViewFromModal').data('filename') != null) {
-    issueDict.media = $('#issueMediaViewFromModal').data('filename')
+  if ($('#issueMediaViewFromModal').data('filenames').length > 0) {
+    issueDict.media = $('#issueMediaViewFromModal').data('filenames')
   }
 
   let error = false
