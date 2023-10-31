@@ -520,12 +520,6 @@
                     <div class='col-12'>
                       <label id="issueMediaModalLabel" for="issueMediaUpload">Add media</label>
                     </div>
-                    <div id="issueMediaUploadCol" class='col-8'>
-                      <label class="btn btn-outline-secondary text-wrap" style="max-width: 100%;">
-                        <span id="issueMediaUploadFilename" class="w-100">Choose file</span>
-                        <input hidden multiple type="file" accept="image/*,video/*" class="form-control-file" id="issueMediaUpload">
-                      </label>
-                    </div>
                     <div id="issueMediaViewCol" class='col-12'>
                       <div class="row">
                         <div class="col-6">
@@ -535,11 +529,15 @@
                           <button id="issueMediaViewFromModal" class='btn btn-outline-secondary w-100'>View</button>
                         </div>
                         <div class="col-3">
-                          <button id="issueMediaDeleteButton" class='btn btn-outline-danger w-100'>Remove</button>
+                          <button id="issueMediaDeleteButton" class='btn btn-outline-danger w-100' data-bs-toggle="popover" title="Are you sure?" data-bs-content="<a id='issueMediaDeleteButtonConfirmation' class='btn btn-danger w-100'>Confirm</a>" data-bs-trigger="focus" data-bs-html="true">Delete</button>
                         </div>
                       </div>
-                      
-                      
+                    </div>
+                    <div id="issueMediaUploadCol" class='col-8'>
+                      <label class="btn btn-outline-secondary text-wrap" style="max-width: 100%;">
+                        <span id="issueMediaUploadFilename" class="w-100">Choose file</span>
+                        <input hidden multiple type="file" accept="image/*,video/*" class="form-control-file" id="issueMediaUpload">
+                      </label>
                     </div>
                     <div class="col-4">
                       <button id="issueMediaUploadSubmitButton" class='btn w-100 btn-outline-primary'>Upload</button>

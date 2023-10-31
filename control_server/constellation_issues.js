@@ -308,13 +308,11 @@ export function uploadIssueMediaFile () {
 
         if ('success' in response) {
           if (response.success === true) {
-            rebuildIssueMediaUploadedList()
+            _rebuildIssueMediaUploadedList(response.filenames, true)
             // If we cancel without saving, need to delete this file.
             document.getElementById('issueEditCancelButton').addEventListener('click', function () {
               issueMediaDelete(response.filenames)
             })
-          } else {
-            rebuildIssueMediaUploadedList()
           }
         }
         $('#issueMediaUploadSubmitButton').prop('disabled', false)
@@ -365,13 +363,20 @@ function rebuildIssueMediaUploadedList (id = '') {
   }
 }
 
-function _rebuildIssueMediaUploadedList (filenames) {
+function _rebuildIssueMediaUploadedList (filenames, append = false) {
   // Helper function to format the issue media details based on the supplied filenames
+  // Set append = true to add the given files to the existing ones, rather than
+  // overwriting.
 
-  $('#issueMediaViewFromModal').data('filenames', filenames)
-
-  if (filenames.length > 0) {
-    $('#issueMediaUploadCol').hide()
+  let current
+  if (append === true) {
+    current = $('#issueMediaViewFromModal').data('filenames')
+    current = [...current, ...filenames]
+  } else {
+    current = filenames
+  }
+  $('#issueMediaViewFromModal').data('filenames', current)
+  if (current.length > 0) {
     $('#issueMediaViewCol').show()
     $('#issueMediaModalLabel').html('Uploaded media')
 
@@ -382,7 +387,7 @@ function _rebuildIssueMediaUploadedList (filenames) {
     let videoCounter = 0
     const imageOptions = []
     const videoOptions = []
-    filenames.forEach((filename) => {
+    current.forEach((filename) => {
       const fileType = constTools.guessMimetype(filename)
       if (fileType === 'image') {
         imageCounter += 1
@@ -407,7 +412,6 @@ function _rebuildIssueMediaUploadedList (filenames) {
     }
   } else {
     $('#issueMediaModalLabel').html('Add media')
-    $('#issueMediaUploadCol').show()
     $('#issueMediaViewCol').hide()
   }
 }
@@ -432,7 +436,9 @@ export function issueMediaDelete (filenames) {
     .then((response) => {
       if ('success' in response) {
         if (response.success === true) {
-          rebuildIssueMediaUploadedList()
+          let current = $('#issueMediaViewFromModal').data('filenames')
+          current = current.filter(e => !filenames.includes(e))
+          _rebuildIssueMediaUploadedList(current)
         }
       }
     })

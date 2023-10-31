@@ -1124,8 +1124,6 @@ document.getElementById('manageFutureDateAddActionButton').addEventListener('cli
 })
 document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', constSchedule.convertFutureScheduleFromModal)
 document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
-  // const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
-  // constSchedule.deleteSchedule(scheduleName)
   event.target.focus()
 })
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
@@ -1146,18 +1144,18 @@ document.addEventListener('click', (event) => {
 
 // Issues tab
 // =========================
-// This event detects when the delete button has been clicked inside a popover to delete an issue.
+// This event detects when the delete button has been clicked inside a popover
 document.addEventListener('click', (event) => {
-  if (event.target.classList.contains('issue-delete') === false) return
-  constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
+  if (event.target.classList.contains('issue-delete') === true) {
+    constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
+  } else if (event.target.getAttribute('id') === 'issueMediaDeleteButtonConfirmation') {
+    const file = document.getElementById('issueMediaViewFromModalSelect').value
+    constIssues.issueMediaDelete([file])
+  }
 })
 $('#issueMediaViewFromModal').click(function () {
   const file = document.getElementById('issueMediaViewFromModalSelect').value
   constTools.openMediaInNewTab(['issues/media/' + file])
-})
-$('#issueMediaDeleteButton').click(function () {
-  const file = document.getElementById('issueMediaViewFromModalSelect').value
-  constIssues.issueMediaDelete([file])
 })
 $('#issueMediaUploadSubmitButton').click(constIssues.uploadIssueMediaFile)
 $('#issueMediaUpload').change(constIssues.onIssueMediaUploadChange)
