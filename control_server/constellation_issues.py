@@ -18,17 +18,15 @@ class Issue:
     def __init__(self, details: dict):
         """Populate the Issue with the information stored in a dictionary"""
 
-        self.details = {}
         now_date = datetime.datetime.now().isoformat()
-        self.details["id"] = details.get("id", str(uuid.uuid4()))
-        self.details["creationDate"] = details.get("creationDate", now_date)
-        self.details["lastUpdateDate"] = details.get("lastUpdateDate", now_date)
-        self.details["priority"] = details.get("priority", "medium")
-        self.details["issueName"] = details.get("issueName", "New Issue")
-        self.details["issueDescription"] = details.get("issueDescription", "")
-        self.details["relatedComponentIDs"] = details.get("relatedComponentIDs", [])
-        self.details["assignedTo"] = details.get("assignedTo", [])
-        self.details["media"] = details.get("media", [])
+        self.details = {"id": details.get("id", str(uuid.uuid4())),
+                        "creationDate": details.get("creationDate", now_date),
+                        "lastUpdateDate": details.get("lastUpdateDate", now_date),
+                        "priority": details.get("priority", "medium"),
+                        "issueName": details.get("issueName", "New Issue"),
+                        "issueDescription": details.get("issueDescription", ""),
+                        "relatedComponentIDs": details.get("relatedComponentIDs", []),
+                        "assignedTo": details.get("assignedTo", []), "media": details.get("media", [])}
         if isinstance(self.details["media"], str):
             # Fix in Constellation 4 when transitioning from one media file to multiple
             self.details["media"] = [self.details["media"]]
@@ -95,9 +93,9 @@ def get_issue(this_id: str) -> Issue:
 def remove_issue(this_id: str) -> None:
     """Remove an Issue with the given id from the issueList"""
 
-    # First, if there are media files, delete them
     issue = get_issue(this_id)
     if issue is not None:
+        # First, if there are media files, delete them
         if "media" in issue.details and len(issue.details["media"]) > 0:
             delete_issue_media_file(issue.details["media"])
 
@@ -106,6 +104,39 @@ def remove_issue(this_id: str) -> None:
             issue.refresh_last_update_date()
             save_issue_list()
     config.last_update_time = time.time()
+
+
+def archive_issue(this_id: str) -> None:
+    """Move the given issue from issues.json to archived.json."""
+
+    issue = get_issue(this_id)
+    now_date = datetime.datetime.now().isoformat()
+    issue.details["archiveDate"] = now_date
+    issue.details["lastUpdateDate"] = now_date
+
+    # First, load the current archive
+    archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
+    with config.issueLock:
+        try:
+            with open(archive_file, 'r', encoding="UTF-8") as file_object:
+                try:
+                    archive: list[dict[str, Any]] = json.load(file_object)
+                except json.decoder.JSONDecodeError:
+                    # File is blank
+                    archive = []
+        except FileNotFoundError:
+            # File does not exist
+            archive = []
+
+        # Next, append the newly-archived issue
+        archive.append(issue.details)
+
+        # Then, write the file back to disk
+        with open(archive_file, "w", encoding="UTF-8") as file_object:
+            json.dump(archive, file_object, indent=2, sort_keys=True)
+
+    # Finally, delete the issue
+    remove_issue(this_id)
 
 
 def read_issue_list() -> None:

@@ -1146,12 +1146,20 @@ document.addEventListener('click', (event) => {
 // =========================
 // This event detects when the delete button has been clicked inside a popover
 document.addEventListener('click', (event) => {
-  if (event.target.classList.contains('issue-delete') === true) {
-    constIssues.deleteIssue(event.target.getAttribute('id').slice(7))
-  } else if (event.target.getAttribute('id') === 'issueMediaDeleteButtonConfirmation') {
+  if (event.target.getAttribute('id') === 'issueMediaDeleteButtonConfirmation') {
     const file = document.getElementById('issueMediaViewFromModalSelect').value
     constIssues.issueMediaDelete([file])
   }
+})
+document.getElementById('issueModifyModalDeleteButton').addEventListener('click', () => {
+  const id = document.getElementById('issueModifyModal').getAttribute('data-id')
+  constIssues.modifyIssue(id, 'delete')
+  $('#issueModifyModal').modal('hide')
+})
+document.getElementById('issueModifyModalArchiveButton').addEventListener('click', () => {
+  const id = document.getElementById('issueModifyModal').getAttribute('data-id')
+  constIssues.modifyIssue(id, 'archive')
+  $('#issueModifyModal').modal('hide')
 })
 $('#issueMediaViewFromModal').click(function () {
   const file = document.getElementById('issueMediaViewFromModalSelect').value

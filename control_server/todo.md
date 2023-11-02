@@ -17,7 +17,6 @@
 ### Maintenance
 - Add ability to mark issue as resolved
 - Connection status history
-- Ability to add multiple media to an issue
 - See issue history in component info modal
 
 ## Constellation Apps

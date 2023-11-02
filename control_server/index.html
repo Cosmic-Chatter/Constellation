@@ -560,6 +560,34 @@
         </div>
       </div>
 
+      <!-- Modify issue confirmation modal -->
+      <!-- This modal is called when deleting or archiving an issue to confirm. -->
+      <div class="modal" tabindex="-1" role="dialog" id="issueModifyModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="issueModifyModalDeleteTitle" class="modal-title">Delete issue?</h5>
+              <h5 id="issueModifyModalArchiveTitle" class="modal-title">Archive issue?</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div id="issueModifyModalDeleteContent">
+                <span class="text-danger"> Deleting an issue cannot be undone. </p>
+              </div>
+              <div id="issueModifyModalArchiveContent">
+                <p> Mark an issue as complete to move it to the archive. Archived issues can be restored at any time, but their media files are deleted. </p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="issueModifyModalDeleteButton" type="button" class="btn btn-danger ms-auto">Delete</button>
+              <button id="issueModifyModalArchiveButton" type="button" class="btn btn-success ms-auto">Mark complete</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
         <div class="col-12 col-sm-auto d-flex">
           <div id="exhibitNameField" class="align-self-center"></div>

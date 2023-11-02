@@ -54,7 +54,6 @@ export function createIssueHTML (issue, full = true) {
 
   const content = document.createElement('div')
   content.style.transition = 'all 1s'
-  content.style.overflow = 'hidden'
   body.appendChild(content)
 
   issue.relatedComponentIDs.forEach((id, i) => {
@@ -77,9 +76,69 @@ export function createIssueHTML (issue, full = true) {
   desc.innerHTML = issue.issueDescription
   content.appendChild(desc)
 
+  const row1 = document.createElement('div')
+  row1.classList = 'row gy-2 row-cols-2'
+  content.appendChild(row1)
+
+  const actionCol = document.createElement('div')
+  actionCol.classList = 'col'
+  row1.appendChild(actionCol)
+
+  const actionDropdownContainer = document.createElement('div')
+  actionDropdownContainer.classList = 'dropdown'
+  actionCol.appendChild(actionDropdownContainer)
+
+  const actionButton = document.createElement('a')
+  actionButton.classList = 'btn btn-primary btn-sm dropdown-toggle w-100'
+  actionButton.innerHTML = 'Action'
+  actionButton.href = '#'
+  actionButton.setAttribute('role', 'button')
+  actionButton.setAttribute('data-bs-toggle', 'dropdown')
+  actionButton.setAttribute('aria-expanded', 'false')
+  actionDropdownContainer.appendChild(actionButton)
+
+  const actionDropdownList = document.createElement('ul')
+  actionDropdownList.classList = 'dropdown-menu'
+  actionDropdownList.style.position = 'static'
+  actionDropdownContainer.appendChild(actionDropdownList)
+
+  const actionDropdownListEditItem = document.createElement('li')
+  const actionDropdownListEditButton = document.createElement('a')
+  actionDropdownListEditButton.classList = 'dropdown-item text-info handCursor'
+  actionDropdownListEditButton.innerHTML = 'Edit'
+  actionDropdownListEditButton.addEventListener('click', function () {
+    showIssueEditModal('edit', issue.id)
+  })
+  actionDropdownListEditItem.appendChild(actionDropdownListEditButton)
+  actionDropdownList.appendChild(actionDropdownListEditItem)
+
+  const actionDropdownListDeleteItem = document.createElement('li')
+  const actionDropdownListDeleteButton = document.createElement('a')
+  actionDropdownListDeleteButton.classList = 'dropdown-item text-danger handCursor'
+  actionDropdownListDeleteButton.innerHTML = 'Delete'
+  actionDropdownListDeleteButton.addEventListener('click', function () {
+    showModifyIssueModal(issue.id, 'delete')
+  })
+  actionDropdownListDeleteItem.appendChild(actionDropdownListDeleteButton)
+  actionDropdownList.appendChild(actionDropdownListDeleteItem)
+
+  const actionDropdownListArchiveItem = document.createElement('li')
+  const actionDropdownListArchiveButton = document.createElement('a')
+  actionDropdownListArchiveButton.classList = 'dropdown-item text-success handCursor'
+  actionDropdownListArchiveButton.innerHTML = 'Mark complete'
+  actionDropdownListArchiveButton.addEventListener('click', function () {
+    showModifyIssueModal(issue.id, 'archive')
+  })
+  actionDropdownListArchiveItem.appendChild(actionDropdownListArchiveButton)
+  actionDropdownList.appendChild(actionDropdownListArchiveItem)
+
   if (issue.media.length > 0) {
+    const mediaCol = document.createElement('div')
+    mediaCol.classList = 'col'
+    row1.appendChild(mediaCol)
+
     const mediaBut = document.createElement('button')
-    mediaBut.setAttribute('class', 'btn btn-primary me-1 mt-1')
+    mediaBut.setAttribute('class', 'btn btn-sm btn-info w-100')
     mediaBut.innerHTML = 'View media'
 
     const mediaFiles = []
@@ -89,38 +148,18 @@ export function createIssueHTML (issue, full = true) {
     mediaBut.addEventListener('click', function () {
       constTools.openMediaInNewTab(mediaFiles)
     }, false)
-    content.appendChild(mediaBut)
+    mediaCol.appendChild(mediaBut)
   }
-
-  const editBut = document.createElement('button')
-  editBut.setAttribute('class', 'btn btn-info me-1 mt-1')
-  editBut.innerHTML = 'Edit'
-  editBut.addEventListener('click', function () {
-    showIssueEditModal('edit', issue.id)
-  })
-  content.appendChild(editBut)
-
-  const deleteBut = document.createElement('button')
-  deleteBut.setAttribute('type', 'button')
-  deleteBut.setAttribute('class', 'btn btn-danger mt-1')
-  deleteBut.setAttribute('data-bs-toggle', 'popover')
-  deleteBut.setAttribute('title', 'Are you sure?')
-  deleteBut.setAttribute('data-bs-content', `<a id="Popover${issue.id}" class='btn btn-danger w-100 issue-delete'>Confirm</a>`)
-  deleteBut.setAttribute('data-bs-trigger', 'focus')
-  deleteBut.setAttribute('data-bs-html', 'true')
-  // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
-  deleteBut.addEventListener('click', function () { deleteBut.focus() })
-  deleteBut.innerHTML = 'Delete'
-  content.appendChild(deleteBut)
-  $(deleteBut).popover()
 
   const footer = document.createElement('div')
   footer.classList = 'card-footer text-body-secondary text-center'
 
   if (full === false) {
     content.style.height = '0px'
+    content.style.overflow = 'hidden'
     footer.innerHTML = 'More'
   } else {
+    content.style.overflow = ''
     footer.innerHTML = 'Less'
   }
   card.appendChild(footer)
@@ -135,8 +174,12 @@ export function createIssueHTML (issue, full = true) {
       if (content.style.height === '0px') {
         content.style.height = String(content.scrollHeight) + 'px'
         footer.innerHTML = 'Less'
+        setTimeout(() => {
+          content.style.overflow = ''
+        }, 1000)
       } else {
         content.style.height = '0px'
+        content.style.overflow = 'hidden'
         footer.innerHTML = 'More'
       }
     }, 1)
@@ -145,13 +188,44 @@ export function createIssueHTML (issue, full = true) {
   return col
 }
 
-export function deleteIssue (id) {
-  // Ask the control server to remove the specified issue
+function showModifyIssueModal (id, mode) {
+  // Configure the modal to confirm archiving or deleting
+
+  document.getElementById('issueModifyModal').setAttribute('data-id', id)
+
+  const deleteTitle = document.getElementById('issueModifyModalDeleteTitle')
+  const archiveTitle = document.getElementById('issueModifyModalArchiveTitle')
+  const deleteContent = document.getElementById('issueModifyModalDeleteContent')
+  const archiveContent = document.getElementById('issueModifyModalArchiveContent')
+  const deleteButton = document.getElementById('issueModifyModalDeleteButton')
+  const archiveButton = document.getElementById('issueModifyModalArchiveButton')
+
+  if (mode === 'archive') {
+    deleteTitle.style.display = 'none'
+    archiveTitle.style.display = 'block'
+    deleteContent.style.display = 'none'
+    archiveContent.style.display = 'block'
+    deleteButton.style.display = 'none'
+    archiveButton.style.display = 'block'
+  } else if (mode === 'delete') {
+    deleteTitle.style.display = 'block'
+    archiveTitle.style.display = 'none'
+    deleteContent.style.display = 'block'
+    archiveContent.style.display = 'none'
+    deleteButton.style.display = 'block'
+    archiveButton.style.display = 'none'
+  }
+
+  $('#issueModifyModal').modal('show')
+}
+
+export function modifyIssue (id, mode) {
+  // Ask Control Server to remove or archive the specified issue
+  // mode is one of 'archive' or 'delete'
 
   constTools.makeServerRequest({
-    method: 'POST',
-    endpoint: '/issue/delete',
-    params: { id_to_delete: id }
+    method: 'GET',
+    endpoint: '/issue/' + id + '/' + mode
   })
     .then((result) => {
       if ('success' in result && result.success === true) {

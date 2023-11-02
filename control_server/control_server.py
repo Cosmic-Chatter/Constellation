@@ -712,13 +712,20 @@ async def create_issue(details: dict[str, Any] = Body(embed=True)):
     return {"success": True}
 
 
-@app.post("/issue/delete")
-async def delete_issue(id_to_delete: str = Body(description="The ID of the issue to delete.", embed=True)):
+@app.get("/issue/{issue_id}/delete")
+async def delete_issue(issue_id: str):
     """Delete an issue."""
 
-    c_issues.remove_issue(id_to_delete)
-    c_issues.save_issue_list()
+    c_issues.remove_issue(issue_id)
     return {"success": True, "reason": ""}
+
+
+@app.get("/issue/{issue_id}/archive")
+async def archive_issue(issue_id: str):
+    """Move the given issue to the archive."""
+
+    c_issues.archive_issue(issue_id)
+    return {"success": True}
 
 
 @app.post("/issue/deleteMedia")
