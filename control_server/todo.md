@@ -15,7 +15,6 @@
 - Real-time preview when setting up definition
 
 ### Maintenance
-- Add ability to mark issue as resolved
 - Connection status history
 - See issue history in component info modal
 

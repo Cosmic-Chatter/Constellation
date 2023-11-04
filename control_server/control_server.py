@@ -728,6 +728,14 @@ async def archive_issue(issue_id: str):
     return {"success": True}
 
 
+@app.get("/issue/{issue_id}/restore")
+async def restore_issue(issue_id: str):
+    """Move the given issue from the archive to the issue list."""
+
+    c_issues.restore_issue(issue_id)
+    return {"success": True}
+
+
 @app.post("/issue/deleteMedia")
 async def delete_issue_media(filenames: list[str] = Body(description="The filenames to be deleted."),
                              owner: Union[str, None] = Body(default=None,
@@ -769,6 +777,34 @@ async def get_issue_list(match_id: str):
     response = {
         "success": True,
         "issueList": matched_issues
+    }
+    return response
+
+
+@app.get("/issue/archive/list/{match_id}")
+async def get_archived_issues(match_id: str):
+    """Return a list of open issues."""
+
+    archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
+
+    with c_config.issueLock:
+        try:
+            with open(archive_file, 'r', encoding='UTF-8') as file_object:
+                archive_list = json.load(file_object)
+        except (FileNotFoundError, json.JSONDecodeError):
+            archive_list = []
+
+    if match_id != "__all":
+        matched_issues = []
+        for issue in archive_list:
+            if match_id in issue["relatedComponentIDs"]:
+                matched_issues.append(issue)
+    else:
+        matched_issues = archive_list
+
+    response = {
+        "success": True,
+        "issues": matched_issues
     }
     return response
 

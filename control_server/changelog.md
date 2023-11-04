@@ -1,5 +1,5 @@
 # **Constellation 4**
-__*Constellation*__ 4 expands customization for your apps and significantly expands Control Server's maintenance tracking capabilities.
+__*Constellation*__ 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.
 
 ## Control Server
 
@@ -7,6 +7,7 @@ __*Constellation*__ 4 expands customization for your apps and significantly expa
 - When viewing component details, a list of related issues is shown in the maintenance tab.
 - Uploaded issue media files can be videos in addition to images.
 - Multiple media files can be attached to an issue. 
+- Mark issues as completed and see a history of completed issues.
 
 ## Constellation Apps
 

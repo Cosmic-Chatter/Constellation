@@ -1171,6 +1171,9 @@ $('#issueEditSubmitButton').click(constIssues.submitIssueFromModal)
 $('#createIssueButton').click(function () {
   constIssues.showIssueEditModal('new')
 })
+document.getElementById('viewIssueArchiveButton').addEventListener('click', () => {
+  constIssues.showArchivedIssuesModal()
+})
 $('#issueListFilterPrioritySelect').change(function () {
   constIssues.rebuildIssueList()
 })

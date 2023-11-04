@@ -113,6 +113,7 @@ def archive_issue(this_id: str) -> None:
     now_date = datetime.datetime.now().isoformat()
     issue.details["archiveDate"] = now_date
     issue.details["lastUpdateDate"] = now_date
+    issue.details["media"] = []
 
     # First, load the current archive
     archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
@@ -137,6 +138,32 @@ def archive_issue(this_id: str) -> None:
 
     # Finally, delete the issue
     remove_issue(this_id)
+
+
+def restore_issue(this_id: str) -> None:
+    """Move the given issue from the archive back to the issueList"""
+
+    archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
+
+    # First, create the new issue
+    with config.issueLock:
+        try:
+            with open(archive_file, 'r', encoding='UTF-8') as file_object:
+                archive_list = json.load(file_object)
+        except (FileNotFoundError, json.JSONDecodeError):
+            archive_list = []
+
+        issue = [x for x in archive_list if x["id"] == this_id][0]
+    create_issue(issue)
+    save_issue_list()
+
+    with config.issueLock:
+        # Then, remove the issue from the archive
+        new_archive = [x for x in archive_list if x["id"] != this_id]
+
+        # Finally, write the file back to disk
+        with open(archive_file, "w", encoding="UTF-8") as file_object:
+            json.dump(new_archive, file_object, indent=2, sort_keys=True)
 
 
 def read_issue_list() -> None:

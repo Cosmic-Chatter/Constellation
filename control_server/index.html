@@ -73,7 +73,11 @@
       .schedule-date-specific {
         background-color: rgba(91, 192, 222, 0.2);
       }
-
+      #completedIssuesModalIssueRow {
+        max-height: 55vh;
+        min-height: 35vh;
+        overflow-y: auto;
+      }
       #componentAvailableContentList {
         max-height: 25vh;
         min-height: 15vh;
@@ -588,6 +592,25 @@
         </div>
       </div>
 
+      <!-- Archived/completed issues modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="archivedIssuesModal">
+        <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Completed issues</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div id="completedIssuesModalIssueRow" class="row gy-2 row-cols-1 row-cols-md-2"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
         <div class="col-12 col-sm-auto d-flex">
           <div id="exhibitNameField" class="align-self-center"></div>
@@ -853,11 +876,14 @@
 
           
 
-          <div id='issueTabButtons' class='row'>
-            <div class='col-12 col-sm-3 col-md-3 col-lg-2 mt-2 mt-sm-auto'>
+          <div id='issueTabButtons' class='row gy-2 mt-2'>
+            <div class='col-6 col-md-3 col-lg-2 d-flex align-items-end'>
               <button id="createIssueButton" class='btn btn-primary w-100'>Create issue</button>
             </div>
-            <div class='col-6 col-sm-4 col-lg-3 col-xl-2 mt-3'>
+            <div class='col-6 col-md-3 col-lg-2 d-flex align-items-end'>
+              <button id="viewIssueArchiveButton" class='btn btn-info w-100'>View completed</button>
+            </div>
+            <div class='col-6 col-md-3 col-xl-2'>
               <label>Priority</label>
               <select id="issueListFilterPrioritySelect" class='form-select'>
                 <option value="all">All</option>
@@ -866,7 +892,7 @@
                 <option value="high">High</option>
               </select>
             </div>
-            <div class='col-6 col-sm-4 col-lg-3 col-xl-2 mt-3'>
+            <div class='col-6 col-md-3 col-xl-2'>
               <label>Assigned to</label>
               <select id="issueListFilterAssignedToSelect" class='form-select'>
               </select>
