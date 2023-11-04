@@ -259,6 +259,36 @@ class ExhibitComponent extends BaseComponent {
     return this.helperAddress
   }
 
+  remove () {
+    if (this.status === constConfig.STATUS.STATIC) {
+      // Remove the component from the static system configuration
+
+      // First, get the current static configuration
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: '/system/static/getConfiguration'
+      })
+        .then((result) => {
+          let staticConfig = result.configuration
+          // Next, remove this element
+          const thisID = this.id
+          staticConfig = staticConfig.filter(function (obj) {
+            return obj.id !== thisID
+          })
+
+          // Finally, send the configuration back for writing
+          constTools.makeServerRequest({
+            method: 'POST',
+            endpoint: '/system/static/updateConfiguration',
+            params: {
+              configuration: staticConfig
+            }
+          })
+        })
+      super.remove()
+    }
+  }
+
   updateFromServer (update) {
     // Extend parent update to include exhibit component-specific items
 
@@ -637,7 +667,7 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalLastContactGroup').hide()
   }
-  if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
+  if (obj.type === 'exhibit_component') {
     // This is an active component, so add a remove button
     $('#componentInfoModalRemoveButtonGroup').show()
   } else {
@@ -1691,5 +1721,44 @@ export function updateStaticComponentsConfigurationFromModal () {
   })
     .then((result) => {
       $('#manageStaticComponentsModal').modal('hide')
+    })
+}
+
+export function showAddStaticComponentsModal () {
+  // Prepare the modal for adding static components and show it.
+
+  document.getElementById('addStaticComponentModalIDField').value = ''
+  document.getElementById('addStaticComponentModalGroupField').value = ''
+
+  $('#addStaticComponentModal').modal('show')
+}
+
+export function submitStaticComponentAdditionFromModal () {
+  // Collect the ID and group from the modal and add it to the static configuration
+
+  // First, get the current static configuration
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/static/getConfiguration'
+  })
+    .then((result) => {
+      const staticConfig = result.configuration
+      // Next, add the new element
+      staticConfig.push({
+        group: document.getElementById('addStaticComponentModalGroupField').value,
+        id: document.getElementById('addStaticComponentModalIDField').value
+      })
+
+      // Finally, send the configuration back for writing
+      constTools.makeServerRequest({
+        method: 'POST',
+        endpoint: '/system/static/updateConfiguration',
+        params: {
+          configuration: staticConfig
+        }
+      })
+        .then((response) => {
+          $('#addStaticComponentModal').modal('hide')
+        })
     })
 }

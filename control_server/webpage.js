@@ -216,22 +216,6 @@ function updateAvailableExhibits (exhibitList) {
   })
 
   exhibitSelect.value = constConfig.currentExhibit
-  // for (let i = 0; i < exhibitList.length; i++) {
-  //   // Check if exhibit already exists as an option. If not, add it
-  //   if ($(`#exhibitSelect option[value='${exhibitList[i]}']`).length === 0) {
-  //     $('#exhibitSelect').append(new Option(exhibitList[i], exhibitList[i]))
-  //     $('#exhibitDeleteSelector').append(new Option(exhibitList[i], exhibitList[i]))
-  //   }
-  // }
-  // $('#exhibitSelect').children().toArray().forEach((item, i) => {
-  //   if (!exhibitList.includes(item.value)) {
-  //     // Remove item from exhibit selecetor
-  //     $(item).remove()
-
-  //     // Remove item from exhibit delete selector
-  //     $(`#exhibitDeleteSelector option[value="${item.value}"]`).remove()
-  //   }
-  // })
   checkDeleteSelection()
 }
 
@@ -1183,6 +1167,9 @@ $('#componentsTabSettingsShowStatic').change(function () {
   // Rebuild the interface with the new option
   constExhibit.rebuildComponentInterface()
 })
+document.getElementById('showAddStaticComponentModalButton').addEventListener('click', constExhibit.showAddStaticComponentsModal)
+document.getElementById('addStaticComponentModalAddButton').addEventListener('click', constExhibit.submitStaticComponentAdditionFromModal)
+
 // Component info modal
 $('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)
 $('#componentInfoModalMaintenanceSaveButton').click(function () {
@@ -1412,6 +1399,10 @@ $('#manageStaticComponentsModalSaveButton').click(constExhibit.updateStaticCompo
 $(function () {
   $('[data-bs-toggle="popover"]').popover()
 })
+
+// Enable all tooltips
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 constConfig.serverAddress = location.origin
 

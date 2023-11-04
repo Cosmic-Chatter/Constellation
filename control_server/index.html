@@ -611,6 +611,40 @@
         </div>
       </div>
 
+      <!-- Add static component modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="addStaticComponentModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add static component</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>Static components allow you to add non-Constellation exhibit elements to Control Server. This is useful for incorporating them into the maintenance tracking system.</p>
+
+              <div class="row">
+                <div class="col">
+                  <label class="form-label" for="addStaticComponentModalIDField">
+                    ID
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="Every component in Constellation must have a unique ID.">?</span>
+                  </label>
+                  <input id="addStaticComponentModalIDField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addStaticComponentModalGroupField">Group</label>
+                  <input id="addStaticComponentModalGroupField" type="text" class="form-control">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="addStaticComponentModalAddButton" type="button" class="btn btn-primary">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
         <div class="col-12 col-sm-auto d-flex">
           <div id="exhibitNameField" class="align-self-center"></div>
@@ -740,8 +774,20 @@
             </div>
           </div>
 
-          <div class="row mt-3 ms-2" id="componentsTabSettingsRow">
-            <div class="col">
+          <div class="row mt-3" id="componentsTabSettingsRow">
+            <div class="col-3 col-md-2 col-xl-1">
+              <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Add
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#">Projector</a></li>
+                  <li><a id="showAddStaticComponentModalButton" class="dropdown-item" href="#">Static component</a></li>
+                  <li><a class="dropdown-item" href="#">Wake on LAN device</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col d-flex align-items-end">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" checked id="componentsTabSettingsShowStatic">
                 <label class="form-check-label" for="componentsTabSettingsShowStatic">

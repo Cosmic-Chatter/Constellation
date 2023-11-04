@@ -1026,7 +1026,8 @@ async def update_schedule(name: str = Body(),
                           time_to_set: str = Body(
                               description="The time of the action to set, expressed in any normal way."),
                           action_to_set: str = Body(description="The action to set."),
-                          target_to_set: list | str = Body(description="The ID(s) of the component(s) that should be acted upon."),
+                          target_to_set: list | str = Body(
+                              description="The ID(s) of the component(s) that should be acted upon."),
                           value_to_set: str = Body(default="", description="A value corresponding to the action."),
                           schedule_id: str = Body(
                               description="A unique identifier corresponding to the schedule entry.")):
@@ -1094,7 +1095,7 @@ async def get_json_configuration(target: str):
     """Return the requested JSON configuration."""
 
     config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
-    return {"configuration": c_tools.load_json(config_path)}
+    return {"success": True, "configuration": c_tools.load_json(config_path)}
 
 
 @app.get("/system/getHelpText")
@@ -1162,9 +1163,9 @@ async def handle_ping(data: dict[str, Any], request: Request):
 
 
 @app.post("/system/{target}/updateConfiguration")
-async def update_configuration(target: str, configuration=Body(
-    description="A JSON object specifying the configuration.",
-    embed=True)):
+async def update_configuration(target: str,
+                               configuration=Body(description="A JSON object specifying the configuration.",
+                                                  embed=True)):
     """Write the given object to the matching JSON file as the configuration."""
 
     if target == "system":

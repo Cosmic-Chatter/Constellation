@@ -6,6 +6,8 @@
 - Add ability to edit exhibits without setting them
 - Move static component editing to _Components_ tab
 - Hide the view screenshot option is screenshot permission is not available
+- Edit descriptions from component info modal
+- Allow components to be in multiple groups
 
 ### Analytics
 - Record app analytics
@@ -17,6 +19,7 @@
 ### Maintenance
 - Connection status history
 - See issue history in component info modal
+- Search issues and archived issues
 
 ## Constellation Apps
 
