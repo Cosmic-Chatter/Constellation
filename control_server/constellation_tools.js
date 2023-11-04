@@ -324,3 +324,37 @@ export function sortComponentsByGroup () {
 
   return result
 }
+
+export function sortDefinitionsByApp (defDict, dropPreview = true) {
+  // Take a dictionary of app definitions with their UUIDs as keys and return a
+  // dictionary sorted by app name.
+  // set dropPreview == false to include the __previewXXX definitions used by the
+  // app config wizards.
+
+  const result = {}
+
+  Object.keys(defDict).forEach((uuid) => {
+    const def = defDict[uuid]
+    try {
+      if ((def.uuid.slice(0, 9) === '__preview') && (dropPreview === true)) return
+    } catch {
+      // If we don't have a name, this definition is faulty.
+      return
+    }
+
+    if (def.app in result) {
+      result[def.app].push(def)
+    } else {
+      result[def.app] = [def]
+    }
+  })
+
+  // Sort the arrays
+  Object.keys(result).forEach((key) => {
+    result[key] = result[key].sort((a, b) => {
+      return a.name.toLowerCase() - b.name.toLowerCase()
+    })
+  })
+
+  return result
+}

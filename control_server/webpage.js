@@ -12,14 +12,15 @@ import * as constTracker from './constellation_tracker.js'
 function showManageExhibitsModal () {
   // Configure the manageExhibitsModal and show it.
 
+  document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').checked = true
   constTools.makeServerRequest({
     method: 'GET',
     endpoint: '/exhibit/getAvailable'
   })
     .then((result) => {
       populateManageExhibitsExhibitList(result.available_exhibits)
+      $('#manageExhibitsModal').modal('show')
     })
-  $('#manageExhibitsModal').modal('show')
 }
 
 function populateManageExhibitsExhibitList (exhibits) {
@@ -52,6 +53,7 @@ function populateManageExhibitsExhibitContent (exhibit) {
 
   const contentList = document.getElementById('manageExhibitsModalExhibitContentList')
   contentList.innerHTML = ''
+  document.getElementById('manageExhibitModalExhibitNameInput').value = exhibit
 
   constTools.makeServerRequest({
     method: 'POST',
@@ -59,7 +61,6 @@ function populateManageExhibitsExhibitContent (exhibit) {
     params: { name: exhibit }
   })
     .then((result) => {
-      console.log(result.exhibit)
       result.exhibit.forEach((component) => {
         const col = document.createElement('div')
         col.classList = 'col-6 mt-2'
@@ -70,15 +71,116 @@ function populateManageExhibitsExhibitContent (exhibit) {
         col.appendChild(row)
 
         const header = document.createElement('div')
-        header.classList = 'col-12 bg-primary rounded-top'
+        header.classList = 'col-12 bg-primary rounded-top text-light py-1'
         header.innerHTML = component.id
         row.appendChild(header)
 
         const body = document.createElement('div')
-        body.classList = 'col-12 bg-secondary'
+        body.classList = 'col-12 bg-secondary rounded-bottom py-2'
         row.appendChild(body)
+
+        const bodyRow = document.createElement('div')
+        bodyRow.classList = 'row gy-2'
+        body.appendChild(bodyRow)
+
+        const componentObj = constExhibit.getExhibitComponent(component.id)
+
+        if (componentObj != null) {
+          // This component is active
+
+          const definitionPreviewCol = document.createElement('div')
+          definitionPreviewCol.classList = 'col-12 exhibit-thumbnail'
+          bodyRow.appendChild(definitionPreviewCol)
+
+          const definitionPreviewImage = document.createElement('img')
+          definitionPreviewImage.style.width = '100%'
+          definitionPreviewImage.style.height = '100px'
+          definitionPreviewImage.style.objectFit = 'contain'
+          definitionPreviewCol.appendChild(definitionPreviewImage)
+
+          const definitionPreviewVideo = document.createElement('video')
+          definitionPreviewVideo.setAttribute('autoplay', true)
+          definitionPreviewVideo.muted = 'true'
+          definitionPreviewVideo.setAttribute('loop', 'true')
+          definitionPreviewVideo.setAttribute('playsinline', 'true')
+          definitionPreviewVideo.setAttribute('webkit-playsinline', 'true')
+          definitionPreviewVideo.setAttribute('disablePictureInPicture', 'true')
+          definitionPreviewVideo.style.width = '100%'
+          definitionPreviewVideo.style.height = '100px'
+          definitionPreviewVideo.style.objectFit = 'contain'
+          definitionPreviewCol.appendChild(definitionPreviewVideo)
+
+          const definitionSelectCol = document.createElement('div')
+          definitionSelectCol.classList = 'col-12'
+          bodyRow.appendChild(definitionSelectCol)
+
+          const definitionSelect = document.createElement('select')
+          definitionSelect.classList = 'form-select'
+          definitionSelectCol.appendChild(definitionSelect)
+
+          constTools.makeRequest({
+            method: 'GET',
+            url: componentObj.getHelperURL(),
+            endpoint: '/getAvailableContent'
+          })
+            .then((availableContent) => {
+              // Build an option for each definition
+              const appDict = constTools.sortDefinitionsByApp(availableContent.definitions)
+              Object.keys(appDict).sort().forEach((app) => {
+                const header = new Option(constExhibit.convertAppIDtoDisplayName(app))
+                header.setAttribute('disabled', true)
+                definitionSelect.appendChild(header)
+
+                appDict[app].forEach((def) => {
+                  const option = new Option(def.name, def.uuid)
+                  definitionSelect.appendChild(option)
+                })
+              })
+
+              const changeThumb = function () {
+                if (availableContent.thumbnails.includes(definitionSelect.value + '.mp4')) {
+                  definitionPreviewVideo.src = componentObj.getHelperURL() + '/thumbnails/' + definitionSelect.value + '.mp4'
+                  definitionPreviewVideo.play()
+                  definitionPreviewImage.style.display = 'none'
+                  definitionPreviewVideo.style.display = 'block'
+                } else if (availableContent.thumbnails.includes(definitionSelect.value + '.jpg')) {
+                  definitionPreviewImage.src = componentObj.getHelperURL() + '/thumbnails/' + definitionSelect.value + '.jpg'
+                  definitionPreviewVideo.style.display = 'none'
+                  definitionPreviewImage.style.display = 'block'
+                } else {
+                  definitionPreviewVideo.style.display = 'none'
+                  definitionPreviewImage.style.display = 'none'
+                }
+              }
+
+              definitionSelect.addEventListener('change', changeThumb)
+              definitionSelect.value = component.definition
+              changeThumb()
+            })
+        } else {
+          // This component is inactive
+
+          const badComponentCol = document.createElement('div')
+          badComponentCol.classList = 'col-12 text-warning fst-italic text-center'
+          badComponentCol.innerHTML = 'Component unavailable'
+          bodyRow.appendChild(badComponentCol)
+        }
       })
     })
+}
+
+function onManageExhibitModalThumbnailCheckboxChange () {
+  // Get the value of the checkbox and show/hide the definition
+  // tbumbnails as appropriate.
+
+  const checked = document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').checked
+  document.querySelectorAll('.exhibit-thumbnail').forEach((el) => {
+    if (checked) {
+      el.style.display = 'block'
+    } else {
+      el.style.display = 'none'
+    }
+  })
 }
 
 function setCurrentExhibitName (name) {
@@ -1231,7 +1333,7 @@ $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFr
 // Settings tab
 // =========================
 // Exhibits
-// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
+document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
 $('#exhibitSelect').change(function () {
   changeExhibit(false)
 })
@@ -1249,6 +1351,7 @@ $('#exhibitChangeConfirmationButton').click(function () {
 })
 $('#deleteExhibitButton').click(deleteExhibitFromModal)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
 // Server settings
 $('#showManageSettingsModalButton').click(showManageSettingsModal)
 $('.manageSettingsInputField').on('input', updateManageSettingsModal).change(updateManageSettingsModal)
