@@ -232,3 +232,51 @@ export function updateProjectorConfigurationFromModal () {
       $('#manageProjectorsModal').modal('hide')
     })
 }
+
+export function showAddProjectorModal () {
+  // Prepare the modal for adding static components and show it.
+
+  document.getElementById('addProjectorModalIDField').value = ''
+  document.getElementById('addProjectorModalGroupField').value = ''
+
+  $('#addProjectorModal').modal('show')
+}
+
+export function submitProjectorAdditionFromModal () {
+  // Set up a new projector from the components tab modal
+
+  // First, get the current projector configuration
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/projectors/getConfiguration'
+  })
+    .then((result) => {
+      let projConfig
+      if (result.success === true) {
+        projConfig = result.configuration
+      } else {
+        projConfig = []
+      }
+
+      // Next, add the new element
+      projConfig.push({
+        group: document.getElementById('addProjectorModalGroupField').value,
+        id: document.getElementById('addProjectorModalIDField').value,
+        ip_address: document.getElementById('addProjectorModalIPField').value,
+        password: document.getElementById('addProjectorModalPasswordField').value,
+        protocol: 'pjlink'
+      })
+
+      // Finally, send the configuration back for writing
+      constTools.makeServerRequest({
+        method: 'POST',
+        endpoint: '/system/projectors/updateConfiguration',
+        params: {
+          configuration: projConfig
+        }
+      })
+        .then((response) => {
+          $('#addProjectorModal').modal('hide')
+        })
+    })
+}

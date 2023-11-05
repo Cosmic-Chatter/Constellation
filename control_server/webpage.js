@@ -1169,6 +1169,8 @@ $('#componentsTabSettingsShowStatic').change(function () {
 })
 document.getElementById('showAddStaticComponentModalButton').addEventListener('click', constExhibit.showAddStaticComponentsModal)
 document.getElementById('addStaticComponentModalAddButton').addEventListener('click', constExhibit.submitStaticComponentAdditionFromModal)
+document.getElementById('showAddProjetorModalButton').addEventListener('click', constProjector.showAddProjectorModal)
+document.getElementById('addProjectorModalAddButton').addEventListener('click', constProjector.submitProjectorAdditionFromModal)
 
 // Component info modal
 $('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)

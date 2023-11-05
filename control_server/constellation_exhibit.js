@@ -335,6 +335,37 @@ class Projector extends BaseComponent {
     this.state = {}
   }
 
+  remove () {
+    // Remove the projector from the system configuration
+
+    // First, get the current projector configuration
+    constTools.makeServerRequest({
+      method: 'GET',
+      endpoint: '/system/projectors/getConfiguration'
+    })
+      .then((result) => {
+        let projConfig = result.configuration
+        // Next, remove this element
+        const thisID = this.id
+        projConfig = projConfig.filter(function (obj) {
+          return obj.id !== thisID
+        })
+
+        // Finally, send the configuration back for writing
+        constTools.makeServerRequest({
+          method: 'POST',
+          endpoint: '/system/projectors/updateConfiguration',
+          params: {
+            configuration: projConfig
+          }
+        })
+          .then(() => {
+            super.remove()
+            rebuildComponentInterface()
+          })
+      })
+  }
+
   updateFromServer (update) {
     // Extend parent method for proejctor-specific items
 
@@ -667,7 +698,7 @@ export function showExhibitComponentInfo (id) {
   } else {
     $('#componentInfoModalLastContactGroup').hide()
   }
-  if (obj.type === 'exhibit_component') {
+  if (['exhibit_component', 'projector'].includes(obj.type)) {
     // This is an active component, so add a remove button
     $('#componentInfoModalRemoveButtonGroup').show()
   } else {
@@ -1334,7 +1365,6 @@ export function getExhibitComponent (id) {
   const result = constConfig.exhibitComponents.find(obj => {
     return obj.id === id
   })
-
   return result
 }
 
@@ -1742,7 +1772,13 @@ export function submitStaticComponentAdditionFromModal () {
     endpoint: '/system/static/getConfiguration'
   })
     .then((result) => {
-      const staticConfig = result.configuration
+      let staticConfig
+      if (result.success === true) {
+        staticConfig = result.configuration
+      } else {
+        staticConfig = []
+      }
+
       // Next, add the new element
       staticConfig.push({
         group: document.getElementById('addStaticComponentModalGroupField').value,

@@ -1095,7 +1095,10 @@ async def get_json_configuration(target: str):
     """Return the requested JSON configuration."""
 
     config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
-    return {"success": True, "configuration": c_tools.load_json(config_path)}
+    configuration = c_tools.load_json(config_path)
+    if configuration is not None:
+        return {"success": True, "configuration": configuration}
+    return {"success": False, "reason": "File does not exist."}
 
 
 @app.get("/system/getHelpText")

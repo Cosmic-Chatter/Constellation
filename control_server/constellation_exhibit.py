@@ -701,7 +701,7 @@ def read_wake_on_LAN_configuration():
     for entry in devices:
         if get_wake_on_LAN_component(entry["id"]) is None:
             device = WakeOnLANDevice(entry["id"],
-                                     entry.get("group", "WAKE_ON_LAN"),
+                                     entry.get("group", "Wake on LAN"),
                                      entry["mac_address"],
                                      ip_address=entry.get("ip_address", ""))
             config.wakeOnLANList.append(device)

@@ -611,6 +611,51 @@
         </div>
       </div>
 
+      <!-- Add projector modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="addProjectorModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add projector</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>Control Server can manage network-connected projectors using the PJLink protocol. To connect a projector, you must first connect it via Ethernet, give it a static IP address, and activate PJLink on the projector.</p>
+
+              <div class="row row-cols-2 gy-2">
+                <div class="col">
+                  <label class="form-label" for="addProjectorModalIDField">
+                    ID
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="Every component in Constellation must have a unique ID.">?</span>
+                  </label>
+                  <input id="addProjectorModalIDField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addProjectorModalGroupField">Group</label>
+                  <input id="addProjectorModalGroupField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addProjectorModalIPField">IP address</label>
+                  <input id="addProjectorModalIPField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addProjectorModalPasswordField">
+                    Password
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="If this projector doesn't have a password, leave this field blank.">?</span>
+                  </label>
+                  <input id="addProjectorModalPasswordField" type="text" class="form-control">
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="addProjectorModalAddButton" type="button" class="btn btn-primary">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Add static component modal -->
       <div class="modal" tabindex="-1" role="dialog" id="addStaticComponentModal">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -781,7 +826,7 @@
                   Add
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#">Projector</a></li>
+                  <li><a id="showAddProjetorModalButton" class="dropdown-item" href="#">Projector</a></li>
                   <li><a id="showAddStaticComponentModalButton" class="dropdown-item" href="#">Static component</a></li>
                   <li><a class="dropdown-item" href="#">Wake on LAN device</a></li>
                 </ul>
