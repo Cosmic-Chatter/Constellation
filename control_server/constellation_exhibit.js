@@ -321,6 +321,37 @@ export class WakeOnLANComponent extends BaseComponent {
     this.type = 'wol_component'
     this.constellationAppId = 'wol_only'
   }
+
+  remove () {
+    // Remove the device from the system configuration
+
+    // First, get the current wake on LAN configuration
+    constTools.makeServerRequest({
+      method: 'GET',
+      endpoint: '/system/wake_on_LAN/getConfiguration'
+    })
+      .then((result) => {
+        let wolConfig = result.configuration
+        // Next, remove this element
+        const thisID = this.id
+        wolConfig = wolConfig.filter(function (obj) {
+          return obj.id !== thisID
+        })
+
+        // Finally, send the configuration back for writing
+        constTools.makeServerRequest({
+          method: 'POST',
+          endpoint: '/system/wake_on_LAN/updateConfiguration',
+          params: {
+            configuration: wolConfig
+          }
+        })
+          .then(() => {
+            super.remove()
+            rebuildComponentInterface()
+          })
+      })
+  }
 }
 
 class Projector extends BaseComponent {
@@ -697,12 +728,6 @@ export function showExhibitComponentInfo (id) {
     $('#componentInfoModalLastContactGroup').show()
   } else {
     $('#componentInfoModalLastContactGroup').hide()
-  }
-  if (['exhibit_component', 'projector'].includes(obj.type)) {
-    // This is an active component, so add a remove button
-    $('#componentInfoModalRemoveButtonGroup').show()
-  } else {
-    $('#componentInfoModalRemoveButtonGroup').hide()
   }
 
   // Add any available description
@@ -1757,14 +1782,35 @@ export function updateStaticComponentsConfigurationFromModal () {
 export function showAddStaticComponentsModal () {
   // Prepare the modal for adding static components and show it.
 
+  // Reset values
   document.getElementById('addStaticComponentModalIDField').value = ''
   document.getElementById('addStaticComponentModalGroupField').value = ''
+
+  // Hide warnings
+  document.getElementById('addStaticComponentModalIDError').style.display = 'none'
+  document.getElementById('addStaticComponentModalGroupError').style.display = 'none'
 
   $('#addStaticComponentModal').modal('show')
 }
 
 export function submitStaticComponentAdditionFromModal () {
   // Collect the ID and group from the modal and add it to the static configuration
+
+  // Make sure the fields are properly completed
+  const group = document.getElementById('addStaticComponentModalGroupField').value.trim()
+  const id = document.getElementById('addStaticComponentModalIDField').value.trim()
+  if (id === '') {
+    document.getElementById('addStaticComponentModalIDError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addStaticComponentModalIDError').style.display = 'none'
+  }
+  if (group === '') {
+    document.getElementById('addStaticComponentModalGroupError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addStaticComponentModalGroupError').style.display = 'none'
+  }
 
   // First, get the current static configuration
   constTools.makeServerRequest({
@@ -1795,6 +1841,94 @@ export function submitStaticComponentAdditionFromModal () {
       })
         .then((response) => {
           $('#addStaticComponentModal').modal('hide')
+        })
+    })
+}
+
+export function showAddWakeOnLANModal () {
+  // Prepare the modal for adding wake on LAN and show it.
+
+  // Reset values
+  document.getElementById('addWakeOnLANModalIDField').value = ''
+  document.getElementById('addWakeOnLANModalGroupField').value = ''
+  document.getElementById('addWakeOnLANModalIPField').value = ''
+  document.getElementById('addWakeOnLANModalMACField').value = ''
+
+  // Hide warnings
+  document.getElementById('addWakeOnLANModalIDError').style.display = 'none'
+  document.getElementById('addWakeOnLANModalGroupError').style.display = 'none'
+  document.getElementById('addWakeOnLANModalMACError').style.display = 'none'
+  document.getElementById('addWakeOnLANModalBadMACError').style.display = 'none'
+
+  $('#addWakeOnLANModal').modal('show')
+}
+
+export function submitWakeOnLANAdditionFromModal () {
+  // Collect details from the modal and add it to the Wake on LAN configuration
+
+  // Check that the fields are properly filled out
+  const group = document.getElementById('addWakeOnLANModalGroupField').value.trim()
+  const id = document.getElementById('addWakeOnLANModalIDField').value.trim()
+  const ipAddress = document.getElementById('addWakeOnLANModalIPField').value.trim()
+  const macAddress = document.getElementById('addWakeOnLANModalMACField').value.trim()
+
+  if (id === '') {
+    document.getElementById('addWakeOnLANModalIDError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addWakeOnLANModalIDError').style.display = 'none'
+  }
+  if (group === '') {
+    document.getElementById('addWakeOnLANModalGroupError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addWakeOnLANModalGroupError').style.display = 'none'
+  }
+  if (macAddress === '') {
+    document.getElementById('addWakeOnLANModalMACError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addWakeOnLANModalMACError').style.display = 'none'
+  }
+  const shortMAC = macAddress.replaceAll(':', '').replaceAll('-', '')
+  if (shortMAC.length !== 12) {
+    document.getElementById('addWakeOnLANModalBadMACError').style.display = 'block'
+    return
+  } else {
+    document.getElementById('addWakeOnLANModalBadMACError').style.display = 'none'
+  }
+
+  // First, get the current static configuration
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/wake_on_LAN/getConfiguration'
+  })
+    .then((result) => {
+      let wolConfig
+      if (result.success === true) {
+        wolConfig = result.configuration
+      } else {
+        wolConfig = []
+      }
+
+      // Next, add the new element
+      wolConfig.push({
+        group,
+        id,
+        ip_address: ipAddress,
+        mac_address: macAddress
+      })
+
+      // Finally, send the configuration back for writing
+      constTools.makeServerRequest({
+        method: 'POST',
+        endpoint: '/system/wake_on_LAN/updateConfiguration',
+        params: {
+          configuration: wolConfig
+        }
+      })
+        .then((response) => {
+          $('#addWakeOnLANModal').modal('hide')
         })
     })
 }

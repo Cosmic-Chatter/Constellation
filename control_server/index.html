@@ -646,6 +646,17 @@
                   <input id="addProjectorModalPasswordField" type="text" class="form-control">
                 </div>
               </div>
+              <div class="row gy-2 mt-2">
+                <div id="addProjectorModalIDError" class="col-12 text-danger">
+                  You must give this projector an ID.
+                </div>
+                <div id="addProjectorModalGroupError" class="col-12 text-danger">
+                  You must put this projector in a group.
+                </div>
+                <div id="addProjectorModalIPError" class="col-12 text-danger">
+                  You must input the static IP address for this projector.
+                </div>
+              </div>
             </div>
             <div class="modal-footer">
               <button id="addProjectorModalAddButton" type="button" class="btn btn-primary">Add</button>
@@ -680,9 +691,79 @@
                   <input id="addStaticComponentModalGroupField" type="text" class="form-control">
                 </div>
               </div>
+              <div class="row gy-2 mt-2">
+                <div id="addStaticComponentModalIDError" class="col-12 text-danger">
+                  You must give this component an ID.
+                </div>
+                <div id="addStaticComponentModalGroupError" class="col-12 text-danger">
+                  You must put this component in a group.
+                </div>
+              </div>
             </div>
             <div class="modal-footer">
               <button id="addStaticComponentModalAddButton" type="button" class="btn btn-primary">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Wake on LAN modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="addWakeOnLANModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add wake on LAN device</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>Control Server can send magic packets to activate wake on LAN. To set up a device, it must be connected via Ethernet and you must know the MAC address of the network adapter.</p>
+
+              <div class="row row-cols-2 gy-2">
+                <div class="col">
+                  <label class="form-label" for="addWakeOnLANModalIDField">
+                    ID
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="Every component in Constellation must have a unique ID.">?</span>
+                  </label>
+                  <input id="addWakeOnLANModalIDField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addWakeOnLANModalGroupField">Group</label>
+                  <input id="addWakeOnLANModalGroupField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addWakeOnLANModalMACField">
+                    MAC address
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="This should have the format XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.">?</span>
+                  </label>
+                  <input id="addWakeOnLANModalMACField" type="text" class="form-control">
+                </div>
+                <div class="col">
+                  <label class="form-label" for="addWakeOnLANModalIPField">
+                    IP address
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size: 0.55em; color: black" data-bs-original-title="If the device has a static IP address, add it here and Control Server will check if the device is online.">?</span>
+                  </label>
+                  <input id="addWakeOnLANModalIPField" type="text" class="form-control">
+                </div>
+              </div>
+              <div class="row gy-2 mt-2">
+                <div id="addWakeOnLANModalIDError" class="col-12 text-danger">
+                  You must give this device an ID.
+                </div>
+                <div id="addWakeOnLANModalGroupError" class="col-12 text-danger">
+                  You must put this device in a group.
+                </div>
+                <div id="addWakeOnLANModalMACError" class="col-12 text-danger">
+                  You must input the MAC address for this device.
+                </div>
+                <div id="addWakeOnLANModalBadMACError" class="col-12 text-danger">
+                  The MAC address must be 12 characters, separated by ':' or '-'.
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="addWakeOnLANModalAddButton" type="button" class="btn btn-primary">Add</button>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
@@ -828,7 +909,7 @@
                 <ul class="dropdown-menu">
                   <li><a id="showAddProjetorModalButton" class="dropdown-item" href="#">Projector</a></li>
                   <li><a id="showAddStaticComponentModalButton" class="dropdown-item" href="#">Static component</a></li>
-                  <li><a class="dropdown-item" href="#">Wake on LAN device</a></li>
+                  <li><a id="showAddWakeOnLANModalButton" class="dropdown-item" href="#">Wake on LAN device</a></li>
                 </ul>
               </div>
             </div>

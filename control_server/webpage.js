@@ -1171,6 +1171,8 @@ document.getElementById('showAddStaticComponentModalButton').addEventListener('c
 document.getElementById('addStaticComponentModalAddButton').addEventListener('click', constExhibit.submitStaticComponentAdditionFromModal)
 document.getElementById('showAddProjetorModalButton').addEventListener('click', constProjector.showAddProjectorModal)
 document.getElementById('addProjectorModalAddButton').addEventListener('click', constProjector.submitProjectorAdditionFromModal)
+document.getElementById('showAddWakeOnLANModalButton').addEventListener('click', constExhibit.showAddWakeOnLANModal)
+document.getElementById('addWakeOnLANModalAddButton').addEventListener('click', constExhibit.submitWakeOnLANAdditionFromModal)
 
 // Component info modal
 $('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)

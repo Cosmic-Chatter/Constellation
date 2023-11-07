@@ -123,7 +123,7 @@ def send_webpage_update():
     for item in c_config.wakeOnLANList:
         temp = {"class": "wolComponent",
                 "id": item.id,
-                "group": 'WAKE_ON_LAN',
+                "group": item.group,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
                 "status": item.state["status"]}
