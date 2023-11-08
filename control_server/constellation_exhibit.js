@@ -159,7 +159,7 @@ class BaseComponent {
       powerOnAction.classList = 'dropdown-item handCursor'
       powerOnAction.innerHTML = 'Power on component'
       powerOnAction.addEventListener('click', function () {
-        queueCommand(thisId, 'powerOn')
+        queueCommand(thisId, 'power_on')
       }, false)
       dropdownMenu.appendChild(powerOnAction)
     }
