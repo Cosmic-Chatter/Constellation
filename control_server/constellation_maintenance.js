@@ -51,7 +51,7 @@ export function submitComponentMaintenanceStatusChange (type = 'component') {
   }
 
   const requestDict = {
-    id,
+    component_id: id,
     status,
     notes
   }

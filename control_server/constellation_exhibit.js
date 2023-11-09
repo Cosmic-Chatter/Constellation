@@ -12,6 +12,7 @@ class BaseComponent {
     this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
+    this.maintenanceStatus = constConfig.MAINTANANCE_STATUS['Off floor, not working']
     this.permissions = {}
 
     this.ip_address = null
@@ -23,7 +24,7 @@ class BaseComponent {
     // Function to build the HTML representation of this component
     // and add it to the row of the parent group
 
-    // If the element is static and the 'Show STATIC' checkbox is ticked, bail out
+    // If the element is static and the 'Show STATIC' checkbox is not ticked, bail out
     if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
       return
     }
@@ -50,7 +51,7 @@ class BaseComponent {
     col.appendChild(btnGroup)
 
     const mainButton = document.createElement('button')
-    mainButton.classList = 'btn w-100 componentStatusButton ' + this.status.colorClass
+    mainButton.classList = 'btn w-100 componentStatusButton ' + this.getStatus().colorClass
     mainButton.setAttribute('type', 'button')
     mainButton.setAttribute('id', cleanId + 'MainButton')
     mainButton.addEventListener('click', function () {
@@ -58,17 +59,18 @@ class BaseComponent {
     }, false)
     btnGroup.appendChild(mainButton)
 
-    const displayNameEl = document.createElement('H5')
+    const displayNameEl = document.createElement('div')
+    displayNameEl.classList = 'fs-5 fw-medium'
     displayNameEl.innerHTML = displayName
     mainButton.appendChild(displayNameEl)
 
     const statusFieldEl = document.createElement('div')
     statusFieldEl.setAttribute('id', cleanId + 'StatusField')
-    statusFieldEl.innerHTML = this.status.name
+    statusFieldEl.innerHTML = this.getStatus().name
     mainButton.appendChild(statusFieldEl)
 
     const dropdownButton = document.createElement('button')
-    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.status.colorClass
+    dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.getStatus().colorClass
     dropdownButton.setAttribute('id', cleanId + 'DropdownButton')
     dropdownButton.setAttribute('type', 'button')
     dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
@@ -88,6 +90,16 @@ class BaseComponent {
     btnGroup.appendChild(dropdownMenu)
 
     $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
+  }
+
+  getStatus () {
+    // Return the current status, based on the selected status mode
+
+    if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
+      return this.status
+    } else {
+      return this.maintenanceStatus
+    }
   }
 
   populateActionMenu (dropdownMenu = null) {
@@ -164,12 +176,19 @@ class BaseComponent {
       dropdownMenu.appendChild(powerOnAction)
     }
 
-    if (numOptions === 0) {
-      const option = document.createElement('a')
-      option.classList = 'dropdown-item handCursor'
-      option.innerHTML = 'No available actions'
-      dropdownMenu.appendChild(option)
+    if (numOptions > 0) {
+      const divider = document.createElement('hr')
+      divider.classList = 'dropdown-divider'
+      dropdownMenu.appendChild(divider)
     }
+
+    const detailsAction = document.createElement('a')
+    detailsAction.classList = 'dropdown-item handCursor'
+    detailsAction.innerHTML = 'View details'
+    detailsAction.addEventListener('click', function () {
+      showExhibitComponentInfo(thisId)
+    }, false)
+    dropdownMenu.appendChild(detailsAction)
   }
 
   remove () {
@@ -191,15 +210,27 @@ class BaseComponent {
     this.populateActionMenu()
   }
 
-  setStatus (status) {
+  setStatus (status, maintenanceStatus) {
     // Set the component's status and change the GUI to reflect the change.
 
     const cleanId = this.id.replaceAll(' ', '_')
 
     this.status = constConfig.STATUS[status]
-    $('#' + cleanId + 'StatusField').html(this.status.name)
+    this.maintenanceStatus = constConfig.MAINTANANCE_STATUS[maintenanceStatus]
 
-    const btnClass = this.status.colorClass
+    // Update the GUI based on which view mode we're in
+    const statusFieldEl = document.getElementById(cleanId + 'StatusField')
+    let btnClass
+    if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
+      // Real-time status mode
+      statusFieldEl.innerHTML = this.status.name
+      btnClass = this.status.colorClass
+    } else {
+      // Maintenance status mode
+      statusFieldEl.innerHTML = this.maintenanceStatus.name
+      btnClass = this.maintenanceStatus.colorClass
+    }
+
     // Strip all existing classes, then add the new one
     $('#' + cleanId + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
     $('#' + cleanId + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
@@ -208,7 +239,7 @@ class BaseComponent {
   updateFromServer (update) {
     // Use a dictionary of values from Control Server to update this component.
 
-    this.setStatus(update.status)
+    this.setStatus(update.status, update.maintenance_status)
 
     if ('ip_address' in update) {
       this.ip_address = update.ip_address

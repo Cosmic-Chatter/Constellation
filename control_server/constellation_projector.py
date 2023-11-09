@@ -7,6 +7,7 @@ import time
 import config
 import constellation_tools as c_tools
 import constellation_exhibit as c_exhibit
+import constellation_maintenance as c_maint
 
 
 def get_projector(this_id: str) -> c_exhibit.Projector:
@@ -42,17 +43,21 @@ def read_projector_configuration():
 
     for proj in proj_config:
         if get_projector(proj["id"]) is None:
+            new_proj = None
             if proj["protocol"] == 'pjlink':
                 new_proj = c_exhibit.Projector(proj["id"],
                                      proj.get("group", "Projectors"),
                                      proj["ip_address"], "pjlink",
                                      password=proj.get("password", None))
-                config.projectorList.append(new_proj)
             elif proj["protocol"] == "serial":
                 new_proj = c_exhibit.Projector(proj["id"],
                                      proj.get("group", "Projectors"),
                                      proj["ip_address"], "serial",
                                      make=proj.get("make", None))
+            if new_proj is not None:
+                # Check if device has an existing maintenance status.
+                maintenance_path = c_tools.get_path(["maintenance-logs", proj["id"] + '.txt'], user_file=True)
+                new_proj.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
                 config.projectorList.append(new_proj)
 
 

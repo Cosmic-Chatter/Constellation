@@ -90,6 +90,7 @@ def send_webpage_update():
                 "lastContactDateTime": item.last_contact_datetime,
                 "latency": item.latency,
                 "platform_details": item.platform_details,
+                "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
                 "status": item.current_status()}
         if "content" in item.config:
             temp["content"] = item.config["content"]
@@ -111,6 +112,7 @@ def send_webpage_update():
                 "id": item.id,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
+                "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
                 "protocol": item.connection_type,
                 "state": item.state,
                 "status": item.state["status"]}
@@ -126,6 +128,7 @@ def send_webpage_update():
                 "group": item.group,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
+                "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
                 "status": item.state["status"]}
         if "permissions" in item.config:
             temp["permissions"] = item.config["permissions"]
@@ -885,18 +888,16 @@ async def get_maintenance_status(data: dict[str, Any]):
 
 
 @app.post("/maintenance/updateStatus")
-async def update_maintenance_status(data: dict[str, Any]):
+async def update_maintenance_status(component_id: str = Body(description='The ID of the component to update.'),
+                                    notes: str = Body(description="Text notes about this component."),
+                                    status: str = Body(description="The status of the component.")):
     """Update the given maintenance status."""
 
-    if "id" not in data or "status" not in data or "notes" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'id', 'status', or 'notes' field."}
-        return response
-    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
-    record = {"id": data["id"],
+    file_path = c_tools.get_path(["maintenance-logs", component_id + ".txt"], user_file=True)
+    record = {"id": component_id,
               "date": datetime.datetime.now().isoformat(),
-              "status": data['status'],
-              "notes": data["notes"]}
+              "status": status,
+              "notes": notes}
     with c_config.maintenanceLock:
         try:
             with open(file_path, 'a', encoding='UTF-8') as f:
@@ -910,6 +911,10 @@ async def update_maintenance_status(data: dict[str, Any]):
         except PermissionError:
             success = False
             reason = f"You do not have write permission for the file {file_path}"
+
+    if success is True:
+        c_exhibit.get_exhibit_component(component_id).config["maintenance_status"] = status
+
     return {"success": success, "reason": reason}
 
 

@@ -15,6 +15,7 @@ import wakeonlan
 # Constellation imports
 import component_helpers
 import config
+import constellation_maintenance as c_maint
 import constellation_tools as c_tools
 import projector_control
 
@@ -43,6 +44,7 @@ class BaseComponent:
                        "app_name": "",
                        "commands": [],
                        "description": config.componentDescriptions.get(id_, ""),
+                       "maintenance_status": ""
                        }
 
     def __repr__(self):
@@ -407,6 +409,11 @@ def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -
     """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
     component = ExhibitComponent(this_id, group, category)
+
+    # Check if component has an existing maintenance status.
+    maintenance_path = c_tools.get_path(["maintenance-logs", this_id + '.txt'], user_file=True)
+    component.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
+
     config.componentList.append(component)
     config.last_update_time = time.time()
 
@@ -704,6 +711,9 @@ def read_wake_on_LAN_configuration():
                                      entry.get("group", "Wake on LAN"),
                                      entry["mac_address"],
                                      ip_address=entry.get("ip_address", ""))
+            # Check if device has an existing maintenance status.
+            maintenance_path = c_tools.get_path(["maintenance-logs", entry["id"] + '.txt'], user_file=True)
+            device.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
             config.wakeOnLANList.append(device)
 
 

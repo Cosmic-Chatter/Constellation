@@ -4,7 +4,8 @@
 
 ### General
 - Add ability to edit exhibits without setting them
-- Move static component editing to _Components_ tab
+- Add ability to change component details (name, group, etc. from the components tab)
+  - Then, remove projector, wake on LAN, and static editing from the settings tab
 - Hide the view screenshot option is screenshot permission is not available
 - Edit descriptions from component info modal
 - Allow components to be in multiple groups

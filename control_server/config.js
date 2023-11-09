@@ -5,6 +5,12 @@ export default {
   errorDict: {},
   exhibitComponents: [],
   issueList: [],
+  MAINTANANCE_STATUS: {
+    'On floor, working': { name: 'On floor, working', value: 1, colorClass: 'btn-success' },
+    'Off floor, working': { name: 'Off floor, working', value: 2, colorClass: 'btn-info' },
+    'Off floor, not working': { name: 'Off floor, not working', value: 3, colorClass: 'btn-warning' },
+    'On floor, not working': { name: 'On floor, not working', value: 4, colorClass: 'btn-danger' }
+  },
   scheduleUpdateTime: 0,
   serverAddress: '',
   serverSoftwareUpdateAvailable: false,

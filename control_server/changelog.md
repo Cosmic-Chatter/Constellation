@@ -3,11 +3,15 @@ __*Constellation*__ 4 expands customization for your apps and significantly impr
 
 ## Control Server
 
+### General
+- Add and remove projectors, wake on LAN devices, and static components from the components tab.
+
 ### Maintenance
 - When viewing component details, a list of related issues is shown in the maintenance tab.
 - Uploaded issue media files can be videos in addition to images.
 - Multiple media files can be attached to an issue. 
 - Mark issues as completed and see a history of completed issues.
+- View the maintenance status of your components from the components tab.
 
 ## Constellation Apps
 

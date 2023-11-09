@@ -4,7 +4,7 @@ import dateutil.parser
 import json
 import logging
 import os
-from typing import Union
+from typing import Any, Union
 
 # Constellation imports
 import config
@@ -44,7 +44,7 @@ def get_maintenance_report(file_path: Union[str, os.PathLike]) -> dict:
     return response_dict
 
 
-def get_last_entry(path: Union[str, os.PathLike]) -> dict:
+def get_last_entry(path: Union[str, os.PathLike]) -> dict[str, Any]:
     """Retrieve the last json entry from the given file"""
 
     with open(path, 'rb') as f:

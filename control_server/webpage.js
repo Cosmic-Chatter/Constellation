@@ -832,6 +832,9 @@ function parseQueryString () {
   if (searchParams.has('hideSTATIC')) {
     $('#componentsTabSettingsShowStatic').prop('checked', false)
   }
+  if (searchParams.has('showMaintStatus')) {
+    document.getElementById('componentStatusModeMaintenanceCheckbox').checked = true
+  }
 }
 
 function createExhibit (name, cloneFrom) {
@@ -1167,6 +1170,26 @@ $('#componentsTabSettingsShowStatic').change(function () {
   // Rebuild the interface with the new option
   constExhibit.rebuildComponentInterface()
 })
+document.getElementById('componentStatusModeRealtimeCheckbox').addEventListener('change', constExhibit.rebuildComponentInterface)
+Array.from(document.getElementsByClassName('view-mode-radio')).forEach((el) => {
+  el.addEventListener('change', () => {
+    // Modify the search params to soft-save the change
+    const urlParams = new URLSearchParams(window.location.search)
+
+    if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
+      // Set real-time mode (default)
+      urlParams.delete('showMaintStatus')
+    } else {
+      // Set maintenance status mode
+      urlParams.set('showMaintStatus', 'true')
+    }
+    window.history.replaceState('', '', '?' + urlParams)
+
+    // Rebuild the interface with the new option
+    constExhibit.rebuildComponentInterface()
+  })
+})
+
 document.getElementById('showAddStaticComponentModalButton').addEventListener('click', constExhibit.showAddStaticComponentsModal)
 document.getElementById('addStaticComponentModalAddButton').addEventListener('click', constExhibit.submitStaticComponentAdditionFromModal)
 document.getElementById('showAddProjetorModalButton').addEventListener('click', constProjector.showAddProjectorModal)
