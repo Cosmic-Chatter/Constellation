@@ -78,24 +78,16 @@
         min-height: 35vh;
         overflow-y: auto;
       }
-      #componentAvailableContentList {
-        max-height: 25vh;
-        min-height: 15vh;
-        overflow-y: auto;
-      }
       #componentInfoModalDefinitionList {
-        max-height: 35vh;
-        min-height: 15vh;
+        height: 45vh;
         overflow-y: auto;
       }
       #componentInfoModalDMXSceneList {
-        max-height: 35vh;
-        min-height: 15vh;
+        height: 45vh;
         overflow-y: auto;
       }
       #componentInfoModalMaintenanceRelatedIssues {
-        max-height: 35vh;
-        min-height: 15vh;
+        height: 35vh;
         overflow-y: scroll;
       }
       #exhibitNameField {
@@ -191,32 +183,6 @@
             </div>
             <div class="modal-body ">
 
-              <div class='row align-items-end mb-3 pb-3 border-bottom' id="contentUploadSystemStatsView">
-                <div class='col-4'>
-                  <strong id="contentUploadDiskSpaceFree"></strong>
-                  <div class="progress" style="height: 20px;">
-                    <div id="contentUploadDiskSpaceUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 70%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                    <div id="contentUploadDiskSpaceFreeBar" class="progress-bar bg-secondary" role="progressbar" style="width: 30%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </div>
-
-                <div class='col-4'>
-                  <strong id="contentUploadCPUUsed"></strong>
-                  <div class="progress" style="height: 20px;">
-                    <div id="contentUploadCPUUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 70%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                    <div id="contentUploadCPUFreeBar"class="progress-bar bg-secondary" role="progressbar" style="width: 30%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </div>
-
-                <div class='col-4'>
-                  <strong id="contentUploadRAMUsed"></strong>
-                  <div class="progress" style="height: 20px;">
-                    <div id="contentUploadRAMUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 60%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
-                    <div id="contentUploadRAMFreeBar" class="progress-bar bg-secondary" role="progressbar" style="width: 40%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </div>
-              </div>
-
               <!-- Tab buttons -->
               <ul class="nav nav-tabs" id="componentInfoModalTabList" role="tablist">
                 <li class="nav-item">
@@ -249,7 +215,7 @@
               <div class="tab-content" id="componentInfoModalTabContainer">
                 <!-- Definition pane -->
                 <div class="tab-pane fade show active" id="componentInfoModalDefinitionsTab" role="tabpanel" aria-labelledby="componentInfoModalDefinitionsTabButton">
-                  <div class="row mx-1 mt-2">
+                  <div class="row mx-1 my-2">
                     <div class="col-4 col-sm-3">
                       <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="" id="definitionTabThumbnailsCheckbox" checked>
@@ -368,6 +334,31 @@
 
                 <!-- Maintenance pane -->
                 <div class="tab-pane fade" id="componentInfoModalMaintenanceTab" role="tabpanel" aria-labelledby="componentInfoModalMaintenanceTabButton">
+                  <div class='row align-items-end my-3 pb-3 border-bottom' id="contentUploadSystemStatsView">
+                    <div class='col-4'>
+                      <strong id="contentUploadDiskSpaceFree"></strong>
+                      <div class="progress" style="height: 20px;">
+                        <div id="contentUploadDiskSpaceUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 70%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div id="contentUploadDiskSpaceFreeBar" class="progress-bar bg-secondary" role="progressbar" style="width: 30%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </div>
+    
+                    <div class='col-4'>
+                      <strong id="contentUploadCPUUsed"></strong>
+                      <div class="progress" style="height: 20px;">
+                        <div id="contentUploadCPUUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 70%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div id="contentUploadCPUFreeBar"class="progress-bar bg-secondary" role="progressbar" style="width: 30%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </div>
+    
+                    <div class='col-4'>
+                      <strong id="contentUploadRAMUsed"></strong>
+                      <div class="progress" style="height: 20px;">
+                        <div id="contentUploadRAMUsedBar" class="progress-bar bg-success" role="progressbar" style="width: 60%;" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div id="contentUploadRAMFreeBar" class="progress-bar bg-secondary" role="progressbar" style="width: 40%;" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="row mt-3">
                     <div class="col-12 col-md-6">
                       <div class="row gy-2">
@@ -408,67 +399,74 @@
                 </div>
                 <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
                   <!-- Full settings -->
-                  <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
-                  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
-                    <!-- Audio permission -->
-                    <div class="col mt-2">
-                      <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
-                        Audio
-                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
-                      </label>
-                      <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
-                        <option value="true">Allow</option>
-                        <option value="false">Disallow</option>
-                      </select>
+                  <div class="d-flex flex-column" style="height: 52vh">
+                    <div class="row">
+                      <div class="col">
+                        <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
+                      </div>
                     </div>
-                    <!-- Refresh permission -->
-                    <div class="col mt-2">
-                      <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
-                        Refresh
-                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
-                      </label>
-                      <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
-                        <option value="true">Allow</option>
-                        <option value="false">Disallow</option>
-                      </select>
+                    
+                    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
+                      <!-- Audio permission -->
+                      <div class="col mt-2">
+                        <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
+                          Audio
+                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                        </label>
+                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
+                          <option value="true">Allow</option>
+                          <option value="false">Disallow</option>
+                        </select>
+                      </div>
+                      <!-- Refresh permission -->
+                      <div class="col mt-2">
+                        <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
+                          Refresh
+                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                        </label>
+                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
+                          <option value="true">Allow</option>
+                          <option value="false">Disallow</option>
+                        </select>
+                      </div>
+                      <!-- Restart permission -->
+                      <div class="col mt-2">
+                        <label for="componentInfoModalSettingsAllowRestart" class="form-label">
+                          Restart
+                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                        </label>
+                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
+                          <option value="true">Allow</option>
+                          <option value="false">Disallow</option>
+                        </select>
+                      </div>
+                      <!-- Shutdown permission -->
+                      <div class="col mt-2">
+                        <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
+                          Shutdown
+                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                        </label>
+                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
+                          <option value="true">Allow</option>
+                          <option value="false">Disallow</option>
+                        </select>
+                      </div>
+                      <!-- Sleep permission -->
+                      <div class="col mt-2">
+                        <label for="componentInfoModalSettingsAllowSleep" class="form-label">
+                          Sleep
+                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                        </label>
+                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
+                          <option value="true">Allow</option>
+                          <option value="false">Disallow</option>
+                        </select>
+                      </div>
                     </div>
-                    <!-- Restart permission -->
-                    <div class="col mt-2">
-                      <label for="componentInfoModalSettingsAllowRestart" class="form-label">
-                        Restart
-                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
-                      </label>
-                      <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
-                        <option value="true">Allow</option>
-                        <option value="false">Disallow</option>
-                      </select>
-                    </div>
-                    <!-- Shutdown permission -->
-                    <div class="col mt-2">
-                      <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
-                        Shutdown
-                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
-                      </label>
-                      <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
-                        <option value="true">Allow</option>
-                        <option value="false">Disallow</option>
-                      </select>
-                    </div>
-                    <!-- Sleep permission -->
-                    <div class="col mt-2">
-                      <label for="componentInfoModalSettingsAllowSleep" class="form-label">
-                        Sleep
-                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
-                      </label>
-                      <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
-                        <option value="true">Allow</option>
-                        <option value="false">Disallow</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="row mt-3">
-                    <div class="col">
-                      <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
+                    <div class="row mt-3 mt-auto">
+                      <div class="col">
+                        <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1100,40 +1098,6 @@
             </div>
             <div class='col-12'>
               <div id='issuesRow' class='row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 mt-3'></div>
-            </div>
-          </div>
-          <div class='row mt-4'>
-            <div class='col-12'>
-              <H3>Maintenance overview</H3>
-              <button id="refreshMaintenanceRecordsBUtton" class='btn btn-primary'>Refresh</button>
-            </div>
-            <div class='col-12 col-md-6'>
-              <div class='col-12 mt-3 pb-3 pt-3' style="background-color: #b4ffb3;">
-                <H4>On the floor and working</H4>
-                <div id='MaintenanceOverviewOnFloorWorkingPane' class='row'>
-                </div>
-              </div>
-            </div>
-            <div class='col-12 col-md-6'>
-              <div class='col-12 mt-3 pb-3 pt-3' style="background-color: #fab8af;">
-                <H4>On the floor and not working</H4>
-                <div id='MaintenanceOverviewOnFloorNotWorkingPane' class='row'>
-                </div>
-              </div>
-            </div>
-            <div class='col-12 col-md-6'>
-              <div class='col-12 mt-3 pb-3 pt-3' style="background-color: #b1ddfc;">
-                <H4>Off the floor and working</H4>
-                <div id='MaintenanceOverviewOffFloorWorkingPane' class='row'>
-                </div>
-              </div>
-            </div>
-            <div class='col-12 col-md-6'>
-              <div class='col-12 mt-3 pb-3 pt-3' style="background-color: #fcdba9;">
-                <H4>Off the floor and not working</H4>
-                <div id='MaintenanceOverviewOffFloorNotWorkingPane' class='row'>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -1296,7 +1296,6 @@ $('#issueListFilterPrioritySelect').change(function () {
 $('#issueListFilterAssignedToSelect').change(function () {
   constIssues.rebuildIssueList()
 })
-$('#refreshMaintenanceRecordsBUtton').click(constMaintenance.refreshMaintenanceRecords)
 $('#componentInfoModalMaintenanceNote').on('input', function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
@@ -1453,6 +1452,5 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 loadVersion()
 populateHelpTab()
-constMaintenance.refreshMaintenanceRecords()
 parseQueryString()
 constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
