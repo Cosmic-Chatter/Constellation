@@ -42,7 +42,7 @@ export function configure (options) {
   config.loadDefinition = options.loadDefinition
 
   document.getElementById('helpButton').addEventListener('click', (event) => {
-    showAppHelpMOdal(config.app)
+    showAppHelpModal(config.app)
   })
 
   createAdvancedColorPickers()
@@ -60,7 +60,7 @@ export function configure (options) {
     })
 }
 
-function showAppHelpMOdal (app) {
+export function showAppHelpModal (app) {
   // Ask the helper to send the relavent README.md file and display it in the modal
 
   const endpointStems = {

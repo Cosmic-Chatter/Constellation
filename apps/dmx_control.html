@@ -45,9 +45,33 @@
   <body>
 
     <main role="main" class="container mb-4 pt-1 pt-md-3 px-md-5">
+
+      <div id="appHelpModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-100 w-75">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Help</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body"  style="max-height: 70vh; overflow-y: auto;">
+              <div class="row">
+                <div id='helpTextDiv' class="col-12"></div>
+              </div>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-2 mb-2">
         <div class="col-auto">
           <H3>DMX Configuration</H3>
+        </div>
+        <div class="col-3 col-sm-2 col-md-2 col-xl-1 ms-auto">
+          <button id="helpButton" class="btn btn-info w-100">Help</button>
         </div>
       </div>
 
@@ -107,7 +131,7 @@
                   <div class="modal-body">
                     <div class="row gy-2">
                       <div id="addUniverseMissingDriverWarning" class="col-12">
-                        <div class="alert alert-danger">This device requires a driver to interface with DMX devices. Click <a href='https://ftdichip.com/drivers/d2xx-drivers/' target="_blank">here</a> and download the appropriate driver.</div>
+                        <div class="alert alert-danger">This device requires a driver to interface with DMX devices. See the help tab for instructions on setting up the driver on Windows and Linux.</div>
                       </div>
                       <div class="col-6">
                         <label for="addUniverseName" class="form-label">Universe name</label>
@@ -316,6 +340,7 @@
   <script src="js/bootstrap_5_3/bootstrap.bundle.min.js"></script>
   <script src="js/platform.js"></script>
   <script src="js/coloris.min.js"></script>
+  <script src="js/showdown.min.js"></script>
 
   <script type="module" src="dmx_control/dmx_control.js"></script>
   </body>

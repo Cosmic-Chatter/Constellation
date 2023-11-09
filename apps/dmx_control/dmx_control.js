@@ -1,6 +1,7 @@
 /* global Coloris, bootstrap */
 
 import * as constCommon from '../js/constellation_app_common.js'
+import * as constSetup from '../js/constellation_setup_common.js'
 
 class DMXUniverse {
   // A mirror for the DMXUniverse Python class
@@ -169,7 +170,7 @@ class DMXFixture {
     // Send a message to the helper asking it to update the given channel
 
     if (channel == null || this.channelValues[channel] == null) {
-      console.log("Error: null value:", channel, this.channelValues[channel])
+      console.log('Error: null value:', channel, this.channelValues[channel])
       return
     }
     constCommon.makeHelperRequest({
@@ -206,7 +207,7 @@ class DMXFixture {
     })
   }
 
-  locateStart() {
+  locateStart () {
     // Send max brightness values to aid in finding the fixture.
 
     // Cycle the possible color channels + dimmer
@@ -221,7 +222,7 @@ class DMXFixture {
     })
   }
 
-  locateEnd() {
+  locateEnd () {
     // Reset the brightness values to their pre-locate values.
 
     // Cycle the possible color channels + dimmer
@@ -390,7 +391,7 @@ class DMXFixtureGroup {
     this.fixtures = {}
   }
 
-  locateStart() {
+  locateStart () {
     // Trigger the locate effect for every fixture in the group.
 
     Object.keys(this.fixtures).forEach((key) => {
@@ -398,7 +399,7 @@ class DMXFixtureGroup {
     })
   }
 
-  locateEnd() {
+  locateEnd () {
     // Trigger the locate effect for every fixture in the group.
 
     Object.keys(this.fixtures).forEach((key) => {
@@ -406,9 +407,9 @@ class DMXFixtureGroup {
     })
   }
 
-  createMetaFixtureHTML() {
+  createMetaFixtureHTML () {
     // Create a widget that provides controls for any channels included in every fixture in the group.
-    
+
     const thisUUID = this.uuid
 
     // Cycle through the channels in the first fixture, comparing each to all the other fixtures
@@ -502,7 +503,7 @@ class DMXFixtureGroup {
 
       const channelSlider = document.createElement('input')
       channelSlider.classList = 'form-range h-100'
-      channelSlider.setAttribute('id','meta_fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
+      channelSlider.setAttribute('id', 'meta_fixture_' + this.uuid + '_' + 'channelSlider_' + channel)
       channelSlider.setAttribute('type', 'range')
       channelSlider.setAttribute('min', 0)
       channelSlider.setAttribute('max', 255)
@@ -522,11 +523,10 @@ class DMXFixtureGroup {
           fixture.setChannelValues(valueToUpdate)
         })
         constCommon.makeHelperRequest({
-          method: "POST",
+          method: 'POST',
           endpoint: '/DMX/group/' + thisUUID + '/setChannel',
-          params: {channel: channel, value: value}
+          params: { channel, value }
         })
-
       })
       channelSliderCol.appendChild(channelSlider)
 
@@ -555,9 +555,9 @@ class DMXFixtureGroup {
           fixture.setChannelValues(valueToUpdate)
         })
         constCommon.makeHelperRequest({
-          method: "POST",
+          method: 'POST',
           endpoint: '/DMX/group/' + thisUUID + '/setChannel',
-          params: {channel: channel, value: value}
+          params: { channel, value }
         })
       })
       channelValueCol.appendChild(channelValue)
@@ -837,7 +837,7 @@ class DMXScene {
   }
 }
 
-function onColorChangeFromPicker (collectionName, uuid, meta=true) {
+function onColorChangeFromPicker (collectionName, uuid, meta = true) {
   // When is a color is changed from the picker, update the interface to match.
 
   const newColor = $('#' + collectionName + '_fixture_' + uuid + '_' + 'colorPicker').val()
@@ -860,9 +860,9 @@ function onColorChangeFromPicker (collectionName, uuid, meta=true) {
   if (meta === true) {
     // Send the update to the whole group
     constCommon.makeHelperRequest({
-      method: "POST",
+      method: 'POST',
       endpoint: '/DMX/group/' + uuid + '/setColor',
-      params: {color: [red, green, blue]}
+      params: { color: [red, green, blue] }
     })
   } else {
     // Update the fixture and send a color change to the helper
@@ -1119,14 +1119,14 @@ function editGroupFromModal () {
   }
 }
 
-function createGroupFromModal(name, fixturesToAdd, fixturesToAddUUID) {
+function createGroupFromModal (name, fixturesToAdd, fixturesToAddUUID) {
   // Ask the helper to create the group, then add the fixtures.
 
   constCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/DMX/group/create',
     params: {
-      name: name,
+      name,
       fixture_list: fixturesToAddUUID
     }
   })
@@ -1428,54 +1428,54 @@ function createUniverse (name, uuid, controller) {
   return newUniverse
 }
 
-function deleteUniverse(uuid) {
+function deleteUniverse (uuid) {
   // Ask the helper to delete the given universe and then remove it from the interface.
 
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/universe/' + uuid + '/delete'
   })
-  .then((result) => {
-    if ('success' in result && result.success === true) {
-      $('#editUniverseModal').modal('hide')
-      getDMXConfiguration()
-    }
-  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        $('#editUniverseModal').modal('hide')
+        getDMXConfiguration()
+      }
+    })
 }
 
 function createGroup (name, uuid = '') {
   // Create a new group and add it to the global list.
 
   const newGroup = new DMXFixtureGroup(name, uuid)
-  
+
   groupList.push(newGroup)
   return newGroup
 }
 
-function deleteGroup(uuid) {
+function deleteGroup (uuid) {
   // Ask the helper to delete the given group and then remove it from the interface.
 
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/group/' + uuid + '/delete'
   })
-  .then((result) => {
-    if ('success' in result && result.success === true) {
-      groupList = groupList.filter((obj) => {
-        return obj.uuid !== uuid
-      })
-
-      // Cycle the fixtures and remove any reference to this group
-      universeList.forEach((universe) => {
-        Object.keys(universe.fixtures).forEach((key) => {
-          const fixture = universe.fixtures[key]
-          fixture.groups = fixture.groups.filter(e => e !== uuid)
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        groupList = groupList.filter((obj) => {
+          return obj.uuid !== uuid
         })
-      })
-      $('#editGroupModal').modal('hide')
-      rebuildGroupsInterface()
-    }
-  })
+
+        // Cycle the fixtures and remove any reference to this group
+        universeList.forEach((universe) => {
+          Object.keys(universe.fixtures).forEach((key) => {
+            const fixture = universe.fixtures[key]
+            fixture.groups = fixture.groups.filter(e => e !== uuid)
+          })
+        })
+        $('#editGroupModal').modal('hide')
+        rebuildGroupsInterface()
+      }
+    })
 }
 
 function channelNameToDisplayName (name) {
@@ -1563,7 +1563,7 @@ function getDMXConfiguration () {
       universeList.length = 0
       groupList.length = 0
       configuration = response.configuration
-      
+
       if (response.success === false && response.reason === 'device_not_found') {
         document.getElementById('missingDeviceWarning').style.display = 'block'
       } else {
@@ -1727,8 +1727,8 @@ function addUniverseFromModal () {
       if ('success' in response && response.success === true) {
         console.log(response)
         createUniverse(response.universe.name,
-                       response.universe.uuid,
-                       response.universe.controller)
+          response.universe.uuid,
+          response.universe.controller)
         rebuildUniverseInterface()
         $('#addUniverseModal').modal('hide')
       }
@@ -1779,7 +1779,7 @@ constCommon.config.updateParser = updateFunc // Function to read app-specific up
 constCommon.config.constellationAppID = 'dmx_control'
 constCommon.config.helperAddress = window.location.origin
 
-let universeList = []
+const universeList = []
 let groupList = []
 
 constCommon.config.debug = true
@@ -1805,6 +1805,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 } else {
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
+
+document.getElementById('helpButton').addEventListener('click', (event) => {
+  constSetup.showAppHelpModal('dmx_control')
+})
 
 setInterval(constCommon.checkForHelperUpdates, 5000)
 
