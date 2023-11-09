@@ -449,8 +449,10 @@ function parseUpdate (update) {
     // If there are no static components, hide the "SHow STATIC" button
     if (numStatic === 0) {
       $('#componentsTabSettingsShowStatic').parent().parent().hide()
+      document.getElementById('componentsTabSettingsShowStaticDivider').parentElement.style.display = 'none'
     } else {
       $('#componentsTabSettingsShowStatic').parent().parent().show()
+      document.getElementById('componentsTabSettingsShowStaticDivider').parentElement.style.display = 'block'
     }
   }
 }

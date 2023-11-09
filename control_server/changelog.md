@@ -12,7 +12,7 @@ __*Constellation*__ 4 expands customization for your apps and significantly impr
 - Multiple media files can be attached to an issue. 
 - Mark issues as completed and see a history of completed issues.
 - View the maintenance status of your components from the components tab.
-- Disk, CPU, and RAM stats have moved to the maintenance tab, to provide more room on other tabs.
+- Disk, CPU, and RAM stats have moved to the maintenance pane of component info, to provide more room on other panes.
 
 ## Constellation Apps
 
