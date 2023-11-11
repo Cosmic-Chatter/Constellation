@@ -113,6 +113,7 @@ def send_webpage_update():
                 "ip_address": item.ip_address,
                 "latency": item.latency,
                 "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
+                "password": item.password,
                 "protocol": item.connection_type,
                 "state": item.state,
                 "status": item.state["status"]}
@@ -1189,12 +1190,14 @@ async def update_configuration(target: str,
             th.start()
         elif target == "descriptions":
             c_exhibit.read_descriptions_configuration()
+            c_config.last_update_time = time.time()
         elif target == "wake_on_LAN":
             c_exhibit.read_wake_on_LAN_configuration()
+            c_config.last_update_time = time.time()
         elif target == "static":
             c_exhibit.read_static_components_configuration()
+            c_config.last_update_time = time.time()
 
-    c_config.last_update_time = time.time()
     return {"success": True}
 
 

@@ -1,4 +1,3 @@
-import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 import * as constIssues from './constellation_issues.js'
 

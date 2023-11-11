@@ -1,6 +1,7 @@
 import constConfig from './config.js'
 import * as constDMX from './constellation_dmx.js'
 import * as constMaint from './constellation_maintenance.js'
+import * as constProj from './constellation_projector.js'
 import * as constTools from './constellation_tools.js'
 
 class BaseComponent {
@@ -194,11 +195,14 @@ class BaseComponent {
   remove () {
     // Remove the component from its ComponentGroup
     getExhibitComponentGroup(this.group).removeComponent(this.id)
+
     // Remove the component from the exhibitComponents list
     const thisInstance = this
     constConfig.exhibitComponents = $.grep(constConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
+
     // Cancel the pollingFunction
     clearInterval(this.pollingFunction)
+
     // Rebuild the interface
     rebuildComponentInterface()
   }
@@ -290,32 +294,35 @@ class ExhibitComponent extends BaseComponent {
     return this.helperAddress
   }
 
-  remove () {
+  remove (deleteConfigurtion = true) {
     if (this.status === constConfig.STATUS.STATIC) {
       // Remove the component from the static system configuration
 
-      // First, get the current static configuration
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: '/system/static/getConfiguration'
-      })
-        .then((result) => {
-          let staticConfig = result.configuration
-          // Next, remove this element
-          const thisID = this.id
-          staticConfig = staticConfig.filter(function (obj) {
-            return obj.id !== thisID
-          })
-
-          // Finally, send the configuration back for writing
-          constTools.makeServerRequest({
-            method: 'POST',
-            endpoint: '/system/static/updateConfiguration',
-            params: {
-              configuration: staticConfig
-            }
-          })
+      if (deleteConfigurtion === true) {
+        // First, get the current static configuration
+        constTools.makeServerRequest({
+          method: 'GET',
+          endpoint: '/system/static/getConfiguration'
         })
+          .then((result) => {
+            let staticConfig = result.configuration
+            // Next, remove this element
+            const thisID = this.id
+            staticConfig = staticConfig.filter(function (obj) {
+              return obj.id !== thisID
+            })
+
+            // Finally, send the configuration back for writing
+            constTools.makeServerRequest({
+              method: 'POST',
+              endpoint: '/system/static/updateConfiguration',
+              params: {
+                configuration: staticConfig
+              }
+            })
+          })
+      }
+
       super.remove()
     }
   }
@@ -353,35 +360,40 @@ export class WakeOnLANComponent extends BaseComponent {
     this.constellationAppId = 'wol_only'
   }
 
-  remove () {
+  remove (deleteConfigurtion = true) {
     // Remove the device from the system configuration
 
-    // First, get the current wake on LAN configuration
-    constTools.makeServerRequest({
-      method: 'GET',
-      endpoint: '/system/wake_on_LAN/getConfiguration'
-    })
-      .then((result) => {
-        let wolConfig = result.configuration
-        // Next, remove this element
-        const thisID = this.id
-        wolConfig = wolConfig.filter(function (obj) {
-          return obj.id !== thisID
-        })
-
-        // Finally, send the configuration back for writing
-        constTools.makeServerRequest({
-          method: 'POST',
-          endpoint: '/system/wake_on_LAN/updateConfiguration',
-          params: {
-            configuration: wolConfig
-          }
-        })
-          .then(() => {
-            super.remove()
-            rebuildComponentInterface()
-          })
+    if (deleteConfigurtion === true) {
+      // First, get the current wake on LAN configuration
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: '/system/wake_on_LAN/getConfiguration'
       })
+        .then((result) => {
+          let wolConfig = result.configuration
+          // Next, remove this element
+          const thisID = this.id
+          wolConfig = wolConfig.filter(function (obj) {
+            return obj.id !== thisID
+          })
+
+          // Finally, send the configuration back for writing
+          constTools.makeServerRequest({
+            method: 'POST',
+            endpoint: '/system/wake_on_LAN/updateConfiguration',
+            params: {
+              configuration: wolConfig
+            }
+          })
+            .then(() => {
+              super.remove()
+              rebuildComponentInterface()
+            })
+        })
+    } else {
+      super.remove()
+      rebuildComponentInterface()
+    }
   }
 }
 
@@ -393,39 +405,45 @@ class Projector extends BaseComponent {
 
     this.type = 'projector'
     this.constellationAppId = 'projector'
+    this.password = ''
     this.protocol = null // 'pjlink' or 'serial'
     this.state = {}
   }
 
-  remove () {
+  remove (deleteConfiguration = true) {
     // Remove the projector from the system configuration
 
-    // First, get the current projector configuration
-    constTools.makeServerRequest({
-      method: 'GET',
-      endpoint: '/system/projectors/getConfiguration'
-    })
-      .then((result) => {
-        let projConfig = result.configuration
-        // Next, remove this element
-        const thisID = this.id
-        projConfig = projConfig.filter(function (obj) {
-          return obj.id !== thisID
-        })
-
-        // Finally, send the configuration back for writing
-        constTools.makeServerRequest({
-          method: 'POST',
-          endpoint: '/system/projectors/updateConfiguration',
-          params: {
-            configuration: projConfig
-          }
-        })
-          .then(() => {
-            super.remove()
-            rebuildComponentInterface()
-          })
+    if (deleteConfiguration === true) {
+      // First, get the current projector configuration
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: '/system/projectors/getConfiguration'
       })
+        .then((result) => {
+          let projConfig = result.configuration
+          // Next, remove this element
+          const thisID = this.id
+          projConfig = projConfig.filter(function (obj) {
+            return obj.id !== thisID
+          })
+
+          // Finally, send the configuration back for writing
+          constTools.makeServerRequest({
+            method: 'POST',
+            endpoint: '/system/projectors/updateConfiguration',
+            params: {
+              configuration: projConfig
+            }
+          })
+            .then(() => {
+              super.remove()
+              rebuildComponentInterface()
+            })
+        })
+    } else {
+      super.remove()
+      rebuildComponentInterface()
+    }
   }
 
   updateFromServer (update) {
@@ -456,9 +474,8 @@ class Projector extends BaseComponent {
         constTools.rebuildNotificationList()
       }
     }
-    if ('protocol' in update) {
-      this.protocol = update.protocol
-    }
+    if ('password' in update) this.password = update.password
+    if ('protocol' in update) this.protocol = update.protocol
   }
 }
 
@@ -797,13 +814,14 @@ export function showExhibitComponentInfo (id) {
 
   // If this is a projector, populate the status pane
   if (obj.type === 'projector') {
-    populateProjectorInfo(obj.id)
+    configureComponentInfoModalForProjector(obj.id)
     $('#componentInfoModaProejctorTabButton').show()
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
     $('#componentInfoModaProejctorTabButton').hide()
     $('#componentInfoModalModelGroup').hide()
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
+    document.getElementById('componentInfoModalProjectorSettings').style.display = 'none'
   }
 
   // Must be after all the settings are configured
@@ -860,11 +878,13 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModal').modal('show')
 }
 
-function populateProjectorInfo (id) {
+function configureComponentInfoModalForProjector (id) {
   // Set up the projector status pane of the componentInfoModal with the info
   // from the selected projector
 
   const obj = getExhibitComponent(id)
+
+  // // Projector status pane
 
   // First, reset all the cell shadings
   $('#projectorInfoLampState').parent().removeClass()
@@ -965,6 +985,14 @@ function populateProjectorInfo (id) {
       createProjectorLampStatusEntry(lampList[i], i)
     }
   }
+
+  // Projetor settings
+  document.getElementById('componentInfoModalProjectorSettingsID').value = obj.id
+  document.getElementById('componentInfoModalProjectorSettingsGroup').value = obj.group
+  document.getElementById('componentInfoModalProjectorSettingsIPAddress').value = obj.ip_address
+  document.getElementById('componentInfoModalProjectorSettingsPassword').value = obj.password
+  document.getElementById('componentInfoModalProjectorSettings').style.display = 'block'
+  document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
 }
 
 function configureNewDefinitionOptions (obj) {
@@ -980,6 +1008,26 @@ function configureNewDefinitionOptions (obj) {
       el.href = obj.getHelperURL() + '/' + app + '/setup.html'
     }
   })
+}
+
+export function updateProjectorFromInfoModal () {
+  // Collect details from the component info modal and update the proejctor
+
+  const id = document.getElementById('componentInfoModalTitle').innerHTML
+
+  const update = {
+    id: document.getElementById('componentInfoModalProjectorSettingsID').value.trim(),
+    group: document.getElementById('componentInfoModalProjectorSettingsGroup').value.trim(),
+    ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
+    password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
+    protocol: 'pjlink'
+  }
+  constProj.submitProjectorChange(id, update)
+    .then(() => {
+      document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
+      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalProjectorSettingsID').value.trim()
+      rebuildComponentInterface()
+    })
 }
 
 export function convertAppIDtoDisplayName (appName) {
@@ -1443,6 +1491,21 @@ export function getExhibitComponent (id) {
     return obj.id === id
   })
   return result
+}
+
+export function checkForRemovedComponents (update) {
+  // Check constConfig.exhibitComponents and remove any components not in `update`
+
+  const updateIDs = []
+  update.forEach((component) => {
+    updateIDs.push(component.id)
+  })
+
+  constConfig.exhibitComponents.forEach((component) => {
+    if (updateIDs.includes(component.id) === false) {
+      component.remove(false) // Remove from interface, but not the config
+    }
+  })
 }
 
 export function rebuildComponentInterface () {

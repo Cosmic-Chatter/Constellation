@@ -427,6 +427,7 @@ function parseUpdate (update) {
     let numOnline = 0
     let numStatic = 0
 
+    constExhibit.checkForRemovedComponents(update.components)
     update.components.forEach((component) => {
       numComps += 1
       if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
@@ -1066,6 +1067,12 @@ document.getElementById('componentInfoModalEditDMXButton').addEventListener('cli
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
   window.open(component.getHelperURL() + '/dmx_control.html?standalone=true', '_blank').focus()
 })
+Array.from(document.querySelectorAll('.componentInfoProjectorSetting')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'block'
+  })
+})
+document.getElementById('componentInfoModalProjectorSettingsSaveButton').addEventListener('click', constExhibit.updateProjectorFromInfoModal)
 // Schedule tab
 // =========================
 document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
@@ -1205,20 +1212,6 @@ document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventLi
 $('#showManageSettingsModalButton').click(showManageSettingsModal)
 $('.manageSettingsInputField').on('input', updateManageSettingsModal).change(updateManageSettingsModal)
 $('#manageSettingsModalSaveButton').click(updateSystemConfigurationFromModal)
-// Projectors
-$('#showManageProjectorsModalButton').click(constProjector.showManageProjectorsModal)
-$('#manageProjectorAddBUtton').click(function () {
-  constProjector.createManageProjectorEntry({
-    id: 'New Projector',
-    ip_address: '',
-    protocol: 'pjlink'
-  })
-  $('#manageProjectorsModalSaveButton').show() // Show the save button
-})
-$('.manageProjectorEditField').change(constProjector.manageProjectorUpdateConfigFromEdit)
-$('.manageProjectorEditField').on('input', constProjector.manageProjectorUpdateConfigFromEdit)
-$('#manageProjectorDeleteButton').click(constProjector.manageProjectorDeleteProjectorEntry)
-$('#manageProjectorsModalSaveButton').click(constProjector.updateProjectorConfigurationFromModal)
 
 // Wake on LAN
 $('#showWakeOnLANEditModalButton').click(constExhibit.showManageWakeOnLANModal)

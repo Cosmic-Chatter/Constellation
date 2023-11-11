@@ -59,6 +59,7 @@ def read_projector_configuration():
                 maintenance_path = c_tools.get_path(["maintenance-logs", proj["id"] + '.txt'], user_file=True)
                 new_proj.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
                 config.projectorList.append(new_proj)
+    config.last_update_time = time.time()
 
 
 # Set up log file

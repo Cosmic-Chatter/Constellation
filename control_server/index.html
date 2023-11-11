@@ -463,9 +463,41 @@
                         </select>
                       </div>
                     </div>
+
+                    <!-- Projector settings -->
+                    <div id="componentInfoModalProjectorSettings" class="mt-2">
+                      <span class="h5">Projector settings</span>
+                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
+                        <div class="col">
+                          <label for="componentInfoModalProjectorSettingsID" class="form-label">
+                            ID
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalProjectorSettingsID" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <label for="componentInfoModalProjectorSettingsGroup" class="form-label">Group</label>
+                          <input id="componentInfoModalProjectorSettingsGroup" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <label for="componentInfoModalProjectorSettingsIPAddress" class="form-label">IP address</label>
+                          <input id="componentInfoModalProjectorSettingsIPAddress" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <label for="componentInfoModalProjectorSettingsPassword" class="form-label">Password</label>
+                          <input id="componentInfoModalProjectorSettingsPassword" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col d-flex">
+                          <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Component description input -->
-                    <label class="mt-3 form-label" for="componentInfoModalDescriptionInput">
-                      Component description<span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                    <span class="h5 mt-3">General settings</span>
+                    <label class="form-label" for="componentInfoModalDescriptionInput">
+                      Component description
+                      <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
                     </label>
                     <input id="componentInfoModalDescriptionInput" class="form-control componentInfoSetting" type="text">
 
@@ -1438,60 +1470,6 @@
             </div>
           </div>
 
-          <!-- Modal for managing projectors -->
-          <div class="modal" tabindex="-1" role="dialog" id="manageProjectorsModal">
-            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Manage Projectors</h5>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-7 px-1">
-                      <div class="row mb-3 ps-2 pe-3">
-                        <div class="col-9" style="font-size: 16pt;">
-                          Current projectors
-                        </div>
-                        <div class="col-3 px-2">
-                          <button id="manageProjectorAddBUtton" class="btn btn-success btn-sm w-100">Add</button>
-                        </div>
-                      </div>
-                      <div style="height: 400px; overflow-y:auto">
-                        <div id="manageProjectorList" class="row mx-2">
-                        </div>
-                      </div>
-                      
-                    </div>
-
-                    <div class="col-5 border-left">
-                      <H4>Edit properties</H4>
-                      <label for="manageProjectorsEditIDInput">ID</label>
-                      <input id="manageProjectorsEditIDInput" type="text" class="form-control manageProjectorEditField">
-                      <label for="manageProjectorsEditGroupInput" class="mt-2">Group</label>
-                      <input id="manageProjectorsEditGroupInput" type="text" placeholder="Projectors" class="form-control manageProjectorEditField">
-                      <label for="manageProjectorsProtocolSelect" class="mt-2">Protocol</label>
-                      <select id="manageProjectorsProtocolSelect" class="form-select manageProjectorEditField">
-                        <option value="pjlink">PJLink</option>
-                        <option value="serial">Serial</option>
-                      </select>
-                      <label for="manageProjectorsEditIPInput" class="mt-2">IP address</label>
-                      <input id="manageProjectorsEditIPInput" type="text" class="form-control manageProjectorEditField">
-                      <label id='manageProjectorsEditPasswordInputLabel' for="manageProjectorsEditPasswordInput" class="mt-2">Password</label>
-                      <input id="manageProjectorsEditPasswordInput" type="text" class="form-control manageProjectorEditField">
-                      <label id='manageProjectorsEditMakeInputLabel' for="manageProjectorsEditMakeInput" class="mt-2">Make</label>
-                      <input id="manageProjectorsEditMakeInput" type="text" class="form-control manageProjectorEditField">
-                      <button id="manageProjectorDeleteButton" class="btn btn-danger w-100 mt-3">Delete projector</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button id="manageProjectorsModalSaveButton" type="button" class="btn btn-primary">Save</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Modal for managing Wake on LAN devices -->
           <div class="modal" tabindex="-1" role="dialog" id="manageWakeOnLANModal">
             <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -1652,9 +1630,6 @@
           <div class="row mt-1">
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showManageSettingsModalButton">Server Settings</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 mt-2">
-              <button type="button" class="btn btn-primary w-100" id="showManageProjectorsModalButton">Projectors</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
