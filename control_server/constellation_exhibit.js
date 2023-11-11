@@ -38,7 +38,7 @@ class BaseComponent {
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
     let classString
-    if (getExhibitComponentGroup(this.group).components.length > 704) {
+    if (getExhibitComponentGroup(this.group).components.length > 7) {
       classString = 'col-12 col-sm-4 col-md-3 mt-1'
     } else {
       classString = 'col-12 col-sm-4 col-md-6 mt-1'

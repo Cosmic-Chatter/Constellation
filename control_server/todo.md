@@ -5,7 +5,7 @@
 ### General
 - Add ability to edit exhibits without setting them
 - Add ability to change component details (name, group, etc. from the components tab)
-  - Then, remove projector, wake on LAN, and static editing from the settings tab
+  - Then, remove wake on LAN and static editing from the settings tab
 - Hide the view screenshot option is screenshot permission is not available
 - Allow components to be in multiple groups
 
@@ -24,7 +24,8 @@
 ## Constellation Apps
 
 ### General
-- Ability to clone definition
+- Ability to clone definition 
+- Change preview aspect ratio in definition setup.
 
 ### DMX Control
 - Rename fixtures

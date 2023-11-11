@@ -103,7 +103,7 @@ export function populateSchedule (schedule) {
     dateCol.appendChild(dateSpan)
 
     const editButtonCol = document.createElement('div')
-    editButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    editButtonCol.classList = 'col-12 col-md-6 mt-2'
     row.appendChild(editButtonCol)
 
     const editButton = document.createElement('button')
@@ -116,7 +116,7 @@ export function populateSchedule (schedule) {
     editButtonCol.appendChild(editButton)
 
     const convertButtonCol = document.createElement('div')
-    convertButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    convertButtonCol.classList = 'col-12 col-md-6 mt-2'
     convertButtonCol.style.display = convertState
     row.appendChild(convertButtonCol)
 
