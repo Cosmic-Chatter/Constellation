@@ -26,6 +26,9 @@ __*Constellation*__ 4 expands customization for your apps and significantly impr
 ### Timelapse Viewer
 - A background can now be set.
 
+### Voting Kiosk
+- Control the number of columns the buttons are arranged in.
+
 ### Word Cloud
 - The cloud can be displayed in uppercase in addition to lowercase.
 - Add to the list of words that are removed from the cloud.

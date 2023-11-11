@@ -10,30 +10,22 @@ function buildLayout (definition) {
   // Clear the exisiting layout
   cardRow.innerHTML = ''
 
-  // Pick the button width class based on the number of options and the orientation of the screen.
-  const buttonClasses = 'button-col mx-0 px-1 col'
-  let nRows
-  let rowClass = 'row-cols-'
-
-  if (window.innerHeight <= window.innerWidth) {
-    if (buttons.length <= 6) {
-      nRows = 1
-      rowClass += String(buttons.length)
+  let nCols
+  if ('num_columns' in definition.style.layout) {
+    if (definition.style.layout.num_columns !== 'auto') {
+      nCols = parseInt(definition.style.layout.num_columns)
     } else {
-      nRows = Math.ceil(buttons.length / 4)
-      rowClass += '4'
+      nCols = calculateButtonRows(buttons)
     }
   } else {
-    if (buttons.length <= 6) {
-      nRows = buttons.length
-      rowClass += '1'
-    } else {
-      nRows = Math.ceil(buttons.length / 2)
-      rowClass += '2'
-    }
+    nCols = calculateButtonRows(buttons)
   }
+
+  const nRows = Math.ceil(buttons.length / nCols)
+  const rowClass = 'row-cols-' + String(nCols)
+
   // Clear any old row layout and then add the new one
-  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((i) => { cardRow.classList.remove('row-cols-' + String(i)) })
+  Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).forEach((i) => { cardRow.classList.remove('row-cols-' + String(i)) })
   cardRow.classList.add(rowClass)
 
   // Iterate through the buttons and build their HTML
@@ -50,7 +42,7 @@ function buildLayout (definition) {
     voteCounts[value] = 0
 
     const div = document.createElement('div')
-    div.classList = buttonClasses
+    div.classList = 'button-col mx-0 px-1 col'
     div.addEventListener('click', function () { buttonTouched(div, value) })
     cardRow.appendChild(div)
 
@@ -100,6 +92,24 @@ function getIcon (name) {
     return 'voting_kiosk/icons/' + name + '.svg'
   } else {
     return 'content/' + name
+  }
+}
+
+function calculateButtonRows (buttons) {
+  // Choose a sensible number of buttons for the given orientation and button count
+
+  if (window.innerHeight <= window.innerWidth) {
+    if (buttons.length <= 6) {
+      return buttons.length
+    } else {
+      return 4
+    }
+  } else {
+    if (buttons.length <= 6) {
+      return 1
+    } else {
+      return 2
+    }
   }
 }
 
