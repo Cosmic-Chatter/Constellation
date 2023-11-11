@@ -37,15 +37,25 @@ class BaseComponent {
     // Change the amount of the Bootstrap grid being used depending on the
     // number of components in this group. Larger groups get more horizontal
     // space, so each component needs a smaller amount of grid.
-    let classString
-    if (getExhibitComponentGroup(this.group).components.length > 7) {
-      classString = 'col-12 col-sm-4 col-md-3 mt-1'
-    } else {
-      classString = 'col-12 col-sm-4 col-md-6 mt-1'
-    }
+
+    // Cycle through the components and count how many we will actually be displaying
+    // const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
+    // let numToDisplay = 0
+    // getExhibitComponentGroup(this.group).components.forEach((component) => {
+    //   if (showStatic || component.status !== constConfig.STATUS.STATIC) {
+    //     numToDisplay += 1
+    //   }
+    // })
+
+    // let classString
+    // if (numToDisplay > 7) {
+    //   classString = 'col-12 col-sm-4 col-md-3 mt-1'
+    // } else {
+    //   classString = 'col-12 col-sm-4 col-md-6 mt-1'
+    // }
 
     const col = document.createElement('div')
-    col.classList = classString
+    col.classList = 'col mt-1'
 
     const btnGroup = document.createElement('div')
     btnGroup.classList = 'btn-group h-100 w-100'
@@ -629,6 +639,12 @@ class ExhibitComponentGroup {
     const componentList = document.createElement('div')
     componentList.classList = 'row'
     componentList.setAttribute('id', thisGroup.replaceAll(' ', '_') + 'ComponentList')
+    if (numToDisplay > 7) {
+      componentList.classList.add('row-cols-2', 'row-cols-sm-3', 'row-cols-md-4')
+    } else {
+      componentList.classList.add('row-cols-2', 'row-cols-sm-3', 'row-cols-md-2')
+    }
+
     col.appendChild(componentList)
 
     $('#componentGroupsRow').append(col)

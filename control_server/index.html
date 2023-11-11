@@ -823,28 +823,28 @@
             <a class="nav-link active" id="nav-components-tab" data-bs-toggle="tab" href="#nav-components" role="tab" aria-controls="nav-components" aria-selected="true">Components</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-sm-block" id="nav-schedule-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
+            <a class="nav-link d-block d-sm-block" id="nav-schedule-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
           </li>
           <li class="nav-item">
             <a class="nav-link d-none d-sm-block" id="nav-issues-tab" data-bs-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-md-block" id="nav-analytics-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+            <a class="nav-link d-none d-sm-block" id="nav-analytics-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-lg-block" id="nav-settings-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
+            <a class="nav-link d-none d-md-block" id="nav-settings-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-lg-block" id="nav-help-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
+            <a class="nav-link d-none d-md-block" id="nav-help-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
           </li>
           
           <!-- Dropdown for overflow items -->
-          <li class="nav-item dropdown d-block d-lg-none">
+          <li class="nav-item dropdown d-block d-md-none">
             <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">More</a>
             <div class="dropdown-menu">
-              <a class="dropdown-item d-block d-sm-none" id="nav-schedule-dropdown-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
+              <!-- <a class="dropdown-item d-block d-sm-none" id="nav-schedule-dropdown-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a> -->
               <a class="dropdown-item d-block d-sm-none" id="nav-issues-dropdown-tab" data-bs-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
-              <a class="dropdown-item d-block d-md-none" id="nav-analytics-dropdown-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+              <a class="dropdown-item d-block d-sm-none" id="nav-analytics-dropdown-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
               <a class="dropdown-item" id="nav-settings-dropdown-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
               <a class="dropdown-item" id="nav-help-dropdown-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
             </div>
@@ -1357,11 +1357,11 @@
                   <h5 class="modal-title">Are you sure?</h5>
                 </div>
                 <div class="modal-body">
-                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly for up to a minute.
+                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly.
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-danger" id="exhibitChangeConfirmationButton">Change exhibit</button>
-                  <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="exhibitChangeConfirmationButton">Change exhibit</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
               </div>
             </div>
@@ -1397,10 +1397,10 @@
                     <div class="col-12 col-sm-6 col-md-4">
                       <div class="row px-2 py-2 h-100">
                         <div class="col-12 bg-primary rounded-top pt-2">
-                          <H4>IP address</H4>
+                          <span class="h5">IP address</span>
                         </div>
-                        <div class="col-12 bg-secondary py-2 rounded-bottom">
-                          <label class="font-italic">The IP address of the machine Control Server is running on.</label>
+                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
+                          <label class="fst-italic">The IP address of the machine Control Server is running on.</label>
                           <input id="manageSettingsModalIPInput" type="text" class="form-control manageSettingsInputField" value="255.255.255.255"></input>
                         </div>
                       </div>
@@ -1408,10 +1408,10 @@
                     <div class="col-12 col-sm-6 col-md-4">
                       <div class="row px-2 py-2 h-100">
                         <div class="col-12 bg-primary rounded-top pt-2">
-                          <H4>Port</H4>
+                          <span class="h5">Port</span>
                         </div>
-                        <div class="col-12 bg-secondary py-2 rounded-bottom">
-                          <label class="font-italic">The port Control Server should listen on.</label>
+                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
+                          <label class="fst-italic">The port Control Server should listen on.</label>
                           <input id="manageSettingsModalPortInput" type="text" class="form-control manageSettingsInputField" placeholder="8082"></input>
                         </div>
                       </div>
@@ -1419,10 +1419,10 @@
                     <div class="col-12 col-sm-6 col-md-4">
                       <div class="row px-2 py-2 h-100">
                         <div class="col-12 bg-primary rounded-top pt-2">
-                          <H4>Gallery name</H4>
+                          <span class="h5">Gallery name</span>
                         </div>
-                        <div class="col-12 bg-secondary py-2 rounded-bottom">
-                          <label class="font-italic">A name describing the space managed by Control Server.</label>
+                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
+                          <label class="fst-italic">A name describing the space managed by Control Server.</label>
                           <input id="manageSettingsModalGalleryNameInput" type="text" class="form-control manageSettingsInputField" placeholder="Constellation"></input>
                         </div>
                       </div>
@@ -1430,10 +1430,10 @@
                     <div class="col-12 col-sm-6 col-md-4">
                       <div class="row px-2 py-2 h-100">
                         <div class="col-12 bg-primary rounded-top pt-2">
-                          <H4>Assignable staff</H4>
+                          <span class="h5">Assignable staff</span>
                         </div>
-                        <div class="col-12 bg-secondary py-2 rounded-bottom">
-                          <label class="font-italic">A comma-separated list of names to whom issues can be assigned.</label>
+                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
+                          <label class="fst-italic">A comma-separated list of names to whom issues can be assigned.</label>
                         <input id="manageSettingsModalAssignableStaffInput" type="text" class="form-control manageSettingsInputField" placeholder=""></input>
                         </div>
                       </div>
@@ -1441,10 +1441,10 @@
                     <div class="col-12 col-sm-6 col-md-4">
                       <div class="row px-2 py-2 h-100">
                         <div class="col-12 bg-primary rounded-top pt-2">
-                          <H4>Enable debug mode</H4>
+                          <span class="h5">Enable debug mode</span>
                         </div>
-                        <div class="col-12 bg-secondary py-2 rounded-bottom">
-                          <label class="font-italic">Print additional debug information to the terminal.</label>
+                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
+                          <label class="fst-italic">Print additional debug information to the terminal.</label>
                           <select id="manageSettingsModalDebugSelect" class="form-select manageSettingsInputField" placeholder="">
                             <option value=true>True</option>
                             <option value=false>False</option>
