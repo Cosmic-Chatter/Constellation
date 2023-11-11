@@ -27,7 +27,6 @@ Many **_Constellation_** `components` will lose functionality if they cannot con
 * On Windows, some secondary functionality requires running Control Server with administrator privileges
 
 #### Environment recommendations
-* Linux is strongly recommended as the operating system, followed by macOS. Everything should work under Windows, but testing is less thorough and the OS has lower uptime.
 * A wired network connection is important to ensure a consistent connection.
 * No aspect of **_Constellation_** requires access to the public internet (except checking for updates), although Control Server should be on a machine with accurate network time.
 
@@ -116,12 +115,6 @@ The _Components_ tab lists every managed component and projector. Each receives 
 
 Clicking on a component opens its status view. Here, you can see a snapshot of the remote system's performance, select a definition, change settings, and add maintenance details.
 
-#### System status
-
-The system status area, located at the top, provides a summary of the performance of the computer running the component. These values are only estimates—if a component is behaving inconsistently, use the operating system's tools to diagnose the problem.
-
-Note that CPU usage is not properly reported for PCs running Windows.
-
 #### Definitions pane
 
 The definition pane allows you to select the app definition that you want to display. A given `component` can have only one active definition. If the definition you selected belongs to an app other than the one that is currently active, the app will be changed before the new definition is applied.
@@ -137,13 +130,15 @@ The maintenance pane allow you to track the maintenance status of the component.
 
 In addition, you may add notes using the provided text box. Changes to the notes or status are not saved until the _Save changes_ button has been pressed.
 
-Changes to the maintenance status of a component are logged. These logs are in plain-text format in the `maintenance-logs` directory. Each line of a log is a JSON object containing the state at the time of submission.
+##### System status
+
+The system status area, located at the top of the maintenance pane, provides a summary of the performance of the computer running the component. These values are only estimates—if a component is behaving inconsistently, use the operating system's tools to diagnose the problem.
+
+Note that CPU usage is not properly reported for PCs running Windows.
 
 #### Settings pane
 
 The settings pane allows you to quickly update certain component settings, as well as launch the full settings page for that component.
-
-Using the dropdown, you can change which _**Constellation**_ app is active on the component.
 
 #### Projector status view
 
@@ -160,7 +155,7 @@ The _Schedule_ tab allows you to set recurring or one-off events within the gall
 * Set a DMX scene for a component
 * Add an explanatory note
 
-Note that sending power off and power on commands may affect different components differently. For projectors, this will sleep or wake them. For Wake on LAN devices with shutdown permitted, the machine will be shutdown.
+Note that sending power off and power on commands may affect different components differently. For projectors, this will sleep or wake them.
 
 ### Maintenance tab
 
@@ -170,42 +165,17 @@ The Maintenance tab organizes information about the current state of the gallery
 
 #### Issues
 
-Issues are not tied to a specific exhibit, but are a property of the overall space. They can be connected to a **_Constellation_** component or simply a note about the state of the facility. When creating an issue, you can give it a priority, assign it to a specific person, and connect it with a component. You can also upload a photo for reference. If you're using the web console on a mobile device, you can even take the picture directly from within the interface.
+Issues are not tied to a specific exhibit, but are a property of the overall space. They can be connected to a **_Constellation_** component or simply a note about the state of the facility. When creating an issue, you can give it a priority, assign it to a specific person, and connect it with a component. You can also upload images or videos for reference. If you're using the web console on a mobile device, you can even take the picture directly from within the interface.
 
 Known issues can be filtered by priority and who they are assigned to.
 
-#### Maintenance overview
+### Analytics tab
 
-The maintenance overview summarizes the current state of the components. From the component status view on the _Components_ tab, maintenance staff can enter notes about various pieces, as well as categorize them into one of four groups:
-
-- On the floor and working
-- On the floor and not working
-- Off the floor and working
-- Off the floor and not working
-
-The various components are grouped into these categories on the maintenance overview. The status bar underneath each `id` shows the fraction of time the component has been working or not working.
-
-### Settings tab
-
-#### Changing the exhibit
-
-Use the _Set current exhibit_ dropdown box to change the exhibit being displayed. **This change takes immediate effect and may result in an unsightly transition in public view.**
-
-#### Creating and deleting exhibits
-
-You can create and delete exhibits from the settings tab. When creating an exhibit, you can either create an empty exhibit (no definition for any component), or you can clone the existing exhibit.
-
-### Hiding tabs
-
-The tabs can be hidden from view by modifying the URL. For example, to hide the schedule tab, change the URL to read `http://[Your IP]:[Your Port]/webpage.html?hideSchedule`. To hide both the help and settings tabs, use `http://[Your IP]:[Your Port]/webpage.html?hideHelp&hideSettings`.
-
-Hiding tabs can be useful when creating a status console for certain staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
-
-## Using the Flexible Tracker
+The analytics tab allows you to configure Flexible Tracker, a powerful tool for creating data-collection interfaces.
 
 <img src="images/tracker_example.jpg" style="width: 50%; float: right; border: 2px solid gray; margin: 5px;"></img>
 
-The Flexible Tracker enables the collection of a wide variety of quantitative and qualitative data using Control Server. Collected data can then be downloaded as a standard CSV file for opening in any spreadsheet software.
+Flexible Tracker enables the collection of a wide variety of quantitative and qualitative data using Control Server. Collected data can then be downloaded as a standard CSV file for opening in any spreadsheet software.
 
 ### Collection types
 Flexible Tracker can collect a variety of data types. Each type provides a widget that makes inputting the data easy and reliable.
@@ -240,4 +210,22 @@ Data are stored in Control Server under `flexible-tracker/data/<template name>.t
 Once you have collected some data, you can easily download it as a comma-separated values (CSV) file that cane be read by Microsoft Excel or another data analysis app. To do so, go to the settings view from the web console and select the appropriate template. Then, click the "Download data" button and a CSV download will be initiated in your browser.
 
 By clicking the _Clear data_ button, you can erase the existing data. This action cannot be undone.
+
+
+### Settings tab
+
+#### Changing the exhibit
+
+Use the _Set current exhibit_ dropdown box to change the exhibit being displayed. **This change takes immediate effect and may result in an unsightly transition in public view.**
+
+#### Creating and deleting exhibits
+
+You can create and delete exhibits from the settings tab. When creating an exhibit, you can either create an empty exhibit (no definition for any component), or you can clone the existing exhibit.
+
+### Hiding tabs
+
+The tabs can be hidden from view by modifying the URL. For example, to hide the schedule tab, change the URL to read `http://[Your IP]:[Your Port]/webpage.html?hideSchedule`. To hide both the help and settings tabs, use `http://[Your IP]:[Your Port]/webpage.html?hideHelp&hideSettings`.
+
+Hiding tabs can be useful when creating a status console for certain staff, without showing them the deeper configuration options. **Note that these options can be re-enabled simply by modifying the URL, so this is not a secure method of limiting access.**
+
 

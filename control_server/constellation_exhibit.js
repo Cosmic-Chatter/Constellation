@@ -763,10 +763,12 @@ export function showExhibitComponentInfo (id) {
 
   // Add any available description
   if (obj.description === '') {
-    $('#componentInfoModalDescription').hide()
+    document.getElementById('componentInfoModalDescription').style.display = 'none'
+    document.getElementById('componentInfoModalDescriptionInput').value = ''
   } else {
     $('#componentInfoModalDescription').html(obj.description)
-    $('#componentInfoModalDescription').show()
+    document.getElementById('componentInfoModalDescription').style.display = 'block'
+    document.getElementById('componentInfoModalDescriptionInput').value = obj.description
   }
 
   // Show/hide warnings and checkboxes as appropriate
@@ -810,7 +812,8 @@ export function showExhibitComponentInfo (id) {
 
   // Show the approriate panes depending on the type and constellationAppID
   if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
-    $('#componentInfoModalSettingsTabButton').show()
+    document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'flex'
+    document.getElementById('componentInfoModalFullSettingsButton').style.display = 'inline-block'
     $('#componentInfoModalDefinitionsTabButton').show()
 
     // Fetch any DMX lighting scenes and show the tab if necessary
@@ -835,7 +838,8 @@ export function showExhibitComponentInfo (id) {
     configureNewDefinitionOptions(obj)
   } else {
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
-    $('#componentInfoModalSettingsTabButton').hide()
+    document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'none'
+    document.getElementById('componentInfoModalFullSettingsButton').style.display = 'none'
     $('#componentInfoModalDefinitionsTabButton').hide()
     $('#componentInfoModalDMXTabButton').hide()
     $('#contentUploadSystemStatsView').hide()
@@ -1387,32 +1391,49 @@ export function toggleExhibitComponentInfoSettingWarnings () {
 
 export function submitComponentSettingsChange () {
   // Collect the current settings and send them to the component's helper for saving.
-  // If the app is changed, send that to Control Server
 
   const obj = getExhibitComponent($('#componentInfoModalTitle').html())
 
-  const settings = {
-    permissions: {
-      audio: constTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
-      refresh: constTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
-      restart: constTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
-      shutdown: constTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
-      sleep: constTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
-    }
-  }
-  constTools.makeRequest({
-    method: 'POST',
-    url: obj.getHelperURL(),
-    endpoint: '/setDefaults',
-    params: { defaults: settings }
-  })
-    .then((response) => {
-      if ('success' in response) {
-        if (response.success === true) {
-          $('#componentInfoModalSettingsSaveButton').hide()
-        }
+  // Update component settings, if allowed
+  const settingsAvailable = document.getElementById('componentInfoModalSettingsPermissionsPane').style.display === 'flex'
+  if (settingsAvailable === true) {
+    const settings = {
+      permissions: {
+        audio: constTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
+        refresh: constTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
+        restart: constTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
+        shutdown: constTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
+        sleep: constTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
       }
+    }
+    constTools.makeRequest({
+      method: 'POST',
+      url: obj.getHelperURL(),
+      endpoint: '/setDefaults',
+      params: { defaults: settings }
     })
+      .then((response) => {
+        if ('success' in response) {
+          if (response.success === true) {
+            $('#componentInfoModalSettingsSaveButton').hide()
+          }
+        }
+      })
+  }
+
+  // Update component description
+  const description = document.getElementById('componentInfoModalDescriptionInput').value.trim()
+  const descriptionEl = document.getElementById('componentInfoModalDescription')
+  submitComponentDescriptionChange(obj.id, {
+    description,
+    id: obj.id
+  })
+  descriptionEl.innerHTML = description
+  if (description !== '') {
+    descriptionEl.style.display = 'block'
+  } else {
+    descriptionEl.style.display = 'none'
+  }
 }
 
 export function getExhibitComponent (id) {
@@ -1433,6 +1454,48 @@ export function rebuildComponentInterface () {
     constConfig.componentGroups[i].sortComponentList()
     constConfig.componentGroups[i].buildHTML()
   }
+}
+
+function submitComponentDescriptionChange (currentID, update) {
+  // Update the description for a component
+  // update is an object with keys `id` and `description`
+
+  // First, get the current description configuration
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/descriptions/getConfiguration'
+  })
+    .then((result) => {
+      let descConfig
+      if (result.success === true) {
+        descConfig = result.configuration
+      } else {
+        descConfig = []
+      }
+
+      // Next, check if there is a configuration matching this id
+      let matchFound = false
+      for (let i = 0; i < descConfig.length; i++) {
+        if (descConfig[i].id === currentID) {
+          descConfig[i].description = update.description
+          descConfig[i].id = update.id
+          matchFound = true
+          break
+        }
+      }
+      if (matchFound === false) {
+        descConfig.push(update)
+      }
+
+      // Finally, send the configuration back for writing
+      constTools.makeServerRequest({
+        method: 'POST',
+        endpoint: '/system/descriptions/updateConfiguration',
+        params: {
+          configuration: descConfig
+        }
+      })
+    })
 }
 
 export function queueCommand (id, cmd) {

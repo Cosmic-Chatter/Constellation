@@ -7,7 +7,6 @@
 - Add ability to change component details (name, group, etc. from the components tab)
   - Then, remove projector, wake on LAN, and static editing from the settings tab
 - Hide the view screenshot option is screenshot permission is not available
-- Edit descriptions from component info modal
 - Allow components to be in multiple groups
 
 ### Analytics
@@ -26,7 +25,6 @@
 
 ### General
 - Ability to clone definition
-- Gradient and image options for background
 
 ### DMX Control
 - Rename fixtures

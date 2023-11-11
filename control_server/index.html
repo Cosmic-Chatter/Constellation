@@ -406,7 +406,7 @@
                       </div>
                     </div>
                     
-                    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
+                    <div id="componentInfoModalSettingsPermissionsPane" class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
                       <!-- Audio permission -->
                       <div class="col mt-2">
                         <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
@@ -463,6 +463,12 @@
                         </select>
                       </div>
                     </div>
+                    <!-- Component description input -->
+                    <label class="mt-3 form-label" for="componentInfoModalDescriptionInput">
+                      Component description<span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                    </label>
+                    <input id="componentInfoModalDescriptionInput" class="form-control componentInfoSetting" type="text">
+
                     <div class="row mt-3 mt-auto">
                       <div class="col">
                         <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
@@ -1486,48 +1492,6 @@
             </div>
           </div>
 
-          <!-- Modal for managing component descriptions -->
-          <div class="modal" tabindex="-1" role="dialog" id="manageDescriptionsModal">
-            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Manage Descriptions</h5>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-7 px-1">
-                      <div class="row mb-3 ps-2 pe-3">
-                        <div class="col-9" style="font-size: 15pt;">
-                          Current descriptions
-                        </div>
-                        <div class="col-3 px-2">
-                          <button id="manageDescriptionsAddBUtton" class="btn btn-success btn-sm w-100">Add</button>
-                        </div>
-                      </div>
-                      <div style="height: 400px; overflow-y:auto">
-                        <div id="manageDescriptionsList" class="row mx-2">
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col-5 border-left">
-                      <H4>Edit properties</H4>
-                      <label for="manageDescriptionsEditIDInput">ID</label>
-                      <input id="manageDescriptionsEditIDInput" type="text" class="form-control manageDescriptionsEditField">
-                      <label for="manageDescriptionsDescriptionEditField" class="mt-2">Description</label>
-                      <textarea id="manageDescriptionsDescriptionEditField" rows="5" class="form-control manageDescriptionsEditField"></textarea>
-                      <button id="manageDescriptionsDeleteButton" class="btn btn-danger w-100 mt-3">Delete description</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button id="manageDescriptionsModalSaveButton" type="button" class="btn btn-primary">Save</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Modal for managing Wake on LAN devices -->
           <div class="modal" tabindex="-1" role="dialog" id="manageWakeOnLANModal">
             <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -1691,9 +1655,6 @@
             </div>
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showManageProjectorsModalButton">Projectors</button>
-            </div>
-            <div class="col-6 col-md-3 col-lg-2 mt-2">
-              <button type="button" class="btn btn-primary w-100" id="showComponentDescriptionEditModalButton">Descriptions</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
