@@ -21,6 +21,7 @@ __*Constellation*__ 4 expands customization for your apps and significantly impr
 - In addition to a solid color, you can now set app backgrounds to an image or a two-color gradient.
 
 ### Media Player
+- Overlay a logo or watermark.
 - A background can now be set.
 
 ### Timelapse Viewer

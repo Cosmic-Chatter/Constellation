@@ -35,7 +35,6 @@
 - Ability to filter results
 
 ### Media Player
-- Option for a watermark
 
 ### Timelapse Viewer
 - Option to prevent looping when scrolling

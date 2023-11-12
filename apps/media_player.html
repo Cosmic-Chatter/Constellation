@@ -63,6 +63,10 @@
         user-select: none;
         webkit-user-select: none;
       }
+      #watermark {
+        position: absolute;
+        object-fit: contain;
+      }
     </style>
   </head>
 
@@ -90,6 +94,8 @@
   </div>
 
   <audio id="audioPlayer" class="d-none" muted></audio>
+
+  <img id="watermark">
 
   <script src="js/jquery-3.6.1.min.js"></script>
   <script src="js/bootstrap_5_3/bootstrap.min.js"></script>

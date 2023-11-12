@@ -106,7 +106,7 @@ export function createFileSelectionModal (userOptions) {
                     <div class="col-6 col-md-4">
                       <label class="btn btn-outline-secondary w-100">
                         <span id="constFileSelectModalUploadfilename" style="overflow-wrap: break-word!important;">Upload new</span>
-                        <input hidden type="file" class="form-control-file" id="constFileSelectModalUpload" multiple>
+                        <input hidden type="file" class="form-control" id="constFileSelectModalUpload" multiple>
                       </label>
                     </div>
                     <div id="constFileSelectModalUploadSubmitCol" class="col-6 col-md-3 col-lg-2">

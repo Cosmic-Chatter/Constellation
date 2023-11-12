@@ -31,6 +31,31 @@ function loadDefinition (def) {
     constCommon.setBackground(def.style.background, root, '#000')
   }
 
+  // Watermark settings
+  const watermarkEl = document.getElementById('watermark')
+  if ('watermark' in def && 'file' in def.watermark && def.watermark.file !== '') {
+    watermarkEl.style.display = 'block'
+    watermarkEl.src = 'content/' + def.watermark.file
+
+    if ('x_position' in def.watermark) {
+      watermarkEl.style.left = String(def.watermark.x_position) + 'vw'
+    } else {
+      watermarkEl.style.left = '80vw'
+    }
+    if ('y_position' in def.watermark) {
+      watermarkEl.style.top = String(def.watermark.y_position) + 'vh'
+    } else {
+      watermarkEl.style.top = '80vh'
+    }
+    if ('size' in def.watermark) {
+      watermarkEl.style.height = String(def.watermark.size) + 'vh'
+    } else {
+      watermarkEl.style.height = '10vh'
+    }
+  } else {
+    watermarkEl.style.display = 'none'
+  }
+
   gotoSource(0)
 }
 

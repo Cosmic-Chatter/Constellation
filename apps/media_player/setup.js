@@ -23,7 +23,8 @@ function clearDefinitionInput (full = true) {
               mode: 'color',
               color: '#000'
             }
-          }
+          },
+          watermark: {}
         })
         $('#definitionSaveButton').data('workingDefinition', {
           uuid: response.uuid,
@@ -34,7 +35,8 @@ function clearDefinitionInput (full = true) {
               mode: 'color',
               color: '#000'
             }
-          }
+          },
+          watermark: {}
         })
         previewDefinition()
       })
@@ -51,6 +53,12 @@ function clearDefinitionInput (full = true) {
   })
 
   document.getElementById('itemList').innerHTML = ''
+  const watermarkSelect = document.getElementById('watermarkSelect')
+  watermarkSelect.innerHTML = 'Select file'
+  watermarkSelect.setAttribute('data-filename', '')
+  document.getElementById('watermarkXPos').value = '80'
+  document.getElementById('watermarkYPos').value = '80'
+  document.getElementById('watermarkSize').value = '10'
 }
 
 function createNewDefinition () {
@@ -85,6 +93,22 @@ function editDefinition (uuid = '') {
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.style) {
     constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+  }
+
+  // Set the appropriate values for the watermark
+  if ('watermark' in def && 'file' in def.watermark && def.watermark.file !== '') {
+    const watermarkSelect = document.getElementById('watermarkSelect')
+    watermarkSelect.innerHTML = def.watermark.file
+    watermarkSelect.setAttribute('data-filename', def.watermark.file)
+  }
+  if ('watermark' in def && 'x_position' in def.watermark) {
+    document.getElementById('watermarkXPos').value = def.watermark.x_position
+  }
+  if ('watermark' in def && 'y_position' in def.watermark) {
+    document.getElementById('watermarkYPos').value = def.watermark.y_position
+  }
+  if ('watermark' in def && 'size' in def.watermark) {
+    document.getElementById('watermarkSize').value = def.watermark.size
   }
 
   // Configure the preview frame
@@ -413,6 +437,15 @@ function rebuildItemList () {
   })
 }
 
+function onWatermarkFileChange () {
+  // Called when a new image is selected.
+
+  const file = document.getElementById('watermarkSelect').getAttribute('data-filename')
+  constSetup.updateWorkingDefinition(['watermark', 'file'], file)
+
+  previewDefinition(true)
+}
+
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.querySelector('html').setAttribute('data-bs-theme', 'dark')
@@ -466,6 +499,31 @@ document.getElementById('manageContentButton').addEventListener('click', (event)
 // Content
 document.getElementById('addItemButton').addEventListener('click', (event) => {
   addItem()
+})
+
+// Watermark
+document.getElementById('watermarkSelect').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['image'], multiple: false })
+    .then((files) => {
+      if (files.length === 1) {
+        event.target.innerHTML = files[0]
+        event.target.setAttribute('data-filename', files[0])
+        onWatermarkFileChange()
+      }
+    })
+})
+document.getElementById('watermarkSelectClear').addEventListener('click', (event) => {
+  const attractorSelect = document.getElementById('watermarkSelect')
+  attractorSelect.innerHTML = 'Select file'
+  attractorSelect.setAttribute('data-filename', '')
+  onWatermarkFileChange()
+})
+Array.from(document.querySelectorAll('.watermark-slider')).forEach((el) => {
+  el.addEventListener('input', (event) => {
+    const field = event.target.getAttribute('data-field')
+    constSetup.updateWorkingDefinition(['watermark', field], event.target.value)
+    previewDefinition(true)
+  })
 })
 
 // Set helper address for use with constCommon.makeHelperRequest
