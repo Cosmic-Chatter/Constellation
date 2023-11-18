@@ -1080,6 +1080,12 @@ Array.from(document.querySelectorAll('.componentInfoStaticSetting')).forEach((el
   })
 })
 document.getElementById('componentInfoModalStaticSettingsSaveButton').addEventListener('click', constExhibit.updateStaticComponentFromInfoModal)
+Array.from(document.querySelectorAll('.componentInfoWakeOnLANSetting')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').style.display = 'block'
+  })
+})
+document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').addEventListener('click', constExhibit.updateWakeOnLANComponentFromInfoModal)
 // Schedule tab
 // =========================
 document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)

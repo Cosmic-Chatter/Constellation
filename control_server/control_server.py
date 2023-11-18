@@ -129,6 +129,7 @@ def send_webpage_update():
                 "group": item.group,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
+                "mac_address": item.mac_address,
                 "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
                 "status": item.state["status"]}
         if "permissions" in item.config:
