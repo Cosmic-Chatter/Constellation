@@ -1443,91 +1443,6 @@
             </div>
           </div>
 
-          <!-- Modal for managing system settings -->
-          <div class="modal" tabindex="-1" role="dialog" id="manageSettingsModal">
-            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">System Settings</h5>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-12 col-sm-6 col-md-4">
-                      <div class="row px-2 py-2 h-100">
-                        <div class="col-12 bg-primary rounded-top pt-2">
-                          <span class="h5">IP address</span>
-                        </div>
-                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
-                          <label class="fst-italic">The IP address of the machine Control Server is running on.</label>
-                          <input id="manageSettingsModalIPInput" type="text" class="form-control manageSettingsInputField" value="255.255.255.255"></input>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                      <div class="row px-2 py-2 h-100">
-                        <div class="col-12 bg-primary rounded-top pt-2">
-                          <span class="h5">Port</span>
-                        </div>
-                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
-                          <label class="fst-italic">The port Control Server should listen on.</label>
-                          <input id="manageSettingsModalPortInput" type="text" class="form-control manageSettingsInputField" placeholder="8082"></input>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                      <div class="row px-2 py-2 h-100">
-                        <div class="col-12 bg-primary rounded-top pt-2">
-                          <span class="h5">Gallery name</span>
-                        </div>
-                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
-                          <label class="fst-italic">A name describing the space managed by Control Server.</label>
-                          <input id="manageSettingsModalGalleryNameInput" type="text" class="form-control manageSettingsInputField" placeholder="Constellation"></input>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                      <div class="row px-2 py-2 h-100">
-                        <div class="col-12 bg-primary rounded-top pt-2">
-                          <span class="h5">Assignable staff</span>
-                        </div>
-                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
-                          <label class="fst-italic">A comma-separated list of names to whom issues can be assigned.</label>
-                        <input id="manageSettingsModalAssignableStaffInput" type="text" class="form-control manageSettingsInputField" placeholder=""></input>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                      <div class="row px-2 py-2 h-100">
-                        <div class="col-12 bg-primary rounded-top pt-2">
-                          <span class="h5">Enable debug mode</span>
-                        </div>
-                        <div class="col-12 bg-secondary text-light py-2 rounded-bottom">
-                          <label class="fst-italic">Print additional debug information to the terminal.</label>
-                          <select id="manageSettingsModalDebugSelect" class="form-select manageSettingsInputField" placeholder="">
-                            <option value=true>True</option>
-                            <option value=false>False</option>
-                          </select> 
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-12 mt-2">
-                      <div id="manageSettingsModalMissingIPWarning" class="text-danger">You must specify an IP address.</div>
-                    </div>
-                    <div class="col-12 mt-2">
-                      <div id="manageSettingsModalRestartRequiredWarning" class="text-warning">This change requires a manual restart of Control Server to take affect.</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button id="manageSettingsModalSaveButton" type="button" class="btn btn-primary">Save</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Modal for managing exhibits -->
           <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
             <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -1595,13 +1510,7 @@
             </div>
           </div>
 
-          <H3 class='mt-4'>Configuration</H3>
-          <div class="row mt-1">
-            <div class="col-6 col-md-3 col-lg-2 mt-2">
-              <button type="button" class="btn btn-primary w-100" id="showManageSettingsModalButton">Server Settings</button>
-            </div>
-          </div>
-          <H3 class='mt-4'>Exhibits</H3>
+          <H3 class='mt-2'>Exhibits</H3>
           <i>Exhibits match each component in your gallery with one of its definitions.</i>
           <div class="row mt-3 gy-2">
             <div class="col-6 col-md-4 col-lg-3">
@@ -1646,6 +1555,60 @@
               </div>
             </div>
           </div>
+
+          <H3 class='mt-4'>Configuration</H3>
+          <div class="row gy-2 row-cols-2 row-cols-md-3 row-cols-lg-5">
+            <!-- IP address -->
+            <div class="col">
+              <label class="form-label" for="controlServerSettingsIPAddress">
+                IP address
+                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="The static IP address of the PC Control Server is running on." style="font-size: 0.55em; color: black">?</span>
+              </label>
+              <input id="controlServerSettingsIPAddress" type="text" class="form-control controlServerSettingsInputField"></input>
+            </div>
+
+            <!-- Port -->
+            <div class="col">
+              <label class="form-label" for="controlServerSettingsPort">
+                Port
+                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="The port on which Control Server is listening." style="font-size: 0.55em; color: black">?</span>
+              </label>
+              <input id="controlServerSettingsPort" type="number" class="form-control controlServerSettingsInputField"></input>
+            </div>
+
+            <!-- Gallery name -->
+            <div class="col">
+              <label class="form-label" for="controlServerSettingsGalleryName">
+                Gallery name
+                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A name describing the space managed by Control Server." style="font-size: 0.55em; color: black">?</span>
+              </label>
+              <input id="controlServerSettingsGalleryName" type="text" class="form-control controlServerSettingsInputField"></input>
+            </div>
+
+            <!-- Assignable staff -->
+            <div class="col">
+              <label class="form-label" for="controlServerSettingsAssignableStaff">
+                Assignable staff
+                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A comma-separated list of names to whom issues can be assigned." style="font-size: 0.55em; color: black">?</span>
+              </label>
+              <input id="controlServerSettingsAssignableStaff" type="text" class="form-control controlServerSettingsInputField"></input>
+            </div>
+
+            <!-- Debug mode -->
+            <div class="col">
+              <label class="form-label" for="controlServerSettingsDebugMode">
+                Debug mode
+                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Print additional debug information to the terminal." style="font-size: 0.55em; color: black">?</span>
+              </label>
+              <select id="controlServerSettingsDebugMode" class="form-select controlServerSettingsInputField">
+                <option value=true>Enabled</option>
+                <option value=false>Disabled</option>
+              </select> 
+            </div>
+          </div>
+          <div id="controlServerSettingsIPWarning" class="mt-2 text-danger"> IP address field cannot be blank.</div>
+          <div id="controlServerSettingsPortWarning" class="mt-2 text-danger"> The port must be a number.</div>
+          <button id="controlServerSettingsSaveButton" class="btn btn-primary mt-2">Save changes</button>
         </div>
         
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">

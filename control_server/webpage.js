@@ -882,19 +882,13 @@ function deleteExhibitFromModal () {
   $('#deleteExhibitModal').modal('hide')
 }
 
-function showManageSettingsModal () {
-  // Configure and show the showManageSettingsModal
-
-  populateManageSettingsModal()
-
-  $('#manageSettingsModalSaveButton').hide()
-  $('#manageSettingsModalMissingIPWarning').hide()
-  $('#manageSettingsModalRestartRequiredWarning').hide()
-  $('#manageSettingsModal').modal('show')
-}
-
-function populateManageSettingsModal () {
+function populateControlServerSettings () {
   // Get the latest system settings from Control Server and build out the interface for changing them.
+
+  // Hide warnings and buttons
+  document.getElementById('controlServerSettingsIPWarning').style.display = 'none'
+  document.getElementById('controlServerSettingsPortWarning').style.display = 'none'
+  document.getElementById('controlServerSettingsSaveButton').style.display = 'none'
 
   constTools.makeServerRequest({
     method: 'GET',
@@ -902,12 +896,11 @@ function populateManageSettingsModal () {
   })
     .then((result) => {
       const config = result.configuration
-      // Tag the modal with this config for later use
-      $('#manageSettingsModal').data('config', config)
 
-      $('#manageSettingsModalIPInput').val(config.ip_address)
-      $('#manageSettingsModalPortInput').val(config.port)
-      $('#manageSettingsModalGalleryNameInput').val(config.gallery_name)
+      document.getElementById('controlServerSettingsIPAddress').value = config.ip_address
+      document.getElementById('controlServerSettingsPort').value = config.port
+      document.getElementById('controlServerSettingsGalleryName').value = config.gallery_name
+      document.getElementById('controlServerSettingsDebugMode').value = config.debug
 
       let staffString
       try {
@@ -915,52 +908,33 @@ function populateManageSettingsModal () {
       } catch {
         staffString = ''
       }
-
-      $('#manageSettingsModalAssignableStaffInput').val(staffString)
-      $('#manageSettingsModalDebugSelect').val(String(config.debug))
+      document.getElementById('controlServerSettingsAssignableStaff').value = staffString
     })
 }
 
-function updateManageSettingsModal () {
-  // Called when a chance to one of the settings is made
-  const config = $('#manageSettingsModal').data('config')
-
-  // Check for any changed data
-  if ($('#manageSettingsModalIPInput').val().trim() !== config.ip_address || parseInt($('#manageSettingsModalPortInput').val()) !== config.port) {
-    $('#manageSettingsModalSaveButton').show()
-    $('#manageSettingsModalRestartRequiredWarning').show()
-  } else {
-    $('#manageSettingsModalRestartRequiredWarning').hide()
-  }
-  let staffString
-  try {
-    staffString = config.assignable_staff.join(', ')
-  } catch {
-    staffString = ''
-  }
-
-  if ($('#manageSettingsModalGalleryNameInput').val().trim() !== config.gallery_name || constTools.stringToBool($('#manageSettingsModalDebugSelect').val()) !== config.debug || $('#manageSettingsModalAssignableStaffInput').val().trim() !== staffString) {
-    $('#manageSettingsModalSaveButton').show()
-  }
-
-  // Check for a missing IP address
-  if ($('#manageSettingsModalIPInput').val() === '' || $('#manageSettingsModalIPInput').val() == null) {
-    $('#manageSettingsModalMissingIPWarning').show()
-    $('#manageSettingsModalSaveButton').hide()
-  } else {
-    $('#manageSettingsModalMissingIPWarning').hide()
-  }
-}
-
-function updateSystemConfigurationFromModal () {
-  // Use the manageSettingsModal to update the system configuration
+function updateSystemConfiguration () {
+  // Update the system configuration
 
   const update = {
-    ip_address: $('#manageSettingsModalIPInput').val().trim(),
-    port: parseInt($('#manageSettingsModalPortInput').val()),
-    gallery_name: $('#manageSettingsModalGalleryNameInput').val().trim(),
-    assignable_staff: $('#manageSettingsModalAssignableStaffInput').val().split(',').map(item => item.trim()),
-    debug: constTools.stringToBool($('#manageSettingsModalDebugSelect').val())
+    ip_address: document.getElementById('controlServerSettingsIPAddress').value.trim(),
+    port: parseInt(document.getElementById('controlServerSettingsPort').value),
+    gallery_name: document.getElementById('controlServerSettingsGalleryName').value.trim(),
+    assignable_staff: document.getElementById('controlServerSettingsAssignableStaff').value.split(',').map(item => item.trim()),
+    debug: constTools.stringToBool(document.getElementById('controlServerSettingsDebugMode').value)
+  }
+
+  // Check that fields are properly filled out
+  if (update.ip_address === '') {
+    document.getElementById('controlServerSettingsIPWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('controlServerSettingsIPWarning').style.display = 'none'
+  }
+  if (isNaN(update.port)) {
+    document.getElementById('controlServerSettingsPortWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('controlServerSettingsPortWarning').style.display = 'none'
   }
 
   constTools.makeServerRequest({
@@ -972,7 +946,7 @@ function updateSystemConfigurationFromModal () {
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
-        $('#manageSettingsModal').modal('hide')
+        document.getElementById('controlServerSettingsSaveButton').style.display = 'none'
       }
     })
 }
@@ -1221,24 +1195,14 @@ $('#exhibitChangeConfirmationButton').click(function () {
 $('#deleteExhibitButton').click(deleteExhibitFromModal)
 $('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
 document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
-// Server settings
-$('#showManageSettingsModalButton').click(showManageSettingsModal)
-$('.manageSettingsInputField').on('input', updateManageSettingsModal).change(updateManageSettingsModal)
-$('#manageSettingsModalSaveButton').click(updateSystemConfigurationFromModal)
 
-// Wake on LAN
-$('#showWakeOnLANEditModalButton').click(constExhibit.showManageWakeOnLANModal)
-$('#manageWakeOnLANAddBUtton').click(function () {
-  constExhibit.createManageWakeOnLANEntry({
-    id: 'New Device',
-    ip_address: '',
-    mac_address: ''
+// Server settings
+Array.from(document.querySelectorAll('.controlServerSettingsInputField')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('controlServerSettingsSaveButton').style.display = 'block'
   })
-  $('#manageWakeOnLANModalSaveButton').show() // Show the save button
 })
-$('.manageWakeOnLANEditField').on('input', constExhibit.manageWakeOnLANUpdateConfigFromEdit).change(constExhibit.manageWakeOnLANUpdateConfigFromEdit)
-$('#manageWakeOnLANDeleteButton').click(constExhibit.manageWakeOnLANDeleteWakeOnLANEntry)
-$('#manageWakeOnLANModalSaveButton').click(constExhibit.updateWakeOnLANConfigurationFromModal)
+document.getElementById('controlServerSettingsSaveButton').addEventListener('click', updateSystemConfiguration)
 
 // Activate all popovers
 $(function () {
@@ -1271,5 +1235,6 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 loadVersion()
 populateHelpTab()
+populateControlServerSettings()
 parseQueryString()
 constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
