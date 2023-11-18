@@ -416,7 +416,7 @@ class Projector extends BaseComponent {
     this.type = 'projector'
     this.constellationAppId = 'projector'
     this.password = ''
-    this.protocol = null // 'pjlink' or 'serial'
+    this.protocol = 'pjlink'
     this.state = {}
   }
 
@@ -722,76 +722,74 @@ export function getExhibitComponentGroup (group) {
   return result
 }
 
-export function showExhibitComponentInfo (id) {
+function showExhibitComponentInfo (id) {
   // This sets up the componentInfoModal with the info from the selected
   // component and shows it on the screen.
 
-  if (id === '') {
-    id = $('#componentInfoModalTitle').html()
-  }
   $('#componentInfoModal').data('id', id)
 
   const obj = getExhibitComponent(id)
 
-  $('#componentInfoModalTitle').html(id)
+  document.getElementById('componentInfoModalTitle').innerHTML = id
 
   // Set up the upper-right dropdown menu with helpful details
-  $('#constellationComponentIdButton').html(convertAppIDtoDisplayName(obj.constellationAppId))
+  document.getElementById('constellationComponentIdButton').innerHTML = convertAppIDtoDisplayName(obj.constellationAppId)
+
   if (obj.ip_address != null) {
-    $('#componentInfoModalIPAddress').html(obj.ip_address)
-    $('#componentInfoModalIPAddressGroup').show()
+    document.getElementById('componentInfoModalIPAddress').innerHTML = obj.ip_address
+    document.getElementById('componentInfoModalIPAddressGroup').style.display = 'block'
   } else {
-    $('#componentInfoModalIPAddressGroup').hide()
+    document.getElementById('componentInfoModalIPAddressGroup').style.display = 'none'
   }
   if (obj.ip_address != null &&
       constTools.extractIPAddress(obj.helperAddress) != null &&
       obj.ip_address !== constTools.extractIPAddress(obj.helperAddress)
   ) {
-    $('#componentInfoModalHelperIPAddress').html(constTools.extractIPAddress(obj.helperAddress))
-    $('#componentInfoModalHelperIPAddressGroup').show()
+    document.getElementById('componentInfoModalHelperIPAddress').innerHTML = constTools.extractIPAddress(obj.helperAddress)
+    document.getElementById('componentInfoModalHelperIPAddressGroup').style.display = 'block'
     // Cannot take screenshots of components with a remote helper
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   } else {
-    $('#componentInfoModalHelperIPAddressGroup').hide()
+    document.getElementById('componentInfoModalHelperIPAddressGroup').style.display = 'none'
   }
+
   if ('platformDetails' in obj) {
     if ('operating_system' in obj.platformDetails) {
-      $('#componentInfoModalOperatingSystem').html(obj.platformDetails.operating_system.replace('OS X', 'macOS'))
-      $('#componentInfoModalOperatingSystemGroup').show()
+      document.getElementById('componentInfoModalOperatingSystem').innerHTML = obj.platformDetails.operating_system.replace('OS X', 'macOS')
+      document.getElementById('componentInfoModalOperatingSystemGroup').style.display = 'block'
     } else {
-      $('#componentInfoModalOperatingSystemGroup').hide()
+      document.getElementById('componentInfoModalOperatingSystemGroup').style.display = 'none'
     }
     if ('browser' in obj.platformDetails) {
-      $('#componentInfoModalBrowser').html(obj.platformDetails.browser)
-      $('#componentInfoModalBrowserGroup').show()
+      document.getElementById('componentInfoModalBrowser').innerHTML = obj.platformDetails.browser
+      document.getElementById('componentInfoModalBrowserGroup').style.display = 'block'
     } else {
-      $('#componentInfoModalBrowserGroup').hide()
+      document.getElementById('componentInfoModalBrowserGroup').style.display = 'none'
     }
   } else {
-    $('#componentInfoModalOperatingSystemGroup').hide()
-    $('#componentInfoModalBrowserGroup').hide()
+    document.getElementById('componentInfoModalOperatingSystemGroup').style.display = 'none'
+    document.getElementById('componentInfoModalBrowserGroup').style.display = 'none'
   }
   if ('protocol' in obj && obj.protocol != null) {
     const protocolNames = {
-      pjlink: 'PJLink',
-      serial: 'Serial'
+      pjlink: 'PJLink'
     }
-    $('#componentInfoModalProtocol').html(protocolNames[obj.protocol])
-    $('#componentInfoModalProtocolGroup').show()
+    document.getElementById('componentInfoModalProtocol').innerHTML = protocolNames[obj.protocol]
+    document.getElementById('componentInfoModalProtocolGroup').style.display = 'block'
   } else {
-    $('#componentInfoModalProtocolGroup').hide()
+    document.getElementById('componentInfoModalProtocolGroup').style.display = 'none'
   }
   if (obj.latency != null) {
-    $('#componentInfoModalLatency').html(String(obj.latency) + ' ms')
-    $('#componentInfoModalLatencyGroup').show()
+    document.getElementById('componentInfoModalLatency').innerHTML = String(obj.latency) + ' ms'
+    document.getElementById('componentInfoModalLatencyGroup').style.display = 'block'
   } else {
-    $('#componentInfoModalLatencyGroup').hide()
+    document.getElementById('componentInfoModalLatencyGroup').style.display = 'none'
   }
   if (obj.lastContactDateTime != null) {
-    $('#componentInfoModalLastContact').html(constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime)))
-    $('#componentInfoModalLastContactGroup').show()
+    document.getElementById('componentInfoModalLastContact').innerHTML = constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime))
+    document.getElementById('componentInfoModalLastContactGroup').style.display = 'block'
   } else {
-    $('#componentInfoModalLastContactGroup').hide()
+    document.getElementById('componentInfoModalLastContactGroup').style.display = 'none'
   }
 
   // Add any available description
@@ -799,7 +797,7 @@ export function showExhibitComponentInfo (id) {
     document.getElementById('componentInfoModalDescription').style.display = 'none'
     document.getElementById('componentInfoModalDescriptionInput').value = ''
   } else {
-    $('#componentInfoModalDescription').html(obj.description)
+    document.getElementById('componentInfoModalDescription').innerHTML = obj.description
     document.getElementById('componentInfoModalDescription').style.display = 'block'
     document.getElementById('componentInfoModalDescriptionInput').value = obj.description
   }
@@ -811,13 +809,57 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
 
+  document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
+  document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'none'
+  document.getElementById('componentInfoModalStaticSettings').style.display = 'none'
+
+  $('#componentInfoModaProejctorTabButton').hide()
+  $('#componentInfoModalModelGroup').hide()
+  document.getElementById('componentInfoModalProjectorSettings').style.display = 'none'
+
   // Populate maintenance details
   constMaint.setComponentInfoModalMaintenanceStatus(id)
 
   // Definition tab
   document.getElementById('definitionTabAppFilterSelect').value = 'all'
   document.getElementById('definitionTabThumbnailsCheckbox').checked = true
-  $('#componentInfoModalDefinitionSaveButton').hide()
+  document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
+
+  // Settings tab
+  document.getElementById('componentInfoModalFullSettingsButton').style.display = 'none'
+  document.getElementById('componentInfoModalDefinitionsTabButton').style.display = 'none'
+
+  $('#componentInfoModalDMXTabButton').hide()
+  $('#contentUploadSystemStatsView').hide()
+
+  $('#componentInfoConnectionStatusFailed').show()
+  $('#componentInfoConnectionStatusInPrograss').hide()
+
+  // Based on the component type, configure the various tabs and panes
+  if (obj.type === 'exhibit_component') {
+    if (obj.status !== constConfig.STATUS.STATIC) {
+      // This is an active component
+      configureComponentInfoModalForExhibitComponent(obj)
+    } else {
+      // This is a static component
+      configureComponentInfoModalForStatic(obj)
+    }
+  } else if (obj.type === 'projector') {
+    configureComponentInfoModalForProjector(obj)
+  } else if (obj.type === 'wol_component') {
+    $('#componentInfoModalMaintenanceTabButton').tab('show')
+  }
+
+  // Must be after all the settings are configured
+  toggleExhibitComponentInfoSettingWarnings()
+  $('#componentInfoModalSettingsSaveButton').hide()
+
+  // Make the modal visible
+  $('#componentInfoModal').modal('show')
+}
+
+function configureComponentInfoModalForExhibitComponent (obj) {
+  // Set up the componentInfoModal to show an exhibit component
 
   // Configure the settings page with the current settings
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
@@ -828,77 +870,40 @@ export function showExhibitComponentInfo (id) {
   $('#componentInfoModalSettingsAllowShutdown').val(String(obj.permissions.shutdown))
   $('#componentInfoModalSettingsAllowSleep').val(String(obj.permissions.sleep))
 
-  // If this is a projector, populate the status pane
-  if (obj.type === 'projector') {
-    configureComponentInfoModalForProjector(obj.id)
-    $('#componentInfoModaProejctorTabButton').show()
-    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
-  } else {
-    $('#componentInfoModaProejctorTabButton').hide()
-    $('#componentInfoModalModelGroup').hide()
-    document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
-    document.getElementById('componentInfoModalProjectorSettings').style.display = 'none'
-  }
+  document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'flex'
+  document.getElementById('componentInfoModalFullSettingsButton').style.display = 'inline-block'
+  document.getElementById('componentInfoModalDefinitionsTabButton').style.display = 'block'
 
-  // Must be after all the settings are configured
-  toggleExhibitComponentInfoSettingWarnings()
-  $('#componentInfoModalSettingsSaveButton').hide()
+  $('#componentInfoModalDefinitionsTabButton').tab('show')
 
-  // Show the approriate panes depending on the type and constellationAppID
-  if (obj.type === 'exhibit_component' && obj.status !== constConfig.STATUS.STATIC) {
-    document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'flex'
-    document.getElementById('componentInfoModalFullSettingsButton').style.display = 'inline-block'
-    $('#componentInfoModalDefinitionsTabButton').show()
+  // This component may be accessible over the network.
+  updateComponentInfoModalFromHelper(obj.id)
+  configureNewDefinitionOptions(obj)
 
-    // Fetch any DMX lighting scenes and show the tab if necessary
-    constTools.makeRequest({
-      method: 'GET',
-      url: obj.getHelperURL(),
-      endpoint: '/DMX/getScenes'
+  // Fetch any DMX lighting scenes and show the tab if necessary
+  constTools.makeRequest({
+    method: 'GET',
+    url: obj.getHelperURL(),
+    endpoint: '/DMX/getScenes'
+  })
+    .then((result) => {
+      constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
+      document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
     })
-      .then((result) => {
-        constDMX.populateDMXScenesForInfoModal(result.groups, obj.getHelperURL())
-        document.getElementById('componentInfoModalDMXTabButton').style.display = 'block'
-      })
-      .catch((error) => {
-        document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
-        console.log(error)
-      })
+    .catch((error) => {
+      document.getElementById('componentInfoModalDMXTabButton').style.display = 'none'
+      console.log(error)
+    })
 
-    $('#componentInfoModalDefinitionsTabButton').tab('show')
-
-    // This component may be accessible over the network.
-    updateComponentInfoModalFromHelper(obj.id)
-    configureNewDefinitionOptions(obj)
-  } else {
-    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
-    document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'none'
-    document.getElementById('componentInfoModalFullSettingsButton').style.display = 'none'
-    $('#componentInfoModalDefinitionsTabButton').hide()
-    $('#componentInfoModalDMXTabButton').hide()
-    $('#contentUploadSystemStatsView').hide()
-
-    // This static component will defintely have no content.
-    $('#componentInfoConnectionStatusFailed').show()
-    $('#componentInfoConnectionStatusInPrograss').hide()
-
-    // Show a useful tab
-    if (obj.status === constConfig.STATUS.STATIC || obj.type === 'wol_component') {
-      $('#componentInfoModalMaintenanceTabButton').tab('show')
-    } else if (obj.type === 'projector') {
-      $('#componentInfoModaProejctorTabButton').tab('show')
-    }
-  }
-
-  // Make the modal visible
-  $('#componentInfoModal').modal('show')
+  document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
 }
 
-function configureComponentInfoModalForProjector (id) {
+function configureComponentInfoModalForProjector (obj) {
   // Set up the projector status pane of the componentInfoModal with the info
   // from the selected projector
 
-  const obj = getExhibitComponent(id)
+  $('#componentInfoModaProejctorTabButton').show()
+  $('#componentInfoModaProejctorTabButton').tab('show')
 
   // // Projector status pane
 
@@ -1009,6 +1014,23 @@ function configureComponentInfoModalForProjector (id) {
   document.getElementById('componentInfoModalProjectorSettingsPassword').value = obj.password
   document.getElementById('componentInfoModalProjectorSettings').style.display = 'block'
   document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
+  document.getElementById('componentInfoModalProjectorSettingsIDWarning').style.display = 'none'
+  document.getElementById('componentInfoModalProjectorSettingsGroupWarning').style.display = 'none'
+  document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
+}
+
+function configureComponentInfoModalForStatic (obj) {
+  // Configure componentInfoModal to show a static component
+
+  document.getElementById('componentInfoModalStaticSettings').style.display = 'block'
+  document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
+  document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
+  document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
+
+  document.getElementById('componentInfoModalStaticSettingsID').value = obj.id
+  document.getElementById('componentInfoModalStaticSettingsGroup').value = obj.group
+
+  $('#componentInfoModalMaintenanceTabButton').tab('show')
 }
 
 function configureNewDefinitionOptions (obj) {
@@ -1038,11 +1060,102 @@ export function updateProjectorFromInfoModal () {
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
     protocol: 'pjlink'
   }
+
+  // Check that fields are properly filled out
+  if (update.id === '') {
+    document.getElementById('componentInfoModalProjectorSettingsIDWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalProjectorSettingsIDWarning').style.display = 'none'
+  }
+  if (update.group === '') {
+    document.getElementById('componentInfoModalProjectorSettingsGroupWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalProjectorSettingsGroupWarning').style.display = 'none'
+  }
+  if (update.ip_address === '') {
+    document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
+  }
+
   constProj.submitProjectorChange(id, update)
     .then(() => {
       document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
       document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalProjectorSettingsID').value.trim()
       rebuildComponentInterface()
+    })
+}
+
+export function updateStaticComponentFromInfoModal () {
+  // Collect details from the component info modal and update the static component
+
+  const id = document.getElementById('componentInfoModalTitle').innerHTML
+
+  const update = {
+    id: document.getElementById('componentInfoModalStaticSettingsID').value.trim(),
+    group: document.getElementById('componentInfoModalStaticSettingsGroup').value.trim()
+  }
+
+  // Check that fields are properly filled out
+  if (update.id === '') {
+    document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
+  }
+  if (update.group === '') {
+    document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
+  }
+
+  submitStaticComponentChange(id, update)
+    .then(() => {
+      document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
+      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalStaticSettingsID').value.trim()
+      rebuildComponentInterface()
+    })
+}
+
+export function submitStaticComponentChange (currentID, update) {
+  // Modify the static settings conifguration with the given details
+
+  // First, get the current  configuration
+  return constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/system/static/getConfiguration'
+  })
+    .then((result) => {
+      let staticConfig = []
+      if (result.success === true) {
+        staticConfig = result.configuration
+      }
+
+      // Next, check if there is a configuration matching this id
+      let matchFound = false
+      for (let i = 0; i < staticConfig.length; i++) {
+        if (staticConfig[i].id === currentID) {
+          staticConfig[i].id = update.id
+          staticConfig[i].group = update.group
+          matchFound = true
+          break
+        }
+      }
+      if (matchFound === false) {
+        staticConfig.push(update)
+      }
+      // Finally, send the configuration back for writing
+      constTools.makeServerRequest({
+        method: 'POST',
+        endpoint: '/system/static/updateConfiguration',
+        params: {
+          configuration: staticConfig
+        }
+      })
     })
 }
 
@@ -1294,7 +1407,7 @@ function handleDefinitionItemSelection (uuid) {
   $('#definitionButton_' + uuid).addClass('definition-selected')
   $('#definitionButtonName_' + uuid).addClass('btn-success')
   $('#definitionButtonDropdown_' + uuid).addClass('btn-success')
-  $('#componentInfoModalDefinitionSaveButton').show()
+  document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'block'
 }
 
 export function submitDefinitionSelectionFromModal () {
@@ -1313,7 +1426,7 @@ export function submitDefinitionSelectionFromModal () {
     endpoint: '/component/' + id + '/setApp',
     params: { app_name: definition.app }
   })
-  $('#componentInfoModalDefinitionSaveButton').hide()
+  document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
 }
 
 function updateComponentInfoModalFromHelper (id) {
@@ -1795,163 +1908,6 @@ export function updateWakeOnLANConfigurationFromModal () {
     })
 }
 
-export function showManageStaticComponentsModal () {
-  // Show the modal for managing Wake on LAN devices.
-
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/static/getConfiguration'
-  })
-    .then((result) => {
-      populateManageStaticComponentsModal(result.configuration)
-    })
-
-  // Clear the input fields
-  $('#manageStaticComponentsEditIDInput').val(null)
-  $('#manageStaticComponentsEditGroupInput').val(null)
-  $('#manageStaticComponentsModalSaveButton').hide()
-
-  $('#manageStaticComponentsModal').modal('show')
-}
-
-function populateManageStaticComponentsModal (list) {
-  // Get a list of static components configs from Control Server and build a widget for each.
-
-  $('#manageStaticComponentsList').empty()
-  list.forEach((entry) => {
-    createManageStaticComponentsEntry(entry)
-  })
-}
-
-export function createManageStaticComponentsEntry (entry) {
-  // Take a dictionary and turn it into HTML elements
-
-  // Create a new ID used only to track this component through the edit process,
-  // even if the actual ID is changed.
-  const cleanID = String(new Date().getTime() + Math.round(1000000 * Math.random()))
-
-  const containerCol = document.createElement('div')
-  containerCol.classList = 'col-12 mb-3 manageStaticComponentsEntry'
-  containerCol.setAttribute('id', 'manageStaticComponents_' + cleanID)
-  $(containerCol).data('config', entry)
-  $('#manageStaticComponentsList').append(containerCol)
-
-  const containerRow = document.createElement('div')
-  containerRow.classList = 'row'
-  containerCol.appendChild(containerRow)
-
-  const topCol = document.createElement('div')
-  topCol.classList = 'col-12'
-  containerRow.appendChild(topCol)
-
-  const row1 = document.createElement('div')
-  row1.classList = 'row'
-  topCol.appendChild(row1)
-
-  const titleCol = document.createElement('div')
-  titleCol.classList = 'col-9 bg-primary'
-  titleCol.setAttribute('id', 'manageStaticComponentsID_' + cleanID)
-  titleCol.style.fontSize = '18px'
-  titleCol.style.borderTopLeftRadius = '0.25rem'
-  titleCol.style.overflowWrap = 'break-word'
-  titleCol.innerHTML = entry.id
-  row1.appendChild(titleCol)
-
-  const editCol = document.createElement('div')
-  editCol.classList = 'col-3 bg-info text-center handCursor py-1'
-  editCol.setAttribute('id', 'manageStaticComponentsEdit_' + cleanID)
-  editCol.style.borderTopRightRadius = '0.25rem'
-  editCol.innerHTML = 'Edit'
-  $(editCol).click(function () {
-    populateManageStaticComponentsEdit(cleanID)
-  })
-  row1.appendChild(editCol)
-
-  const bottomCol = document.createElement('div')
-  bottomCol.classList = 'col-12'
-  containerRow.appendChild(bottomCol)
-
-  const row2 = document.createElement('div')
-  row2.classList = 'row'
-  bottomCol.appendChild(row2)
-
-  const groupCol = document.createElement('div')
-  groupCol.classList = 'col-12 bg-secondary py-1 px-1 text-center'
-  groupCol.setAttribute('id', 'manageStaticComponentsGroup_' + cleanID)
-  groupCol.style.borderBottomLeftRadius = '0.25rem'
-  groupCol.style.borderBottomRightRadius = '0.25rem'
-  groupCol.innerHTML = entry.group
-  row2.appendChild(groupCol)
-}
-
-function populateManageStaticComponentsEdit (id) {
-  // Take a dictionary of details and use it to fill the edit properties fields.
-
-  const details = $('#manageStaticComponents_' + id.replaceAll(' ', '_')).data('config')
-
-  // Tag element with the id to enable updating the config later
-  $('#manageStaticComponentsEditIDInput').data('id', id)
-
-  $('#manageStaticComponentsEditIDInput').val(details.id)
-  $('#manageStaticComponentsEditGroupInput').val(details.group)
-}
-
-export function manageStaticComponentsUpdateConfigFromEdit () {
-  // Called when a change occurs in an edit field.
-  // Update both the HTML and the config itself
-
-  const id = $('#manageStaticComponentsEditIDInput').data('id')
-  const details = $('#manageStaticComponents_' + id).data('config')
-  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
-
-  const newID = $('#manageStaticComponentsEditIDInput').val()
-  $('#manageStaticComponentsID_' + id).html(newID)
-  details.id = newID
-
-  const newGroup = $('#manageStaticComponentsEditGroupInput').val()
-  if (newGroup != null && newGroup !== '') {
-    $('#manageStaticComponentsGroup_' + id).html(newGroup)
-    details.group = newGroup
-  } else {
-    $('#manageStaticComponentsGroup_' + id).html('STATIC')
-    details.group = 'STATIC'
-  }
-
-  $('#manageStaticComponents_' + id).data('config', details)
-}
-
-export function manageStaticComponentsDeleteComponentEntry () {
-  // Called when the "Delete component" button is clicked.
-  // Remove the HTML entry from the listing
-
-  const id = $('#manageStaticComponentsEditIDInput').data('id')
-  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
-  $('#manageStaticComponents_' + id).remove()
-
-  // Clear the input fields
-  $('#manageStaticComponentsEditIDInput').val(null)
-  $('#manageStaticComponentsEditGroupInput').val(null)
-}
-
-export function updateStaticComponentsConfigurationFromModal () {
-  // Collect the dictionary from each component element and send it to Control Server to save.
-
-  const entries = $('.manageStaticComponentsEntry')
-  const listToSend = []
-  entries.each((i, entry) => {
-    listToSend.push($(entry).data('config'))
-  })
-
-  constTools.makeServerRequest({
-    method: 'POST',
-    endpoint: '/system/static/updateConfiguration',
-    params: { configuration: listToSend }
-  })
-    .then((result) => {
-      $('#manageStaticComponentsModal').modal('hide')
-    })
-}
-
 export function showAddStaticComponentsModal () {
   // Prepare the modal for adding static components and show it.
 
@@ -1985,36 +1941,9 @@ export function submitStaticComponentAdditionFromModal () {
     document.getElementById('addStaticComponentModalGroupError').style.display = 'none'
   }
 
-  // First, get the current static configuration
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/static/getConfiguration'
-  })
-    .then((result) => {
-      let staticConfig
-      if (result.success === true) {
-        staticConfig = result.configuration
-      } else {
-        staticConfig = []
-      }
-
-      // Next, add the new element
-      staticConfig.push({
-        group: document.getElementById('addStaticComponentModalGroupField').value,
-        id: document.getElementById('addStaticComponentModalIDField').value
-      })
-
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/static/updateConfiguration',
-        params: {
-          configuration: staticConfig
-        }
-      })
-        .then((response) => {
-          $('#addStaticComponentModal').modal('hide')
-        })
+  submitStaticComponentChange(id, { id, group })
+    .then((response) => {
+      $('#addStaticComponentModal').modal('hide')
     })
 }
 

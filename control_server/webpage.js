@@ -1058,7 +1058,8 @@ document.getElementById('definitionTabAppFilterSelect').addEventListener('change
 document.getElementById('definitionTabThumbnailsCheckbox').addEventListener('change', (event) => {
   constExhibit.onDefinitionTabThumbnailsCheckboxChange()
 })
-$('#componentInfoModalDefinitionSaveButton').click(constExhibit.submitDefinitionSelectionFromModal)
+document.getElementById('componentInfoModalDefinitionSaveButton').addEventListener('click', constExhibit.submitDefinitionSelectionFromModal)
+
 document.getElementById('componentInfoModalViewScreenshot').addEventListener('click', () => {
   const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
   constTools.openMediaInNewTab([component.getHelperURL() + '/system/getScreenshot'], ['image'])
@@ -1073,6 +1074,12 @@ Array.from(document.querySelectorAll('.componentInfoProjectorSetting')).forEach(
   })
 })
 document.getElementById('componentInfoModalProjectorSettingsSaveButton').addEventListener('click', constExhibit.updateProjectorFromInfoModal)
+Array.from(document.querySelectorAll('.componentInfoStaticSetting')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'block'
+  })
+})
+document.getElementById('componentInfoModalStaticSettingsSaveButton').addEventListener('click', constExhibit.updateStaticComponentFromInfoModal)
 // Schedule tab
 // =========================
 document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
@@ -1226,18 +1233,6 @@ $('#manageWakeOnLANAddBUtton').click(function () {
 $('.manageWakeOnLANEditField').on('input', constExhibit.manageWakeOnLANUpdateConfigFromEdit).change(constExhibit.manageWakeOnLANUpdateConfigFromEdit)
 $('#manageWakeOnLANDeleteButton').click(constExhibit.manageWakeOnLANDeleteWakeOnLANEntry)
 $('#manageWakeOnLANModalSaveButton').click(constExhibit.updateWakeOnLANConfigurationFromModal)
-// Static components
-$('#showStaticComponentsEditModalButton').click(constExhibit.showManageStaticComponentsModal)
-$('#manageStaticComponentsAddBUtton').click(function () {
-  constExhibit.createManageStaticComponentsEntry({
-    id: 'New component',
-    group: 'STATIC'
-  })
-  $('#manageStaticComponentsModalSaveButton').show() // Show the save button
-})
-$('.manageStaticComponentsEditField').on('input', constExhibit.manageStaticComponentsUpdateConfigFromEdit).change(constExhibit.manageStaticComponentsUpdateConfigFromEdit)
-$('#manageStaticComponentsDeleteButton').click(constExhibit.manageStaticComponentsDeleteComponentEntry)
-$('#manageStaticComponentsModalSaveButton').click(constExhibit.updateStaticComponentsConfigurationFromModal)
 
 // Activate all popovers
 $(function () {

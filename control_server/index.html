@@ -491,6 +491,32 @@
                           <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
                         </div>
                       </div>
+                      <div id="componentInfoModalProjectorSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
+                      <div id="componentInfoModalProjectorSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
+                      <div id="componentInfoModalProjectorSettingsIPWarning" class="text-danger mt-2">IP address must not be blank.</div>
+                    </div>
+
+                    <!-- Static settings -->
+                    <div id="componentInfoModalStaticSettings" class="mt-2">
+                      <span class="h5">Static component settings</span>
+                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
+                        <div class="col">
+                          <label for="componentInfoModalStaticSettingsID" class="form-label">
+                            ID
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalStaticSettingsID" class="form-control componentInfoStaticSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <label for="componentInfoModalStaticSettingsGroup" class="form-label">Group</label>
+                          <input id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" type="text">
+                        </div>
+                        <div class="col d-flex">
+                          <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        </div>
+                      </div>
+                      <div id="componentInfoModalStaticSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
+                      <div id="componentInfoModalStaticSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
                     </div>
 
                     <!-- Component description input -->
@@ -1335,7 +1361,7 @@
               <select id="trackerDataSelect" class="form-select"></select>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
-              <button id="getAvailableTrackerDataButton" class='btn btn-primary w-100'>Refresh</button>
+              <button id="getAvailableTrackerDataButton" class='btn btn-primary w-100'>Refresh list</button>
             </div>
             <div class="col-6 col-md-3 col-lg-2 col-xl-2 mt-2">
               <button id="downloadTrackerDataButton" class='btn btn-info w-100'>Download</button>
@@ -1517,48 +1543,6 @@
             </div>
           </div>
 
-          <!-- Modal for managing static components -->
-          <div class="modal" tabindex="-1" role="dialog" id="manageStaticComponentsModal">
-            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Manage Static Components</h5>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-7 px-1">
-                      <div class="row mb-3 ps-2 pe-3">
-                        <div class="col-9" style="font-size: 15pt;">
-                          Current components
-                        </div>
-                        <div class="col-3 px-2">
-                          <button id="manageStaticComponentsAddBUtton" class="btn btn-success btn-sm w-100">Add</button>
-                        </div>
-                      </div>
-                      <div style="height: 400px; overflow-y:auto">
-                        <div id="manageStaticComponentsList" class="row mx-2">
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col-5 border-left">
-                      <H4>Edit properties</H4>
-                      <label for="manageStaticComponentsEditIDInput">ID</label>
-                      <input id="manageStaticComponentsEditIDInput" type="text" class="form-control manageStaticComponentsEditField">
-                      <label for="manageStaticComponentsEditGroupInput" class="mt-2">Group</label> 
-                      <input id="manageStaticComponentsEditGroupInput" type="text" placeholder="STATIC" class="form-control manageStaticComponentsEditField">
-                      <button id="manageStaticComponentsDeleteButton" class="btn btn-danger w-100 mt-3">Delete component</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button id="manageStaticComponentsModalSaveButton" type="button" class="btn btn-primary">Save</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Modal for managing exhibits -->
           <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
             <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -1634,9 +1618,7 @@
             <div class="col-6 col-md-3 col-lg-2 mt-2">
               <button type="button" class="btn btn-primary w-100" id="showWakeOnLANEditModalButton">Wake on LAN</button>
             </div>
-            <div class="col-6 col-md-3 col-lg-3 col-xl-2 mt-2">
-              <button type="button" class="btn btn-primary w-100" id="showStaticComponentsEditModalButton">Static Components</button>
-            </div>
+
           </div>
           <H3 class='mt-4'>Exhibits</H3>
           <i>Exhibits match each component in your gallery with one of its definitions.</i>

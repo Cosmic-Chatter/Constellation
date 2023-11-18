@@ -332,21 +332,11 @@ class Projector(BaseComponent):
 
         error = False
         try:
-            if self.connection_type == 'pjlink':
-                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
-                self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
-                self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
-                self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
-                self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
-                self.state["model"] = projector_control.serial_send_command(connection, "get_model", make=self.make)
-                self.state["power_state"] = projector_control.serial_send_command(connection, "power_state",
-                                                                                  make=self.make)
-                self.state["lamp_status"] = projector_control.serial_send_command(connection, "lamp_status",
-                                                                                  make=self.make)
-                self.state["error_status"] = projector_control.serial_send_command(connection, "error_status",
-                                                                                   make=self.make)
+            connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
+            self.state["model"] = projector_control.pjlink_send_command(connection, "get_model")
+            self.state["power_state"] = projector_control.pjlink_send_command(connection, "power_state")
+            self.state["lamp_status"] = projector_control.pjlink_send_command(connection, "lamp_status")
+            self.state["error_status"] = projector_control.pjlink_send_command(connection, "error_status")
 
             self.update_last_contact_datetime()
         except Exception as e:
@@ -388,18 +378,11 @@ class Projector(BaseComponent):
         }
 
         try:
-            if self.connection_type == "pjlink":
-                connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
-                if cmd in cmd_dict:
-                    projector_control.pjlink_send_command(connection, cmd_dict[cmd])
-                else:
-                    projector_control.pjlink_send_command(connection, cmd)
-            elif self.connection_type == "serial":
-                connection = projector_control.serial_connect_with_url(self.ip_address, make=self.make)
-                if cmd in cmd_dict:
-                    projector_control.serial_send_command(connection, cmd_dict[cmd], make=self.make)
-                else:
-                    projector_control.serial_send_command(connection, cmd, make=self.make)
+            connection = projector_control.pjlink_connect(self.ip_address, password=self.password)
+            if cmd in cmd_dict:
+                projector_control.pjlink_send_command(connection, cmd_dict[cmd])
+            else:
+                projector_control.pjlink_send_command(connection, cmd)
 
         except Exception as e:
             print(e)

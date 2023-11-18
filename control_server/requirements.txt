@@ -4,7 +4,6 @@ icmplib
 psutil
 pydantic==1.10.11 
 pypjlink2
-pyserial
 python-dateutil
 python-multipart
 requests

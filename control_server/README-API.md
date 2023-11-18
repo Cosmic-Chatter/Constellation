@@ -124,31 +124,6 @@ For projectors that support PJLink, the following commands are supported:
 * `power_on`
 * `power_state`
 
-For projectors connected via serial commands over Ethernet, command support is manufacturer dependent. Even for supported manufacturers, every model may not be supported.
-
-| Command | Manufacturer support |
-| ------- | -------------------- |
-| `error_status` | Barco, Christie, Optoma, Viewsonic |
-| `get_model` | Barco, Christie, Optoma, Viewsonic |
-| `get_source` | Barco |
-| `lamp_status` | Barco, Christie |
-| `power_off` | Barco, Christie, Optoma, Viewsonic |
-| `power_on` | Barco, Christie, Optoma, Viewsonic |
-| `power_state` | Barco, Christie, Optoma, Viewsonic |
-| `set_dvi_1` | Barco |
-| `set_dvi_2` | Barco |
-| `set_hdmi_1` | Barco |
-| `set_hdmi_2` | Barco |
-| `set_vga_1` | Barco |
-| `set_vga_2` | Barco |
-| `shutter_close` | Christie |
-| `shutter_open` | Christie |
-| `shutter_state` | Christie |
-| `video_mute` | Christie |
-| `video_mute_state` | Christie |
-| `video_unmute` | Christie |
-
-
 
 ##### `updateSchedule`
 

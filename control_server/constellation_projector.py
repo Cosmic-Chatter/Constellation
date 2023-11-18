@@ -43,22 +43,16 @@ def read_projector_configuration():
 
     for proj in proj_config:
         if get_projector(proj["id"]) is None:
-            new_proj = None
-            if proj["protocol"] == 'pjlink':
-                new_proj = c_exhibit.Projector(proj["id"],
-                                     proj.get("group", "Projectors"),
-                                     proj["ip_address"], "pjlink",
-                                     password=proj.get("password", None))
-            elif proj["protocol"] == "serial":
-                new_proj = c_exhibit.Projector(proj["id"],
-                                     proj.get("group", "Projectors"),
-                                     proj["ip_address"], "serial",
-                                     make=proj.get("make", None))
-            if new_proj is not None:
-                # Check if device has an existing maintenance status.
-                maintenance_path = c_tools.get_path(["maintenance-logs", proj["id"] + '.txt'], user_file=True)
-                new_proj.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
-                config.projectorList.append(new_proj)
+            new_proj = c_exhibit.Projector(proj["id"],
+                                           proj.get("group", "Projectors"),
+                                           proj.get('ip_address', ''), "pjlink",
+                                           password=proj.get("password", None))
+
+            # Check if device has an existing maintenance status.
+            maintenance_path = c_tools.get_path(["maintenance-logs", proj["id"] + '.txt'], user_file=True)
+            new_proj.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
+            config.projectorList.append(new_proj)
+
     config.last_update_time = time.time()
 
 

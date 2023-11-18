@@ -1,5 +1,5 @@
 # **Constellation 4**
-__*Constellation*__ 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.
+Constellation 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.
 
 ## Control Server
 

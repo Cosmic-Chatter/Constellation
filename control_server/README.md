@@ -52,24 +52,11 @@ _**Constellation**_ is configured using a series of pop-up dialogs accessible fr
 These options are described in the sections below.
 
 #### Controlling projectors
-Control Server can manage projectors over IP using the PJLink protocol or serial commands (select models).
+Control Server can manage projectors over IP using the PJLink protocol.
 
-##### PJLink
 The PJLink protocol returns a defined set of information about the state of the connected projector. Each manufacturer implements the protocol slightly differently, so the available information may vary marginally.
 
 To configure a PJLink projector, it should have a static IP address. Some projectors require a password, which you can also specify here.
-
-##### Serial (RS-232)
-Control Server can also manage projectors that implement a serial-over-IP interface. You can also use a wireless serial adapter for projectors that do not implement serial-over-IP. Because every manufacturer implements a different set of functionality, the returned information is much more variable than over PJLink. **If PJLink is available, it is highly recommended.**
-
-In addition to their IP address, you must specify the manufacturer (_Make_) of your device. Because some manufacturers vary their serial commands over generation, there is no guarantee that Control Server supports your model, even if your manufacturer is supported. The following makes are at least partially supported:
-
-| Make      | Known compatible models |
-|-----------|-------------------------|
-| Barco     | F35                     |
-| Christie  | DHD850-GS, Mirage HD8   |
-| Optoma    |                         |
-| Viewsonic |                         |
 
 #### Wake on LAN
 
