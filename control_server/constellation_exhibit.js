@@ -234,6 +234,8 @@ class BaseComponent {
 
     // Update the GUI based on which view mode we're in
     const statusFieldEl = document.getElementById(cleanId + 'StatusField')
+    if (statusFieldEl == null) return // This is a hidden static component
+
     let btnClass
     if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
       // Real-time status mode
@@ -736,7 +738,7 @@ function showExhibitComponentInfo (id) {
   // Set up the upper-right dropdown menu with helpful details
   document.getElementById('constellationComponentIdButton').innerHTML = convertAppIDtoDisplayName(obj.constellationAppId)
 
-  if (obj.ip_address != null) {
+  if (obj.ip_address != null && obj.ip_address !== '') {
     document.getElementById('componentInfoModalIPAddress').innerHTML = obj.ip_address
     document.getElementById('componentInfoModalIPAddressGroup').style.display = 'block'
   } else {

@@ -1176,7 +1176,7 @@ $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFr
 // Settings tab
 // =========================
 // Exhibits
-document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
+// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
 $('#exhibitSelect').change(function () {
   changeExhibit(false)
 })

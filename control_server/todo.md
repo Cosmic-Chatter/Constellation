@@ -4,9 +4,13 @@
 
 ### General
 - Add ability to edit exhibits without setting them
-- Hide the view screenshot option is screenshot permission is not available
 - Allow components to be in multiple groups
 - User account/access control system
+
+### Components
+- Hide the view screenshot option is screenshot permission is not available
+- Replace table lawout for projector status
+
 
 ### Analytics
 - Record app analytics
