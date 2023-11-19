@@ -9,7 +9,7 @@
 
 ### Components
 - Hide the view screenshot option is screenshot permission is not available
-- Replace table lawout for projector status
+- Replace table layout for projector status
 
 
 ### Analytics
