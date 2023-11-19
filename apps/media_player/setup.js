@@ -38,7 +38,7 @@ function clearDefinitionInput (full = true) {
           },
           watermark: {}
         })
-        previewDefinition()
+        constSetup.previewDefinition()
       })
   }
 
@@ -59,12 +59,6 @@ function clearDefinitionInput (full = true) {
   document.getElementById('watermarkXPos').value = '80'
   document.getElementById('watermarkYPos').value = '80'
   document.getElementById('watermarkSize').value = '10'
-}
-
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
 }
 
 function editDefinition (uuid = '') {
@@ -115,28 +109,7 @@ function editDefinition (uuid = '') {
   document.getElementById('previewFrame').src = '../media_player.html?standalone=true&definition=' + def.uuid
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewMediaPlayer'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../media_player.html?standalone=true&definition=__previewMediaPlayer'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -364,7 +337,7 @@ function setItemContent (item, itemEl, file) {
   // Populate the given element, item, with content.
 
   constSetup.updateWorkingDefinition(['content', item.uuid, 'filename'], file)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 
   const image = itemEl.querySelector('.image-preview')
   const video = itemEl.querySelector('.video-preview')
@@ -443,7 +416,7 @@ function onWatermarkFileChange () {
   const file = document.getElementById('watermarkSelect').getAttribute('data-filename')
   constSetup.updateWorkingDefinition(['watermark', 'file'], file)
 
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 }
 
 // Set color mode
@@ -486,11 +459,6 @@ setTimeout(setUpColorPickers, 100)
 // -------------------------------------------------------------
 
 // Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
 
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true, filetypes: ['audio', 'image', 'video'] })
@@ -522,7 +490,7 @@ Array.from(document.querySelectorAll('.watermark-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const field = event.target.getAttribute('data-field')
     constSetup.updateWorkingDefinition(['watermark', field], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -534,5 +502,6 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'media_player',
   clearDefinition: clearDefinitionInput,
-  loadDefinition: editDefinition
+  loadDefinition: editDefinition,
+  saveDefinition
 })

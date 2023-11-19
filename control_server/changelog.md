@@ -19,6 +19,7 @@ Constellation 4 expands customization for your apps and significantly improves C
 ### General
 - Constellation Apps now checks for software updates in standalone mode.
 - In addition to a solid color, you can now set app backgrounds to an image or a two-color gradient.
+- Clone definitions when setting up an app.
 
 ### Media Player
 - Overlay a logo or watermark.

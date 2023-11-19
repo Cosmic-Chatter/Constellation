@@ -1,4 +1,4 @@
-/* global Coloris, bootstrap */
+/* global Coloris */
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constSetup from '../js/constellation_setup_common.js'
@@ -41,7 +41,7 @@ function clearDefinitionInput (full = true) {
             localization: {}
           }
         })
-        previewDefinition(false)
+        constSetup.previewDefinition(false)
       })
   }
 
@@ -78,11 +78,6 @@ function clearDefinitionInput (full = true) {
   })
 
   document.getElementById('promptTextSizeSlider').value = 0
-}
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
 }
 
 function editDefinition (uuid = '') {
@@ -142,7 +137,7 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../word_cloud_input.html?standalone=true&definition=' + def.uuid
-  previewDefinition()
+  constSetup.previewDefinition()
 }
 
 function onFontUploadChange () {
@@ -178,28 +173,7 @@ function onFontUploadChange () {
   xhr.send(formData)
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewWordCloudInput'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../word_cloud_input.html?standalone=true&definition=__previewWordCloudInput'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -308,30 +282,23 @@ setTimeout(setUpColorPickers, 100)
 // Add event listeners
 // -------------------------------------------------------------
 
-// Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
-
 // Settings
 document.getElementById('collectionNameInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['behavior', 'collection_name'], event.target.value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Content
 document.getElementById('promptInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['content', 'prompt'], event.target.value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 Array.from(document.querySelectorAll('.localization-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['content', 'localization', property], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -342,14 +309,14 @@ document.getElementById('uploadFontInput').addEventListener('change', onFontUplo
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['appearance', 'font', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Color
 $('.coloris').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['appearance', 'color', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Realtime-sliders should adjust as we drag them
@@ -357,7 +324,7 @@ Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['appearance', 'text_size', property], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -374,5 +341,6 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'word_cloud_input',
   clearDefinition: clearDefinitionInput,
-  loadDefinition: editDefinition
+  loadDefinition: editDefinition,
+  saveDefinition
 })

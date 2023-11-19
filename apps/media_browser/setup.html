@@ -153,10 +153,16 @@
        
       <div id="setupTools" class="row my-1 gx-2 gy-2">
         <div class="col-6 col-sm-2">
-          <button id="newDefinitionButton" class="btn btn-primary w-100">
-            <span class="d-inline d-sm-none d-lg-inline">Create new</span>
-            <span class="d-none d-sm-inline d-lg-none">New</span>
-          </button>
+          <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="d-inline d-sm-none d-lg-inline">Create new</span>
+              <span class="d-none d-sm-inline d-lg-none">New</span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a id="newDefinitionButton" class="dropdown-item" href="#">Create blank definition</a></li>
+              <li><a id="cloneDefinitionButton" class="dropdown-item" href="#">Clone selected definition</a></li>
+            </ul>
+          </div>
         </div>
         <div class="col-6 col-sm-2">
           <button id="editDefinitionButton" class="btn btn-primary w-100">

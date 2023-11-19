@@ -107,12 +107,6 @@ function clearDefinitionInput (full = true) {
   document.getElementById('imageHeightSlider').value = 90
 }
 
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
@@ -432,7 +426,7 @@ function setIconUserFile (file = '') {
   }
 }
 
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -539,11 +533,6 @@ setTimeout(setUpColorPickers, 100)
 // -------------------------------------------------------------
 
 // Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  constSetup.previewDefinition()
-})
 
 // Behavior fields
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
@@ -659,5 +648,7 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'voting_kiosk',
-  loadDefinition: editDefinition
+  clearDefinition: clearDefinitionInput,
+  loadDefinition: editDefinition,
+  saveDefinition
 })

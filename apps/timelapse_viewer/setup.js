@@ -36,7 +36,7 @@ function clearDefinitionInput (full = true) {
             }
           }
         })
-        previewDefinition(false)
+        constSetup.previewDefinition(false)
       })
   }
 
@@ -69,12 +69,6 @@ function clearDefinitionInput (full = true) {
     gradient_color_1: '#22222E',
     gradient_color_2: '#22222E'
   })
-}
-
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
 }
 
 function editDefinition (uuid = '') {
@@ -127,7 +121,7 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=' + def.uuid
-  previewDefinition()
+  constSetup.previewDefinition()
 }
 
 function onFontUploadChange () {
@@ -176,28 +170,7 @@ function disableAttractorOptions (disable) {
   }
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewTimelapse'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=__previewTimelapse'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -412,19 +385,12 @@ setTimeout(setUpColorPickers, 100)
 // Add event listeners
 // -------------------------------------------------------------
 
-// Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
-
 // Behavior fields
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['behavior', key], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -479,7 +445,7 @@ document.getElementById('videoConversionModalSubmitButton').addEventListener('cl
 document.getElementById('filePatternInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['files'], event.target.value)
   retrieveMatchingFilesCount()
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 document.getElementById('selectFirstImageButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
@@ -517,7 +483,7 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
   } else {
     guessFilenamePattern()
     PatternGeneratorModal.hide()
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   }
 })
 
@@ -526,7 +492,7 @@ Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -542,7 +508,7 @@ Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
         disableAttractorOptions(true)
       }
     }
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -554,7 +520,7 @@ Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -571,5 +537,6 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'timelapse_viewer',
   clearDefinition: clearDefinitionInput,
-  loadDefinition: editDefinition
+  loadDefinition: editDefinition,
+  saveDefinition
 })

@@ -40,7 +40,7 @@ function clearDefinitionInput (full = true) {
             text_size: {}
           }
         })
-        previewDefinition()
+        constSetup.previewDefinition()
       })
   }
 
@@ -78,18 +78,12 @@ function clearDefinitionInput (full = true) {
   })
 }
 
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
   const def = constSetup.getDefinitionByUUID(uuid)
-  console.log(def)
+
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -256,7 +250,7 @@ function createLanguageTab (code, displayName) {
     })
     event.target.checked = true
     constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   checkContainer.appendChild(defaultCheckbox)
 
@@ -359,7 +353,7 @@ function createLanguageTab (code, displayName) {
   headerInput.setAttribute('id', 'languageTabHeader_' + code)
   headerInput.addEventListener('change', (event) => {
     constSetup.updateWorkingDefinition(['languages', code, 'header'], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   headerInput.value = workingDefinition.languages[code].header ?? ''
   headerCol.appendChild(headerInput)
@@ -495,7 +489,7 @@ function createInfoStationTab (lang, uuid = '') {
   buttonTextInput.addEventListener('change', (event) => {
     constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'button_text'], event.target.value)
     document.getElementById('infostationTab_' + lang + '_' + uuid).innerHTML = event.target.value
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   buttonTextInput.value = workingDefinition.languages[lang].tabs[uuid].button_text
   buttonTextCol.appendChild(buttonTextInput)
@@ -522,7 +516,7 @@ function createInfoStationTab (lang, uuid = '') {
   textInput.setAttribute('placeholder', '# Header\nThis is a sentence with a **bold** word and an _italics_ word.\n\n## Subheader\nThis is a sentance under the subheader.')
   textInput.addEventListener('change', (event) => {
     constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'text'], event.target.value)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   textInput.value = workingDefinition.languages[lang].tabs[uuid].text
   textCol.appendChild(textInput)
@@ -547,7 +541,7 @@ function createInfoStationTab (lang, uuid = '') {
   $(deleteButton).popover()
 
   $(tabButton).click()
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 }
 
 function deleteInfoStationTab (lang, uuid) {
@@ -634,28 +628,7 @@ function onFlagUploadChange (lang) {
   xhr.send(formData)
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewInfoStation'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../infostation.html?standalone=true&definition=__previewInfoStation'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -689,7 +662,7 @@ function onAttractorFileChange () {
   workingDefinition.attractor = file
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
 
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 }
 
 function populateFontSelects () {
@@ -774,11 +747,6 @@ setTimeout(setUpColorPickers, 100)
 // -------------------------------------------------------------
 
 // Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true })
@@ -804,21 +772,21 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 $('#uploadFontInput').change(onFontUploadChange)
 
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Text size fields
@@ -826,7 +794,7 @@ Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -837,7 +805,7 @@ document.addEventListener('click', (event) => {
   if (event.target.classList.contains('lang-delete')) {
     const lang = event.target.getAttribute('id').split('_').slice(-1)[0]
     deleteLanguageTab(lang)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   }
 
   if (event.target.classList.contains('tab-delete')) {
@@ -845,7 +813,7 @@ document.addEventListener('click', (event) => {
     const lang = split.slice(-2)[0]
     const uuid = split.slice(-1)[0]
     deleteInfoStationTab(lang, uuid)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   }
 })
 
@@ -864,5 +832,7 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'infostation',
-  loadDefinition: editDefinition
+  clearDefinition: clearDefinitionInput,
+  loadDefinition: editDefinition,
+  saveDefinition
 })

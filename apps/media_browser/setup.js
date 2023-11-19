@@ -95,12 +95,6 @@ function clearDefinitionInput (full = true) {
   document.getElementById('Lightbox_creditTextSizeSlider').value = 0
 }
 
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
@@ -123,12 +117,24 @@ function editDefinition (uuid = '') {
     $('#attractorSelect').html('Select file')
   }
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
-  document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+  if ('inactivity_timeout' in def) {
+    document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+  } else {
+    document.getElementById('inactivityTimeoutField').value = 30
+  }
 
   // Set the layout options
   // document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
-  document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
-  document.getElementById('numColsSelect').value = def.style.layout.num_columns
+  if ('items_per_page' in def.style.layout) {
+    document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
+  } else {
+    document.getElementById('itemsPerPageInput').value = 12
+  }
+  if ('num_columns' in def.style.layout) {
+    document.getElementById('numColsSelect').value = def.style.layout.num_columns
+  } else {
+    document.getElementById('numColsSelect').value = 6
+  }
   document.getElementById('imageHeightSlider').value = def.style.layout.image_height
   document.getElementById('lightboxTitleHeightSlider').value = def.style.layout.lightbox_title_height
   document.getElementById('lightboxCaptionHeightSlider').value = def.style.layout.lightbox_caption_height
@@ -283,7 +289,7 @@ function createLanguageTab (code, displayName) {
     })
     event.target.checked = true
     constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   checkContainer.appendChild(defaultCheckbox)
 
@@ -403,7 +409,7 @@ function createLanguageTab (code, displayName) {
       let value = $(this).val()
       if (typeof value === 'string') value = value.trim()
       constSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
-      previewDefinition(true)
+      constSetup.previewDefinition(true)
     })
     col.appendChild(input)
   })
@@ -529,28 +535,7 @@ function onFlagUploadChange (lang) {
   xhr.send(formData)
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewMediaBrowser'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../media_browser.html?standalone=true&definition=__previewMediaBrowser'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -584,7 +569,7 @@ function onAttractorFileChange () {
   workingDefinition.attractor = file
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
 
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 }
 
 function onSpreadsheetFileChange () {
@@ -617,7 +602,7 @@ function onSpreadsheetFileChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
-      previewDefinition(true)
+      constSetup.previewDefinition(true)
     })
 }
 
@@ -912,11 +897,6 @@ setTimeout(setUpColorPickers, 100)
 // -------------------------------------------------------------
 
 // Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
 
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
@@ -961,25 +941,25 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Layout fields
 // document.getElementById('showSearchPaneCheckbox').addEventListener('change', (event) => {
 //   updateWorkingDefinition(['style', 'layout', 'show_search_and_filter'], event.target.checked)
-//   previewDefinition(true)
+//   constSetup.previewDefinition(true)
 // })
 document.getElementById('itemsPerPageInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['style', 'layout', 'items_per_page'], parseInt(event.target.value))
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 document.getElementById('numColsSelect').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['style', 'layout', 'num_columns'], parseInt(event.target.value))
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 document.getElementById('imageHeightSlider').addEventListener('input', (event) => {
   constSetup.updateWorkingDefinition(['style', 'layout', 'image_height'], parseInt(event.target.value))
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
   el.addEventListener('input', () => {
@@ -991,7 +971,7 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
     constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_caption_height'], captionHeight)
     constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_credit_height'], creditHeight)
     constSetup.updateWorkingDefinition(['style', 'layout', 'lightbox_image_height'], imageHeight)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -999,14 +979,14 @@ Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
 $('.coloris').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 $('#uploadFontInput').change(onFontUploadChange)
 
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Text size fields
@@ -1014,7 +994,7 @@ Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
     constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
 })
 
@@ -1033,5 +1013,7 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'media_browser',
-  loadDefinition: editDefinition
+  clearDefinition: clearDefinitionInput,
+  loadDefinition: editDefinition,
+  saveDefinition
 })

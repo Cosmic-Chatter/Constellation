@@ -19,7 +19,8 @@ $.fn.visibleHeight = function () {
 export const config = {
   availableDefinitions: {},
   clearDefinition: null,
-  loadDefinition: null
+  loadDefinition: null,
+  saveDefinition: null
 }
 
 export function configure (options) {
@@ -28,7 +29,8 @@ export function configure (options) {
   const defaults = {
     app: null,
     clearDefinition: null,
-    loadDefinition: null
+    loadDefinition: null,
+    saveDefinition: null
   }
 
   options = { ...defaults, ...options } // Merge in user-supplied options
@@ -36,14 +38,12 @@ export function configure (options) {
   // Make sure we have the options we need
   if (options.app == null) throw new Error("The options must include the 'app' field.")
   if (options.loadDefinition == null) throw new Error("The options must include the 'loadDefinition' field referencing the appropriate function.")
+  if (options.saveDefinition == null) throw new Error("The options must include the 'saveDefinition' field referencing the appropriate function.")
 
   config.app = options.app
   config.clearDefinition = options.clearDefinition
   config.loadDefinition = options.loadDefinition
-
-  document.getElementById('helpButton').addEventListener('click', (event) => {
-    showAppHelpModal(config.app)
-  })
+  config.saveDefinition = options.saveDefinition
 
   createAdvancedColorPickers()
   createDefinitionDeletePopup()
@@ -103,9 +103,15 @@ export function showAppHelpModal (app) {
 export function populateAvailableDefinitions (definitions) {
   // Take a list of definitions and add them to the select.
 
-  $('#availableDefinitionSelect').empty()
+  document.getElementById('availableDefinitionSelect').innerHTML = ''
   config.availableDefinitions = definitions
-  const keys = Object.keys(definitions).sort()
+  const keys = Object.keys(definitions).sort((a, b) => {
+    const aName = definitions[a].name.toLowerCase()
+    const bName = definitions[b].name.toLowerCase()
+    if (aName > bName) return 1
+    if (bName > aName) return -1
+    return 0
+  })
 
   keys.forEach((uuid) => {
     if ((uuid.slice(0, 9) === '__preview') || uuid.trim() === '') return
@@ -136,7 +142,7 @@ export function getDefinitionByUUID (uuid = '') {
   // Return the definition with this UUID
 
   if (uuid === '') {
-    uuid = $('#availableDefinitionSelect').val()
+    uuid = document.getElementById('availableDefinitionSelect').value
   }
   let matchedDef = null
   Object.keys(config.availableDefinitions).forEach((key) => {
@@ -167,6 +173,32 @@ function deleteDefinition () {
     })
 }
 
+function cloneDefinition () {
+  // Clone the definition currently in the select and make it active.
+
+  const uuidToClone = document.getElementById('availableDefinitionSelect').value
+  if (uuidToClone === '') return
+
+  const defToClone = structuredClone(getDefinitionByUUID(uuidToClone))
+
+  defToClone.uuid = '' // Will be replaced with a new UUID on saving
+  defToClone.name += ' 2'
+
+  constCommon.writeDefinition(defToClone)
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        constCommon.getAvailableDefinitions(config.app)
+          .then((response) => {
+            if ('success' in response && response.success === true) {
+              populateAvailableDefinitions(response.definitions)
+              document.getElementById('availableDefinitionSelect').value = result.uuid
+              config.loadDefinition(result.uuid)
+            }
+          })
+      }
+    })
+}
+
 export function updateWorkingDefinition (property, value) {
   // Update a field in the working defintion.
   // 'property' should be an array of subproperties, e.g., ["style", "color", 'headerColor']
@@ -178,14 +210,35 @@ export function updateWorkingDefinition (property, value) {
 function createEventListeners () {
   // Bind various event listeners to their elements.
 
+  // New definition buttons
+  document.getElementById('newDefinitionButton').addEventListener('click', () => {
+    config.clearDefinition()
+  })
+  document.getElementById('cloneDefinitionButton').addEventListener('click', cloneDefinition)
+
   // Edit definition button
   document.getElementById('editDefinitionButton').addEventListener('click', () => {
     config.loadDefinition()
   })
 
+  // Save definition button
+  document.getElementById('definitionSaveButton').addEventListener('click', () => {
+    config.saveDefinition()
+  })
+
+  // Preview definition button
+  document.getElementById('previewRefreshButton').addEventListener('click', () => {
+    previewDefinition(false)
+  })
+
   // Rotate preview button
   document.getElementById('previewRotateButton').addEventListener('click', () => {
     rotatePreview()
+  })
+
+  // Help button
+  document.getElementById('helpButton').addEventListener('click', () => {
+    showAppHelpModal(config.app)
   })
 
   // Preview frame

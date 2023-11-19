@@ -73,12 +73,6 @@ function clearDefinitionInput (full = true) {
   })
 }
 
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
-}
-
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
@@ -97,7 +91,11 @@ function editDefinition (uuid = '') {
   // Attractor
   $('#attractorSelect').html(def.attractor)
   document.getElementById('attractorSelect').setAttribute('data-filename', def.attractor)
-  document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+  if ('inactivity_timeout' in def) {
+    document.getElementById('inactivityTimeoutField').value = def.inactivity_timeout
+  } else {
+    document.getElementById('inactivityTimeoutField').value = 30
+  }
 
   // Set the appropriate values for the color pickers
   Object.keys(def.style.color).forEach((key) => {
@@ -234,7 +232,7 @@ function createLanguageTab (code, displayName) {
     })
     event.target.checked = true
     constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
-    previewDefinition(true)
+    constSetup.previewDefinition(true)
   })
   checkContainer.appendChild(defaultCheckbox)
 
@@ -346,7 +344,7 @@ function createLanguageTab (code, displayName) {
     input.addEventListener('change', function () {
       const value = $(this).val().trim()
       constSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
-      previewDefinition(true)
+      constSetup.previewDefinition(true)
     })
     col.appendChild(input)
   })
@@ -472,28 +470,7 @@ function onFlagUploadChange (lang) {
   xhr.send(formData)
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewTimeline'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        document.getElementById('previewFrame').src = '../timeline_explorer.html?standalone=true&definition=__previewTimeline'
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -527,7 +504,7 @@ function onAttractorFileChange () {
   workingDefinition.attractor = file
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
 
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 }
 
 function onSpreadsheetFileChange () {
@@ -560,7 +537,7 @@ function onSpreadsheetFileChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
-      previewDefinition(true)
+      constSetup.previewDefinition(true)
     })
 }
 
@@ -852,11 +829,6 @@ setTimeout(setUpColorPickers, 100)
 // -------------------------------------------------------------
 
 // Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ manage: true })
@@ -900,21 +872,21 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 $('#uploadFontInput').change(onFontUploadChange)
 
 $('.font-select').change(function () {
   const value = $(this).val().trim()
   constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
-  previewDefinition(true)
+  constSetup.previewDefinition(true)
 })
 
 // Set color mode
@@ -933,5 +905,6 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'timeline_explorer',
   clearDefinition: clearDefinitionInput,
-  loadDefinition: editDefinition
+  loadDefinition: editDefinition,
+  saveDefinition
 })

@@ -21,7 +21,7 @@ function clearDefinitionInput (full = true) {
           path: '',
           properties: {}
         })
-        previewDefinition(false)
+        constSetup.previewDefinition(false)
       })
   }
 
@@ -29,12 +29,6 @@ function clearDefinitionInput (full = true) {
   document.getElementById('definitionNameInput').value = ''
   document.getElementById('keyList').innerHTML = ''
   document.getElementById('pathInput').value = ''
-}
-
-function createNewDefinition () {
-  // Set up for a new definition
-
-  clearDefinitionInput()
 }
 
 function editDefinition (uuid = '') {
@@ -59,36 +53,10 @@ function editDefinition (uuid = '') {
   } else {
     document.getElementById('previewFrame').style.display = 'none'
   }
-  previewDefinition()
+  constSetup.previewDefinition()
 }
 
-function previewDefinition (automatic = false) {
-  // Save the definition to a temporary file and load it into the preview frame.
-  // If automatic == true, we've called this function beceause a definition field
-  // has been updated. Only preview if the 'Refresh on change' checkbox is checked
-
-  if ((automatic === true) && $('#refreshOnChangeCheckbox').prop('checked') === false) {
-    return
-  }
-
-  const def = $('#definitionSaveButton').data('workingDefinition')
-  // Set the uuid to a temp one
-  def.uuid = '__previewOther'
-  constCommon.writeDefinition(def)
-    .then((result) => {
-      if ('success' in result && result.success === true) {
-        // Configure the preview frame
-        if (def.path !== '') {
-          document.getElementById('previewFrame').src = '../' + def.path + '?standalone=true&definition=__previewOther'
-          document.getElementById('previewFrame').style.display = 'block'
-        } else {
-          document.getElementById('previewFrame').style.display = 'none'
-        }
-      }
-    })
-}
-
-function saveDefintion () {
+function saveDefinition () {
   // Collect inputted information to save the definition
 
   const definition = $('#definitionSaveButton').data('workingDefinition')
@@ -165,17 +133,10 @@ constCommon.config.helperAddress = window.location.origin
 // Add event listeners
 // -------------------------------------------------------------
 
-// Main buttons
-$('#newDefinitionButton').click(createNewDefinition)
-$('#definitionSaveButton').click(saveDefintion)
-$('#previewRefreshButton').click(() => {
-  previewDefinition()
-})
-
 // Settings
 document.getElementById('pathInput').addEventListener('change', (event) => {
   constSetup.updateWorkingDefinition(['path'], event.target.value)
-  previewDefinition()
+  constSetup.previewDefinition()
 })
 document.getElementById('addKeyButton').addEventListener('click', (event) => {
   createKeyValueHTML()
@@ -199,5 +160,7 @@ clearDefinitionInput()
 
 constSetup.configure({
   app: 'other',
-  loadDefinition: editDefinition
+  clearDefinition: clearDefinitionInput,
+  loadDefinition: editDefinition,
+  saveDefinition
 })
