@@ -1,6 +1,8 @@
 # Constellation
 Open-source software for developing and controlling museum exhibits.
 
+[Learn more and download for Windows and Linux](https://cosmicchatter.org/constellation/constellation.html).
+
 ## Available components
 
 **_Constellation_** provides a number of apps, enabling the creation of a diverse array of digital exhibit pieces.

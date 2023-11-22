@@ -1172,7 +1172,7 @@ if __name__ == "__main__":
                 webview_menu.Menu(
                     'Settings',
                     [
-                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings')),
+                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings', {'reload': True})),
                         webview_menu.Menu('Configure',
                                           [
                                               webview_menu.MenuAction('DMX Control',
