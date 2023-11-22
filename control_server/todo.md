@@ -34,6 +34,7 @@
 
 ### General
 - Change preview aspect ratio in definition setup.
+- Add heartbeat app
 
 ### DMX Control
 - Rename fixtures

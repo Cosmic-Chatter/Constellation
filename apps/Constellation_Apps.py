@@ -1,6 +1,7 @@
 # Standard modules
 from functools import lru_cache, partial
 import io
+import logging
 import mimetypes
 import os
 import platform
@@ -15,7 +16,6 @@ from fastapi import FastAPI, Body, Depends, File, Form, HTTPException, UploadFil
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
-import logging
 import uvicorn
 
 # Constellation modules
