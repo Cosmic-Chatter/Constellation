@@ -39,7 +39,8 @@ document.getElementById('settingsButton').addEventListener('click', (event) => {
 
     constCommon.makeHelperRequest({
       method: 'POST',
-      endpoint: '/app/showWindow/settings'
+      endpoint: '/app/showWindow/settings',
+      params: { reload: true }
     })
   }
 })
