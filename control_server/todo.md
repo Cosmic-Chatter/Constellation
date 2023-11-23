@@ -37,8 +37,6 @@
 - Add heartbeat app
 
 ### DMX Control
-- Rename fixtures
-- *Tap to hide* hint for fixture widgets
 
 ### Media Browser
 - Ability to filter results

@@ -198,7 +198,8 @@ async def create_thumbnail_video_from_frames(
 
 @app.post('/files/generateThumbnail')
 def generate_thumbnail(source: str | list[str] = Body(description='The file(s) in content to generate thumbnails for'),
-                       mimetype: str | list[str] = Body(description='One of [image | video] that gives the mimetype of the file. Must have the same length as source.'),
+                       mimetype: str | list[str] = Body(
+                           description='One of [image | video] that gives the mimetype of the file. Must have the same length as source.'),
                        width: int = Body(description="The pixel width of the thumbnails.",
                                          default=400)):
     """Generate new thumbnail(s) from files in teh content directory"""
@@ -651,6 +652,25 @@ async def create_dmx_fixture(name: str = Body(description="The name of the fixtu
     helper_dmx.write_dmx_configuration()
 
     return {"success": True, "fixture": new_fixture.get_dict()}
+
+
+@app.post("/DMX/fixture/edit")
+async def edit_dmx_fixture(fixture_uuid: str = Body(description="The UUID of the fixture to remove."),
+                           name: str = Body(description="The name of the fixture.", default=None),
+                           channels: list[str] = Body(description="A list of channel names.", default=None),
+                           start_channel: int = Body(description="The first channel to allocate.", default=None),
+                           universe: str = Body(description='The UUID of the universe this fixture belongs to.')):
+    """Edit an existing DMX fixture"""
+
+    success, reason = helper_dmx.activate_dmx()
+    if not success:
+        return {"success": False, "reason": reason}
+
+    fixture = helper_dmx.get_universe(uuid_str=universe).get_fixture(fixture_uuid)
+    fixture.update(name=name, start_channel=start_channel, channel_list=channels)
+    helper_dmx.write_dmx_configuration()
+
+    return {"success": True, "fixture": fixture.get_dict()}
 
 
 @app.post("/DMX/fixture/remove")
@@ -1118,7 +1138,7 @@ if __name__ == "__main__":
     else:
         # We need to create a config.json file based on user input.
 
-        if sys.platform == 'linux' :
+        if sys.platform == 'linux':
             # Linux apps can't use the GUI
             helper_utilities.handle_missing_defaults_file()
         else:
@@ -1152,7 +1172,8 @@ if __name__ == "__main__":
                                            height=720,
                                            width=1280,
                                            min_size=(1280, 720),
-                                           url='http://localhost:' + str(const_config.defaults["system"]["port"]) + '/app.html')
+                                           url='http://localhost:' + str(
+                                               const_config.defaults["system"]["port"]) + '/app.html')
 
         # Subscribe to event listeners
         app_window.events.closed += helper_webview.on_closed
@@ -1172,7 +1193,8 @@ if __name__ == "__main__":
                 webview_menu.Menu(
                     'Settings',
                     [
-                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings', {'reload': True})),
+                        webview_menu.MenuAction('Show settings', partial(helper_webview.show_webview_window, 'settings',
+                                                                         {'reload': True})),
                         webview_menu.Menu('Configure',
                                           [
                                               webview_menu.MenuAction('DMX Control',

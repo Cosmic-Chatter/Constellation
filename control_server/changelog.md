@@ -21,6 +21,9 @@ Constellation 4 expands customization for your apps and significantly improves C
 - In addition to a solid color, you can now set app backgrounds to an image or a two-color gradient.
 - Clone definitions when setting up an app.
 
+### DMX Control
+- Fixtures can now be edited after creation.
+
 ### Media Player
 - Overlay a logo or watermark.
 - A background can now be set.

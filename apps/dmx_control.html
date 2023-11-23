@@ -46,6 +46,7 @@
 
     <main role="main" class="container mb-4 pt-1 pt-md-3 px-md-5">
 
+      <!-- Help modal -->
       <div id="appHelpModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered mw-100 w-75">
           <div class="modal-content">
@@ -61,6 +62,55 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add fixture modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="addFixtureModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content" style="border:black 1px solid;">
+            <div class="modal-header">
+              <h4 class="modal-title">Add new fixture</h4>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-6 col-sm-8">
+                  <label for="addFixtureName" class="form-label">Fixture name</label>
+                  <input type="text" class="form-control" id="addFixtureName">
+                </div>
+                <div class="col-6 col-sm-4">
+                  <label for="addFixtureStartingChannel" class="form-label">Starting channel</label>
+                  <input type="number" min="1" max="512" class="form-control" id="addFixtureStartingChannel">
+                </div>
+
+                <div id="cloneFixtureGroup" class="col-12 mt-2">
+                  <label for="cloneFixtureList" class="form-label">Clone existing fixture</label>
+                  <div class="row">
+                    <div class="col-8">
+                      <select id="cloneFixtureList" class="form-select"></select>
+                    </div>
+                    <div class="col-4">
+                      <button id="cloneFixtureButton" class="btn btn-primary">Clone</button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="col-12 mt-2">
+                  <label  class="form-label">Channels</label>
+                  <div id="addFixtureChannelList" class="row" style="max-height: 25vh; overflow-y: auto;"></div>
+                  <button id="addFixtureAddChannelButton" class="btn btn-primary btn-sm mt-2">Add channel</button>
+                </div>
+              </div>
+              <div id="addFixtureChannelsOccupiedWarning" class="col-12 text-danger mt-2">
+                A fixture with these channels already exists!
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="addFixtureFromModalButton">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
           </div>
         </div>
@@ -83,6 +133,7 @@
           <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups-tab-pane" type="button" role="tab" aria-controls="groups-tab-pane" aria-selected="false">Groups</button>
         </li>
       </ul>
+
       <div class="tab-content" id="main-nav-content">
 
         <!-- Universes tab -->
@@ -176,55 +227,6 @@
                   <div class="modal-footer">
                     <button type="button" class="btn btn-danger me-auto" id="editUniverseModalDeleteButton" data-bs-toggle="popover" title="Are you sure?" data-bs-content='<a id="universeDeletePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger="focus" data-bs-html="true">Delete</button>
                     <button type="button" class="btn btn-primary" id="editUniverseModalSaveButton">Save</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Add fixture modal -->
-            <div class="modal" tabindex="-1" role="dialog" id="addFixtureModal">
-              <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content" style="border:black 1px solid;">
-                  <div class="modal-header">
-                    <h4 class="modal-title">Add new fixture</h4>
-                  </div>
-                  <div class="modal-body">
-                    <div class="row">
-                      <div class="col-6 col-sm-8">
-                        <label for="addFixtureName" class="form-label">Fixture name</label>
-                        <input type="text" class="form-control" id="addFixtureName">
-                      </div>
-                      <div class="col-6 col-sm-4">
-                        <label for="addFixtureStartingChannel" class="form-label">Starting channel</label>
-                        <input type="number" min="1" max="512" class="form-control" id="addFixtureStartingChannel">
-                      </div>
-
-                      <div id="cloneFixtureGroup" class="col-12 mt-2">
-                        <label for="cloneFixtureList" class="form-label">Clone existing fixture</label>
-                        <div class="row">
-                          <div class="col-8">
-                            <select id="cloneFixtureList" class="form-select"></select>
-                          </div>
-                          <div class="col-4">
-                            <button id="cloneFixtureButton" class="btn btn-primary">Clone</button>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      <div class="col-12 mt-2">
-                        <label  class="form-label">Channels</label>
-                        <div id="addFixtureChannelList" class="row" style="max-height: 25vh; overflow-y: auto;"></div>
-                        <button id="addFixtureAddChannelButton" class="btn btn-primary btn-sm mt-2">Add channel</button>
-                      </div>
-                    </div>
-                    <div id="addFixtureChannelsOccupiedWarning" class="col-12 text-danger mt-2">
-                      A fixture with these channels already exists!
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="addFixtureFromModalButton">Add</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                   </div>
                 </div>

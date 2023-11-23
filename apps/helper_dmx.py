@@ -152,6 +152,24 @@ class DMXFixture(Fixture):
     def __str__(self, *args, **kwargs):
         return f"[DMXFixture: '{self.name}' in universe '{get_universe(self.universe).name}' with channels {self.channel_usage}]"
 
+    def update(self,
+               name: str | None = None,
+               start_channel: int | None = None,
+               channel_list: list[str] | None = None):
+        """Update the fixture with the given details"""
+
+        if name is not None:
+            self._set_name(name)
+
+        if start_channel is not None:
+            self.__start_channel = start_channel
+
+        if channel_list is not None:
+            self._Fixture__channels = []
+            self._Fixture__channel_aliases = {}
+            for channel in channel_list:
+                self._register_channel(channel)
+
     def delete(self):
         """Remove the fixture from all its groups, then its universe."""
 
@@ -395,10 +413,6 @@ def get_fixture(uuid_str: str) -> Union[DMXFixture, None]:
     for fixture in config.dmx_fixtures:
         if fixture.uuid == uuid_str:
             return fixture
-
-    # search = [x for x in config.dmx_fixtures if x.uuid == uuid_str]
-    # if len(search) > 0:
-    #     return search[0]
     return None
 
 
