@@ -145,7 +145,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
     actionCol.appendChild(unarchiveButton)
   }
 
-  if (issue.media.length > 0) {
+  if (issue.media != null && issue.media.length > 0) {
     const mediaCol = document.createElement('div')
     mediaCol.classList = 'col'
     row1.appendChild(mediaCol)

@@ -53,6 +53,12 @@ export function populateSchedule (schedule) {
   // Record the timestamp when this schedule was generated
   constConfig.scheduleUpdateTime = schedule.updateTime
   const sched = schedule.schedule
+  const dateOptions = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }
 
   sched.forEach((day) => {
     // Apply a background color to date-specific schedules so that we
@@ -78,29 +84,25 @@ export function populateSchedule (schedule) {
     }
 
     const dayContainer = document.createElement('div')
-    dayContainer.classList = `col-12 col-sm-6 col-lg-4 mt-3 pt-3 pb-3 ${scheduleClass}`
+    dayContainer.classList = `col-12 col-sm-6 col-lg-4 pb-3 border ${scheduleClass}`
 
     const row = document.createElement('div')
     row.classList = 'row'
     dayContainer.appendChild(row)
 
     const dayNameCol = document.createElement('div')
-    dayNameCol.classList = 'col-6 col-sm-12 col-md-6'
+    dayNameCol.classList = 'col-12 border-bottom py-2'
     row.appendChild(dayNameCol)
 
+    // Parse the date into a string
+    const dateSplit = day.date.split('-')
+    const date = new Date(parseInt(dateSplit[0]), parseInt(dateSplit[1]) - 1, parseInt(dateSplit[2]))
+    const dateStr = date.toLocaleDateString(undefined, dateOptions)
+
     const dayNameSpan = document.createElement('span')
-    dayNameSpan.style.fontSize = '35px'
-    dayNameSpan.innerHTML = day.dayName
+    dayNameSpan.style.fontSize = '24px'
+    dayNameSpan.innerHTML = dateStr
     dayNameCol.appendChild(dayNameSpan)
-
-    const dateCol = document.createElement('div')
-    dateCol.classList = 'col-6 col-sm-12 col-md-6 my-auto'
-    dateCol.style.textAlign = 'right'
-    row.appendChild(dateCol)
-
-    const dateSpan = document.createElement('strong')
-    dateSpan.innerHTML = day.date
-    dateCol.appendChild(dateSpan)
 
     const editButtonCol = document.createElement('div')
     editButtonCol.classList = 'col-12 col-md-6 mt-2'
@@ -123,21 +125,21 @@ export function populateSchedule (schedule) {
     const convertButton = document.createElement('button')
     convertButton.classList = 'btn btn-warning w-100'
     convertButton.setAttribute('type', 'button')
-    convertButton.innerHTML = 'Convert to date-specific schedule'
+    convertButton.innerHTML = 'Convert to date-specific'
     convertButton.addEventListener('click', function () {
       scheduleConvertToDateSpecific(day.date, day.dayName)
     })
     convertButtonCol.appendChild(convertButton)
 
     const deleteButtonCol = document.createElement('div')
-    deleteButtonCol.classList = 'col-12 col-lg-6 mt-2'
+    deleteButtonCol.classList = 'col-12 col-md-6 mt-2'
     deleteButtonCol.style.display = deleteState
     row.appendChild(deleteButtonCol)
 
     const deleteButton = document.createElement('button')
     deleteButton.classList = 'btn btn-danger w-100'
     deleteButton.setAttribute('type', 'button')
-    deleteButton.innerHTML = 'Delete date-specific schedule'
+    deleteButton.innerHTML = 'Delete date-specific'
     deleteButton.setAttribute('data-bs-toggle', 'popover')
     deleteButton.setAttribute('title', 'Are you sure?')
     deleteButton.setAttribute('data-bs-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
@@ -312,14 +314,18 @@ function scheduleActionToDescription (action) {
 function scheduleTargetToDescription (targetList) {
   // Convert targets such as "__id_TEST1" to English words like "TEST1"
 
+  if (targetList == null) return 'none'
+
   let target
   if (typeof targetList === 'string') {
     target = targetList
   } else {
     if (targetList.length > 1) {
       return 'multiple components'
-    } else {
+    } else if (targetList.length === 1) {
       target = targetList[0]
+    } else {
+      return 'none'
     }
   }
 
