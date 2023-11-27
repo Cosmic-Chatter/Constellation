@@ -42,6 +42,7 @@ import constellation_projector as c_proj
 import constellation_schedule as c_sched
 import constellation_tools as c_tools
 import constellation_tracker as c_track
+import constellation_users as c_users
 
 
 # Set up the automatic documentation
@@ -229,6 +230,7 @@ def load_default_configuration() -> None:
     if not os.path.exists(config_path):
         # We don't have a config file, so let's get info from the user to create one
         command_line_setup()
+    c_users.check_for_root_admin()
     c_tools.load_system_configuration()
 
     c_tools.start_debug_loop()

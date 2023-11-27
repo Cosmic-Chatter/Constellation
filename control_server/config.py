@@ -61,3 +61,6 @@ current_exhibit: Union[str, None] = None  # The JSON file defining the current e
 exhibit_configuration: Union[list[dict[str, Any]], None] = None
 assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
+
+# User stuff
+user_list: list = []

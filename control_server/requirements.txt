@@ -1,4 +1,5 @@
 aiofiles
+argon2-cffi
 fastapi
 icmplib
 psutil
