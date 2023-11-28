@@ -37,14 +37,14 @@ export function populateDMXScenesForInfoModal(groups, helperURL) {
             col.appendChild(row)
 
             const name = document.createElement('div')
-            name.classList = 'col-12 bg-primary rounded-top py-1 position-relative'
+            name.classList = 'col-12 bg-primary text-white rounded-top py-1 position-relative'
             name.setAttribute('id', 'DMXEntryName_' + scene.uuid)
             name.style.fontSize = '18px'
             name.innerHTML = scene.name
             row.appendChild(name)
 
             const groupDiv = document.createElement('div')
-            groupDiv.classList = 'col-12 bg-info rounded-bottom pb-1'
+            groupDiv.classList = 'col-12 bg-info text-dark rounded-bottom pb-1'
             groupDiv.innerHTML = group.name
             row.appendChild(groupDiv)
         })
