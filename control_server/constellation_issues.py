@@ -169,15 +169,21 @@ def restore_issue(this_id: str) -> None:
 def read_issue_list() -> None:
     """Read issues.json and set up the issueList"""
 
+    latest_update = datetime.datetime(year=2000, day=1, month=1)
+
     try:
         issue_file = c_tools.get_path(["issues", "issues.json"], user_file=True)
         with open(issue_file, "r", encoding="UTF-8") as file_object:
             issues = json.load(file_object)
 
         for issue in issues:
+            update_datetime = datetime.datetime.fromisoformat(issue['lastUpdateDate'])
+            if update_datetime > latest_update:
+                latest_update = update_datetime
             create_issue(issue)
     except FileNotFoundError:
         print("No stored issues to read")
+    config.issueList_last_update_date = latest_update
 
 
 def save_issue_list() -> None:

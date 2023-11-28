@@ -151,7 +151,6 @@ def send_webpage_update():
                              "lastUpdateDate": c_config.issueList_last_update_date,
                              "assignable_staff": c_config.assignable_staff}
 
-    c_sched.retrieve_json_schedule()
     with c_config.scheduleLock:
         update_dict["schedule"] = {"updateTime": c_config.scheduleUpdateTime,
                                    "schedule": c_config.json_schedule_list,
