@@ -200,8 +200,6 @@ function updateAvailableExhibits (exhibitList) {
 
   const exhibitSelect = document.getElementById('exhibitSelect')
   const exhibitDeleteSelect = document.getElementById('exhibitDeleteSelector')
-  exhibitSelect.innerHTML = ''
-  exhibitDeleteSelect.innerHTML = ''
 
   const sortedExhibitList = exhibitList.sort((a, b) => {
     const aVal = a.toLowerCase()
@@ -210,6 +208,14 @@ function updateAvailableExhibits (exhibitList) {
     if (aVal < bVal) return -1
     return 0
   })
+  if (constTools.arraysEqual(sortedExhibitList, constConfig.availableExhibits) === true) {
+    return
+  }
+
+  constConfig.availableExhibits = sortedExhibitList
+  exhibitSelect.innerHTML = ''
+  exhibitDeleteSelect.innerHTML = ''
+
   sortedExhibitList.forEach((exhibit) => {
     exhibitSelect.appendChild(new Option(exhibit, exhibit))
     exhibitDeleteSelect.appendChild(new Option(exhibit, exhibit))
@@ -374,7 +380,7 @@ function parseUpdate (update) {
     updateAvailableExhibits(update.gallery.availableExhibits)
 
     if ('galleryName' in update.gallery) {
-      $('#galleryNameField').html(update.gallery.galleryName)
+      document.getElementById('galleryNameField').innerHTML = update.gallery.galleryName
       document.title = update.gallery.galleryName
     }
 
@@ -417,6 +423,7 @@ function parseUpdate (update) {
   }
 
   if ('schedule' in update) {
+    console.log(constConfig.scheduleUpdateTime, update.schedule.updateTime)
     if (constConfig.scheduleUpdateTime !== update.schedule.updateTime) {
       constSchedule.populateSchedule(update.schedule)
     }

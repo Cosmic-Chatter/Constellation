@@ -1,5 +1,6 @@
 export default {
   assignableStaff: [],
+  availableExhibits: [], // An array of strings
   componentGroups: [],
   currentExhibit: '',
   errorDict: {},
