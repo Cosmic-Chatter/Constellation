@@ -1313,7 +1313,7 @@ function createProjectorLampStatusEntry (entry, number) {
   topCol.appendChild(row1)
 
   const titleCol = document.createElement('div')
-  titleCol.classList = 'col-8 bg-primary'
+  titleCol.classList = 'col-8 bg-primary text-white'
   titleCol.style.fontSize = '18px'
   titleCol.style.borderTopLeftRadius = '0.25rem'
   titleCol.innerHTML = 'Lamp ' + String(number + 1)
@@ -1325,10 +1325,10 @@ function createProjectorLampStatusEntry (entry, number) {
   if (entry[1] === true) {
     // Lamp is on
     stateCol.innerHTML = 'On'
-    stateCol.classList += ' bg-success'
+    stateCol.classList += ' bg-success text-white'
   } else {
     stateCol.innerHTML = 'Off'
-    stateCol.classList += ' bg-info'
+    stateCol.classList += ' bg-info text-dark'
   }
   row1.appendChild(stateCol)
 
@@ -1341,7 +1341,7 @@ function createProjectorLampStatusEntry (entry, number) {
   bottomCol.appendChild(row2)
 
   const hoursCol = document.createElement('div')
-  hoursCol.classList = 'col-12 bg-secondary py-1 text-center'
+  hoursCol.classList = 'col-12 bg-secondary py-1 text-center text-white'
   hoursCol.style.borderBottomLeftRadius = '0.25rem'
   hoursCol.style.borderBottomRightRadius = '0.25rem'
   hoursCol.innerHTML = String(entry[0]) + ' hours'
