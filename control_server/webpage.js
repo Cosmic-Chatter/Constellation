@@ -423,7 +423,6 @@ function parseUpdate (update) {
   }
 
   if ('schedule' in update) {
-    console.log(constConfig.scheduleUpdateTime, update.schedule.updateTime)
     if (constConfig.scheduleUpdateTime !== update.schedule.updateTime) {
       constSchedule.populateSchedule(update.schedule)
     }

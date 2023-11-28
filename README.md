@@ -3,6 +3,8 @@ Open-source software for developing and controlling museum exhibits.
 
 [Learn more and download for Windows and Linux](https://cosmicchatter.org/constellation/constellation.html).
 
+<img src="control_server/images/Components_overview_tab.png" style="width: 100%;"></img>
+
 ## Available components
 
 **_Constellation_** provides a number of apps, enabling the creation of a diverse array of digital exhibit pieces.
@@ -18,13 +20,3 @@ Open-source software for developing and controlling museum exhibits.
 | Timeline Explorer | Create interactive timelines using a spreadsheet.                                                                             | 
 | Voting Kiosk      | Collect visitor feedback with a voting kiosk.                                                                                 |
 | Word Cloud        | Display a word cloud with an optional user input kiosk.                                                                       |
-
-## Available utilities
-
-In addition to full-fledged `component`s, **_Constellation_** provides utilities for interacting with other common hardware types.
-
-| Utility           | Description                                                            | Location                               |
-|-------------------|------------------------------------------------------------------------|----------------------------------------|
-| iPlayer 3 Control | Interface with the Color Kinetics iPlayer 3 DMX controller.            | `iplayer3_control/iplayer3_control.py` |
-| Projector Control | Control projectors using PJLink or serial commands.                    | `control_server/projector_control.py`  |
-| SOS Plot Tools    | Python library for creating datasets to display on Science on a Sphere | `sos_plot_tools/SoS_plot_tools.py`     |
