@@ -392,6 +392,50 @@ def get_config():
     return c_config
 
 
+# User account actions
+
+@app.post("/user/login")
+def log_in(credentials: tuple[str, str] = Body(description="A tuple containing the username and password.",
+                                               default=("", "")),
+           token: str = Body(description="An authentication token", default="")
+           ):
+    """Authenticate the user and return the permissions and an authentication token."""
+
+    print(credentials, token)
+    success, username = c_users.authenticate_user(token=token, credentials=credentials)
+    if success is False:
+        return {"success": False, "reason": "authentication_failed"}
+
+    user = c_users.get_user(username=username)
+    if token == "":
+        token = c_users.encrypt_token(username)
+    return {"success": True, "user": user.get_dict(), "token": token}
+
+
+@app.post("/user/{username}/create")
+def create_user(username: str,
+                token: str = Body(description="The authentication token for the authorizing account."),
+                password: str = Body(description="The password for the account to create."),
+                display_name: str = Body(description="The name of the account holder."),
+                permissions: dict | None = Body(description="A dictionary of permissions for the new account.",
+                                                default=None)):
+    """Create a new user account."""
+
+    success, authorizing_user = c_users.authenticate_user(token=token)
+    if success is False:
+        return {"success": False, "reason": "authentication_failed"}
+
+    if c_users.get_user(authorizing_user).check_permission("users", "edit") is False:
+        return {"success": False, "reason": "insufficient_permission"}
+
+    success, user_dict = c_users.create_user(username, display_name, password, permissions=permissions)
+
+    response = {"success": success, "user": user_dict}
+    if success is False:
+        response["reason"] = "username_taken"
+    return response
+
+
 # Exhibit component actions
 
 class Exhibit(BaseModel):

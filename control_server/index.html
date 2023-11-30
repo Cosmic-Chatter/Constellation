@@ -121,7 +121,42 @@
 
   <body>
 
-    <main role="main" class="container mb-4 pt-1 pt-md-3 px-md-5">
+    <main role="main" class="container mb-4 pt-1 pt-md-2 px-md-5">
+
+      <!-- Reset password modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="createAccountModal">
+        <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Reset your password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-4">
+                  <form>
+                    <label class="form-label" for="resetPasswordUsernameInput"><b>Username</b></label>
+                    <input  class="form-control" id="resetPasswordUsernameInput" type="text">
+
+                    <label class="form-label mt-2" for="resetPasswordCurrentPasswordInput"><b>Current password</b></label>
+                    <input class="form-control" type="password" id="resetPasswordCurrentPasswordInput">
+    
+                    <label class="form-label mt-2" for="resetPasswordPassword1Input"><b>New password</b></label>
+                    <input class="form-control" type="password" id="resetPasswordPassword1InputPassword1Input">
+    
+                    <label class="form-label mt-2" for="resetPasswordPassword1InputPassword2Input"><b>Confirm new password</b></label>
+                    <input class="form-control" type="password" id="resetPasswordPassword1InputPassword2Input" >
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Component info modal -->
       <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
@@ -586,7 +621,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form id="scheduleEditForm" class="mb-2" onsubmit="event.preventDefault();">
+              <form class="mb-2" onsubmit="event.preventDefault();">
                 <div class="form-group">
                   <div class="row gy-2">
                     <div class="col-8">
@@ -865,12 +900,41 @@
         </div>
       </div>
 
-      <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
-        <div class="col-12 col-sm-auto d-flex">
-          <div id="exhibitNameField" class="align-self-center"></div>
+      <div class="row mb-2 flex-column-reverse flex-sm-row">
+        <div class="col-12 col-sm-10">
+          <div id="galleryNameField"></div>
+          <div id="exhibitNameField"></div>
         </div>
-        <div class="col-12 col-sm-auto d-flex ms-auto">
-          <div id="galleryNameField" class="align-self-center"></div>
+        <div class="col-12 col-sm-2">
+          <div id="loginMenu">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">Log in</button>
+            <div class="dropdown-menu">
+              <div class="px-4 py-3">
+                <div class="mb-3">
+                  <label for="loginDropdownUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="loginDropdownUsername">
+                </div>
+                <div class="mb-3">
+                  <label for="loginDropdownPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="loginDropdownPassword">
+                </div>
+                <button id="loginSubmitButton" class="btn btn-primary">Log in</button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="loginCreateAccountButton">Create account</button>
+              <a class="dropdown-item" href="#">Forgot password?</a>
+            </div>
+
+            <div id="userMenu" style="display: none;">
+              <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">Morgan Rehnberg</button>
+            <div class="dropdown-menu">
+              <button class="dropdown-item" id="changePasswordButton">Change password</button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="logoutButton">Log out</button>
+            </div>
+            </div>
+          </div>
+          
         </div>
       </div>
 

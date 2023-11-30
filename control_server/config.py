@@ -63,4 +63,5 @@ assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
 
 # User stuff
+encryption_key: bytes | None = None
 user_list: list = []

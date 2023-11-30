@@ -197,3 +197,4 @@ def check_file_structure() -> None:
                 os.mkdir(misc_dirs[key])
             except PermissionError:
                 print(f"Error: unable to create '{key}' directory. Do you have write permission?")
+

@@ -8,6 +8,7 @@ import * as constProjector from './constellation_projector.js'
 import * as constSchedule from './constellation_schedule.js'
 import * as constTools from './constellation_tools.js'
 import * as constTracker from './constellation_tracker.js'
+import * as constUsers from './constellation_users.js'
 
 function showManageExhibitsModal () {
   // Configure the manageExhibitsModal and show it.
@@ -971,6 +972,10 @@ function loadVersion () {
 }
 
 // Bind event listeners
+
+// Login
+document.getElementById('loginCreateAccountButton').addEventListener('click', constUsers.showCreateAccountModal)
+document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
 
 // Components tab
 // =========================
