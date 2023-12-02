@@ -811,21 +811,6 @@ function parseQueryString () {
 
   const searchParams = new URLSearchParams(queryString)
 
-  if (searchParams.has('hideComponents')) {
-    $('#nav-components-tab').hide()
-  }
-  if (searchParams.has('hideSchedule')) {
-    $('#nav-schedule-tab').hide()
-  }
-  if (searchParams.has('hideIssues')) {
-    $('#nav-issues-tab').hide()
-  }
-  if (searchParams.has('hideSettings')) {
-    $('#nav-settings-tab').hide()
-  }
-  if (searchParams.has('hideHelp')) {
-    $('#nav-help-tab').hide()
-  }
   if (searchParams.has('hideSTATIC')) {
     $('#componentsTabSettingsShowStatic').prop('checked', false)
   }
@@ -976,6 +961,7 @@ function loadVersion () {
 // Login
 document.getElementById('loginCreateAccountButton').addEventListener('click', constUsers.showCreateAccountModal)
 document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
+document.getElementById('logoutButton').addEventListener('click', constUsers.logoutUser)
 
 // Components tab
 // =========================
@@ -1226,17 +1212,6 @@ const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstra
 
 constConfig.serverAddress = location.origin
 
-// Subscribe to updates from the control server
-const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
-eventSource.addEventListener('update', function (event) {
-  const update = JSON.parse(event.data)
-  parseUpdate(update)
-})
-eventSource.addEventListener('end', function (event) {
-  console.log('Handling end....')
-  eventSource.close()
-})
-
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.querySelector('html').setAttribute('data-bs-theme', 'dark')
@@ -1249,3 +1224,17 @@ populateHelpTab()
 populateControlServerSettings()
 parseQueryString()
 constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+
+constUsers.authenticateUser()
+  .then(() => {
+    // Subscribe to updates from the control server once we're logged in (or not)
+    const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
+    eventSource.addEventListener('update', function (event) {
+      const update = JSON.parse(event.data)
+      parseUpdate(update)
+    })
+    eventSource.addEventListener('end', function (event) {
+      console.log('Handling end....')
+      eventSource.close()
+    })
+  })

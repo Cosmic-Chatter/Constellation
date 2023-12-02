@@ -1,11 +1,12 @@
 # Standard modules
 import datetime
 import os.path
+from typing import Any
 import uuid
 
 # Non-standard modules
 import argon2
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 # Constellation modules
 import config
@@ -64,6 +65,8 @@ class User:
         """Check if the user has sufficient permission to perform an action"""
 
         if action != "components":
+            if needed_level == "none":
+                return True
             allowed_level = self.permissions.get(action, "none")
             if needed_level == "edit":
                 if allowed_level == "edit":
@@ -73,8 +76,6 @@ class User:
                 if allowed_level == "edit" or allowed_level == "view":
                     return True
                 return False
-            if needed_level == "none":
-                return True
         return False
 
 
@@ -231,7 +232,7 @@ def get_user(username: str = '', uuid_str: str = '') -> User | None:
 def create_user(username: str,
                 display_name: str,
                 password: str,
-                permissions: str | None = None) -> tuple[bool, dict]:
+                permissions: dict[str, Any] | None = None) -> tuple[bool, dict]:
     """Create a new user."""
 
     if check_username_available(username) is False:
@@ -277,8 +278,11 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
         raise ValueError("You must supply a token or a tuple of credentials.")
 
     if token != "":
-        username = decrypt_token(token)
-        user = get_user(username=username)
+        try:
+            username = decrypt_token(token)
+            user = get_user(username=username)
+        except InvalidToken:
+            user = None
         if user is None:
             return False, ""
         return True, username

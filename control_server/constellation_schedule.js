@@ -50,6 +50,8 @@ export function populateSchedule (schedule) {
   document.getElementById('scheduleContainer').innerHTML = ''
   $('#dateSpecificScheduleAlert').hide()
 
+  const allowEdit = constTools.checkPermission('schedule', 'edit')
+
   // Record the timestamp when this schedule was generated
   constConfig.scheduleUpdateTime = schedule.updateTime
   const sched = schedule.schedule
@@ -104,51 +106,53 @@ export function populateSchedule (schedule) {
     dayNameSpan.innerHTML = dateStr
     dayNameCol.appendChild(dayNameSpan)
 
-    const editButtonCol = document.createElement('div')
-    editButtonCol.classList = 'col-12 col-md-6 mt-2'
-    row.appendChild(editButtonCol)
+    if (allowEdit) {
+      const editButtonCol = document.createElement('div')
+      editButtonCol.classList = 'col-12 col-md-6 mt-2'
+      row.appendChild(editButtonCol)
 
-    const editButton = document.createElement('button')
-    editButton.classList = 'btn btn-primary w-100'
-    editButton.setAttribute('type', 'button')
-    editButton.innerHTML = addItemText
-    editButton.addEventListener('click', function () {
-      scheduleConfigureEditModal(scheduleName, day.source)
-    })
-    editButtonCol.appendChild(editButton)
+      const editButton = document.createElement('button')
+      editButton.classList = 'btn btn-primary w-100'
+      editButton.setAttribute('type', 'button')
+      editButton.innerHTML = addItemText
+      editButton.addEventListener('click', function () {
+        scheduleConfigureEditModal(scheduleName, day.source)
+      })
+      editButtonCol.appendChild(editButton)
 
-    const convertButtonCol = document.createElement('div')
-    convertButtonCol.classList = 'col-12 col-md-6 mt-2'
-    convertButtonCol.style.display = convertState
-    row.appendChild(convertButtonCol)
+      const convertButtonCol = document.createElement('div')
+      convertButtonCol.classList = 'col-12 col-md-6 mt-2'
+      convertButtonCol.style.display = convertState
+      row.appendChild(convertButtonCol)
 
-    const convertButton = document.createElement('button')
-    convertButton.classList = 'btn btn-warning w-100'
-    convertButton.setAttribute('type', 'button')
-    convertButton.innerHTML = 'Convert to date-specific'
-    convertButton.addEventListener('click', function () {
-      scheduleConvertToDateSpecific(day.date, day.dayName)
-    })
-    convertButtonCol.appendChild(convertButton)
+      const convertButton = document.createElement('button')
+      convertButton.classList = 'btn btn-warning w-100'
+      convertButton.setAttribute('type', 'button')
+      convertButton.innerHTML = 'Convert to date-specific'
+      convertButton.addEventListener('click', function () {
+        scheduleConvertToDateSpecific(day.date, day.dayName)
+      })
+      convertButtonCol.appendChild(convertButton)
 
-    const deleteButtonCol = document.createElement('div')
-    deleteButtonCol.classList = 'col-12 col-md-6 mt-2'
-    deleteButtonCol.style.display = deleteState
-    row.appendChild(deleteButtonCol)
+      const deleteButtonCol = document.createElement('div')
+      deleteButtonCol.classList = 'col-12 col-md-6 mt-2'
+      deleteButtonCol.style.display = deleteState
+      row.appendChild(deleteButtonCol)
 
-    const deleteButton = document.createElement('button')
-    deleteButton.classList = 'btn btn-danger w-100'
-    deleteButton.setAttribute('type', 'button')
-    deleteButton.innerHTML = 'Delete date-specific'
-    deleteButton.setAttribute('data-bs-toggle', 'popover')
-    deleteButton.setAttribute('title', 'Are you sure?')
-    deleteButton.setAttribute('data-bs-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
-    deleteButton.setAttribute('data-bs-trigger', 'focus')
-    deleteButton.setAttribute('data-bs-html', 'true')
-    // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
-    deleteButton.addEventListener('click', function () { deleteButton.focus() })
-    deleteButtonCol.appendChild(deleteButton)
-    $(deleteButton).popover()
+      const deleteButton = document.createElement('button')
+      deleteButton.classList = 'btn btn-danger w-100'
+      deleteButton.setAttribute('type', 'button')
+      deleteButton.innerHTML = 'Delete date-specific'
+      deleteButton.setAttribute('data-bs-toggle', 'popover')
+      deleteButton.setAttribute('title', 'Are you sure?')
+      deleteButton.setAttribute('data-bs-content', `<a id="Popover${day.date}" class='btn btn-danger w-100 schedule-delete'>Confirm</a>`)
+      deleteButton.setAttribute('data-bs-trigger', 'focus')
+      deleteButton.setAttribute('data-bs-html', 'true')
+      // Note: The event listener to detect is the delete button is clicked is defined in webpage.js
+      deleteButton.addEventListener('click', function () { deleteButton.focus() })
+      deleteButtonCol.appendChild(deleteButton)
+      $(deleteButton).popover()
+    }
 
     $('#scheduleContainer').append(dayContainer)
 
@@ -177,6 +181,8 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
   const target = item.target
   const value = item.value
 
+  const allowEdit = constTools.checkPermission('schedule', 'edit')
+
   // Create the plain-language description of the action
   if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_definition', 'set_dmx_scene'].includes(action)) {
     description = populateScheduleDescriptionHelper([item], false)
@@ -192,12 +198,17 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
   eventRow.classList = 'row mt-2 eventListing'
   $(eventRow).data('time_in_seconds', item.time_in_seconds)
 
+  let eventDescriptionOuterContainer
   if (action === 'note') {
     const eventDescriptionCol = document.createElement('div')
-    eventDescriptionCol.classList = 'col-9 me-0 pe-0'
+    if (allowEdit) {
+      eventDescriptionCol.classList = 'me-0 pe-0 col-9'
+    } else {
+      eventDescriptionCol.classList = 'col-12'
+    }
     eventRow.appendChild(eventDescriptionCol)
 
-    const eventDescriptionOuterContainer = document.createElement('div')
+    eventDescriptionOuterContainer = document.createElement('div')
     eventDescriptionOuterContainer.classList = 'text-white bg-success w-100 h-100 justify-content-center d-flex py-1 pe-1 rounded-start'
     eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
@@ -223,10 +234,14 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
     eventTimeContainer.appendChild(eventTime)
 
     const eventDescriptionCol = document.createElement('div')
-    eventDescriptionCol.classList = 'col-5 mx-0 px-0'
+    if (allowEdit) {
+      eventDescriptionCol.classList = 'mx-0 px-0 col-5'
+    } else {
+      eventDescriptionCol.classList += 'ms-0 ps-0 col-8'
+    }
     eventRow.appendChild(eventDescriptionCol)
 
-    const eventDescriptionOuterContainer = document.createElement('div')
+    eventDescriptionOuterContainer = document.createElement('div')
     eventDescriptionOuterContainer.classList = 'text-light bg-secondary w-100 h-100 justify-content-center d-flex py-1 pe-1'
     eventDescriptionCol.appendChild(eventDescriptionOuterContainer)
 
@@ -239,20 +254,24 @@ function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) 
     eventDescriptionOuterContainer.appendChild(eventDescription)
   }
 
-  const eventEditButtonCol = document.createElement('div')
-  eventEditButtonCol.classList = 'col-3 ms-0 ps-0'
-  eventRow.appendChild(eventEditButtonCol)
+  if (allowEdit) {
+    const eventEditButtonCol = document.createElement('div')
+    eventEditButtonCol.classList = 'col-3 ms-0 ps-0'
+    eventRow.appendChild(eventEditButtonCol)
 
-  const eventEditButton = document.createElement('button')
-  eventEditButton.classList = 'btn-info w-100 h-100 rounded-end'
-  eventEditButton.setAttribute('type', 'button')
-  eventEditButton.style.borderStyle = 'solid'
-  eventEditButton.style.border = '0px'
-  eventEditButton.innerHTML = 'Edit'
-  eventEditButton.addEventListener('click', function () {
-    scheduleConfigureEditModal(scheduleName, scheduleType.source, false, scheduleID, item.time, action, target, value)
-  })
-  eventEditButtonCol.appendChild(eventEditButton)
+    const eventEditButton = document.createElement('button')
+    eventEditButton.classList = 'btn-info w-100 h-100 rounded-end'
+    eventEditButton.setAttribute('type', 'button')
+    eventEditButton.style.borderStyle = 'solid'
+    eventEditButton.style.border = '0px'
+    eventEditButton.innerHTML = 'Edit'
+    eventEditButton.addEventListener('click', function () {
+      scheduleConfigureEditModal(scheduleName, scheduleType.source, false, scheduleID, item.time, action, target, value)
+    })
+    eventEditButtonCol.appendChild(eventEditButton)
+  } else {
+    eventDescriptionOuterContainer.classList.add('rounded-end')
+  }
 
   return eventRow
 }
@@ -696,13 +715,25 @@ export function scheduleDeleteActionFromModal () {
 export function showManageFutureDateModal () {
   // Prepare the modal and show it.
 
+  const allowEdit = constTools.checkPermission('schedule', 'edit')
+
   // Clear any existing entries
   document.getElementById('manageFutureDateEntryList').innerHTML = ''
   document.getElementById('manageFutureDateCalendarInput').value = ''
   populateFutureDatesList()
-  document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
   document.getElementById('manageFutureDateAddActionButton').style.display = 'none'
   document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'none'
+
+  if (allowEdit) {
+    document.getElementById('manageFutureDateModal').querySelector('.modal-title').innerHTML = 'Manage a future date'
+    document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'block'
+    document.getElementById('manageFutureDateEntryList').classList.add('mt-3')
+  } else {
+    document.getElementById('manageFutureDateModal').querySelector('.modal-title').innerHTML = 'View a future date'
+    document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'none'
+    document.getElementById('manageFutureDateCalendarInput').style.display = 'none'
+    document.getElementById('manageFutureDateEntryList').classList.remove('mt-3')
+  }
 
   $('#manageFutureDateModal').modal('show')
 }
@@ -751,6 +782,8 @@ function populateFutureDatesList () {
 export function populateFutureDateCalendarInput () {
   // Called when the user selects a date on the manageFutureDateModal
 
+  const allowEdit = constTools.checkPermission('schedule', 'edit')
+
   const date = document.getElementById('manageFutureDateCalendarInput').value
   const scheduleList = document.getElementById('manageFutureDateEntryList')
   scheduleList.innerHTML = ''
@@ -779,8 +812,10 @@ export function populateFutureDateCalendarInput () {
         return
       } else {
         document.getElementById('manageFutureDateCreateScheduleButtonContainer').style.display = 'none'
-        document.getElementById('manageFutureDateAddActionButton').style.display = 'block'
-        document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'block'
+        if (allowEdit) {
+          document.getElementById('manageFutureDateAddActionButton').style.display = 'block'
+          document.getElementById('manageFutureDateDeleteScheduleButton').style.display = 'block'
+        }
 
         // Find the appropriate button and highlight it
         document.getElementById('futureDateButton_' + date).classList.replace('btn-info', 'btn-success')

@@ -358,3 +358,25 @@ export function sortDefinitionsByApp (defDict, dropPreview = true) {
 
   return result
 }
+
+export function checkPermission (action, neededLevel) {
+  // Check that the user has permission for the requested action
+
+  if (Object.keys(constConfig.user).length === 0) return false
+
+  if (action !== 'components') {
+    if (neededLevel === 'none') return true
+    if (action in constConfig.user.permissions === false) return false
+
+    const allowedLevel = constConfig.user.permissions[action]
+    if (neededLevel === 'edit') {
+      if (allowedLevel === 'edit') return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (allowedLevel === 'edit' || allowedLevel === 'view') return true
+      return false
+    }
+  }
+  return false
+}

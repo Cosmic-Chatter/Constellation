@@ -26,7 +26,7 @@ import uvicorn
 # Non-standard modules
 import aiofiles
 import dateutil.parser
-from fastapi import FastAPI, Body, File, Request, UploadFile
+from fastapi import FastAPI, Body, File, Response, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -395,12 +395,14 @@ def get_config():
 # User account actions
 
 @app.post("/user/login")
-def log_in(credentials: tuple[str, str] = Body(description="A tuple containing the username and password.",
+def log_in(response: Response,
+           credentials: tuple[str, str] = Body(description="A tuple containing the username and password.",
                                                default=("", "")),
            token: str = Body(description="An authentication token", default="")
            ):
     """Authenticate the user and return the permissions and an authentication token."""
 
+    print('/user/login')
     print(credentials, token)
     success, username = c_users.authenticate_user(token=token, credentials=credentials)
     if success is False:
@@ -409,7 +411,9 @@ def log_in(credentials: tuple[str, str] = Body(description="A tuple containing t
     user = c_users.get_user(username=username)
     if token == "":
         token = c_users.encrypt_token(username)
-    return {"success": True, "user": user.get_dict(), "token": token}
+        print(token)
+        response.set_cookie(key="authToken", value=token, max_age=int(3e7))  # Expire cookie in approx 1 yr
+    return {"success": True, "user": user.get_dict()}
 
 
 @app.post("/user/{username}/create")
@@ -1315,6 +1319,7 @@ if __name__ == "__main__":
     c_tools.check_file_structure()
     c_exhibit.check_available_exhibits()
     load_default_configuration()
+    c_users.load_users()
     c_proj.poll_projectors()
     c_exhibit.poll_wake_on_LAN_devices()
     check_for_software_update()

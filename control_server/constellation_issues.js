@@ -27,6 +27,8 @@ export function rebuildIssueList () {
 export function createIssueHTML (issue, full = true, archived = false) {
   // Create an HTML representation of an issue
 
+  const allowEdit = constTools.checkPermission('maintenance', 'edit')
+
   const col = document.createElement('div')
   col.setAttribute('class', 'col mt-2')
 
@@ -80,69 +82,71 @@ export function createIssueHTML (issue, full = true, archived = false) {
   row1.classList = 'row gy-2 row-cols-2'
   content.appendChild(row1)
 
-  const actionCol = document.createElement('div')
-  actionCol.classList = 'col'
-  row1.appendChild(actionCol)
+  if (allowEdit) {
+    const actionCol = document.createElement('div')
+    actionCol.classList = 'col'
+    row1.appendChild(actionCol)
 
-  if (archived === false) {
-    const actionDropdownContainer = document.createElement('div')
-    actionDropdownContainer.classList = 'dropdown'
-    actionCol.appendChild(actionDropdownContainer)
+    if (archived === false) {
+      const actionDropdownContainer = document.createElement('div')
+      actionDropdownContainer.classList = 'dropdown'
+      actionCol.appendChild(actionDropdownContainer)
 
-    const actionButton = document.createElement('a')
-    actionButton.classList = 'btn btn-primary btn-sm dropdown-toggle w-100'
-    actionButton.innerHTML = 'Action'
-    actionButton.href = '#'
-    actionButton.setAttribute('role', 'button')
-    actionButton.setAttribute('data-bs-toggle', 'dropdown')
-    actionButton.setAttribute('aria-expanded', 'false')
-    actionDropdownContainer.appendChild(actionButton)
+      const actionButton = document.createElement('a')
+      actionButton.classList = 'btn btn-primary btn-sm dropdown-toggle w-100'
+      actionButton.innerHTML = 'Action'
+      actionButton.href = '#'
+      actionButton.setAttribute('role', 'button')
+      actionButton.setAttribute('data-bs-toggle', 'dropdown')
+      actionButton.setAttribute('aria-expanded', 'false')
+      actionDropdownContainer.appendChild(actionButton)
 
-    const actionDropdownList = document.createElement('ul')
-    actionDropdownList.classList = 'dropdown-menu'
-    actionDropdownList.style.position = 'static'
-    actionDropdownContainer.appendChild(actionDropdownList)
+      const actionDropdownList = document.createElement('ul')
+      actionDropdownList.classList = 'dropdown-menu'
+      actionDropdownList.style.position = 'static'
+      actionDropdownContainer.appendChild(actionDropdownList)
 
-    const actionDropdownListEditItem = document.createElement('li')
-    const actionDropdownListEditButton = document.createElement('a')
-    actionDropdownListEditButton.classList = 'dropdown-item text-info handCursor'
-    actionDropdownListEditButton.innerHTML = 'Edit'
-    actionDropdownListEditButton.addEventListener('click', function () {
-      showIssueEditModal('edit', issue.id)
-    })
-    actionDropdownListEditItem.appendChild(actionDropdownListEditButton)
-    actionDropdownList.appendChild(actionDropdownListEditItem)
+      const actionDropdownListEditItem = document.createElement('li')
+      const actionDropdownListEditButton = document.createElement('a')
+      actionDropdownListEditButton.classList = 'dropdown-item text-info handCursor'
+      actionDropdownListEditButton.innerHTML = 'Edit'
+      actionDropdownListEditButton.addEventListener('click', function () {
+        showIssueEditModal('edit', issue.id)
+      })
+      actionDropdownListEditItem.appendChild(actionDropdownListEditButton)
+      actionDropdownList.appendChild(actionDropdownListEditItem)
 
-    const actionDropdownListDeleteItem = document.createElement('li')
-    const actionDropdownListDeleteButton = document.createElement('a')
-    actionDropdownListDeleteButton.classList = 'dropdown-item text-danger handCursor'
-    actionDropdownListDeleteButton.innerHTML = 'Delete'
-    actionDropdownListDeleteButton.addEventListener('click', function () {
-      showModifyIssueModal(issue.id, 'delete')
-    })
-    actionDropdownListDeleteItem.appendChild(actionDropdownListDeleteButton)
-    actionDropdownList.appendChild(actionDropdownListDeleteItem)
+      const actionDropdownListDeleteItem = document.createElement('li')
+      const actionDropdownListDeleteButton = document.createElement('a')
+      actionDropdownListDeleteButton.classList = 'dropdown-item text-danger handCursor'
+      actionDropdownListDeleteButton.innerHTML = 'Delete'
+      actionDropdownListDeleteButton.addEventListener('click', function () {
+        showModifyIssueModal(issue.id, 'delete')
+      })
+      actionDropdownListDeleteItem.appendChild(actionDropdownListDeleteButton)
+      actionDropdownList.appendChild(actionDropdownListDeleteItem)
 
-    const actionDropdownListArchiveItem = document.createElement('li')
-    const actionDropdownListArchiveButton = document.createElement('a')
-    actionDropdownListArchiveButton.classList = 'dropdown-item text-success handCursor'
-    actionDropdownListArchiveButton.innerHTML = 'Mark complete'
-    actionDropdownListArchiveButton.addEventListener('click', function () {
-      showModifyIssueModal(issue.id, 'archive')
-    })
-    actionDropdownListArchiveItem.appendChild(actionDropdownListArchiveButton)
-    actionDropdownList.appendChild(actionDropdownListArchiveItem)
-  } else {
-    const unarchiveButton = document.createElement('button')
-    unarchiveButton.classList = 'btn btn-primary w-100'
-    unarchiveButton.innerHTML = 'Re-open issue'
-    unarchiveButton.addEventListener('click', (event) => {
-      modifyIssue(issue.id, 'restore')
-        .then(() => {
-          showArchivedIssuesModal()
-        })
-    })
-    actionCol.appendChild(unarchiveButton)
+      const actionDropdownListArchiveItem = document.createElement('li')
+      const actionDropdownListArchiveButton = document.createElement('a')
+      actionDropdownListArchiveButton.classList = 'dropdown-item text-success handCursor'
+      actionDropdownListArchiveButton.innerHTML = 'Mark complete'
+      actionDropdownListArchiveButton.addEventListener('click', function () {
+        showModifyIssueModal(issue.id, 'archive')
+      })
+      actionDropdownListArchiveItem.appendChild(actionDropdownListArchiveButton)
+      actionDropdownList.appendChild(actionDropdownListArchiveItem)
+    } else {
+      const unarchiveButton = document.createElement('button')
+      unarchiveButton.classList = 'btn btn-primary w-100'
+      unarchiveButton.innerHTML = 'Re-open issue'
+      unarchiveButton.addEventListener('click', (event) => {
+        modifyIssue(issue.id, 'restore')
+          .then(() => {
+            showArchivedIssuesModal()
+          })
+      })
+      actionCol.appendChild(unarchiveButton)
+    }
   }
 
   if (issue.media != null && issue.media.length > 0) {

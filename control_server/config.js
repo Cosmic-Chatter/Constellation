@@ -24,5 +24,6 @@ export default {
     'SYSTEM ON': { name: 'SYSTEM ON', value: 4, colorClass: 'btn-info' },
     UNKNOWN: { name: 'UNKNOWN', value: 5, colorClass: 'btn-warning' },
     OFFLINE: { name: 'OFFLINE', value: 6, colorClass: 'btn-danger' }
-  }
+  },
+  user: {}
 }
