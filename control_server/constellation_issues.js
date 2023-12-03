@@ -26,7 +26,7 @@ export function rebuildIssueList () {
 
 export function createIssueHTML (issue, full = true, archived = false) {
   // Create an HTML representation of an issue
-
+  console.log(issue)
   const allowEdit = constTools.checkPermission('maintenance', 'edit')
 
   const col = document.createElement('div')
@@ -81,6 +81,10 @@ export function createIssueHTML (issue, full = true, archived = false) {
   const row1 = document.createElement('div')
   row1.classList = 'row gy-2 row-cols-2'
   content.appendChild(row1)
+
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  content.appendChild(row2)
 
   if (allowEdit) {
     const actionCol = document.createElement('div')
@@ -166,6 +170,63 @@ export function createIssueHTML (issue, full = true, archived = false) {
       constTools.openMediaInNewTab(mediaFiles)
     }, false)
     mediaCol.appendChild(mediaBut)
+  }
+
+  const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' }
+  if (archived === true) {
+    if ('archivedUsername' in issue && 'archiveDate' in issue) {
+      // Add line with when this was archived and by whom.
+      const archivedDateCol = document.createElement('div')
+      archivedDateCol.classList = 'col-12 fst-italic text-secondary mt-2'
+      archivedDateCol.style.fontSize = '0.7rem'
+
+      const archivedDate = new Date(issue.archiveDate)
+      archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)}`
+      row2.appendChild(archivedDateCol)
+
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: `/user/${issue.archivedUsername}/getDisplayName`
+      }).then((response) => {
+        archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
+      })
+    }
+  } else {
+    // Add a line about when this issue was created
+    const createdDateCol = document.createElement('div')
+    createdDateCol.classList = 'col-12 fst-italic text-secondary mt-2'
+    createdDateCol.style.fontSize = '0.7rem'
+
+    const createdDate = new Date(issue.creationDate)
+    createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)}`
+    row2.appendChild(createdDateCol)
+
+    if ('createdUsername' in issue && issue.createdUsername !== '') {
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: `/user/${issue.createdUsername}/getDisplayName`
+      }).then((response) => {
+        createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
+      })
+    }
+
+    // Add a line about when this issue was last updated
+    const updatedDateCol = document.createElement('div')
+    updatedDateCol.classList = 'col-12 fst-italic text-secondary'
+    updatedDateCol.style.fontSize = '0.7rem'
+
+    const updatedDate = new Date(issue.lastUpdateDate)
+    updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)}`
+    row2.appendChild(updatedDateCol)
+
+    if ('lastUpdateUsername' in issue && issue.lastUpdateUsername !== '') {
+      constTools.makeServerRequest({
+        method: 'GET',
+        endpoint: `/user/${issue.lastUpdateUsername}/getDisplayName`
+      }).then((response) => {
+        updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
+      })
+    }
   }
 
   const footer = document.createElement('div')

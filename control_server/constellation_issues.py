@@ -23,6 +23,7 @@ class Issue:
                         "creationDate": details.get("creationDate", now_date),
                         "createdUsername": details.get("createdUsername", ""),
                         "lastUpdateDate": details.get("lastUpdateDate", now_date),
+                        "lastUpdateUsername": details.get("lastUpdateUsername", ""),
                         "priority": details.get("priority", "medium"),
                         "issueName": details.get("issueName", "New Issue"),
                         "issueDescription": details.get("issueDescription", ""),
@@ -77,14 +78,15 @@ def create_issue(details: dict[str, Any], username: str = "") -> Issue:
     return new_issue
 
 
-def edit_issue(details: dict) -> None:
+def edit_issue(details: dict, username: str) -> None:
     """Edit issue with the id given in details dict"""
-    if "id" in details:
-        issue = get_issue(details["id"])
-        with config.issueLock:
-            issue.details = issue.details | details
-            issue.refresh_last_update_date()
-        config.last_update_time = time.time()
+
+    details["lastUpdateUsername"] = username
+    issue = get_issue(details["id"])
+    with config.issueLock:
+        issue.details = issue.details | details
+        issue.refresh_last_update_date()
+    config.last_update_time = time.time()
 
 
 def get_issue(this_id: str) -> Issue:

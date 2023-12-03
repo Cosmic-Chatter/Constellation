@@ -390,9 +390,7 @@ def create_user(request: Request,
     """Create a new user account."""
 
     token = request.cookies.get("authToken", "")
-
     success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
-
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -402,6 +400,16 @@ def create_user(request: Request,
     if success is False:
         response["reason"] = "username_taken"
     return response
+
+
+@app.get("/user/{username}/getDisplayName")
+def create_user(username: str):
+    """Get the display name for a user account."""
+
+    user = c_users.get_user(username=username)
+    if user is None:
+        return {"success": False, "reason": "username_does_not_exist"}
+    return {"success": True, "display_name": user.display_name}
 
 
 # Exhibit component actions
@@ -838,7 +846,7 @@ async def edit_issue(request: Request,
         return {"success": False, "reason": reason}
 
     if "id" in details:
-        c_issues.edit_issue(details)
+        c_issues.edit_issue(details, authorizing_user)
         c_issues.save_issue_list()
         response_dict = {"success": True}
     else:
