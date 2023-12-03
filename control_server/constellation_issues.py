@@ -106,14 +106,15 @@ def remove_issue(this_id: str) -> None:
     config.last_update_time = time.time()
 
 
-def archive_issue(this_id: str) -> None:
+def archive_issue(this_id: str, username: str) -> None:
     """Move the given issue from issues.json to archived.json."""
 
-    issue = get_issue(this_id)
+    details = get_issue(this_id).details.copy()
     now_date = datetime.datetime.now().isoformat()
-    issue.details["archiveDate"] = now_date
-    issue.details["lastUpdateDate"] = now_date
-    issue.details["media"] = []
+    details["archiveDate"] = now_date
+    details["lastUpdateDate"] = now_date
+    details["media"] = []
+    details["archivedUsername"] = username
 
     # First, load the current archive
     archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
@@ -130,7 +131,7 @@ def archive_issue(this_id: str) -> None:
             archive = []
 
         # Next, append the newly-archived issue
-        archive.append(issue.details)
+        archive.append(details)
 
         # Then, write the file back to disk
         with open(archive_file, "w", encoding="UTF-8") as file_object:
