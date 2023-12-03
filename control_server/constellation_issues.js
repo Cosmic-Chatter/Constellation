@@ -5,8 +5,9 @@ export function rebuildIssueList () {
   // Take an array of issue dictionaries and build the GUI representation.
 
   // Gather the settings for the various filters
-  const filterPriority = $('#issueListFilterPrioritySelect').val()
-  const filterAssignedTo = $('#issueListFilterAssignedToSelect').val()
+  const filterPriority = document.getElementById('issueListFilterPrioritySelect').value
+  let filterAssignedTo = document.getElementById('issueListFilterAssignedToSelect').value
+  if (filterAssignedTo === '') filterAssignedTo = 'all'
   const issueList = document.getElementById('issuesRow')
   issueList.innerHTML = ''
 
@@ -24,9 +25,39 @@ export function rebuildIssueList () {
   })
 }
 
+export async function rebuildIssueFilters () {
+  // Rebuild the 'Assigned to' issue filter
+
+  const assignedToSelect = document.getElementById('issueListFilterAssignedToSelect')
+  assignedToSelect.innerHTML = ''
+  assignedToSelect.appendChild(new Option('All', 'all'))
+  assignedToSelect.appendChild(new Option('Unassigned', 'unassigned'))
+
+  // First, aggregate the various options needed
+  const assignableUsernameList = []
+  const optionList = []
+  for (const issue of constConfig.issueList) {
+    for (const username of issue.assignedTo) {
+      if (assignableUsernameList.includes(username) === false) {
+        assignableUsernameList.push(username)
+        const displayName = await constTools.getUserDisplayName(username)
+        optionList.push(new Option(displayName, username))
+      }
+    }
+  }
+
+  const sortedOptionsList = optionList.sort(function (a, b) {
+    return a.innerHTML.toLowerCase().localeCompare(b.innerHTML.toLowerCase())
+  })
+  // Populate the filter
+  sortedOptionsList.forEach((option) => {
+    assignedToSelect.appendChild(option)
+  })
+}
+
 export function createIssueHTML (issue, full = true, archived = false) {
   // Create an HTML representation of an issue
-  console.log(issue)
+
   const allowEdit = constTools.checkPermission('maintenance', 'edit')
 
   const col = document.createElement('div')
@@ -68,12 +99,15 @@ export function createIssueHTML (issue, full = true, archived = false) {
   issue.assignedTo.forEach((name, i) => {
     const tag = document.createElement('span')
     tag.setAttribute('class', 'badge bg-success me-1')
-    tag.innerHTML = name
+    constTools.getUserDisplayName(name)
+      .then((displayName) => {
+        tag.innerHTML = displayName
+      })
     content.appendChild(tag)
   })
 
   const desc = document.createElement('p')
-  desc.setAttribute('class', 'card-text')
+  desc.classList = 'card-text mt-2'
   desc.style.whiteSpace = 'pre-wrap' // To preserve new lines
   desc.innerHTML = issue.issueDescription
   content.appendChild(desc)
@@ -184,12 +218,10 @@ export function createIssueHTML (issue, full = true, archived = false) {
       archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)}`
       row2.appendChild(archivedDateCol)
 
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: `/user/${issue.archivedUsername}/getDisplayName`
-      }).then((response) => {
-        archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
-      })
+      constTools.getUserDisplayName(issue.archivedUsername)
+        .then((displayName) => {
+          archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+        })
     }
   } else {
     // Add a line about when this issue was created
@@ -202,30 +234,28 @@ export function createIssueHTML (issue, full = true, archived = false) {
     row2.appendChild(createdDateCol)
 
     if ('createdUsername' in issue && issue.createdUsername !== '') {
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: `/user/${issue.createdUsername}/getDisplayName`
-      }).then((response) => {
-        createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
-      })
+      constTools.getUserDisplayName(issue.createdUsername)
+        .then((displayName) => {
+          createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+        })
     }
 
-    // Add a line about when this issue was last updated
-    const updatedDateCol = document.createElement('div')
-    updatedDateCol.classList = 'col-12 fst-italic text-secondary'
-    updatedDateCol.style.fontSize = '0.7rem'
+    // Add a line about when this issue was last updated, if different than created.
+    if (issue.creationDate !== issue.lastUpdateDate) {
+      const updatedDateCol = document.createElement('div')
+      updatedDateCol.classList = 'col-12 fst-italic text-secondary'
+      updatedDateCol.style.fontSize = '0.7rem'
 
-    const updatedDate = new Date(issue.lastUpdateDate)
-    updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)}`
-    row2.appendChild(updatedDateCol)
+      const updatedDate = new Date(issue.lastUpdateDate)
+      updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)}`
+      row2.appendChild(updatedDateCol)
 
-    if ('lastUpdateUsername' in issue && issue.lastUpdateUsername !== '') {
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: `/user/${issue.lastUpdateUsername}/getDisplayName`
-      }).then((response) => {
-        updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)} by ${response.display_name}`
-      })
+      if ('lastUpdateUsername' in issue && issue.lastUpdateUsername !== '') {
+        constTools.getUserDisplayName(issue.lastUpdateUsername)
+          .then((displayName) => {
+            updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+          })
+      }
     }
   }
 
@@ -388,12 +418,23 @@ export function showIssueEditModal (issueType, target) {
 
   // Make sure we have all the assignable staff listed as options for
   // issueAssignedToSelector
-  for (let i = 0; i < constConfig.assignableStaff.length; i++) {
-    // Check if component already exists as an option. If not, add it
-    if ($(`#issueAssignedToSelector option[value='${constConfig.assignableStaff[i]}']`).length === 0) {
-      $('#issueAssignedToSelector').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
+  document.getElementById('issueAssignedToSelector').innerHTML = ''
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/users/list',
+    params: {
+      permissions: {
+        maintenance: 'view'
+      }
     }
-  }
+  })
+    .then((response) => {
+      if (response.success === true) {
+        response.users.forEach((user) => {
+          document.getElementById('issueAssignedToSelector').appendChild(new Option(user.display_name, user.username))
+        })
+      }
+    })
 
   // Clear file upload interface elements
   $('#issueMediaUploadFilename').html('Choose files')

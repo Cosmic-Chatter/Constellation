@@ -81,17 +81,20 @@ class User:
                 return False
         return False
 
-    def get_dict(self) -> dict:
+    def get_dict(self, omit_password: bool = True) -> dict:
         """Return a JSON representation of this user."""
 
-        return {
+        this_dict = {
             "username": self.username,
             "display_name": self.display_name,
             "last_activity": self.last_activity,
-            "password_hash": self.password_hash,
             "permissions": self.permissions,
             "uuid": self.uuid
         }
+        if not omit_password:
+            this_dict["password_hash"] = self.password_hash
+
+        return this_dict
 
     def update_last_activity(self):
         """Set the last activity time ot now."""
@@ -204,7 +207,7 @@ def save_users():
 
     dict_list = []
     for user in config.user_list:
-        dict_list.append(user.get_dict())
+        dict_list.append(user.get_dict(omit_password=False))
 
     path = c_tools.get_path(["configuration", "users.json"], user_file=True)
     c_tools.write_json(dict_list, path)

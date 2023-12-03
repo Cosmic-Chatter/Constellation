@@ -409,17 +409,11 @@ function parseUpdate (update) {
 
     if (!constTools.arraysEqual(constConfig.assignableStaff, update.issues.assignable_staff)) {
       constConfig.assignableStaff = update.issues.assignable_staff
-      // Populate the filter
-      $('#issueListFilterAssignedToSelect').empty()
-      $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
-      $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
-      for (let i = 0; i < constConfig.assignableStaff.length; i++) {
-        $('#issueListFilterAssignedToSelect').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
-      }
     }
     if (updatedDate > currentLastDate) {
       constConfig.issueList = update.issues.issueList
       constIssues.rebuildIssueList()
+      constIssues.rebuildIssueFilters()
     }
   }
 

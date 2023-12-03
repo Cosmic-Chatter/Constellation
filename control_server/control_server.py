@@ -148,8 +148,7 @@ def send_webpage_update():
                               "updateAvailable": str(c_config.software_update_available).lower()}
 
     update_dict["issues"] = {"issueList": [x.details for x in c_config.issueList],
-                             "lastUpdateDate": c_config.issueList_last_update_date,
-                             "assignable_staff": c_config.assignable_staff}
+                             "lastUpdateDate": c_config.issueList_last_update_date}
 
     with c_config.scheduleLock:
         update_dict["schedule"] = {"updateTime": c_config.scheduleUpdateTime,
@@ -402,8 +401,28 @@ def create_user(request: Request,
     return response
 
 
+@app.post("/users/list")
+def list_users(permissions: dict[str, str] = Body(description="A dictionary of permissions to match.",
+                                                  default={},
+                                                  embed=True)):
+    """Return a list of users matching the provided criteria"""
+
+    matched_users = []
+
+    for user in c_config.user_list:
+        error = False
+        for key in permissions:
+
+            if user.check_permission(key, permissions[key]) is False:
+                error = True
+        if not error:
+            matched_users.append(user.get_dict())
+
+    return {"success": True, "users": matched_users}
+
+
 @app.get("/user/{username}/getDisplayName")
-def create_user(username: str):
+def get_user_display_name(username: str):
     """Get the display name for a user account."""
 
     user = c_users.get_user(username=username)

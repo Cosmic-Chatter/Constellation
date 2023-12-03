@@ -1,5 +1,4 @@
 export default {
-  assignableStaff: [],
   availableExhibits: [], // An array of strings
   componentGroups: [],
   currentExhibit: '',
@@ -25,5 +24,6 @@ export default {
     UNKNOWN: { name: 'UNKNOWN', value: 5, colorClass: 'btn-warning' },
     OFFLINE: { name: 'OFFLINE', value: 6, colorClass: 'btn-danger' }
   },
-  user: {}
+  user: {},
+  usersDisplayNameCache: {}
 }
