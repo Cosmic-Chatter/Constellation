@@ -57,12 +57,15 @@ class User:
     def authenticate(self, password: str) -> bool:
         try:
             result = password_hasher.verify(self.password_hash, password)
+            self.update_last_activity()
         except argon2.exceptions.VerificationError:
             result = False
         return result
 
     def check_permission(self, action, needed_level) -> bool:
         """Check if the user has sufficient permission to perform an action"""
+
+        self.update_last_activity()
 
         if action != "components":
             if needed_level == "none":
@@ -78,13 +81,13 @@ class User:
                 return False
         return False
 
-
     def get_dict(self) -> dict:
         """Return a JSON representation of this user."""
 
         return {
             "username": self.username,
             "display_name": self.display_name,
+            "last_activity": self.last_activity,
             "password_hash": self.password_hash,
             "permissions": self.permissions,
             "uuid": self.uuid
@@ -275,7 +278,7 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
         raise ValueError("Supply only a token or credentials, not both.")
 
     if token == "" and credentials == ("", ""):
-        raise ValueError("You must supply a token or a tuple of credentials.")
+        return False, ""
 
     if token != "":
         try:
@@ -285,6 +288,7 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
             user = None
         if user is None:
             return False, ""
+        user.update_last_activity()
         return True, username
 
     username, password = credentials
@@ -296,6 +300,25 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
     if success is True:
         return True, username
     return False, ""
+
+
+def check_user_permission(action: str,
+                          needed_level: str,
+                          token: str = "",
+                          credentials: tuple[str, str] = ("", "")) -> tuple[bool, str, str]:
+    """Confirm that the given user has the necessary permission to perform the given action.
+
+    Returns a tuple of success, the authorizing user, and a reason for failure
+    """
+
+    success, username = authenticate_user(token=token, credentials=credentials)
+    if success is False:
+        return False, username, "authentication_failed"
+
+    if get_user(username=username).check_permission(action, needed_level) is False:
+        return False, username, "insufficient_permission"
+
+    return True, username, ""
 
 
 def get_admin():

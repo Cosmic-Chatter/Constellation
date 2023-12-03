@@ -1,3 +1,15 @@
+# **Constellation 5**
+Constellation 5 introduces a user account system that enables administrators to restrict access to various features. Divide responsibility while minimizing risk with granular permissions and improved logging.
+
+## Control Server
+
+### General
+- A new user account system for managing access to Constellation.
+
+## Constellation Apps
+
+### General
+
 # **Constellation 4**
 Constellation 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.
 

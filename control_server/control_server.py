@@ -19,14 +19,14 @@ import socket
 import sys
 import time
 import traceback
-from typing import Any, Union
+from typing import Annotated, Any, Union
 import urllib.request
 import uvicorn
 
 # Non-standard modules
 import aiofiles
 import dateutil.parser
-from fastapi import FastAPI, Body, File, Response, Request, UploadFile
+from fastapi import Body, Cookie, FastAPI, File, Response, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -396,14 +396,14 @@ def get_config():
 
 @app.post("/user/login")
 def log_in(response: Response,
+           request: Request,
            credentials: tuple[str, str] = Body(description="A tuple containing the username and password.",
-                                               default=("", "")),
-           token: str = Body(description="An authentication token", default="")
+                                               default=("", ""), embed=True)
            ):
     """Authenticate the user and return the permissions and an authentication token."""
 
-    print('/user/login')
-    print(credentials, token)
+    token = request.cookies.get("authToken", "")
+
     success, username = c_users.authenticate_user(token=token, credentials=credentials)
     if success is False:
         return {"success": False, "reason": "authentication_failed"}
@@ -417,20 +417,20 @@ def log_in(response: Response,
 
 
 @app.post("/user/{username}/create")
-def create_user(username: str,
-                token: str = Body(description="The authentication token for the authorizing account."),
+def create_user(request: Request,
+                username: str,
                 password: str = Body(description="The password for the account to create."),
                 display_name: str = Body(description="The name of the account holder."),
                 permissions: dict | None = Body(description="A dictionary of permissions for the new account.",
                                                 default=None)):
     """Create a new user account."""
 
-    success, authorizing_user = c_users.authenticate_user(token=token)
-    if success is False:
-        return {"success": False, "reason": "authentication_failed"}
+    token = request.cookies.get("authToken", "")
 
-    if c_users.get_user(authorizing_user).check_permission("users", "edit") is False:
-        return {"success": False, "reason": "insufficient_permission"}
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+
+    if success is False:
+        return {"success": False, "reason": reason}
 
     success, user_dict = c_users.create_user(username, display_name, password, permissions=permissions)
 
@@ -477,18 +477,31 @@ async def set_component_definition(component_id: str,
 
 
 @app.post("/exhibit/create")
-async def create_exhibit(exhibit: Exhibit,
+async def create_exhibit(request: Request,
+                         exhibit: Exhibit,
                          clone_from: Union[str, None] = Body(default=None,
                                                              description="The name of the exhibit to clone.")):
     """Create a new exhibit JSON file."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("exhibits", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_exhibit.create_new_exhibit(exhibit.name, clone_from)
     return {"success": True, "reason": ""}
 
 
 @app.post("/exhibit/delete")
-async def delete_exhibit(exhibit: Exhibit = Body(embed=True)):
+async def delete_exhibit(request: Request, exhibit: Exhibit = Body(embed=True)):
     """Delete the specified exhibit."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("exhibits", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_exhibit.delete_exhibit(exhibit.name)
     return {"success": True, "reason": ""}
@@ -568,8 +581,14 @@ async def get_exhibit_details(name: str = Body(description='The name of the exhi
 
 # Flexible Tracker actions
 @app.post("/tracker/{tracker_type}/createTemplate")
-async def create_tracker_template(data: dict[str, Any], tracker_type: str):
+async def create_tracker_template(request: Request, data: dict[str, Any], tracker_type: str):
     """Create a new tracker template, overwriting if necessary."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "name" not in data or "template" not in data:
         response = {"success": False,
@@ -585,8 +604,14 @@ async def create_tracker_template(data: dict[str, Any], tracker_type: str):
 
 
 @app.post("/tracker/{tracker_type}/deleteData")
-async def delete_tracker_data(data: dict[str, Any], tracker_type: str):
+async def delete_tracker_data(request: Request, data: dict[str, Any], tracker_type: str):
     """Delete the specified tracker data file."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "name" not in data:
         response = {"success": False,
@@ -619,8 +644,14 @@ async def delete_tracker_data(data: dict[str, Any], tracker_type: str):
 
 
 @app.post("/tracker/{tracker_type}/deleteTemplate")
-async def delete_tracker_template(data: dict[str, Any], tracker_type: str):
+async def delete_tracker_template(request: Request, data: dict[str, Any], tracker_type: str):
     """Delete the specified tracker template."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "name" not in data:
         response = {"success": False,
@@ -758,8 +789,14 @@ async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str):
 
 # Issue actions
 @app.post("/issue/create")
-async def create_issue(details: dict[str, Any] = Body(embed=True)):
+async def create_issue(request: Request, details: dict[str, Any] = Body(embed=True)):
     """Create a new issue."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_issues.create_issue(details)
     c_issues.save_issue_list()
@@ -767,42 +804,74 @@ async def create_issue(details: dict[str, Any] = Body(embed=True)):
 
 
 @app.get("/issue/{issue_id}/delete")
-async def delete_issue(issue_id: str):
+async def delete_issue(request: Request, issue_id: str):
     """Delete an issue."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_issues.remove_issue(issue_id)
     return {"success": True, "reason": ""}
 
 
 @app.get("/issue/{issue_id}/archive")
-async def archive_issue(issue_id: str):
+async def archive_issue(request: Request, issue_id: str):
     """Move the given issue to the archive."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_issues.archive_issue(issue_id)
     return {"success": True}
 
 
 @app.get("/issue/{issue_id}/restore")
-async def restore_issue(issue_id: str):
+async def restore_issue(request: Request, issue_id: str):
     """Move the given issue from the archive to the issue list."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_issues.restore_issue(issue_id)
     return {"success": True}
 
 
 @app.post("/issue/deleteMedia")
-async def delete_issue_media(filenames: list[str] = Body(description="The filenames to be deleted."),
+async def delete_issue_media(request: Request,
+                             filenames: list[str] = Body(description="The filenames to be deleted."),
                              owner: Union[str, None] = Body(default=None,
                                                             description="The ID of the Issue this media file belonged to.")):
     """Delete the media files linked to an issue and remove the reference."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_issues.delete_issue_media_file(filenames, owner=owner)
     return {"success": True}
 
 
 @app.post("/issue/edit")
-async def edit_issue(details: dict[str, Any] = Body(description="The details to be changed.", embed=True)):
+async def edit_issue(request: Request,
+                     details: dict[str, Any] = Body(description="The details to be changed.", embed=True)):
     """Make changes to an existing issue."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "id" in details:
         c_issues.edit_issue(details)
@@ -817,8 +886,14 @@ async def edit_issue(details: dict[str, Any] = Body(description="The details to 
 
 
 @app.get("/issue/list/{match_id}")
-async def get_issue_list(match_id: str):
+async def get_issue_list(request: Request, match_id: str):
     """Return a list of open issues."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if match_id != "__all":
         matched_issues = []
@@ -836,8 +911,14 @@ async def get_issue_list(match_id: str):
 
 
 @app.get("/issue/archive/list/{match_id}")
-async def get_archived_issues(match_id: str):
+async def get_archived_issues(request: Request, match_id: str):
     """Return a list of open issues."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
 
@@ -864,8 +945,14 @@ async def get_archived_issues(match_id: str):
 
 
 @app.get("/issue/{issue_id}/getMedia")
-async def get_issue_media(issue_id: str):
+async def get_issue_media(request: Request, issue_id: str):
     """Return a list of media files connected to the given ID."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     issue = c_issues.get_issue(issue_id)
 
@@ -876,8 +963,14 @@ async def get_issue_media(issue_id: str):
 
 
 @app.post("/issue/uploadMedia")
-async def upload_issue_media(files: list[UploadFile] = File()):
+async def upload_issue_media(request: Request, files: list[UploadFile] = File()):
     """Upload issue media files."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     filenames = []
     for file in files:
@@ -895,8 +988,14 @@ async def upload_issue_media(files: list[UploadFile] = File()):
 
 # Maintenance actions
 @app.post("/maintenance/deleteRecord")
-async def delete_maintenance_record(data: dict[str, Any]):
+async def delete_maintenance_record(request: Request, data: dict[str, Any]):
     """Delete the specified maintenance record."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "id" not in data:
         return {"success": False, "reason": "Request missing 'id' field."}
@@ -909,8 +1008,14 @@ async def delete_maintenance_record(data: dict[str, Any]):
 
 
 @app.get("/maintenance/getAllStatuses")
-async def get_all_maintenance_statuses():
+async def get_all_maintenance_statuses(request: Request):
     """Send a list of all the maintenance statuses for known components"""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     record_list = []
     maintenance_path = c_tools.get_path(["maintenance-logs"], user_file=True)
@@ -925,8 +1030,14 @@ async def get_all_maintenance_statuses():
 
 
 @app.post("/maintenance/getStatus")
-async def get_maintenance_status(data: dict[str, Any]):
+async def get_maintenance_status(request: Request, data: dict[str, Any]):
     """Return the specified maintenance status"""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if "id" not in data:
         response = {"success": False,
@@ -939,10 +1050,17 @@ async def get_maintenance_status(data: dict[str, Any]):
 
 
 @app.post("/maintenance/updateStatus")
-async def update_maintenance_status(component_id: str = Body(description='The ID of the component to update.'),
+async def update_maintenance_status(request: Request,
+                                    component_id: str = Body(description='The ID of the component to update.'),
                                     notes: str = Body(description="Text notes about this component."),
                                     status: str = Body(description="The status of the component.")):
     """Update the given maintenance status."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     file_path = c_tools.get_path(["maintenance-logs", component_id + ".txt"], user_file=True)
     record = {"id": component_id,
@@ -982,9 +1100,16 @@ async def queue_projector_command(component: ExhibitComponent,
 # Schedule actions
 @app.post("/schedule/convert")
 async def convert_schedule(
+        request: Request,
         date: str = Body(description="The date of the schedule to create, in the form of YYYY-MM-DD."),
         convert_from: str = Body(description="The name of the schedule to clone to the new date.")):
     """Convert between date- and day-specific schedules."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     with c_config.scheduleLock:
         shutil.copy(c_tools.get_path(["schedules", convert_from.lower() + ".json"], user_file=True),
@@ -1004,10 +1129,17 @@ async def convert_schedule(
 
 
 @app.post("/schedule/deleteAction")
-async def delete_schedule_action(schedule_name: str = Body(description="The schedule to delete the action from."),
+async def delete_schedule_action(request: Request,
+                                 schedule_name: str = Body(description="The schedule to delete the action from."),
                                  schedule_id: str = Body(
                                      description="The unique identifier of the action to be deleted.")):
     """Delete the given action from the specified schedule."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     c_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
     c_sched.retrieve_json_schedule()
@@ -1022,8 +1154,15 @@ async def delete_schedule_action(schedule_name: str = Body(description="The sche
 
 
 @app.post("/schedule/deleteSchedule")
-async def delete_schedule(name: str = Body(description="The name of the schedule to delete.", embed=True)):
+async def delete_schedule(request: Request,
+                          name: str = Body(description="The name of the schedule to delete.", embed=True)):
     """Delete the given schedule."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     with c_config.scheduleLock:
         json_schedule_path = c_tools.get_path(["schedules", name + ".json"], user_file=True)
@@ -1043,10 +1182,15 @@ async def delete_schedule(name: str = Body(description="The name of the schedule
 
 
 @app.get("/schedule/refresh")
-async def refresh_schedule():
+async def refresh_schedule(request: Request):
     """Reload the schedule from disk and return it."""
 
-    # This command reloads the schedule from disk. Normal schedule changes are passed during /system/getUpdate
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
     c_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
@@ -1060,15 +1204,27 @@ async def refresh_schedule():
 
 
 @app.get("/schedule/availableDateSpecificSchedules")
-async def get_date_specific_schedules():
+async def get_date_specific_schedules(request: Request):
     """Retrieve a list of available date-specific schedules"""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     return {"success": True, "schedules": c_sched.get_available_date_specific_schedules()}
 
 
 @app.get("/schedule/{schedule_name}/get")
-async def get_specific_schedule(schedule_name: str):
+async def get_specific_schedule(request: Request, schedule_name: str):
     """Retrieve the given schedule and return it as a dictionary."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if not schedule_name.endswith('.json'):
         schedule_name += '.json'
@@ -1078,19 +1234,24 @@ async def get_specific_schedule(schedule_name: str):
 
 
 @app.post("/schedule/update")
-async def update_schedule(name: str = Body(),
-                          time_to_set: str = Body(
-                              description="The time of the action to set, expressed in any normal way."),
-                          action_to_set: str = Body(description="The action to set."),
-                          target_to_set: list | str = Body(
-                              description="The ID(s) of the component(s) that should be acted upon."),
-                          value_to_set: str = Body(default="", description="A value corresponding to the action."),
-                          schedule_id: str = Body(
-                              description="A unique identifier corresponding to the schedule entry.")):
+async def update_schedule(
+        request: Request,
+        name: str = Body(),
+        time_to_set: str = Body(description="The time of the action to set, expressed in any normal way."),
+        action_to_set: str = Body(description="The action to set."),
+        target_to_set: list | str = Body(description="The ID(s) of the component(s) that should be acted upon."),
+        value_to_set: str = Body(default="", description="A value corresponding to the action."),
+        schedule_id: str = Body(description="A unique identifier corresponding to the schedule entry.")):
     """Write a schedule update to disk.
 
     This command handles both adding a new scheduled action and editing an existing action
     """
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     # Make sure we were given a valid time to parse
     try:
@@ -1125,19 +1286,6 @@ async def update_schedule(name: str = Body(),
 
 
 # System actions
-@app.post("/system/beginSynchronization")
-async def begin_synchronization(data: dict[str, Any]):
-    """Initiate a synchronization attempt between the specified components."""
-
-    if "synchronizeWith" not in data:
-        response = {"success": False,
-                    "reason": "Request missing 'synchronizeWith' field."}
-        return response
-
-    c_exhibit.update_synchronization_list(data["id"], data["synchronizeWith"])
-
-    return {"success": True}
-
 
 @app.get("/system/checkConnection")
 async def check_connection():
@@ -1193,13 +1341,6 @@ async def get_version():
         "version": str(c_config.software_version)
     }
     return response
-
-
-@app.get("/system/getUpdate")
-async def get_update():
-    """Retrieve an update of everything being managed by Control Server"""
-
-    return send_webpage_update()
 
 
 @app.post("/system/ping")

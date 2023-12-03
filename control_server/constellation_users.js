@@ -47,10 +47,7 @@ export function authenticateUser () {
 
   return constTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/user/login',
-    params: {
-      token
-    }
+    endpoint: '/user/login'
   })
     .then((response) => {
       if (response.success === true) {
