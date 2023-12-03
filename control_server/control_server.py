@@ -827,7 +827,7 @@ async def archive_issue(request: Request, issue_id: str):
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.archive_issue(issue_id)
+    c_issues.archive_issue(issue_id, authorizing_user)
     return {"success": True}
 
 
