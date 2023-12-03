@@ -266,12 +266,6 @@ def quit_handler(*args) -> None:
     except RuntimeError:
         exit_code = 0
 
-    # Save the current component lists to a pickle file so that
-    # we can resume from the current state
-    path_to_write = c_tools.get_path(["current_state.dat"], user_file=True)
-    with open(path_to_write, 'wb') as f:
-        pickle.dump(c_config.componentList, f)
-
     for key in c_config.polling_thread_dict:
         c_config.polling_thread_dict[key].cancel()
 
@@ -344,36 +338,6 @@ sys.excepthook = error_handler
 
 with c_config.logLock:
     logging.info("Server started")
-
-# Try to reload the previous state from the pickle file current_state.dat
-# First, check if we are loading from an updated version. If so, delete current_state.dat to avoid incompatibility.
-last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
-state_path = c_tools.get_path(["current_state.dat"], user_file=True)
-if not os.path.exists(last_ver_path):
-    # No version file means we are updating from 2.0 -> 3.0
-    try:
-        os.remove(state_path)
-    except (FileNotFoundError, EOFError):
-        pass
-else:
-    with open(last_ver_path, 'r', encoding='UTF-8') as f:
-        try:
-            if float(f.read()) < c_config.software_version:
-                try:
-                    logging.info("Update detected... deleting current_state.dat")
-                    os.remove(state_path)
-                except (FileNotFoundError, EOFError):
-                    pass
-        except ValueError:
-            pass
-try:
-    with open(state_path, "rb") as previous_state:
-        c_config.componentList = pickle.load(previous_state)
-        if c_config.debug:
-            print("Previous server state loaded")
-except (FileNotFoundError, EOFError):
-    if c_config.debug:
-        print("Could not load previous server state")
 
 app = FastAPI()
 
@@ -798,7 +762,7 @@ async def create_issue(request: Request, details: dict[str, Any] = Body(embed=Tr
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.create_issue(details)
+    c_issues.create_issue(details, username=authorizing_user)
     c_issues.save_issue_list()
     return {"success": True}
 

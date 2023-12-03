@@ -21,6 +21,7 @@ class Issue:
         now_date = datetime.datetime.now().isoformat()
         self.details = {"id": details.get("id", str(uuid.uuid4())),
                         "creationDate": details.get("creationDate", now_date),
+                        "createdUsername": details.get("createdUsername", ""),
                         "lastUpdateDate": details.get("lastUpdateDate", now_date),
                         "priority": details.get("priority", "medium"),
                         "issueName": details.get("issueName", "New Issue"),
@@ -64,9 +65,11 @@ def delete_issue_media_file(files: list[str], owner: Union[str, None] = None) ->
             config.last_update_time = time.time()
 
 
-def create_issue(details: dict[str, Any]) -> Issue:
+def create_issue(details: dict[str, Any], username: str = "") -> Issue:
     """Create a new issue and add it to the issueList"""
 
+    if username != "":
+        details["createdUsername"] = username
     with config.issueLock:
         new_issue = Issue(details)
         config.issueList.append(new_issue)
