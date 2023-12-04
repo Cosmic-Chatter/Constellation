@@ -59,7 +59,6 @@ rebooting: bool = False  # This will be set to True from a background thread whe
 # Exhibit stuff
 current_exhibit: Union[str, None] = None  # The JSON file defining the current exhibit "name.json"
 exhibit_configuration: Union[list[dict[str, Any]], None] = None
-assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
 
 # User stuff

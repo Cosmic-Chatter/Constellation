@@ -407,9 +407,6 @@ function parseUpdate (update) {
     const currentLastDate = Math.max.apply(Math, constConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
     const updatedDate = new Date(update.issues.lastUpdateDate)
 
-    if (!constTools.arraysEqual(constConfig.assignableStaff, update.issues.assignable_staff)) {
-      constConfig.assignableStaff = update.issues.assignable_staff
-    }
     if (updatedDate > currentLastDate) {
       constConfig.issueList = update.issues.issueList
       constIssues.rebuildIssueList()
@@ -887,14 +884,6 @@ function populateControlServerSettings () {
       document.getElementById('controlServerSettingsPort').value = config.port
       document.getElementById('controlServerSettingsGalleryName').value = config.gallery_name
       document.getElementById('controlServerSettingsDebugMode').value = config.debug
-
-      let staffString
-      try {
-        staffString = config.assignable_staff.join(', ')
-      } catch {
-        staffString = ''
-      }
-      document.getElementById('controlServerSettingsAssignableStaff').value = staffString
     })
 }
 
@@ -905,7 +894,6 @@ function updateSystemConfiguration () {
     ip_address: document.getElementById('controlServerSettingsIPAddress').value.trim(),
     port: parseInt(document.getElementById('controlServerSettingsPort').value),
     gallery_name: document.getElementById('controlServerSettingsGalleryName').value.trim(),
-    assignable_staff: document.getElementById('controlServerSettingsAssignableStaff').value.split(',').map(item => item.trim()),
     debug: constTools.stringToBool(document.getElementById('controlServerSettingsDebugMode').value)
   }
 

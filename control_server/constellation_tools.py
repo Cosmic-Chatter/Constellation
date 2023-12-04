@@ -72,7 +72,6 @@ def load_system_configuration(from_dict: Union[dict[str, Any], None] = None) -> 
     else:
         system = from_dict
 
-    config.assignable_staff = system.get("assignable_staff", "")
     config.current_exhibit = system.get("current_exhibit", "default.exhibit")
     config.port = system.get("port", 8082)
     config.ip_address = system.get("ip_address", "localhost")

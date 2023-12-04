@@ -6,6 +6,10 @@ Constellation 5 introduces a user account system that enables administrators to 
 ### General
 - A new user account system for managing access to Constellation.
 
+### Maintenance
+- Assign issues to users.
+- Track when the latest change to an issue was made and who made it.
+
 ## Constellation Apps
 
 ### General
