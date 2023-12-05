@@ -1,6 +1,6 @@
 @if [%~1]==[] goto :NoPath
 
-CALL %1\Scripts\activate.bat
+CALL %1\venv\Scripts\activate.bat
 
 python -m pip install --upgrade pip
 python -m pip install --upgrade pyinstaller
