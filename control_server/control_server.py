@@ -36,6 +36,7 @@ from sse_starlette.sse import EventSourceResponse
 # Constellation modules
 import config as c_config
 import constellation_exhibit as c_exhibit
+import constellation_group as c_group
 import constellation_issues as c_issues
 import constellation_maintenance as c_maint
 import constellation_projector as c_proj
@@ -149,6 +150,9 @@ def send_webpage_update():
 
     update_dict["issues"] = {"issueList": [x.details for x in c_config.issueList],
                              "lastUpdateDate": c_config.issueList_last_update_date}
+
+    update_dict["groups"] = {"group_list": c_config.group_list,
+                             "last_update_date": c_config.group_list_last_update_date}
 
     with c_config.scheduleLock:
         update_dict["schedule"] = {"updateTime": c_config.scheduleUpdateTime,
@@ -464,6 +468,66 @@ async def set_component_definition(component_id: str,
 
     c_exhibit.update_exhibit_configuration(component_id, {"definition": uuid})
 
+    return {"success": True}
+
+
+@app.get("/group/{uuid_str}/getDetails")
+async def get_group_details(request: Request, uuid_str: str):
+    """Return the details for the given group."""
+
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    group = c_group.get_group(uuid_str)
+
+    if group is None:
+        return {"success": False, "reason": "Group does not exist."}
+    return {"success": True, "details": group}
+
+
+@app.post("/group/create")
+async def create_group(request: Request,
+                       name: str = Body(description="The name of the group to create"),
+                       description: str = Body("The description for the group to create.")):
+    """Create a group."""
+
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    group = c_group.create_group(name, description)
+    return {"success": True, "uuid": group["uuid"]}
+
+
+@app.post("/group/{uuid_str}/edit")
+async def edit_group(request: Request,
+                     uuid_str: str,
+                     name: str = Body(description="The name of the group to create", default=None),
+                     description: str = Body(description="The description for the group to create.", default=None)):
+    """Edit a group"""
+
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    success = c_group.edit_group(uuid_str, name=name, description=description)
+    return {"success": success}
+
+
+@app.get("/group/{uuid_str}/delete")
+async def delete_group(request: Request, uuid_str: str):
+    """Return the details for the given group."""
+
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    c_group.delete_group(uuid_str)
     return {"success": True}
 
 

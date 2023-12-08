@@ -4,6 +4,7 @@ import logging
 import shutil
 import threading
 import time
+import uuid
 from typing import Any, Union
 import os
 
@@ -25,10 +26,15 @@ class BaseComponent:
 
     def __init__(self, id_: str, group: str,
                  ip_address: Union[str, None] = None,
-                 mac_address: Union[str, None] = None):
+                 mac_address: Union[str, None] = None,
+                 uuid_str: str = ""):
+
+        if uuid_str == "":
+            uuid_str = str(uuid.uuid4())
 
         self.id: str = id_
         self.group: str = group
+        self.uuid = uuid_str
 
         self.ip_address = ip_address
         self.mac_address = mac_address
@@ -40,12 +46,12 @@ class BaseComponent:
 
         self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
 
-        self.config = {"permissions": {},
-                       "app_name": "",
-                       "commands": [],
-                       "description": config.componentDescriptions.get(id_, ""),
-                       "maintenance_status": ""
-                       }
+        self.config: dict[str, Any] = {"permissions": {},
+                                       "app_name": "",
+                                       "commands": [],
+                                       "description": config.componentDescriptions.get(id_, ""),
+                                       "maintenance_status": ""
+                                       }
 
     def __repr__(self):
         return repr(f"[BaseComponent ID: {self.id} Group: {self.group}]")
@@ -110,12 +116,12 @@ class BaseComponent:
 class ExhibitComponent(BaseComponent):
     """Holds basic data about a component in the exhibit"""
 
-    def __init__(self, id_: str, group: str, category: str = 'dynamic'):
+    def __init__(self, id_: str, group: str, category: str = 'dynamic', uuid_str: str = ""):
 
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from galleryConfiguration.ini
 
-        super().__init__(id_, group)
+        super().__init__(id_, group, uuid_str=uuid_str)
 
         self.category = category
         self.helperAddress: str = ""  # full IP and port of helper
@@ -229,9 +235,9 @@ class ExhibitComponent(BaseComponent):
 class WakeOnLANDevice(BaseComponent):
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
-    def __init__(self, id_: str,  group: str, mac_address: str, ip_address: str = None):
+    def __init__(self, id_: str, group: str, mac_address: str, ip_address: str = None, uuid_str: str = ""):
 
-        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
+        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address, uuid_str=uuid_str)
 
         self.WOL_broadcast_address = "255.255.255.255"
         self.WOL_port = 9
@@ -388,10 +394,13 @@ class Projector(BaseComponent):
             print(e)
 
 
-def add_exhibit_component(this_id: str, group: str, category: str = "dynamic") -> ExhibitComponent:
+def add_exhibit_component(this_id: str,
+                          group: str,
+                          category: str = "dynamic",
+                          uuid_str: str = "") -> ExhibitComponent:
     """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
 
-    component = ExhibitComponent(this_id, group, category)
+    component = ExhibitComponent(this_id, group, category, uuid_str=uuid_str)
 
     # Check if component has an existing maintenance status.
     maintenance_path = c_tools.get_path(["maintenance-logs", this_id + '.txt'], user_file=True)
@@ -616,7 +625,7 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
 
     component = get_exhibit_component(this_id)
     if component is None:  # This is a new id, so make the component
-        component = add_exhibit_component(this_id, group)
+        component = add_exhibit_component(this_id, group, uuid_str=data.get("uuid", ""))
 
     component.ip_address = ip
     if "helperAddress" in data:
@@ -673,7 +682,10 @@ def read_static_components_configuration():
 
     for entry in components:
         if get_exhibit_component(entry["id"]) is None:
-            component = add_exhibit_component(entry["id"], entry["group"], category="static")
+            component = add_exhibit_component(entry["id"],
+                                              entry["group"],
+                                              category="static",
+                                              uuid_str=entry.get("uuid", ""))
             component.config["app_name"] = "static_component"
 
 
@@ -693,7 +705,8 @@ def read_wake_on_LAN_configuration():
             device = WakeOnLANDevice(entry["id"],
                                      entry.get("group", "Wake on LAN"),
                                      entry["mac_address"],
-                                     ip_address=entry.get("ip_address", ""))
+                                     ip_address=entry.get("ip_address", ""),
+                                     uuid_str=entry.get("uuid", ""))
             # Check if device has an existing maintenance status.
             maintenance_path = c_tools.get_path(["maintenance-logs", entry["id"] + '.txt'], user_file=True)
             device.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]

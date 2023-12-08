@@ -158,6 +158,41 @@
         </div>
       </div>
 
+      <!-- Edit group modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="editGroupModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="editGroupModalTitle" class="modal-title">Create a group</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row gy-2">
+                <div class="col-6">
+                  <label for="editGroupModalNameInput" class="form-label">Group name</label>
+                  <input id="editGroupModalNameInput" class="form-control" type="text">
+                </div>
+                <div class="col-12">
+                  <label for="editGroupModalDescriptionInput" class="form-label">
+                    Description
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Descriptions help others understand what this group should contain." style="font-size: 0.55em; color: black">?</span>
+                  </label>
+                  <input id="editGroupModalDescriptionInput" class="form-control" type="text">
+                </div>
+                <div id="editGroupModalNameWarning" class="col-12">
+                  <div class="alert alert-danger py-2">The group must have a name.</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="editGroupModalSubmitButton" type="button" class="btn btn-primary">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Component info modal -->
       <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
         <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -1641,7 +1676,18 @@
 
         <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
 
-          
+          <H3 class='mt-4'>Groups</H3>
+          <div class="row mt-0 gy-2">
+            <div class="col-12 fst-italic">
+              Groups help you organize your components. You may choose to arrange them by location, type, content, or whatever supports your needs.
+            </div>
+            <div class="col-4 col-md-2">
+              <button id="settingsAddGroupButton" class="btn btn-primary w-100">Add group</button>
+            </div>
+            <div class="col-8 col-md-10">
+              <div id="settingsGroupsRow" class="row gy-2"></div>
+            </div>
+          </div>
 
           <H3 class='mt-4'>Configuration</H3>
           <div class="row gy-2 row-cols-2 row-cols-md-3 row-cols-lg-5">

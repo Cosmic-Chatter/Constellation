@@ -6,6 +6,7 @@ import psutil
 import os
 import socket
 import urllib, urllib.request, urllib.error
+import uuid
 import shutil
 import sys
 from typing import Any, Union
@@ -111,6 +112,10 @@ def update_defaults(data: dict[str, Any], cull: bool = False):
 
     prior_defaults = copy.deepcopy(config.defaults)
 
+    if "uuid" in prior_defaults["app"]:
+        uuid_str = prior_defaults["app"]["uuid"]
+    else:
+        uuid_str = str(uuid.uuid4())
     if cull is True:
         # Replace the current dictionary with the new one
         new_defaults = data
@@ -118,6 +123,7 @@ def update_defaults(data: dict[str, Any], cull: bool = False):
         # Merge the new dictionary into the current one
         new_defaults = copy.deepcopy(prior_defaults)
         deep_merge(data, new_defaults)
+    new_defaults["app"]["uuid"] = uuid_str
 
     if new_defaults == prior_defaults:
         if config.debug:

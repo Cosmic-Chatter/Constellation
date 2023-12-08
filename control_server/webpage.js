@@ -2,6 +2,7 @@
 
 import constConfig from './config.js'
 import * as constExhibit from './constellation_exhibit.js'
+import * as constGroup from './constellation_group.js'
 import * as constIssues from './constellation_issues.js'
 import * as constMaintenance from './constellation_maintenance.js'
 import * as constProjector from './constellation_projector.js'
@@ -397,6 +398,19 @@ function parseUpdate (update) {
         }
         constTools.rebuildNotificationList()
       }
+    }
+  }
+
+  if ('groups' in update) {
+    // Check if the list of groups has changed.
+
+    const updateDate = new Date(update.groups.last_update_date)
+    const currentGroupsDate = new Date(constConfig.groupLastUpdateDate)
+
+    if (updateDate > currentGroupsDate) {
+      constConfig.groupLastUpdateDate = update.groups.last_update_date
+      constConfig.groups = update.groups.group_list
+      constGroup.populateGroupsRow()
     }
   }
 
@@ -1067,7 +1081,29 @@ document.addEventListener('click', (event) => {
   }
 })
 
-// Issues tab
+// Exhibits tab
+// =========================
+// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
+$('#exhibitSelect').change(function () {
+  changeExhibit(false)
+})
+$('#exhibitDeleteSelector').change(checkDeleteSelection)
+$('#createExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), null)
+  $('#createExhibitNameInput').val('')
+})
+$('#cloneExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), $('#exhibitSelect').val())
+  $('#createExhibitNameInput').val('')
+})
+$('#exhibitChangeConfirmationButton').click(function () {
+  changeExhibit(true)
+})
+$('#deleteExhibitButton').click(deleteExhibitFromModal)
+$('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
+
+// Maintenance tab
 // =========================
 // This event detects when the delete button has been clicked inside a popover
 document.addEventListener('click', (event) => {
@@ -1154,26 +1190,12 @@ $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFr
 
 // Settings tab
 // =========================
-// Exhibits
-// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
-$('#exhibitSelect').change(function () {
-  changeExhibit(false)
+
+// Groups
+document.getElementById('settingsAddGroupButton').addEventListener('click', () => {
+  constGroup.showEditGroupModal()
 })
-$('#exhibitDeleteSelector').change(checkDeleteSelection)
-$('#createExhibitButton').click(function () {
-  createExhibit($('#createExhibitNameInput').val(), null)
-  $('#createExhibitNameInput').val('')
-})
-$('#cloneExhibitButton').click(function () {
-  createExhibit($('#createExhibitNameInput').val(), $('#exhibitSelect').val())
-  $('#createExhibitNameInput').val('')
-})
-$('#exhibitChangeConfirmationButton').click(function () {
-  changeExhibit(true)
-})
-$('#deleteExhibitButton').click(deleteExhibitFromModal)
-$('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
-document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
+document.getElementById('editGroupModalSubmitButton').addEventListener('click', constGroup.submitChangeFromGroupEditModal)
 
 // Server settings
 Array.from(document.querySelectorAll('.controlServerSettingsInputField')).forEach((el) => {

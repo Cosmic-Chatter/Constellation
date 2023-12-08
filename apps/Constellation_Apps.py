@@ -321,20 +321,6 @@ async def load_definition(this_uuid: str):
     return {"success": True, "definition": definition}
 
 
-@app.get("/getClipList")
-async def send_clip_list(config: const_config = Depends(get_config)):
-    """Get the list of currently playing content"""
-
-    # If we don't have a clip list, ask for one to be sent for
-    # next time.
-    response = {"clipList": []}
-    if len(config.clipList) == 0:
-        config.commandList.append("sendClipList")
-    else:
-        response["clipList"] = config.clipList
-    return response
-
-
 @app.get("/getDefaults")
 async def send_defaults(config: const_config = Depends(get_config)):
     config_to_send = config.defaults.copy()

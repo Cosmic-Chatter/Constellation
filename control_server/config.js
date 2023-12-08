@@ -4,6 +4,8 @@ export default {
   currentExhibit: '',
   errorDict: {},
   exhibitComponents: [],
+  groups: [],
+  groupLastUpdateDate: 0,
   issueList: [],
   MAINTANANCE_STATUS: {
     'On floor, working': { name: 'On floor, working', value: 1, colorClass: 'btn-success' },

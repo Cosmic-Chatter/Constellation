@@ -10,9 +10,8 @@ application_path: str = ""
 exec_path: str = ""
 
 # Defaults (loaded from config.json)
-defaults: dict[str, Any] = {}  # Dictionary holding default parameters from defaults.ini
+defaults: dict[str, Any] = {}
 
-clipList: dict = {}  # Dict of currently-loaded content. E.g., for the media player
 commandList: list[str] = []  # List of queued commands to send to the client
 missingContentWarningList: list[dict] = []  # Holds a list of warning about missing content
 NEXT_EVENT: Union[tuple[datetime.time, list[str]], None] = None  # A tuple with the next event to occur and the time is happens

@@ -39,6 +39,10 @@ wakeOnLANList = []
 synchronizationList = []  # Holds sets of displays that are being synchronized
 componentDescriptions = {}  # Holds optional short descriptions of each component
 
+# Group stuff
+group_list: list[dict[str, Any]] = []
+group_list_last_update_date = datetime.datetime.now().isoformat()
+
 # Dictionary to keep track of warnings we have already presented
 serverWarningDict = {}
 
