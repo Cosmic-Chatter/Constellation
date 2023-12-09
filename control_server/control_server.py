@@ -476,7 +476,7 @@ async def get_group_details(request: Request, uuid_str: str):
     """Return the details for the given group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -494,7 +494,7 @@ async def create_group(request: Request,
     """Create a group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -510,7 +510,7 @@ async def edit_group(request: Request,
     """Edit a group"""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -518,12 +518,12 @@ async def edit_group(request: Request,
     return {"success": success}
 
 
-@app.get("/group/{uuid_str}/delete")
+@app.get("/group/{uuid_str}/delete  ")
 async def delete_group(request: Request, uuid_str: str):
     """Return the details for the given group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1465,7 +1465,7 @@ async def send_update_stream(request: Request):
                 yield {
                     "event": "update",
                     "id": str(last_update_time),
-                    "retry": 15000,  # milliseconds
+                    "retry": 5000,  # milliseconds
                     "data": json.dumps(send_webpage_update(), default=str)
                 }
             await asyncio.sleep(0.5)  # seconds
@@ -1516,6 +1516,7 @@ if __name__ == "__main__":
     c_exhibit.check_available_exhibits()
     load_default_configuration()
     c_users.load_users()
+    c_group.load_groups()
     c_proj.poll_projectors()
     c_exhibit.poll_wake_on_LAN_devices()
     check_for_software_update()

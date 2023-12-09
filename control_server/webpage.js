@@ -1196,6 +1196,7 @@ document.getElementById('settingsAddGroupButton').addEventListener('click', () =
   constGroup.showEditGroupModal()
 })
 document.getElementById('editGroupModalSubmitButton').addEventListener('click', constGroup.submitChangeFromGroupEditModal)
+document.getElementById('deleteGroupConfirmationButton').addEventListener('click', constGroup.deleteGroupFromModal)
 
 // Server settings
 Array.from(document.querySelectorAll('.controlServerSettingsInputField')).forEach((el) => {
