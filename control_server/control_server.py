@@ -579,7 +579,7 @@ async def queue_command(component: ExhibitComponent,
                         command: str = Body(description="The command to be sent to the specified component")):
     """Queue the specified command for the exhibit component to retrieve."""
 
-    c_exhibit.get_exhibit_component(component.id).queue_command(command)
+    c_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
@@ -588,7 +588,7 @@ async def queue_WOL_command(component: ExhibitComponent,
                             command: str = Body(description="The command to be sent to the specified component")):
     """Queue the Wake on Lan command for the exhibit component to retrieve."""
 
-    c_exhibit.get_wake_on_LAN_component(component.id).queue_command(command)
+    c_exhibit.get_wake_on_LAN_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
@@ -596,7 +596,7 @@ async def queue_WOL_command(component: ExhibitComponent,
 async def remove_component(component: ExhibitComponent = Body(embed=True)):
     """Queue the specified command for the exhibit component to retrieve."""
 
-    to_remove = c_exhibit.get_exhibit_component(component.id)
+    to_remove = c_exhibit.get_exhibit_component(component_id=component.id)
     print("Removing component:", component.id)
     to_remove.remove()
     return {"success": True, "reason": ""}
@@ -1149,7 +1149,7 @@ async def update_maintenance_status(request: Request,
             reason = f"You do not have write permission for the file {file_path}"
 
     if success is True:
-        c_exhibit.get_exhibit_component(component_id).config["maintenance_status"] = status
+        c_exhibit.get_exhibit_component(component_id=component_id).config["maintenance_status"] = status
 
     return {"success": success, "reason": reason}
 
@@ -1169,7 +1169,7 @@ async def create_projector(request: Request,
         return {"success": False, "reason": reason}
 
     proj = c_exhibit.add_projector(id, group, ip_address, password=password)
-    print("PROJECTOR CREATED")
+
     return {"success": True, "uuid": proj.uuid}
 
 
@@ -1188,12 +1188,14 @@ async def edit_projector(request: Request,
     if success is False:
         return {"success": False, "reason": reason}
 
-    proj = c_proj.get_projector(projector_uuid=uuid_str)
+    proj = c_exhibit.get_projector(projector_uuid=uuid_str)
     if proj is None:
         return {"success": False, "reason": "Projector does not exist"}
 
     if id is not None:
         proj.id = id
+    if group is not None:
+        proj.group = group
     if ip_address is not None:
         proj.ip_address = ip_address
     if password is not None:
@@ -1209,8 +1211,106 @@ async def queue_projector_command(component: ExhibitComponent,
                                       description="The command to be sent to the specified projector.")):
     """Send a command to the specified projector."""
 
-    c_exhibit.get_exhibit_component(component.id).queue_command(command)
+    c_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
+
+
+@app.post("/component/static/create")
+async def create_static_component(request: Request,
+                                  id: str = Body(description="The ID of the projector to add."),
+                                  group: str = Body(description="The group of the projector to add.")):
+    """Create a new static component."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    component = c_exhibit.add_exhibit_component(id, group, 'static')
+
+    return {"success": True, "uuid": component.uuid}
+
+
+@app.post("/component/static/{uuid_str}/edit")
+async def edit_static_component(request: Request,
+                                uuid_str: str,
+                                id: str | None = Body(description="The ID of the projector to add.", default=None),
+                                group: str | None = Body(description="The group of the projector to add.",
+                                                         default=None)):
+    """Edit the given static component."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    if component is None:
+        return {"success": False, "reason": "Component does not exist"}
+
+    if id is not None:
+        component.id = id
+    if group is not None:
+        component.group = group
+    component.save()
+
+    return {"success": True}
+
+
+@app.post("/component/WOL/create")
+async def create_wake_on_LAN_component(request: Request,
+                                       id: str = Body(description="The ID of the projector to add."),
+                                       group: str = Body(description="The group of the projector to add."),
+                                       mac_address: str = Body(description="The MAC address of the machine to wake."),
+                                       ip_address: str = Body(description="The static IP address of the machine.",
+                                                              default="")):
+    """Create a new wake on LAN component."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    component = c_exhibit.add_wake_on_LAN_device(id, group, mac_address, ip_address=ip_address)
+
+    return {"success": True, "uuid": component.uuid}
+
+
+@app.post("/component/WOL/{uuid_str}/edit")
+async def edit_wake_on_LAN_component(request: Request,
+                                     uuid_str: str,
+                                     id: str | None = Body(description="The ID of the projector to add.", default=None),
+                                     group: str | None = Body(description="The group of the projector to add.",
+                                                              default=None),
+                                     mac_address: str = Body(description="The MAC address of the machine to wake."),
+                                     ip_address: str = Body(description="The static IP address of the machine.",
+                                                            default="")):
+    """Edit the given static component."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    component = c_exhibit.get_wake_on_LAN_component(component_uuid=uuid_str)
+    if component is None:
+        return {"success": False, "reason": "Component does not exist"}
+
+    if id is not None:
+        component.id = id
+    if group is not None:
+        component.group = group
+    if mac_address is not None:
+        component.mac_address = mac_address
+    if ip_address is not None:
+        component.ip_address = ip_address
+    component.save()
+
+    return {"success": True}
 
 
 # Schedule actions
@@ -1471,10 +1571,11 @@ async def handle_ping(data: dict[str, Any], request: Request):
     this_id = data['id']
     c_exhibit.update_exhibit_component_status(data, request.client.host)
 
-    dict_to_send = c_exhibit.get_exhibit_component(this_id).config.copy()
-    if len(c_exhibit.get_exhibit_component(this_id).config["commands"]) > 0:
+    component = c_exhibit.get_exhibit_component(component_id=this_id)
+    dict_to_send = component.config.copy()
+    if len(dict_to_send["commands"]) > 0:
         # Clear the command list now that we are sending
-        c_exhibit.get_exhibit_component(this_id).config["commands"] = []
+        component.config["commands"] = []
     return dict_to_send
 
 

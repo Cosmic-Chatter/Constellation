@@ -95,6 +95,8 @@ class BaseComponent:
             config.projectorList = [x for x in config.projectorList if x.id != self.id]
         elif isinstance(self, WakeOnLANDevice):
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != self.id]
+        path = c_tools.get_path(["components", self.uuid + '.json'], user_file=True)
+        os.remove(path)
 
     def seconds_since_last_contact(self) -> float:
         """The number of seconds since the last successful contact with the component."""
@@ -188,7 +190,7 @@ class ExhibitComponent(BaseComponent):
 
         # Check if we have specified a Wake on LAN device matching this id
         # If yes, subsume it into this component
-        wol = get_wake_on_LAN_component(self.id)
+        wol = get_wake_on_LAN_component(component_id=self.id)
         if wol is not None:
             self.mac_address = wol.mac_address
             self.config["permissions"]["shutdown"] = True
@@ -718,26 +720,59 @@ def delete_exhibit(name: str):
     check_available_exhibits()
 
 
-def get_exhibit_component(this_id: str) -> ExhibitComponent:
+def get_exhibit_component(component_id: str = "", component_uuid: str = "") -> ExhibitComponent | None:
     """Return a component with the given id, or None if no such component exists"""
 
-    component = next((x for x in config.componentList if x.id == this_id), None)
+    if component_uuid != "" and component_id != "":
+        raise ValueError("Must specify only one of 'component_id' or 'component_uuid'")
+    elif component_uuid == "" and component_id == "":
+        raise ValueError("Must specify one of 'component_id' or 'component_uuid'")
+
+    if component_id != "":
+        component = next((x for x in config.componentList if x.id == component_id), None)
+    else:
+        component = next((x for x in config.componentList if x.uuid == component_uuid), None)
 
     if component is None:
         # Try projector
-        component = next((x for x in config.projectorList if x.id == this_id), None)
+
+        component = get_projector(projector_uuid=component_uuid, projector_id=component_id)
 
     if component is None:
         # Try wake on LAN
-        component = get_wake_on_LAN_component(this_id)
+        component = get_wake_on_LAN_component(component_uuid=component_uuid, component_id=component_id)
 
     return component
 
 
-def get_wake_on_LAN_component(this_id: str) -> WakeOnLANDevice:
-    """Return a WakeOnLan device with the given id, or None if no such component exists"""
+def get_projector(projector_id: str = "", projector_uuid: str = "") -> Projector | None:
+    """Return a projector with the given id or uuid, or None if no such projector exists"""
 
-    return next((x for x in config.wakeOnLANList if x.id == this_id), None)
+    if projector_uuid != "" and projector_id != "":
+        raise ValueError("Must specify only one of 'projector_id' or 'projector_uuid'")
+    elif projector_uuid == "" and projector_id == "":
+        raise ValueError("Must specify one of 'projector_id' or 'projector_uuid'")
+
+    if projector_id != "":
+        return next((x for x in config.projectorList if x.id == projector_id), None)
+    if projector_uuid != "":
+        return next((x for x in config.projectorList if x.uuid == projector_uuid), None)
+    return None
+
+
+def get_wake_on_LAN_component(component_id: str = "", component_uuid: str = "") -> WakeOnLANDevice | None:
+    """Return a WakeOnLan device with the given id or uuid, or None if no such component exists"""
+
+    if component_uuid != "" and component_id != "":
+        raise ValueError("Must specify only one of 'component_id' or 'component_uuid'")
+    elif component_uuid == "" and component_id == "":
+        raise ValueError("Must specify one of 'component_id' or 'component_uuid'")
+
+    if component_id != "":
+        return next((x for x in config.wakeOnLANList if x.id == component_id), None)
+    if component_uuid != "":
+        return next((x for x in config.wakeOnLANList if x.uuid == component_uuid), None)
+    return None
 
 
 def poll_wake_on_LAN_devices():
@@ -802,7 +837,7 @@ def update_exhibit_configuration(this_id: str, update: dict[str, Any], exhibit_n
     config.exhibit_configuration = exhibit_config
 
     c_tools.write_json(exhibit_config, exhibit_path)
-    this_component = get_exhibit_component(this_id)
+    this_component = get_exhibit_component(component_id=this_id)
     if this_component is not None:
         this_component.update_configuration()
 
@@ -838,7 +873,7 @@ def update_synchronization_list(this_id: str, other_ids: list[str]):
             print("All components have checked in. Dispatching sync command")
             time_to_start = str(round(time.time() * 1000) + 10000)
             for item in (config.synchronizationList[match_index])["ids"]:
-                get_exhibit_component(item).queue_command(f"beginSynchronization_{time_to_start}")
+                get_exhibit_component(component_id=item).queue_command(f"beginSynchronization_{time_to_start}")
             # Remove this sync from the list in case it happens again later.
             config.synchronizationList.pop(match_index)
 
@@ -852,7 +887,7 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
     if ip == "::1":
         ip = "localhost"
 
-    component = get_exhibit_component(this_id)
+    component = get_exhibit_component(component_id=this_id)
     if component is None:  # This is a new id, so make the component
         component = add_exhibit_component(this_id, group, uuid_str=data.get("uuid", ""))
 
@@ -893,7 +928,7 @@ def read_descriptions_configuration():
     for entry in descriptions:
         config.componentDescriptions[entry["id"]] = entry["description"]
 
-        component = get_exhibit_component(entry["id"])
+        component = get_exhibit_component(component_id=entry["id"])
         if component is not None:
             component.config["description"] = entry["description"]
 

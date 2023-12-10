@@ -231,7 +231,7 @@ def execute_scheduled_action(action: str, target: Union[list, str, None], value:
         if target.startswith("__id_"):
             target = target[5:]
         logging.info('Setting DMX scene for %s to %s', target, value)
-        component = c_exhibit.get_exhibit_component(target)
+        component = c_exhibit.get_exhibit_component(component_id=target)
         component.queue_command("set_dmx_scene__" + value)
     elif action == 'set_exhibit' and target is not None:
         print("Changing exhibit to:", target)
@@ -259,7 +259,7 @@ def execute_scheduled_action(action: str, target: Union[list, str, None], value:
                     if component.group == group:
                         component.queue_command(action)
             elif target_i.startswith("__id"):
-                c_exhibit.get_exhibit_component(target_i[5:]).queue_command(action)
+                c_exhibit.get_exhibit_component(component_id=target_i[5:]).queue_command(action)
     else:
         c_exhibit.command_all_exhibit_components(action)
 
