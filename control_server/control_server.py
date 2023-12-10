@@ -5,6 +5,7 @@
 
 # Standard modules
 import asyncio
+from contextlib import asynccontextmanager
 import datetime
 import threading
 import uuid
@@ -12,7 +13,6 @@ from functools import lru_cache
 import json
 import logging
 import os
-import pickle
 import shutil
 import signal
 import socket
@@ -26,7 +26,7 @@ import uvicorn
 # Non-standard modules
 import aiofiles
 import dateutil.parser
-from fastapi import Body, Cookie, FastAPI, File, Response, Request, UploadFile
+from fastapi import Body, FastAPI, File, Response, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +38,7 @@ import config as c_config
 import constellation_exhibit as c_exhibit
 import constellation_group as c_group
 import constellation_issues as c_issues
+import constellation_legacy as c_legacy
 import constellation_maintenance as c_maint
 import constellation_projector as c_proj
 import constellation_schedule as c_sched
@@ -93,7 +94,8 @@ def send_webpage_update():
                 "latency": item.latency,
                 "platform_details": item.platform_details,
                 "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
-                "status": item.current_status()}
+                "status": item.current_status(),
+                "uuid": item.uuid}
         if "content" in item.config:
             temp["content"] = item.config["content"]
         if "definition" in item.config:
@@ -118,7 +120,8 @@ def send_webpage_update():
                 "password": item.password,
                 "protocol": item.connection_type,
                 "state": item.state,
-                "status": item.state["status"]}
+                "status": item.state["status"],
+                "uuid": item.uuid}
         if "permissions" in item.config:
             temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
@@ -133,7 +136,8 @@ def send_webpage_update():
                 "latency": item.latency,
                 "mac_address": item.mac_address,
                 "maintenance_status": item.config.get("maintenance_status", "Off floor, not working"),
-                "status": item.state["status"]}
+                "status": item.state["status"],
+                "uuid": item.uuid}
         if "permissions" in item.config:
             temp["permissions"] = item.config["permissions"]
         if "description" in item.config:
@@ -235,12 +239,17 @@ def load_default_configuration() -> None:
     c_users.check_for_root_admin()
     c_tools.load_system_configuration()
 
+    # Handle legacy conversions
+    c_legacy.convert_legacy_projector_configuration()
+    c_legacy.convert_legacy_static_configuration()
+    c_legacy.convert_legacy_WOL_configuration()
+
     c_tools.start_debug_loop()
     c_sched.retrieve_json_schedule()
     c_exhibit.read_descriptions_configuration()
-    c_proj.read_projector_configuration()
-    c_exhibit.read_wake_on_LAN_configuration()
-    c_exhibit.read_static_components_configuration()
+    # c_proj.read_projector_configuration()
+    # c_exhibit.read_wake_on_LAN_configuration()
+    # c_exhibit.read_static_components_configuration()
     c_exhibit.read_exhibit_configuration(c_config.current_exhibit)
 
     # Update the components that their configuration may have changed
@@ -259,33 +268,26 @@ def load_default_configuration() -> None:
 def quit_handler(*args) -> None:
     """Handle cleanly shutting down the server."""
 
-    try:
-        if c_config.rebooting is True:
-            exit_code = 1
-            print("\nRebooting server...")
-        else:
-            exit_code = 0
-            print('\nKeyboard interrupt detected. Cleaning up and shutting down...')
-    except RuntimeError:
-        exit_code = 0
-
     for key in c_config.polling_thread_dict:
         c_config.polling_thread_dict[key].cancel()
 
     for component in c_config.componentList:
         component.clean_up()
+        component.save()
     for component in c_config.projectorList:
         component.clean_up()
+        component.save()
     for component in c_config.wakeOnLANList:
         component.clean_up()
+        component.save()
 
     with c_config.logLock:
         logging.info("Server shutdown")
 
-    with c_config.galleryConfigurationLock:
-        with c_config.scheduleLock:
-            with c_config.trackingDataWriteLock:
-                sys.exit(exit_code)
+    # with c_config.galleryConfigurationLock:
+    #     with c_config.scheduleLock:
+    #         with c_config.trackingDataWriteLock:
+    #             sys.exit(exit_code)
 
 
 def error_handler(*exc_info) -> None:
@@ -336,13 +338,23 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
                     level=logging.DEBUG)
-signal.signal(signal.SIGINT, quit_handler)
+# signal.signal(signal.SIGINT, quit_handler)
+# signal.signal(signal.SIGTERM, quit_handler)
 sys.excepthook = error_handler
 
 with c_config.logLock:
     logging.info("Server started")
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    yield
+    # Clean up actions
+    quit_handler()
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -581,7 +593,7 @@ async def queue_WOL_command(component: ExhibitComponent,
 
 
 @app.post("/exhibit/removeComponent")
-async def queue_command(component: ExhibitComponent = Body(embed=True)):
+async def remove_component(component: ExhibitComponent = Body(embed=True)):
     """Queue the specified command for the exhibit component to retrieve."""
 
     to_remove = c_exhibit.get_exhibit_component(component.id)
@@ -1142,6 +1154,55 @@ async def update_maintenance_status(request: Request,
     return {"success": success, "reason": reason}
 
 
+@app.post("/projector/create")
+async def create_projector(request: Request,
+                           id: str = Body(description="The ID of the projector to add."),
+                           group: str = Body(description="The group of the projector to add."),
+                           ip_address: str = Body(description="The IP address for the projector."),
+                           password: str = Body(description="The PJLink password", default="")):
+    """Create a new projector."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    proj = c_exhibit.add_projector(id, group, ip_address, password=password)
+    print("PROJECTOR CREATED")
+    return {"success": True, "uuid": proj.uuid}
+
+
+@app.post("/projector/{uuid_str}/edit")
+async def edit_projector(request: Request,
+                         uuid_str: str,
+                         id: str | None = Body(description="The ID of the projector to add.", default=None),
+                         group: str | None = Body(description="The group of the projector to add.", default=None),
+                         ip_address: str | None = Body(description="The IP address for the projector.", default=None),
+                         password: str | None = Body(description="The PJLink password", default=None)):
+    """Edit the given projector."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    proj = c_proj.get_projector(projector_uuid=uuid_str)
+    if proj is None:
+        return {"success": False, "reason": "Projector does not exist"}
+
+    if id is not None:
+        proj.id = id
+    if ip_address is not None:
+        proj.ip_address = ip_address
+    if password is not None:
+        proj.password = password
+    proj.save()
+
+    return {"success": True}
+
+
 @app.post("/projector/queueCommand")
 async def queue_projector_command(component: ExhibitComponent,
                                   command: str = Body(
@@ -1429,19 +1490,8 @@ async def update_configuration(target: str,
         config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
         c_tools.write_json(configuration, config_path)
 
-        if target == "projectors":
-            # Use a separate thread for this one, as connecting to projectors is blocking
-            th = threading.Thread(target=c_proj.read_projector_configuration,
-                                  name='c_proj.read_projector_configuration()')
-            th.start()
-        elif target == "descriptions":
+        if target == "descriptions":
             c_exhibit.read_descriptions_configuration()
-            c_config.last_update_time = time.time()
-        elif target == "wake_on_LAN":
-            c_exhibit.read_wake_on_LAN_configuration()
-            c_config.last_update_time = time.time()
-        elif target == "static":
-            c_exhibit.read_static_components_configuration()
             c_config.last_update_time = time.time()
 
     return {"success": True}
@@ -1517,6 +1567,7 @@ if __name__ == "__main__":
     load_default_configuration()
     c_users.load_users()
     c_group.load_groups()
+    c_exhibit.load_components()
     c_proj.poll_projectors()
     c_exhibit.poll_wake_on_LAN_devices()
     check_for_software_update()

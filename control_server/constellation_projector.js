@@ -42,22 +42,21 @@ export function submitProjectorAdditionFromModal () {
     document.getElementById('addProjectorModalIPError').style.display = 'none'
   }
 
-  submitProjectorChange(id, {
-    group,
-    id,
-    ip_address: ipAddress,
-    password: document.getElementById('addProjectorModalPasswordField').value,
-    protocol: 'pjlink'
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/projector/create',
+    params: {
+      id,
+      group,
+      ip_address: ipAddress,
+      password: document.getElementById('addProjectorModalPasswordField').value
+    }
   })
-    .then(() => {
-      $('#addProjectorModal').modal('hide')
-    })
+  $('#addProjectorModal').modal('hide')
 }
 
 export function submitProjectorChange (currentID, update) {
-  // Modify the projector settings conifguration with the given details
-
-  if ('protocol' in update === false) update.protocol = 'pjlink'
+  // Modify the projector with the given details
 
   // First, get the current projector configuration
   return constTools.makeServerRequest({

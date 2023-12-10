@@ -1,5 +1,6 @@
 # Standard imports
 import datetime
+import json
 import logging
 import shutil
 import threading
@@ -25,9 +26,13 @@ class BaseComponent:
     """A basic Constellation component."""
 
     def __init__(self, id_: str, group: str,
-                 ip_address: Union[str, None] = None,
-                 mac_address: Union[str, None] = None,
+                 ip_address: str | None = None,
+                 last_contact_datetime: str = "",
+                 mac_address: str | None = None,
+                 maintenance_log: dict[str, Any] | None = None,
                  uuid_str: str = ""):
+
+        now_date = datetime.datetime.now()
 
         if uuid_str == "":
             uuid_str = str(uuid.uuid4())
@@ -44,7 +49,22 @@ class BaseComponent:
         self.latency: Union[None, float] = None  # Latency between Control Server and the device in ms
         self.latency_timer: Union[threading.Timer, None] = None
 
-        self.last_contact_datetime: Union[datetime.datetime, None] = datetime.datetime.now()
+        if last_contact_datetime == "" or last_contact_datetime == "None":
+            self.last_contact_datetime = now_date
+        else:
+            self.last_contact_datetime = datetime.datetime.fromisoformat(last_contact_datetime)
+
+        if maintenance_log is not None:
+            self.maintenance_log = maintenance_log
+        else:
+            self.maintenance_log = {
+                "current": {
+                    "date": str(now_date),
+                    "status": "On floor, not working",
+                    "notes": ""
+                },
+                "history": []
+            }
 
         self.config: dict[str, Any] = {"permissions": {},
                                        "app_name": "",
@@ -112,16 +132,45 @@ class BaseComponent:
         self.latency_timer.daemon = True
         self.latency_timer.start()
 
+    def get_dict(self) -> dict[str, Any]:
+        """Return a dictionary representation of this component.
+
+        Include only attributes that are likely to be the same if this component is restored at a later date.
+        """
+
+        return {
+            "uuid": self.uuid,
+            "id": self.id,
+            "last_contact_datetime": str(self.last_contact_datetime),
+            "mac_address": self.mac_address,
+            "maintenance_log": self.maintenance_log
+        }
+
+    def save(self):
+        """Write the component to disk"""
+        if config.debug:
+            print("Saving component to disk: ", self.id, self.uuid)
+        path = c_tools.get_path(["components", self.uuid + '.json'], user_file=True)
+        c_tools.write_json(self.get_dict(), path)
+
 
 class ExhibitComponent(BaseComponent):
     """Holds basic data about a component in the exhibit"""
 
-    def __init__(self, id_: str, group: str, category: str = 'dynamic', uuid_str: str = ""):
+    def __init__(self, id_: str,
+                 group: str,
+                 category: str = 'dynamic',
+                 last_contact_datetime: str = "",
+                 maintenance_log: dict[str, Any] | None = None,
+                 uuid_str: str = ""):
 
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from galleryConfiguration.ini
 
-        super().__init__(id_, group, uuid_str=uuid_str)
+        super().__init__(id_, group,
+                         last_contact_datetime=last_contact_datetime,
+                         maintenance_log=maintenance_log,
+                         uuid_str=uuid_str)
 
         self.category = category
         self.helperAddress: str = ""  # full IP and port of helper
@@ -231,13 +280,36 @@ class ExhibitComponent(BaseComponent):
                 with config.logLock:
                     logging.error(f"Wake on LAN error for component {self.id}: {str(e)}")
 
+    def get_dict(self) -> dict[str, Any]:
+        """Return a dictionary representation of this component.
+
+        Include only attributes that are likely to be the same if this component is restored at a later date.
+        """
+
+        the_dict = super().get_dict()
+        the_dict["class"] = "ExhibitComponent"
+        the_dict["category"] = self.category
+
+        return the_dict
+
 
 class WakeOnLANDevice(BaseComponent):
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
-    def __init__(self, id_: str, group: str, mac_address: str, ip_address: str = None, uuid_str: str = ""):
+    def __init__(self, id_: str,
+                 group: str,
+                 mac_address: str,
+                 ip_address: str = None,
+                 last_contact_datetime: str = "",
+                 maintenance_log: dict[str, Any] | None = None,
+                 uuid_str: str = ""):
 
-        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address, uuid_str=uuid_str)
+        super().__init__(id_, group,
+                         ip_address=ip_address,
+                         last_contact_datetime=last_contact_datetime,
+                         mac_address=mac_address,
+                         maintenance_log=maintenance_log,
+                         uuid_str=uuid_str)
 
         self.WOL_broadcast_address = "255.255.255.255"
         self.WOL_port = 9
@@ -300,6 +372,19 @@ class WakeOnLANDevice(BaseComponent):
         else:
             self.state["status"] = "UNKNOWN"
 
+    def get_dict(self):
+        """Return a dictionary representation of this component.
+
+        Include only attributes that are likely to be the same if this component is restored at a later date.
+        """
+
+        the_dict = super().get_dict()
+        the_dict["class"] = "WakeOnLANDevice"
+        the_dict["WOL_broadcast_address"] = self.WOL_broadcast_address
+        the_dict["WOL_port"] = self.WOL_port
+
+        return the_dict
+
 
 class Projector(BaseComponent):
     """Holds basic data about a projector."""
@@ -309,11 +394,19 @@ class Projector(BaseComponent):
                  group: str,
                  ip_address: str,
                  connection_type: str,
+                 last_contact_datetime: str = "",
                  mac_address: str = None,
                  make: str = None,
-                 password: str = None):
+                 maintenance_log: dict[str, Any] | None = None,
+                 password: str = None,
+                 uuid_str: str = ""):
 
-        super().__init__(id_, group, ip_address=ip_address, mac_address=mac_address)
+        super().__init__(id_, group,
+                         ip_address=ip_address,
+                         last_contact_datetime=last_contact_datetime,
+                         mac_address=mac_address,
+                         maintenance_log=maintenance_log,
+                         uuid_str=uuid_str)
 
         self.password = password  # Password to access PJLink
         self.connection_type = connection_type
@@ -393,20 +486,156 @@ class Projector(BaseComponent):
         except Exception as e:
             print(e)
 
+    def get_dict(self):
+        """Return a dictionary representation of this projector.
+
+        Include only attributes that are likely to be the same if this projector is restored at a later date.
+        """
+
+        the_dict = super().get_dict()
+        the_dict["class"] = "Projector"
+        the_dict["ip_address"] = self.ip_address
+        the_dict["password"] = self.password
+        the_dict["connection_type"] = self.connection_type
+
+        return the_dict
+
+
+def load_components():
+    """Load the components from disk"""
+
+    path = c_tools.get_path(["components"], user_file=True)
+    components = os.listdir(path)
+
+    for component in components:
+        if component.startswith('.'):
+            continue  # Ignore .DS_store and similar
+        comp_path = c_tools.get_path(["components", component], user_file=True)
+        try:
+            comp_dict = c_tools.load_json(comp_path)
+        except json.JSONDecodeError:
+            print("Bad component file detected. Removing and continuing")
+            c_tools.delete_file(comp_path)
+            continue
+        if comp_dict is None:
+            continue
+
+        if comp_dict["class"] == "ExhibitComponent":
+            add_exhibit_component(comp_dict["id"],
+                                  "Default",
+                                  category=comp_dict["category"],
+                                  from_disk=True,
+                                  last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
+                                  maintenance_log=comp_dict.get("maintenance_log", None),
+                                  uuid_str=comp_dict["uuid"])
+        elif comp_dict["class"] == "Projector":
+            add_projector(comp_dict["id"],
+                          "Default",
+                          ip_address=comp_dict["ip_address"],
+                          from_disk=True,
+                          last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
+                          maintenance_log=comp_dict.get("maintenance_log", None),
+                          password=comp_dict.get("password", None),
+                          uuid_str=comp_dict["uuid"])
+        elif comp_dict["class"] == "WakeOnLANDevice":
+            add_wake_on_LAN_device(comp_dict["id"],
+                                   "Default",
+                                   comp_dict["mac_address"],
+                                   ip_address=comp_dict.get("ip_address", None),
+                                   from_disk=True,
+                                   last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
+                                   maintenance_log=comp_dict.get("maintenance_log", None),
+                                   uuid_str=comp_dict["uuid"])
+
 
 def add_exhibit_component(this_id: str,
                           group: str,
                           category: str = "dynamic",
+                          from_disk: bool = False,
+                          last_contact_datetime: str = "",
+                          maintenance_log: dict[str, Any] | None = None,
                           uuid_str: str = "") -> ExhibitComponent:
-    """Create a new ExhibitComponent, add it to the config.componentList, and return it"""
+    """Create a new ExhibitComponent, add it to the config.componentList, and return it.
 
-    component = ExhibitComponent(this_id, group, category, uuid_str=uuid_str)
+    Set category="static" for static components.
+    Set from_disk=True when loading a previously-created component to skip some steps.
+    """
 
-    # Check if component has an existing maintenance status.
-    maintenance_path = c_tools.get_path(["maintenance-logs", this_id + '.txt'], user_file=True)
-    component.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
+    if not from_disk:
+        # Check if component has a legacy maintenance status.
+        maintenance_log = c_maint.convert_legacy_maintenance_log(this_id)
+        if maintenance_log is not None:
+            maint_path = c_tools.get_path(["maintenance-logs", this_id + '.txt'], user_file=True)
+            maint_path_new = c_tools.get_path(["maintenance-logs", this_id + '.txt'], user_file=True)
+            try:
+                os.rename(maint_path, maint_path_new)
+            except FileNotFoundError:
+                pass
+
+    component = ExhibitComponent(this_id, group, category,
+                                 last_contact_datetime=last_contact_datetime,
+                                 maintenance_log=maintenance_log,
+                                 uuid_str=uuid_str)
+    if not from_disk:
+        component.save()
 
     config.componentList.append(component)
+    config.last_update_time = time.time()
+
+    return component
+
+
+def add_projector(this_id: str,
+                  group: str,
+                  ip_address: str,
+                  from_disk: bool = False,
+                  last_contact_datetime: str = "",
+                  maintenance_log: dict[str, Any] | None = None,
+                  password: str | None = None,
+                  uuid_str: str = "") -> Projector:
+    """Create a new Projector, add it to the config.projectorList, and return it.
+
+    Set from_disk=True when loading a previously-created projector to skip some steps.
+    """
+
+    projector = Projector(this_id,
+                          group,
+                          ip_address, "pjlink",
+                          password=password,
+                          last_contact_datetime=last_contact_datetime,
+                          maintenance_log=maintenance_log,
+                          uuid_str=uuid_str)
+    if not from_disk:
+        projector.save()
+
+    config.projectorList.append(projector)
+    config.last_update_time = time.time()
+
+    return projector
+
+
+def add_wake_on_LAN_device(this_id: str,
+                           group: str,
+                           mac_address: str,
+                           from_disk: bool = False,
+                           ip_address: str | None = None,
+                           last_contact_datetime: str = "",
+                           maintenance_log: dict[str, Any] | None = None,
+                           uuid_str: str = "") -> WakeOnLANDevice:
+    """Create a new WakeOnLANDevice, add it to the config.wakeOnLANList, and return it.
+
+    Set from_disk=True when loading a previously-created component to skip some steps.
+    """
+
+    component = WakeOnLANDevice(this_id, group, mac_address,
+                                ip_address=ip_address,
+                                last_contact_datetime=last_contact_datetime,
+                                maintenance_log=maintenance_log,
+                                uuid_str=uuid_str)
+    if not from_disk:
+        component.save()
+
+    config.wakeOnLANList.append(component)
     config.last_update_time = time.time()
 
     return component
@@ -667,50 +896,6 @@ def read_descriptions_configuration():
         component = get_exhibit_component(entry["id"])
         if component is not None:
             component.config["description"] = entry["description"]
-
-
-def read_static_components_configuration():
-    """Read the static.json configuration file."""
-
-    config_path = c_tools.get_path(["configuration", "static.json"], user_file=True)
-    components = c_tools.load_json(config_path)
-    if components is None:
-        return
-
-    # Remove all static components before adding the most up-to-date list
-    config.componentList = [x for x in config.componentList if x.category != "static"]
-
-    for entry in components:
-        if get_exhibit_component(entry["id"]) is None:
-            component = add_exhibit_component(entry["id"],
-                                              entry["group"],
-                                              category="static",
-                                              uuid_str=entry.get("uuid", ""))
-            component.config["app_name"] = "static_component"
-
-
-def read_wake_on_LAN_configuration():
-    """Read the descriptions.json configuration file."""
-
-    config_path = c_tools.get_path(["configuration", "wake_on_LAN.json"], user_file=True)
-    devices = c_tools.load_json(config_path)
-    if devices is None:
-        return
-    for device in config.wakeOnLANList:
-        device.clean_up()
-    config.wakeOnLANList = []
-
-    for entry in devices:
-        if get_wake_on_LAN_component(entry["id"]) is None:
-            device = WakeOnLANDevice(entry["id"],
-                                     entry.get("group", "Wake on LAN"),
-                                     entry["mac_address"],
-                                     ip_address=entry.get("ip_address", ""),
-                                     uuid_str=entry.get("uuid", ""))
-            # Check if device has an existing maintenance status.
-            maintenance_path = c_tools.get_path(["maintenance-logs", entry["id"] + '.txt'], user_file=True)
-            device.config["maintenance_status"] = c_maint.get_maintenance_report(maintenance_path)["status"]
-            config.wakeOnLANList.append(device)
 
 
 # Set up log file

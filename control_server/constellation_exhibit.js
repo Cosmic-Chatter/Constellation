@@ -7,7 +7,8 @@ import * as constTools from './constellation_tools.js'
 class BaseComponent {
   // A basic Constellation component.
 
-  constructor (id, group) {
+  constructor (uuid, id, group) {
+    this.uuid = uuid
     this.id = id
     this.group = group
     this.type = 'base_component'
@@ -33,26 +34,6 @@ class BaseComponent {
     const displayName = this.id
     const thisId = this.id
     const cleanId = this.id.replaceAll(' ', '_')
-
-    // Change the amount of the Bootstrap grid being used depending on the
-    // number of components in this group. Larger groups get more horizontal
-    // space, so each component needs a smaller amount of grid.
-
-    // Cycle through the components and count how many we will actually be displaying
-    // const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
-    // let numToDisplay = 0
-    // getExhibitComponentGroup(this.group).components.forEach((component) => {
-    //   if (showStatic || component.status !== constConfig.STATUS.STATIC) {
-    //     numToDisplay += 1
-    //   }
-    // })
-
-    // let classString
-    // if (numToDisplay > 7) {
-    //   classString = 'col-12 col-sm-4 col-md-3 mt-1'
-    // } else {
-    //   classString = 'col-12 col-sm-4 col-md-6 mt-1'
-    // }
 
     const col = document.createElement('div')
     col.classList = 'col mt-1'
@@ -108,9 +89,10 @@ class BaseComponent {
 
     if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
       return this.status
-    } else {
+    } else if (this.maintenanceStatus != null) {
       return this.maintenanceStatus
     }
+    return constConfig.MAINTANANCE_STATUS['Off floor, not working']
   }
 
   populateActionMenu (dropdownMenu = null) {
@@ -257,6 +239,9 @@ class BaseComponent {
 
     this.setStatus(update.status, update.maintenance_status)
 
+    if ('uuid' in update) {
+      this.uuid = update.uuid
+    }
     if ('ip_address' in update) {
       this.ip_address = update.ip_address
     }
@@ -290,8 +275,8 @@ class BaseComponent {
 class ExhibitComponent extends BaseComponent {
   // A component representing an device running a Constellation App or using the API
 
-  constructor (id, group) {
-    super(id, group)
+  constructor (uuid, id, group) {
+    super(uuid, id, group)
 
     this.type = 'exhibit_component'
     this.helperAddress = null
@@ -365,8 +350,8 @@ class ExhibitComponent extends BaseComponent {
 export class WakeOnLANComponent extends BaseComponent {
   // A component representings a Wake on LAN device
 
-  constructor (id, group, macAddress) {
-    super(id, group)
+  constructor (uuid, id, group, macAddress) {
+    super(uuid, id, group)
 
     this.type = 'wol_component'
     this.mac_address = macAddress
@@ -413,8 +398,8 @@ export class WakeOnLANComponent extends BaseComponent {
 class Projector extends BaseComponent {
   // A component representing a projector
 
-  constructor (id, group) {
-    super(id, group)
+  constructor (uuid, id, group) {
+    super(uuid, id, group)
 
     this.type = 'projector'
     this.constellationAppId = 'projector'
@@ -675,11 +660,11 @@ export function createComponentFromUpdate (update) {
   // Then create a new component
   let newComponent
   if (update.class === 'exhibitComponent') {
-    newComponent = new ExhibitComponent(update.id, update.group)
+    newComponent = new ExhibitComponent(update.uuid, update.id, update.group)
   } else if (update.class === 'wolComponent') {
-    newComponent = new WakeOnLANComponent(update.id, update.group, update.mac_address)
+    newComponent = new WakeOnLANComponent(update.uuid, update.id, update.group, update.mac_address)
   } else if (update.class === 'projector') {
-    newComponent = new Projector(update.id, update.group)
+    newComponent = new Projector(update.uuid, update.id, update.group)
   }
 
   newComponent.buildHTML()
@@ -697,6 +682,7 @@ export function updateComponentFromServer (update) {
   // and use it to set up the component
 
   const obj = getExhibitComponent(update.id)
+
   if (obj != null) {
     // Update the object with the latest info from the server
     obj.updateFromServer(update)
@@ -729,9 +715,9 @@ function showExhibitComponentInfo (id) {
   // This sets up the componentInfoModal with the info from the selected
   // component and shows it on the screen.
 
-  $('#componentInfoModal').data('id', id)
-
   const obj = getExhibitComponent(id)
+  $('#componentInfoModal').data('id', id)
+  document.getElementById('componentInfoModal').setAttribute('data-uuid', obj.uuid)
 
   document.getElementById('componentInfoModalTitle').innerHTML = id
 
@@ -763,7 +749,7 @@ function showExhibitComponentInfo (id) {
     } else {
       document.getElementById('componentInfoModalOperatingSystemGroup').style.display = 'none'
     }
-    if ('browser' in obj.platformDetails) {
+    if ('browser' in obj.platformDetails && obj.platformDetails.browser !== 'null null') {
       document.getElementById('componentInfoModalBrowser').innerHTML = obj.platformDetails.browser
       document.getElementById('componentInfoModalBrowserGroup').style.display = 'block'
     } else {
@@ -1072,14 +1058,14 @@ function configureNewDefinitionOptions (obj) {
 export function updateProjectorFromInfoModal () {
   // Collect details from the component info modal and update the proejctor
 
-  const id = document.getElementById('componentInfoModalTitle').innerHTML
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
 
   const update = {
     id: document.getElementById('componentInfoModalProjectorSettingsID').value.trim(),
     group: document.getElementById('componentInfoModalProjectorSettingsGroup').value.trim(),
     ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
-    protocol: 'pjlink'
+    uuid
   }
 
   // Check that fields are properly filled out
@@ -1102,11 +1088,16 @@ export function updateProjectorFromInfoModal () {
     document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
   }
 
-  constProj.submitProjectorChange(id, update)
-    .then(() => {
-      document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
-      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalProjectorSettingsID').value.trim()
-      rebuildComponentInterface()
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/projector/' + uuid + '/edit',
+    params: update
+  })
+    .then((response) => {
+      if (response.success === true) {
+        document.getElementById('componentInfoModalTitle').innerHTML = update.id
+        document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
+      }
     })
 }
 

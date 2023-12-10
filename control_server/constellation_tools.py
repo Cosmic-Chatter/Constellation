@@ -150,6 +150,7 @@ def check_file_structure() -> None:
     exhibits_dir = get_path(["exhibits"], user_file=True)
 
     misc_dirs = {"analytics": get_path(["analytics"], user_file=True),
+                 "components": get_path(["components"], user_file=True),
                  "configuration": get_path(["configuration"], user_file=True),
                  "flexible-tracker": get_path(["flexible-tracker"], user_file=True),
                  "flexible-tracker/data": get_path(["flexible-tracker", "data"], user_file=True),
@@ -172,7 +173,7 @@ def check_file_structure() -> None:
 
             for file in default_schedule_list:
                 with open(os.path.join(schedules_dir, file), 'w', encoding="UTF-8") as f:
-                    f.write("{}")
+                    f.write("[]")
         except PermissionError:
             print("Error: unable to create 'schedules' directory. Do you have write permission?")
 
@@ -182,8 +183,8 @@ def check_file_structure() -> None:
         print("Missing exhibits directory. Creating now...")
         try:
             os.mkdir(exhibits_dir)
-            with open(os.path.join(exhibits_dir, "default.exhibit"), 'w', encoding="UTF-8") as f:
-                f.write("")
+            with open(os.path.join(exhibits_dir, "Default.json"), 'w', encoding="UTF-8") as f:
+                f.write("{}")
         except PermissionError:
             print("Error: unable to create 'exhibits' directory. Do you have write permission?")
 
