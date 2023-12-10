@@ -67,13 +67,14 @@ def get_last_entry(path: Union[str, os.PathLike]) -> dict[str, Any]:
         return result
 
 
-def load_file(path: Union[str, os.PathLike]) -> list[dict]:
+def load_file(path: Union[str, os.PathLike], convert_date: bool = True) -> list[dict]:
     """Read the file into a list of dictionaries"""
     entries = []
     with open(path, "r", encoding="UTF-8") as f:
         for line in f.readlines():
             entry = json.loads(line)
-            entry["datetime"] = dateutil.parser.isoparse(entry["date"])
+            if convert_date:
+                entry["datetime"] = dateutil.parser.isoparse(entry["date"])
             entries.append(entry)
     return entries
 
@@ -145,6 +146,20 @@ def summarize_segments(segments: list[dict]) -> dict[str, float]:
             "off_floor": off_floor_pct,
             "working": working_pct,
             "not_working": not_working_pct}
+
+
+# Added in C5 to convert legacy C4 and below maintenance logs.
+def convert_legacy_maintenance_log(this_id: str) -> dict[str, Any] | None:
+    """Convert a maintenance .txt file to a dictionary for use with Constellation 5."""
+
+    path = c_tools.get_path(["maintenance-logs", this_id + ".txt"], user_file=True)
+    if not os.path.exists(path):
+        return None
+
+    entries = load_file(path, convert_date=False)
+    if len(entries) == 0:
+        return None
+    return {"current": entries[-1], "history": entries}
 
 
 # Set up log file
