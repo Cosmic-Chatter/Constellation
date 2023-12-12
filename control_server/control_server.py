@@ -89,7 +89,7 @@ def send_webpage_update():
                 "helperAddress": item.helperAddress,
                 "id": item.id,
                 "ip_address": item.ip_address,
-                "group": item.group,
+                "groups": item.groups,
                 "lastContactDateTime": item.last_contact_datetime,
                 "latency": item.latency,
                 "platform_details": item.platform_details,
@@ -112,7 +112,7 @@ def send_webpage_update():
 
     for item in c_config.projectorList:
         temp = {"class": "projector",
-                "group": item.group,
+                "groups": item.groups,
                 "id": item.id,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
@@ -131,7 +131,7 @@ def send_webpage_update():
     for item in c_config.wakeOnLANList:
         temp = {"class": "wolComponent",
                 "id": item.id,
-                "group": item.group,
+                "groups": item.groups,
                 "ip_address": item.ip_address,
                 "latency": item.latency,
                 "mac_address": item.mac_address,
@@ -1157,7 +1157,7 @@ async def update_maintenance_status(request: Request,
 @app.post("/projector/create")
 async def create_projector(request: Request,
                            id: str = Body(description="The ID of the projector to add."),
-                           group: str = Body(description="The group of the projector to add."),
+                           groups: list[str] = Body(description="The groups of the projector to add."),
                            ip_address: str = Body(description="The IP address for the projector."),
                            password: str = Body(description="The PJLink password", default="")):
     """Create a new projector."""
@@ -1168,7 +1168,7 @@ async def create_projector(request: Request,
     if success is False:
         return {"success": False, "reason": reason}
 
-    proj = c_exhibit.add_projector(id, group, ip_address, password=password)
+    proj = c_exhibit.add_projector(id, groups, ip_address, password=password)
 
     return {"success": True, "uuid": proj.uuid}
 
@@ -1177,7 +1177,7 @@ async def create_projector(request: Request,
 async def edit_projector(request: Request,
                          uuid_str: str,
                          id: str | None = Body(description="The ID of the projector to add.", default=None),
-                         group: str | None = Body(description="The group of the projector to add.", default=None),
+                         groups: list[str] | None = Body(description="The groups of the projector to add.", default=None),
                          ip_address: str | None = Body(description="The IP address for the projector.", default=None),
                          password: str | None = Body(description="The PJLink password", default=None)):
     """Edit the given projector."""
@@ -1194,14 +1194,14 @@ async def edit_projector(request: Request,
 
     if id is not None:
         proj.id = id
-    if group is not None:
-        proj.group = group
+    if groups is not None:
+        proj.groups = groups
     if ip_address is not None:
         proj.ip_address = ip_address
     if password is not None:
         proj.password = password
     proj.save()
-
+    c_config.last_update_time = time.time()
     return {"success": True}
 
 
@@ -1218,7 +1218,7 @@ async def queue_projector_command(component: ExhibitComponent,
 @app.post("/component/static/create")
 async def create_static_component(request: Request,
                                   id: str = Body(description="The ID of the projector to add."),
-                                  group: str = Body(description="The group of the projector to add.")):
+                                  groups: list[str] = Body(description="The groups of the projector to add.")):
     """Create a new static component."""
 
     # Check permission
@@ -1227,7 +1227,7 @@ async def create_static_component(request: Request,
     if success is False:
         return {"success": False, "reason": reason}
 
-    component = c_exhibit.add_exhibit_component(id, group, 'static')
+    component = c_exhibit.add_exhibit_component(id, groups, 'static')
 
     return {"success": True, "uuid": component.uuid}
 
@@ -1236,7 +1236,7 @@ async def create_static_component(request: Request,
 async def edit_static_component(request: Request,
                                 uuid_str: str,
                                 id: str | None = Body(description="The ID of the projector to add.", default=None),
-                                group: str | None = Body(description="The group of the projector to add.",
+                                groups: list[str] | None = Body(description="The groups of the projector to add.",
                                                          default=None)):
     """Edit the given static component."""
 
@@ -1252,17 +1252,17 @@ async def edit_static_component(request: Request,
 
     if id is not None:
         component.id = id
-    if group is not None:
-        component.group = group
+    if groups is not None:
+        component.groups = groups
     component.save()
-
+    c_config.last_update_time = time.time()
     return {"success": True}
 
 
 @app.post("/component/WOL/create")
 async def create_wake_on_LAN_component(request: Request,
                                        id: str = Body(description="The ID of the projector to add."),
-                                       group: str = Body(description="The group of the projector to add."),
+                                       groups: list[str] = Body(description="The groups of the projector to add."),
                                        mac_address: str = Body(description="The MAC address of the machine to wake."),
                                        ip_address: str = Body(description="The static IP address of the machine.",
                                                               default="")):
@@ -1274,7 +1274,7 @@ async def create_wake_on_LAN_component(request: Request,
     if success is False:
         return {"success": False, "reason": reason}
 
-    component = c_exhibit.add_wake_on_LAN_device(id, group, mac_address, ip_address=ip_address)
+    component = c_exhibit.add_wake_on_LAN_device(id, groups, mac_address, ip_address=ip_address)
 
     return {"success": True, "uuid": component.uuid}
 
@@ -1283,7 +1283,7 @@ async def create_wake_on_LAN_component(request: Request,
 async def edit_wake_on_LAN_component(request: Request,
                                      uuid_str: str,
                                      id: str | None = Body(description="The ID of the projector to add.", default=None),
-                                     group: str | None = Body(description="The group of the projector to add.",
+                                     groups: list[str] | None = Body(description="The groups of the projector to add.",
                                                               default=None),
                                      mac_address: str = Body(description="The MAC address of the machine to wake."),
                                      ip_address: str = Body(description="The static IP address of the machine.",
@@ -1302,13 +1302,14 @@ async def edit_wake_on_LAN_component(request: Request,
 
     if id is not None:
         component.id = id
-    if group is not None:
-        component.group = group
+    if groups is not None:
+        component.groups = groups
     if mac_address is not None:
         component.mac_address = mac_address
     if ip_address is not None:
         component.ip_address = ip_address
     component.save()
+    c_config.last_update_time = time.time()
 
     return {"success": True}
 
@@ -1563,9 +1564,9 @@ async def get_version():
 async def handle_ping(data: dict[str, Any], request: Request):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
-    if "id" not in data or "group" not in data:
+    if "id" not in data:
         response = {"success": False,
-                    "reason": "Request missing 'id' or 'group' field."}
+                    "reason": "Request missing 'id' field."}
         return response
 
     this_id = data['id']

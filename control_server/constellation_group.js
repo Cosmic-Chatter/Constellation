@@ -1,6 +1,15 @@
 import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 
+export function getGroupName (uuid) {
+  // Return the name of a group given its UUID.
+
+  for (const group of constConfig.groups) {
+    if (group.uuid === uuid) return group.name
+  }
+  return uuid
+}
+
 export function showEditGroupModal (uuid = '') {
   // Show the modal for creatng or editing a group
 

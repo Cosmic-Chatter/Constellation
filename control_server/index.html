@@ -569,7 +569,7 @@
                     <!-- Static settings -->
                     <div id="componentInfoModalStaticSettings" class="mt-2">
                       <span class="h5">Static component settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
+                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-3">
                         <div class="col">
                           <label for="componentInfoModalStaticSettingsID" class="form-label">
                             ID
@@ -578,15 +578,15 @@
                           <input id="componentInfoModalStaticSettingsID" class="form-control componentInfoStaticSetting" type="text">
                         </div>
                         <div class="col">
-                          <label for="componentInfoModalStaticSettingsGroup" class="form-label">Group</label>
-                          <input id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" type="text">
+                          <label for="componentInfoModalStaticSettingsGroup" class="form-label">Groups</label>
+                          <select id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" multiple></select>
                         </div>
                         <div class="col d-flex">
                           <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalStaticSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
-                      <div id="componentInfoModalStaticSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
+                      <div id="componentInfoModalStaticSettingsGroupWarning" class="text-danger mt-2">Components must be in at least one group.</div>
                     </div>
 
                     <!-- Wake on LAN settings -->

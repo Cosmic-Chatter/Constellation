@@ -25,7 +25,7 @@ import projector_control
 class BaseComponent:
     """A basic Constellation component."""
 
-    def __init__(self, id_: str, group: str,
+    def __init__(self, id_: str, groups: list[str],
                  ip_address: str | None = None,
                  last_contact_datetime: str = "",
                  mac_address: str | None = None,
@@ -38,7 +38,7 @@ class BaseComponent:
             uuid_str = str(uuid.uuid4())
 
         self.id: str = id_
-        self.group: str = group
+        self.groups: list[str] = groups
         self.uuid = uuid_str
 
         self.ip_address = ip_address
@@ -74,7 +74,7 @@ class BaseComponent:
                                        }
 
     def __repr__(self):
-        return repr(f"[BaseComponent ID: {self.id} Group: {self.group}]")
+        return repr(f"[BaseComponent ID: {self.id} Groups: {self.groups} UUID: {self.uuid}]")
 
     def clean_up(self):
         """Stop any timers so the class instance can be safely removed."""
@@ -143,6 +143,7 @@ class BaseComponent:
         return {
             "uuid": self.uuid,
             "id": self.id,
+            "groups": self.groups,
             "last_contact_datetime": str(self.last_contact_datetime),
             "mac_address": self.mac_address,
             "maintenance_log": self.maintenance_log
@@ -160,7 +161,7 @@ class ExhibitComponent(BaseComponent):
     """Holds basic data about a component in the exhibit"""
 
     def __init__(self, id_: str,
-                 group: str,
+                 groups: list[str],
                  category: str = 'dynamic',
                  last_contact_datetime: str = "",
                  maintenance_log: dict[str, Any] | None = None,
@@ -169,7 +170,7 @@ class ExhibitComponent(BaseComponent):
         # category='dynamic' for components that are connected over the network
         # category='static' for components added from galleryConfiguration.ini
 
-        super().__init__(id_, group,
+        super().__init__(id_, groups,
                          last_contact_datetime=last_contact_datetime,
                          maintenance_log=maintenance_log,
                          uuid_str=uuid_str)
@@ -197,7 +198,7 @@ class ExhibitComponent(BaseComponent):
             config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != wol.id]
 
     def __repr__(self):
-        return repr(f"[ExhibitComponent ID: {self.id} Group: {self.group}]")
+        return repr(f"[ExhibitComponent ID: {self.id} Group: {self.groups} UUID: {self.uuid}]")
 
     def update_last_contact_datetime(self, interaction: bool = False):
 
@@ -299,14 +300,14 @@ class WakeOnLANDevice(BaseComponent):
     """Holds basic information about a wake on LAN device and facilitates waking it"""
 
     def __init__(self, id_: str,
-                 group: str,
+                 groups: list[str],
                  mac_address: str,
                  ip_address: str = None,
                  last_contact_datetime: str = "",
                  maintenance_log: dict[str, Any] | None = None,
                  uuid_str: str = ""):
 
-        super().__init__(id_, group,
+        super().__init__(id_, groups,
                          ip_address=ip_address,
                          last_contact_datetime=last_contact_datetime,
                          mac_address=mac_address,
@@ -324,7 +325,7 @@ class WakeOnLANDevice(BaseComponent):
         self.poll_latency()
 
     def __repr__(self):
-        return repr(f"[WakeOnLANDevice ID: {self.id} Group: {self.group}]")
+        return repr(f"[WakeOnLANDevice ID: {self.id} Group: {self.groups} UUID: {self.uuid}]")
 
     def queue_command(self, cmd: str):
 
@@ -367,7 +368,7 @@ class WakeOnLANDevice(BaseComponent):
             except icmplib.exceptions.SocketPermissionError:
                 if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
-                        "Warning: to check the status of Wake on LAN devices, you must run the control server with administrator privileges.")
+                        "Warning: to check the status of Wake on LAN devices, you must run Control Server with administrator privileges.")
                     with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
                     config.serverWarningDict["wakeOnLANPrivilege"] = True
@@ -393,7 +394,7 @@ class Projector(BaseComponent):
 
     def __init__(self,
                  id_: str,
-                 group: str,
+                 groups: list[str],
                  ip_address: str,
                  connection_type: str,
                  last_contact_datetime: str = "",
@@ -403,7 +404,7 @@ class Projector(BaseComponent):
                  password: str = None,
                  uuid_str: str = ""):
 
-        super().__init__(id_, group,
+        super().__init__(id_, groups,
                          ip_address=ip_address,
                          last_contact_datetime=last_contact_datetime,
                          mac_address=mac_address,
@@ -425,7 +426,7 @@ class Projector(BaseComponent):
         self.poll_latency()
 
     def __repr__(self):
-        return repr(f"[Projector ID: {self.id} Group: {self.group}]")
+        return repr(f"[Projector ID: {self.id} Group: {self.groups} UUID: {self.uuid}]")
 
     def update(self):
 
@@ -524,7 +525,7 @@ def load_components():
 
         if comp_dict["class"] == "ExhibitComponent":
             add_exhibit_component(comp_dict["id"],
-                                  "Default",
+                                  comp_dict.get("groups", ["Default"]),
                                   category=comp_dict["category"],
                                   from_disk=True,
                                   last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
@@ -532,7 +533,7 @@ def load_components():
                                   uuid_str=comp_dict["uuid"])
         elif comp_dict["class"] == "Projector":
             add_projector(comp_dict["id"],
-                          "Default",
+                          comp_dict.get("groups", ["Default"]),
                           ip_address=comp_dict["ip_address"],
                           from_disk=True,
                           last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
@@ -541,7 +542,7 @@ def load_components():
                           uuid_str=comp_dict["uuid"])
         elif comp_dict["class"] == "WakeOnLANDevice":
             add_wake_on_LAN_device(comp_dict["id"],
-                                   "Default",
+                                   comp_dict.get("groups", ["Default"]),
                                    comp_dict["mac_address"],
                                    ip_address=comp_dict.get("ip_address", None),
                                    from_disk=True,
@@ -551,7 +552,7 @@ def load_components():
 
 
 def add_exhibit_component(this_id: str,
-                          group: str,
+                          groups: list[str],
                           category: str = "dynamic",
                           from_disk: bool = False,
                           last_contact_datetime: str = "",
@@ -574,7 +575,7 @@ def add_exhibit_component(this_id: str,
             except FileNotFoundError:
                 pass
 
-    component = ExhibitComponent(this_id, group, category,
+    component = ExhibitComponent(this_id, groups, category,
                                  last_contact_datetime=last_contact_datetime,
                                  maintenance_log=maintenance_log,
                                  uuid_str=uuid_str)
@@ -588,7 +589,7 @@ def add_exhibit_component(this_id: str,
 
 
 def add_projector(this_id: str,
-                  group: str,
+                  groups: list[str],
                   ip_address: str,
                   from_disk: bool = False,
                   last_contact_datetime: str = "",
@@ -601,7 +602,7 @@ def add_projector(this_id: str,
     """
 
     projector = Projector(this_id,
-                          group,
+                          groups,
                           ip_address, "pjlink",
                           password=password,
                           last_contact_datetime=last_contact_datetime,
@@ -617,7 +618,7 @@ def add_projector(this_id: str,
 
 
 def add_wake_on_LAN_device(this_id: str,
-                           group: str,
+                           groups: list[str],
                            mac_address: str,
                            from_disk: bool = False,
                            ip_address: str | None = None,
@@ -629,7 +630,7 @@ def add_wake_on_LAN_device(this_id: str,
     Set from_disk=True when loading a previously-created component to skip some steps.
     """
 
-    component = WakeOnLANDevice(this_id, group, mac_address,
+    component = WakeOnLANDevice(this_id, groups, mac_address,
                                 ip_address=ip_address,
                                 last_contact_datetime=last_contact_datetime,
                                 maintenance_log=maintenance_log,
@@ -882,14 +883,13 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
     this_id = data["id"]
-    group = data["group"]
 
     if ip == "::1":
         ip = "localhost"
 
     component = get_exhibit_component(component_id=this_id)
     if component is None:  # This is a new id, so make the component
-        component = add_exhibit_component(this_id, group, uuid_str=data.get("uuid", ""))
+        component = add_exhibit_component(this_id, ["Default"], uuid_str=data.get("uuid", ""))
 
     component.ip_address = ip
     if "helperAddress" in data:

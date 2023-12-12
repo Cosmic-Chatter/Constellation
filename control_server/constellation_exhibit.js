@@ -1,16 +1,16 @@
 import constConfig from './config.js'
 import * as constDMX from './constellation_dmx.js'
+import * as constGroup from './constellation_group.js'
 import * as constMaint from './constellation_maintenance.js'
-import * as constProj from './constellation_projector.js'
 import * as constTools from './constellation_tools.js'
 
 class BaseComponent {
   // A basic Constellation component.
 
-  constructor (uuid, id, group) {
+  constructor (uuid, id, groups) {
     this.uuid = uuid
     this.id = id
-    this.group = group
+    this.groups = groups
     this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
@@ -22,7 +22,7 @@ class BaseComponent {
     this.lastContactDateTime = null
   }
 
-  buildHTML () {
+  buildHTML (group) {
     // Function to build the HTML representation of this component
     // and add it to the row of the parent group
 
@@ -45,7 +45,7 @@ class BaseComponent {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn w-100 componentStatusButton ' + this.getStatus().colorClass
     mainButton.setAttribute('type', 'button')
-    mainButton.setAttribute('id', cleanId + 'MainButton')
+    mainButton.setAttribute('id', cleanId + '_' + group + '_MainButton')
     mainButton.addEventListener('click', function () {
       showExhibitComponentInfo(thisId)
     }, false)
@@ -63,7 +63,7 @@ class BaseComponent {
 
     const dropdownButton = document.createElement('button')
     dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.getStatus().colorClass
-    dropdownButton.setAttribute('id', cleanId + 'DropdownButton')
+    dropdownButton.setAttribute('id', cleanId + '_' + group + '_DropdownButton')
     dropdownButton.setAttribute('type', 'button')
     dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
     dropdownButton.setAttribute('aria-haspopup', 'true')
@@ -80,8 +80,7 @@ class BaseComponent {
     dropdownMenu.setAttribute('id', cleanId + 'DropdownMenu')
     this.populateActionMenu(dropdownMenu)
     btnGroup.appendChild(dropdownMenu)
-
-    $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
+    return col
   }
 
   getStatus () {
@@ -186,7 +185,9 @@ class BaseComponent {
 
   remove () {
     // Remove the component from its ComponentGroup
-    getExhibitComponentGroup(this.group).removeComponent(this.id)
+    for (const group of this.groups) {
+      getExhibitComponentGroup(group).removeComponent(this.id)
+    }
 
     // Remove the component from the exhibitComponents list
     const thisInstance = this
@@ -196,6 +197,30 @@ class BaseComponent {
     clearInterval(this.pollingFunction)
 
     // Rebuild the interface
+    rebuildComponentInterface()
+  }
+
+  setGroups (groups) {
+    // Adjust the component's groups and rebuild the interface if needed.
+
+    // First, remove the component from any groups it is no longer in
+    for (const group of this.groups) {
+      if (groups.includes(group) === false) getExhibitComponentGroup(group).removeComponent(this.id)
+    }
+
+    // Then, add component to any groups it was not in before
+    for (const group of groups) {
+      if (this.groups.includes(group) === false) {
+        let componentGroup = getExhibitComponentGroup(group)
+        if (componentGroup == null) {
+          // If this is the first component in the group, create the group first.
+          componentGroup = new ExhibitComponentGroup(group)
+          constConfig.componentGroups.push(componentGroup)
+        }
+        componentGroup.addComponent(this)
+      }
+    }
+    this.groups = groups
     rebuildComponentInterface()
   }
 
@@ -230,8 +255,10 @@ class BaseComponent {
     }
 
     // Strip all existing classes, then add the new one
-    $('#' + cleanId + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-    $('#' + cleanId + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    for (const group of this.groups) {
+      $('#' + cleanId + '_' + group + '_MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+      $('#' + cleanId + '_' + group + '_DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    }
   }
 
   updateFromServer (update) {
@@ -241,6 +268,9 @@ class BaseComponent {
 
     if ('uuid' in update) {
       this.uuid = update.uuid
+    }
+    if ('groups' in update) {
+      this.setGroups(update.groups)
     }
     if ('ip_address' in update) {
       this.ip_address = update.ip_address
@@ -275,8 +305,8 @@ class BaseComponent {
 class ExhibitComponent extends BaseComponent {
   // A component representing an device running a Constellation App or using the API
 
-  constructor (uuid, id, group) {
-    super(uuid, id, group)
+  constructor (uuid, id, groups) {
+    super(uuid, id, groups)
 
     this.type = 'exhibit_component'
     this.helperAddress = null
@@ -350,98 +380,26 @@ class ExhibitComponent extends BaseComponent {
 export class WakeOnLANComponent extends BaseComponent {
   // A component representings a Wake on LAN device
 
-  constructor (uuid, id, group, macAddress) {
-    super(uuid, id, group)
+  constructor (uuid, id, groups, macAddress) {
+    super(uuid, id, groups)
 
     this.type = 'wol_component'
     this.mac_address = macAddress
     this.constellationAppId = 'wol_only'
-  }
-
-  remove (deleteConfigurtion = true) {
-    // Remove the device from the system configuration
-
-    if (deleteConfigurtion === true) {
-      // First, get the current wake on LAN configuration
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: '/system/wake_on_LAN/getConfiguration'
-      })
-        .then((result) => {
-          let wolConfig = result.configuration
-          // Next, remove this element
-          const thisID = this.id
-          wolConfig = wolConfig.filter(function (obj) {
-            return obj.id !== thisID
-          })
-
-          // Finally, send the configuration back for writing
-          constTools.makeServerRequest({
-            method: 'POST',
-            endpoint: '/system/wake_on_LAN/updateConfiguration',
-            params: {
-              configuration: wolConfig
-            }
-          })
-            .then(() => {
-              super.remove()
-              rebuildComponentInterface()
-            })
-        })
-    } else {
-      super.remove()
-      rebuildComponentInterface()
-    }
   }
 }
 
 class Projector extends BaseComponent {
   // A component representing a projector
 
-  constructor (uuid, id, group) {
-    super(uuid, id, group)
+  constructor (uuid, id, groups) {
+    super(uuid, id, groups)
 
     this.type = 'projector'
     this.constellationAppId = 'projector'
     this.password = ''
     this.protocol = 'pjlink'
     this.state = {}
-  }
-
-  remove (deleteConfiguration = true) {
-    // Remove the projector from the system configuration
-
-    if (deleteConfiguration === true) {
-      // First, get the current projector configuration
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: '/system/projectors/getConfiguration'
-      })
-        .then((result) => {
-          let projConfig = result.configuration
-          // Next, remove this element
-          const thisID = this.id
-          projConfig = projConfig.filter(function (obj) {
-            return obj.id !== thisID
-          })
-
-          // Finally, send the configuration back for writing
-          constTools.makeServerRequest({
-            method: 'POST',
-            endpoint: '/system/projectors/updateConfiguration',
-            params: {
-              configuration: projConfig
-            }
-          })
-            .then(() => {
-              super.remove()
-              rebuildComponentInterface()
-            })
-        })
-    } else {
-      super.remove()
-      rebuildComponentInterface()
-    }
   }
 
   updateFromServer (update) {
@@ -542,10 +500,7 @@ class ExhibitComponentGroup {
       onCmdName = 'wakeDisplay'
       offCmdName = 'sleepDisplay'
     }
-    let displayRefresh = 'block'
-    if (thisGroup === 'WAKE_ON_LAN') {
-      displayRefresh = 'none'
-    }
+    const displayRefresh = 'block'
 
     // Cycle through the components and count how many we will actually be displaying
     const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
@@ -579,7 +534,7 @@ class ExhibitComponentGroup {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn btn-secondary w-100 btn-lg'
     mainButton.setAttribute('type', 'button')
-    mainButton.innerHTML = this.group
+    mainButton.innerHTML = constGroup.getGroupName(this.group)
     btnGroup.appendChild(mainButton)
 
     const dropdownButton = document.createElement('button')
@@ -635,10 +590,9 @@ class ExhibitComponentGroup {
 
     col.appendChild(componentList)
 
-    $('#componentGroupsRow').append(col)
-
+    document.getElementById('componentGroupsRow').appendChild(col)
     this.components.forEach((component) => {
-      component.buildHTML()
+      componentList.appendChild(component.buildHTML(this.group))
     })
   }
 }
@@ -650,28 +604,33 @@ export function createComponentFromUpdate (update) {
   const obj = getExhibitComponent(update.id)
   if (obj != null) return
 
-  // First, make sure the group matching this group exists
-  let group = getExhibitComponentGroup(update.group)
-  if (group == null) {
-    group = new ExhibitComponentGroup(update.group)
-    constConfig.componentGroups.push(group)
+  // First, make sure the groups exist
+  for (const group of update.groups) {
+    let matchingGroup = getExhibitComponentGroup(group)
+
+    if (matchingGroup == null) {
+      matchingGroup = new ExhibitComponentGroup(group)
+      constConfig.componentGroups.push(matchingGroup)
+    }
   }
 
   // Then create a new component
   let newComponent
   if (update.class === 'exhibitComponent') {
-    newComponent = new ExhibitComponent(update.uuid, update.id, update.group)
+    newComponent = new ExhibitComponent(update.uuid, update.id, update.groups)
   } else if (update.class === 'wolComponent') {
-    newComponent = new WakeOnLANComponent(update.uuid, update.id, update.group, update.mac_address)
+    newComponent = new WakeOnLANComponent(update.uuid, update.id, update.groups, update.mac_address)
   } else if (update.class === 'projector') {
-    newComponent = new Projector(update.uuid, update.id, update.group)
+    newComponent = new Projector(update.uuid, update.id, update.groups)
   }
 
   newComponent.buildHTML()
   constConfig.exhibitComponents.push(newComponent)
 
-  // Add the component to the right group
-  group.addComponent(newComponent)
+  // Add the component to the right groups
+  for (const group of update.groups) {
+    getExhibitComponentGroup(group).addComponent(newComponent)
+  }
 
   // Finally, update the new component
   newComponent.updateFromServer(update)
@@ -1018,7 +977,18 @@ function configureComponentInfoModalForStatic (obj) {
   document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
 
   document.getElementById('componentInfoModalStaticSettingsID').value = obj.id
-  document.getElementById('componentInfoModalStaticSettingsGroup').value = obj.group
+  const groupSelect = document.getElementById('componentInfoModalStaticSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
 
   $('#componentInfoModalMaintenanceTabButton').tab('show')
 }
@@ -1106,9 +1076,13 @@ export function updateStaticComponentFromInfoModal () {
 
   const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
 
+  const groupSelect = document.getElementById('componentInfoModalStaticSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
+
   const update = {
     id: document.getElementById('componentInfoModalStaticSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalStaticSettingsGroup').value.trim()
+    groups: selectedGroupUUIDs
   }
 
   // Check that fields are properly filled out
@@ -1118,7 +1092,7 @@ export function updateStaticComponentFromInfoModal () {
   } else {
     document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
   }
-  if (update.group === '') {
+  if (update.groups.length === 0) {
     document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'block'
     return
   } else {
@@ -1730,7 +1704,7 @@ export function queueCommand (id, cmd) {
     let cmdPath = ''
     if (obj.type === 'projector') {
       cmdPath = '/projector/queueCommand'
-    } else if (obj.group === 'WAKE_ON_LAN') {
+    } else if (obj.type === 'wol_component') {
       cmdPath = '/exhibit/queueWOLCommand'
     } else {
       cmdPath = '/exhibit/queueCommand'
