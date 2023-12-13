@@ -203,6 +203,8 @@ class BaseComponent {
   setGroups (groups) {
     // Adjust the component's groups and rebuild the interface if needed.
 
+    if (groups.length === 0) groups = ['Default']
+
     // First, remove the component from any groups it is no longer in
     for (const group of this.groups) {
       if (groups.includes(group) === false) getExhibitComponentGroup(group).removeComponent(this.id)
@@ -958,7 +960,20 @@ function configureComponentInfoModalForProjector (obj) {
 
   // Projetor settings
   document.getElementById('componentInfoModalProjectorSettingsID').value = obj.id
-  document.getElementById('componentInfoModalProjectorSettingsGroup').value = obj.group
+
+  const groupSelect = document.getElementById('componentInfoModalProjectorSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   document.getElementById('componentInfoModalProjectorSettingsIPAddress').value = obj.ip_address
   document.getElementById('componentInfoModalProjectorSettingsPassword').value = obj.password
   document.getElementById('componentInfoModalProjectorSettings').style.display = 'block'
@@ -977,6 +992,7 @@ function configureComponentInfoModalForStatic (obj) {
   document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
 
   document.getElementById('componentInfoModalStaticSettingsID').value = obj.id
+
   const groupSelect = document.getElementById('componentInfoModalStaticSettingsGroup')
   groupSelect.innerHTML = ''
   const defaultOption = new Option('Default', 'Default')
@@ -1030,9 +1046,13 @@ export function updateProjectorFromInfoModal () {
 
   const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
 
+  const groupSelect = document.getElementById('componentInfoModalProjectorSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
+
   const update = {
     id: document.getElementById('componentInfoModalProjectorSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalProjectorSettingsGroup').value.trim(),
+    groups: selectedGroupUUIDs,
     ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
     uuid

@@ -1,5 +1,12 @@
 # To-do list
 
+## General
+
+- Rename ideas:
+  - ExhibitMate
+    - ExhibitMate Apps
+    - ExhibitMate Hub
+
 ## Control Server
 
 ### General
