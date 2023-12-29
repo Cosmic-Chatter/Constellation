@@ -16,25 +16,15 @@ class TimingObject {
   createWidget () {
     // Return an element representing the timer onscreen.
 
-    // const html = `
-    //   <div class="row w-100">
-    //     <div class="col-12 col-md-6 mt-2">
-    //       <button id="TimerStartStopButton_${this.name}" class='btn btn-primary btn-block' onclick="getTimer('${this.name}').toggleTimer();">Start</button>
-    //     </div>
-    //     <div class="col-12 col-md-6 mt-2">
-    //       <span id="TimerCounterView_${this.name}" class="btn btn-secondary disabled btn-block">0 sec</span>
-    //     </div>
-    //   </div>
-    //   `
     const row = document.createElement('div')
-    row.classList = 'row w-100'
+    row.classList = 'row w-100 mx-0'
 
     const col1 = document.createElement('div')
-    col1.classList = 'col-12 col-md-6 mt-2'
+    col1.classList = 'col-12 col-md-6 mt-2 ps-md-0 pe-md-1'
     row.appendChild(col1)
 
     const button = document.createElement('button')
-    button.classList = 'btn btn-primary btn-block'
+    button.classList = 'btn btn-primary w-100'
     button.setAttribute('id', 'TimerStartStopButton_' + this.name)
     button.innerHTML = 'Start'
     const thisName = this.name
@@ -44,11 +34,11 @@ class TimingObject {
     col1.appendChild(button)
 
     const col2 = document.createElement('div')
-    col2.classList = 'col-12 col-md-6 mt-2'
+    col2.classList = 'col-12 col-md-6 mt-2 ps-md-1 pe-md-0'
     row.appendChild(col2)
 
     const span = document.createElement('span')
-    span.classList = 'btn btn-secondary disabled btn-block'
+    span.classList = 'btn btn-secondary disabled w-100'
     span.setAttribute('id', 'TimerCounterView_' + this.name)
     span.innerHTML = '0 sec'
     col2.appendChild(span)
@@ -175,6 +165,7 @@ function buildLayout (definition) {
 
     if ('label' in item) {
       const label = document.createElement('label')
+      label.classList = 'form-label'
       label.setAttribute('for', itemID + '_input')
       label.innerHTML = item.label
       body.appendChild(label)
@@ -191,11 +182,11 @@ function buildLayout (definition) {
       case 'counter':
         {
           const counterRow = document.createElement('div')
-          counterRow.classList = 'row w-100'
+          counterRow.classList = 'row w-100 mx-0'
           inputGroup.appendChild(counterRow)
 
           const counterCol1 = document.createElement('div')
-          counterCol1.classList = 'col-4'
+          counterCol1.classList = 'col-4 ps-0 pe-1'
           counterRow.appendChild(counterCol1)
 
           const decButton = document.createElement('button')
@@ -207,7 +198,7 @@ function buildLayout (definition) {
           counterCol1.appendChild(decButton)
 
           const counterCol2 = document.createElement('div')
-          counterCol2.classList = 'col-4'
+          counterCol2.classList = 'col-4 px-1'
           counterRow.appendChild(counterCol2)
 
           const flexRow = document.createElement('div')
@@ -223,7 +214,7 @@ function buildLayout (definition) {
           flexRow.appendChild(counterVal)
 
           const counterCol3 = document.createElement('div')
-          counterCol3.classList = 'col-4'
+          counterCol3.classList = 'col-4 pe-0 ps-1'
           counterRow.appendChild(counterCol3)
 
           const incButton = document.createElement('button')
@@ -279,6 +270,7 @@ function buildLayout (definition) {
           input.setAttribute('type', 'number')
           input.setAttribute('id', itemID + '_input')
           input.setAttribute('data-name', itemName)
+          input.classList = 'form-control'
           inputGroup.appendChild(input)
         }
         break
@@ -307,11 +299,11 @@ function buildLayout (definition) {
             start = Math.round((max - min) / 2)
           }
           const sliderRow = document.createElement('div')
-          sliderRow.classList = 'row w-100'
+          sliderRow.classList = 'row w-100 mx-0'
           inputGroup.appendChild(sliderRow)
 
           const col9 = document.createElement('div')
-          col9.classList = 'col-9'
+          col9.classList = 'col-9 ps-0'
           sliderRow.appendChild(col9)
 
           const slider = document.createElement('input')
@@ -330,7 +322,7 @@ function buildLayout (definition) {
           col9.appendChild(slider)
 
           const col3 = document.createElement('div')
-          col3.classList = 'col-3'
+          col3.classList = 'col-3 pe-0 text-center'
           sliderRow.appendChild(col3)
 
           const sliderLabel = document.createElement('span')
@@ -574,6 +566,13 @@ function parseQueryString () {
     // Clear the query string so it reloads clean on refresh
     history.pushState(null, '', location.href.split('?')[0])
   }
+}
+
+// Set color mode
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.querySelector('html').setAttribute('data-bs-theme', 'dark')
+} else {
+  document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
 $('#recordButton').click(sendData)
