@@ -462,6 +462,38 @@ class ExhibitComponent(BaseModel):
     )
 
 
+@app.post("/component/{uuid_str}/edit")
+async def edit_component(request: Request,
+                         uuid_str: str,
+                         id: str | None = Body(description="The ID of the component.", default=None),
+                         groups: list[str] | None = Body(description="The groups of the component.", default=None),
+                         description: str | None = Body(description="A short description of the component.",
+                                                        default=None),
+                         ip_address: str | None = Body(description="The IP address for the projector.", default=None),
+                         password: str | None = Body(description="The PJLink password", default=None)):
+    """Edit the given component."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    if component is None:
+        return {"success": False, "reason": "Component does not exist"}
+
+    if id is not None:
+        component.id = id
+    if groups is not None:
+        component.groups = groups
+    if description is not None:
+        component.config["description"] = description
+    component.save()
+    c_config.last_update_time = time.time()
+    return {"success": True}
+
+
 @app.post("/component/{component_id}/setApp")
 async def set_component_app(component_id: str,
                             app_name: str = Body(description="The app to be set.", embed=True)):
@@ -1177,7 +1209,10 @@ async def create_projector(request: Request,
 async def edit_projector(request: Request,
                          uuid_str: str,
                          id: str | None = Body(description="The ID of the projector to add.", default=None),
-                         groups: list[str] | None = Body(description="The groups of the projector to add.", default=None),
+                         groups: list[str] | None = Body(description="The groups of the projector to add.",
+                                                         default=None),
+                         description: str | None = Body(description="A short description of this projector.",
+                                                        default=None),
                          ip_address: str | None = Body(description="The IP address for the projector.", default=None),
                          password: str | None = Body(description="The PJLink password", default=None)):
     """Edit the given projector."""
@@ -1200,6 +1235,8 @@ async def edit_projector(request: Request,
         proj.ip_address = ip_address
     if password is not None:
         proj.password = password
+    if description is not None:
+        proj.config["description"] = description
     proj.save()
     c_config.last_update_time = time.time()
     return {"success": True}
@@ -1235,9 +1272,11 @@ async def create_static_component(request: Request,
 @app.post("/component/static/{uuid_str}/edit")
 async def edit_static_component(request: Request,
                                 uuid_str: str,
-                                id: str | None = Body(description="The ID of the projector to add.", default=None),
-                                groups: list[str] | None = Body(description="The groups of the projector to add.",
-                                                         default=None)):
+                                id: str | None = Body(description="The ID of the static component.", default=None),
+                                description: str | None = Body(description="A short description of this component.",
+                                                               default=None),
+                                groups: list[str] | None = Body(description="The groups of the static component.",
+                                                                default=None)):
     """Edit the given static component."""
 
     # Check permission
@@ -1254,6 +1293,8 @@ async def edit_static_component(request: Request,
         component.id = id
     if groups is not None:
         component.groups = groups
+    if description is not None:
+        component.config["description"] = description
     component.save()
     c_config.last_update_time = time.time()
     return {"success": True}
@@ -1284,11 +1325,13 @@ async def edit_wake_on_LAN_component(request: Request,
                                      uuid_str: str,
                                      id: str | None = Body(description="The ID of the projector to add.", default=None),
                                      groups: list[str] | None = Body(description="The groups of the projector to add.",
-                                                              default=None),
+                                                                     default=None),
+                                     description: str | None = Body(
+                                         description="A short description of this component.", default=None),
                                      mac_address: str = Body(description="The MAC address of the machine to wake."),
                                      ip_address: str = Body(description="The static IP address of the machine.",
                                                             default="")):
-    """Edit the given static component."""
+    """Edit the given wake on LAN component."""
 
     # Check permission
     token = request.cookies.get("authToken", "")
@@ -1308,6 +1351,8 @@ async def edit_wake_on_LAN_component(request: Request,
         component.mac_address = mac_address
     if ip_address is not None:
         component.ip_address = ip_address
+    if description is not None:
+        component.config["description"] = description
     component.save()
     c_config.last_update_time = time.time()
 

@@ -468,73 +468,106 @@
                   </div>
                 </div>
                 <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
-                  <!-- Full settings -->
                   <div class="d-flex flex-column" style="height: 52vh">
-                    <div class="row">
-                      <div class="col">
-                        <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
+                  <!-- Exhibit component settings -->
+                    <div id="componentInfoModalSettingsPermissionsPane" class="mt-2">
+                      <div class="row gy-2">
+                        <div class="col-4">
+                          <div class="row gy-2 row-cols-1">
+                            <div class="col">
+                              <label for="componentInfoModalBasicSettingsID" class="form-label">
+                                ID
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <input id="componentInfoModalBasicSettingsID" class="form-control componentInfoBasicSetting" type="text">
+                            </div>
+                            <div class="col">
+                              <label for="componentInfoModalBasicSettingsGroup" class="form-label">Groups</label>
+                              <select id="componentInfoModalBasicSettingsGroup" class="form-control componentInfoBasicSetting" multiple></select>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-8">
+                          <div class="row row-cols-2 row-cols-sm-3 gy-2">
+                            <!-- Audio permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
+                                Audio
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Refresh permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
+                                Refresh
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Restart permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowRestart" class="form-label">
+                                Restart
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Shutdown permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
+                                Shutdown
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Sleep permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowSleep" class="form-label">
+                                Sleep
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <div class="col d-flex">
+                              <a id='componentInfoModalFullSettingsButton' class="btn btn-primary w-100 align-self-end" target='_blank'>Full settings</a>
+                            </div>
+                            
+                          </div>
+                          <div class="row mt-2">
+                            <div class="col-12">
+                              <!-- Component description input -->
+                              <label class="form-label" for="componentInfoModalExhibitDescriptionInput">
+                                Component description
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <input id="componentInfoModalExhibitDescriptionInput" class="form-control componentInfoBasicSetting" type="text">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-12">
+                          <div id="componentInfoModalBasicSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
+                          <div id="componentInfoModalBasicSettingsGroupWarning" class="text-danger mt-2">Components must be in at least one group.</div>
+                        </div>
                       </div>
                     </div>
                     
-                    <div id="componentInfoModalSettingsPermissionsPane" class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
-                      <!-- Audio permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
-                          Audio
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Refresh permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
-                          Refresh
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Restart permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowRestart" class="form-label">
-                          Restart
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Shutdown permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
-                          Shutdown
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Sleep permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowSleep" class="form-label">
-                          Sleep
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <!-- Projector settings -->
+                      <!-- Projector settings -->
                     <div id="componentInfoModalProjectorSettings" class="mt-2">
                       <span class="h5">Projector settings</span>
                       <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
@@ -602,7 +635,7 @@
                         </div>
                         <div class="col">
                           <label for="componentInfoModalWakeOnLANSettingsGroup" class="form-label">Group</label>
-                          <input id="componentInfoModalWakeOnLANSettingsGroup" class="form-control componentInfoWakeOnLANSetting" type="text">
+                          <select id="componentInfoModalWakeOnLANSettingsGroup" class="form-control componentInfoWakeOnLANSetting" multiple></select>
                         </div>
                         <div class="col">
                           <label for="componentInfoModalWakeOnLANSettingsMAC" class="form-label">MAC address</label>
@@ -621,9 +654,8 @@
                       <div id="componentInfoModalWakeOnLANSettingsMACWarning" class="text-danger mt-2">MAC address must be six pairs of two characters, separated by - or :.</div>
                     </div>
 
-                    <!-- Component description input -->
-                    <span class="h5 mt-3">General settings</span>
-                    <label class="form-label" for="componentInfoModalDescriptionInput">
+                    <!-- Component description input (for everything except exhibit components) -->
+                    <label id="componentInfoModalDescriptionInputLabel" class="form-label" for="componentInfoModalDescriptionInput">
                       Component description
                       <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
                     </label>
@@ -632,6 +664,7 @@
                     <div class="row mt-3 mt-auto">
                       <div class="col">
                         <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
+                        <button id="componentInfoModalBasicSettingsSaveButton" class="btn btn-primary">Save changes</button>
                       </div>
                     </div>
                   </div>

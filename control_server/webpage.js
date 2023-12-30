@@ -1015,6 +1015,12 @@ $('#componentInfoModalSettingsAutoplayAudio').change(function () {
 $('#componentInfoModalSettingsAllowShutdown').change(function () {
   constExhibit.toggleExhibitComponentInfoSettingWarnings()
 })
+document.getElementById('componentInfoModalBasicSettingsSaveButton').addEventListener('click', constExhibit.submitComponentBasicSettingsChange)
+Array.from(document.querySelectorAll('.componentInfoBasicSetting')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'block'
+  })
+})
 $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })

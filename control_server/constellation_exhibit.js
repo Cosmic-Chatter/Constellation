@@ -746,9 +746,14 @@ function showExhibitComponentInfo (id) {
   if (obj.description === '') {
     document.getElementById('componentInfoModalDescription').style.display = 'none'
     document.getElementById('componentInfoModalDescriptionInput').value = ''
+    document.getElementById('componentInfoModalExhibitDescriptionInput').value = ''
   } else {
     document.getElementById('componentInfoModalDescription').innerHTML = obj.description
     document.getElementById('componentInfoModalDescription').style.display = 'block'
+
+    // For exhibit components
+    document.getElementById('componentInfoModalExhibitDescriptionInput').value = obj.description
+    // For everything else
     document.getElementById('componentInfoModalDescriptionInput').value = obj.description
   }
 
@@ -804,6 +809,7 @@ function showExhibitComponentInfo (id) {
   // Must be after all the settings are configured
   toggleExhibitComponentInfoSettingWarnings()
   $('#componentInfoModalSettingsSaveButton').hide()
+  document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'none'
 
   // Make the modal visible
   $('#componentInfoModal').modal('show')
@@ -813,6 +819,21 @@ function configureComponentInfoModalForExhibitComponent (obj) {
   // Set up the componentInfoModal to show an exhibit component
 
   // Configure the settings page with the current settings
+  document.getElementById('componentInfoModalBasicSettingsID').value = obj.id
+
+  const groupSelect = document.getElementById('componentInfoModalBasicSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
   $('#componentInfoModalSettingsAutoplayAudio').val(String(obj.permissions.audio))
@@ -824,6 +845,15 @@ function configureComponentInfoModalForExhibitComponent (obj) {
   document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'flex'
   document.getElementById('componentInfoModalFullSettingsButton').style.display = 'inline-block'
   document.getElementById('componentInfoModalDefinitionsTabButton').style.display = 'block'
+
+  // Description
+  document.getElementById('componentInfoModalDescriptionInput').style.display = 'none'
+  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'none'
+  document.getElementById('componentInfoModalExhibitDescriptionInput').style.display = 'block'
+
+  // Warnings
+  document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'none'
+  document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'none'
 
   $('#componentInfoModalDefinitionsTabButton').tab('show')
 
@@ -1019,7 +1049,20 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
   document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
 
   document.getElementById('componentInfoModalWakeOnLANSettingsID').value = obj.id
-  document.getElementById('componentInfoModalWakeOnLANSettingsGroup').value = obj.group
+
+  const groupSelect = document.getElementById('componentInfoModalWakeOnLANSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value = obj.mac_address
   document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value = obj.ip_address
 
@@ -1055,6 +1098,7 @@ export function updateProjectorFromInfoModal () {
     groups: selectedGroupUUIDs,
     ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
+    description: document.getElementById('componentInfoModalDescriptionInput').value.trim(),
     uuid
   }
 
@@ -1102,7 +1146,8 @@ export function updateStaticComponentFromInfoModal () {
 
   const update = {
     id: document.getElementById('componentInfoModalStaticSettingsID').value.trim(),
-    groups: selectedGroupUUIDs
+    groups: selectedGroupUUIDs,
+    description: document.getElementById('componentInfoModalDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1136,11 +1181,16 @@ export function updateWakeOnLANComponentFromInfoModal () {
 
   const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
 
+  const groupSelect = document.getElementById('componentInfoModalWakeOnLANSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
+
   const update = {
     id: document.getElementById('componentInfoModalWakeOnLANSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalWakeOnLANSettingsGroup').value.trim(),
+    groups: selectedGroupUUIDs,
     mac_address: document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value.trim(),
-    ip_address: document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value.trim()
+    ip_address: document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value.trim(),
+    description: document.getElementById('componentInfoModalDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1583,6 +1633,57 @@ export function toggleExhibitComponentInfoSettingWarnings () {
   }
 }
 
+export function submitComponentBasicSettingsChange () {
+  // Update the id, group, and description of an exhibit component
+
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
+
+  const groupSelect = document.getElementById('componentInfoModalBasicSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
+
+  const update = {
+    id: document.getElementById('componentInfoModalBasicSettingsID').value.trim(),
+    groups: selectedGroupUUIDs,
+    description: document.getElementById('componentInfoModalExhibitDescriptionInput').value.trim(),
+    uuid
+  }
+
+  const descriptionEl = document.getElementById('componentInfoModalDescription')
+  if (update.description !== '') {
+    descriptionEl.innerHTML = update.description
+    descriptionEl.style.display = 'block'
+  } else {
+    descriptionEl.style.display = 'none'
+  }
+
+  // Check that fields are properly filled out
+  if (update.id === '') {
+    document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'none'
+  }
+  if (update.group === '') {
+    document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'none'
+  }
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/' + uuid + '/edit',
+    params: update
+  })
+    .then((response) => {
+      if (response.success === true) {
+        document.getElementById('componentInfoModalTitle').innerHTML = update.id
+        document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'none'
+      }
+    })
+}
+
 export function submitComponentSettingsChange () {
   // Collect the current settings and send them to the component's helper for saving.
 
@@ -1618,10 +1719,10 @@ export function submitComponentSettingsChange () {
   // Update component description
   const description = document.getElementById('componentInfoModalDescriptionInput').value.trim()
   const descriptionEl = document.getElementById('componentInfoModalDescription')
-  submitComponentDescriptionChange(obj.id, {
-    description,
-    id: obj.id
-  })
+  // submitComponentDescriptionChange(obj.id, {
+  //   description,
+  //   id: obj.id
+  // })
   descriptionEl.innerHTML = description
   if (description !== '') {
     descriptionEl.style.display = 'block'

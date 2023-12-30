@@ -26,6 +26,7 @@ class BaseComponent:
     """A basic Constellation component."""
 
     def __init__(self, id_: str, groups: list[str],
+                 description: str | None = None,
                  ip_address: str | None = None,
                  last_contact_datetime: str = "",
                  mac_address: str | None = None,
@@ -69,9 +70,12 @@ class BaseComponent:
         self.config: dict[str, Any] = {"permissions": {},
                                        "app_name": "",
                                        "commands": [],
-                                       "description": config.componentDescriptions.get(id_, ""),
                                        "maintenance_status": ""
                                        }
+        if description is not None:
+            self.config["description"] = description
+        else:
+            self.config["description"] = config.componentDescriptions.get(id_, "")
 
     def __repr__(self):
         return repr(f"[BaseComponent ID: {self.id} Groups: {self.groups} UUID: {self.uuid}]")
@@ -144,6 +148,7 @@ class BaseComponent:
             "uuid": self.uuid,
             "id": self.id,
             "groups": self.groups,
+            "description": self.config["description"],
             "last_contact_datetime": str(self.last_contact_datetime),
             "mac_address": self.mac_address,
             "maintenance_log": self.maintenance_log
@@ -163,6 +168,7 @@ class ExhibitComponent(BaseComponent):
     def __init__(self, id_: str,
                  groups: list[str],
                  category: str = 'dynamic',
+                 description: str | None = None,
                  last_contact_datetime: str = "",
                  maintenance_log: dict[str, Any] | None = None,
                  uuid_str: str = ""):
@@ -171,6 +177,7 @@ class ExhibitComponent(BaseComponent):
         # category='static' for components added from galleryConfiguration.ini
 
         super().__init__(id_, groups,
+                         description=description,
                          last_contact_datetime=last_contact_datetime,
                          maintenance_log=maintenance_log,
                          uuid_str=uuid_str)
@@ -303,11 +310,13 @@ class WakeOnLANDevice(BaseComponent):
                  groups: list[str],
                  mac_address: str,
                  ip_address: str = None,
+                 description: str | None = None,
                  last_contact_datetime: str = "",
                  maintenance_log: dict[str, Any] | None = None,
                  uuid_str: str = ""):
 
         super().__init__(id_, groups,
+                         description=description,
                          ip_address=ip_address,
                          last_contact_datetime=last_contact_datetime,
                          mac_address=mac_address,
@@ -397,6 +406,7 @@ class Projector(BaseComponent):
                  groups: list[str],
                  ip_address: str,
                  connection_type: str,
+                 description: str | None = None,
                  last_contact_datetime: str = "",
                  mac_address: str = None,
                  make: str = None,
@@ -405,6 +415,7 @@ class Projector(BaseComponent):
                  uuid_str: str = ""):
 
         super().__init__(id_, groups,
+                         description=description,
                          ip_address=ip_address,
                          last_contact_datetime=last_contact_datetime,
                          mac_address=mac_address,
@@ -527,6 +538,7 @@ def load_components():
             add_exhibit_component(comp_dict["id"],
                                   comp_dict.get("groups", ["Default"]),
                                   category=comp_dict["category"],
+                                  description=comp_dict.get("description", None),
                                   from_disk=True,
                                   last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
                                   maintenance_log=comp_dict.get("maintenance_log", None),
@@ -536,6 +548,7 @@ def load_components():
                           comp_dict.get("groups", ["Default"]),
                           ip_address=comp_dict["ip_address"],
                           from_disk=True,
+                          description=comp_dict.get("description", None),
                           last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
                           maintenance_log=comp_dict.get("maintenance_log", None),
                           password=comp_dict.get("password", None),
@@ -546,6 +559,7 @@ def load_components():
                                    comp_dict["mac_address"],
                                    ip_address=comp_dict.get("ip_address", None),
                                    from_disk=True,
+                                   description=comp_dict.get("description", None),
                                    last_contact_datetime=comp_dict.get("last_contact_datetime", ""),
                                    maintenance_log=comp_dict.get("maintenance_log", None),
                                    uuid_str=comp_dict["uuid"])
@@ -554,6 +568,7 @@ def load_components():
 def add_exhibit_component(this_id: str,
                           groups: list[str],
                           category: str = "dynamic",
+                          description: str | None = None,
                           from_disk: bool = False,
                           last_contact_datetime: str = "",
                           maintenance_log: dict[str, Any] | None = None,
@@ -576,6 +591,7 @@ def add_exhibit_component(this_id: str,
                 pass
 
     component = ExhibitComponent(this_id, groups, category,
+                                 description=description,
                                  last_contact_datetime=last_contact_datetime,
                                  maintenance_log=maintenance_log,
                                  uuid_str=uuid_str)
@@ -591,6 +607,7 @@ def add_exhibit_component(this_id: str,
 def add_projector(this_id: str,
                   groups: list[str],
                   ip_address: str,
+                  description: str | None = None,
                   from_disk: bool = False,
                   last_contact_datetime: str = "",
                   maintenance_log: dict[str, Any] | None = None,
@@ -605,6 +622,7 @@ def add_projector(this_id: str,
                           groups,
                           ip_address, "pjlink",
                           password=password,
+                          description=description,
                           last_contact_datetime=last_contact_datetime,
                           maintenance_log=maintenance_log,
                           uuid_str=uuid_str)
@@ -620,6 +638,7 @@ def add_projector(this_id: str,
 def add_wake_on_LAN_device(this_id: str,
                            groups: list[str],
                            mac_address: str,
+                           description: str | None = None,
                            from_disk: bool = False,
                            ip_address: str | None = None,
                            last_contact_datetime: str = "",
@@ -631,6 +650,7 @@ def add_wake_on_LAN_device(this_id: str,
     """
 
     component = WakeOnLANDevice(this_id, groups, mac_address,
+                                description=description,
                                 ip_address=ip_address,
                                 last_contact_datetime=last_contact_datetime,
                                 maintenance_log=maintenance_log,
