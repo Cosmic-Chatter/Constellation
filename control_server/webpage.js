@@ -955,7 +955,6 @@ function loadVersion () {
 // Bind event listeners
 
 // Login
-document.getElementById('loginCreateAccountButton').addEventListener('click', constUsers.showCreateAccountModal)
 document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
 document.getElementById('logoutButton').addEventListener('click', constUsers.logoutUser)
 
@@ -1194,6 +1193,25 @@ $('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalD
 $('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
 $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
 
+// Users tab
+// =========================
+document.getElementById('showEditUserModalButton').addEventListener('click', () => {
+  constUsers.showEditUserModal()
+})
+Array.from(document.querySelectorAll('.editUserField')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('editUserSubmitButton').style.display = 'block'
+  })
+})
+document.getElementById('editUserPermissionGroups').addEventListener('change', (event) => {
+  if (event.target.value === 'custom') {
+    document.getElementById('editUserGroupsRow').style.display = 'flex'
+  } else {
+    document.getElementById('editUserGroupsRow').style.display = 'none'
+  }
+})
+document.getElementById('editUserSubmitButton').addEventListener('click', constUsers.submitChangeFromEditUserModal)
+
 // Settings tab
 // =========================
 
@@ -1232,6 +1250,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 loadVersion()
 populateHelpTab()
+constUsers.populateUsers()
 populateControlServerSettings()
 parseQueryString()
 constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)

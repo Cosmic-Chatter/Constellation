@@ -6,6 +6,8 @@
   - ExhibitMate
     - ExhibitMate Apps
     - ExhibitMate Hub
+  - Exhibitera
+- Separate versioning for Control Server and Apps
 
 ## Control Server
 
