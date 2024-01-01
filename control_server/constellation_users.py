@@ -121,20 +121,20 @@ def get_encryption_key() -> bytes:
     return config.encryption_key
 
 
-def encrypt_token(username: str) -> str:
-    """Encrypt the username as a token and return it."""
+def encrypt_token(uuid_str: str) -> str:
+    """Encrypt the uuid as a token and return it."""
 
     f = Fernet(get_encryption_key())
-    token = f.encrypt(bytes(username, 'UTF-8'))
+    token = f.encrypt(bytes(uuid_str, 'UTF-8'))
     return str(token, 'UTF-8')
 
 
 def decrypt_token(token: str) -> str:
-    """Decrypt a token and return the username."""
+    """Decrypt a token and return the uuid."""
 
     f = Fernet(get_encryption_key())
-    username = f.decrypt(token)
-    return str(username, 'UTF-8')
+    uuid_str = f.decrypt(token)
+    return str(uuid_str, 'UTF-8')
 
 
 def create_root_admin(password: str):
@@ -142,8 +142,8 @@ def create_root_admin(password: str):
 
     path = c_tools.get_path(["configuration", "root_admin.txt"], user_file=True)
 
-    password_hash = password_hasher.hash(bytes(password, 'UTF-8'),
-                                         salt=bytes("Constellation", "UTF-8"))
+    password_hash = hash_password(password)
+
     with config.galleryConfigurationLock:
         with open(path, 'w', encoding='UTF-8') as f:
             f.write(password_hash)
@@ -246,8 +246,8 @@ def create_user(username: str,
             print(f"create_user: error: username {username} exists")
         return False, {}
 
-    password_hash = password_hasher.hash(bytes(password, 'UTF-8'),
-                                         salt=bytes("Constellation", "UTF-8"))
+    password_hash = hash_password(password)
+
     new_user = User(username,
                     display_name,
                     password_hash,
@@ -274,7 +274,7 @@ def check_username_available(username: str) -> bool:
 def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) -> tuple[bool, str]:
     """Authenticate the user using either a username/password or a token.
 
-    If the user is authenticated successfully, return the matching username.
+    If the user is authenticated successfully, return the matching uuid.
     """
 
     if token != "" and credentials != ("", ""):
@@ -285,14 +285,14 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
 
     if token != "":
         try:
-            username = decrypt_token(token)
-            user = get_user(username=username)
+            user_uuid = decrypt_token(token)
+            user = get_user(uuid_str=user_uuid)
         except InvalidToken:
             user = None
         if user is None:
             return False, ""
         user.update_last_activity()
-        return True, username
+        return True, user_uuid
 
     username, password = credentials
     user = get_user(username=username)
@@ -301,7 +301,7 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
         return False, ""
     success = user.authenticate(password)
     if success is True:
-        return True, username
+        return True, user.uuid
     return False, ""
 
 
@@ -336,7 +336,7 @@ def get_admin():
         "analytics": "edit",
         "components": {
             "edit": ["__all"],
-            "view": ["__all"]
+            "view": []
         },
         "exhibits": "edit",
         "maintenance": "edit",
@@ -344,3 +344,10 @@ def get_admin():
         "settings": "edit",
         "users": "edit"
     })
+
+
+def hash_password(password: str) -> str:
+    """Return the argon2 hash of the given password"""
+
+    return password_hasher.hash(bytes(password, 'UTF-8'),
+                                salt=bytes("Constellation", "UTF-8"))

@@ -34,14 +34,14 @@ export async function rebuildIssueFilters () {
   assignedToSelect.appendChild(new Option('Unassigned', 'unassigned'))
 
   // First, aggregate the various options needed
-  const assignableUsernameList = []
+  const assignableUserList = []
   const optionList = []
   for (const issue of constConfig.issueList) {
-    for (const username of issue.assignedTo) {
-      if (assignableUsernameList.includes(username) === false) {
-        assignableUsernameList.push(username)
-        const displayName = await constTools.getUserDisplayName(username)
-        optionList.push(new Option(displayName, username))
+    for (const uuid of issue.assignedTo) {
+      if (assignableUserList.includes(uuid) === false) {
+        assignableUserList.push(uuid)
+        const displayName = await constTools.getUserDisplayName(uuid)
+        optionList.push(new Option(displayName, uuid))
       }
     }
   }
@@ -96,10 +96,10 @@ export function createIssueHTML (issue, full = true, archived = false) {
     content.appendChild(tag)
   })
 
-  issue.assignedTo.forEach((name, i) => {
+  issue.assignedTo.forEach((uuid, i) => {
     const tag = document.createElement('span')
     tag.setAttribute('class', 'badge bg-success me-1')
-    constTools.getUserDisplayName(name)
+    constTools.getUserDisplayName(uuid)
       .then((displayName) => {
         tag.innerHTML = displayName
       })

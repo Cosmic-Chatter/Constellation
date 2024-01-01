@@ -383,21 +383,21 @@ def log_in(response: Response,
 
     token = request.cookies.get("authToken", "")
 
-    success, username = c_users.authenticate_user(token=token, credentials=credentials)
+    success, user_uuid = c_users.authenticate_user(token=token, credentials=credentials)
     if success is False:
         return {"success": False, "reason": "authentication_failed"}
 
-    user = c_users.get_user(username=username)
+    user = c_users.get_user(uuid_str=user_uuid)
     if token == "":
-        token = c_users.encrypt_token(username)
+        token = c_users.encrypt_token(user_uuid)
         print(token)
         response.set_cookie(key="authToken", value=token, max_age=int(3e7))  # Expire cookie in approx 1 yr
     return {"success": True, "user": user.get_dict()}
 
 
-@app.post("/user/{username}/create")
+@app.post("/user/create")
 def create_user(request: Request,
-                username: str,
+                username: str = Body(description="The username"),
                 password: str = Body(description="The password for the account to create."),
                 display_name: str = Body(description="The name of the account holder."),
                 permissions: dict | None = Body(description="A dictionary of permissions for the new account.",
@@ -415,6 +415,41 @@ def create_user(request: Request,
     if success is False:
         response["reason"] = "username_taken"
     return response
+
+
+@app.post("/user/{uuid_str}/edit")
+def edit_user(request: Request,
+              uuid_str: str,
+              username: str | None = Body(description="The username", default=None),
+              password: str | None = Body(description="The password for the account to create.", default=None),
+              display_name: str | None = Body(description="The name of the account holder.", default=None),
+              permissions: dict | None = Body(description="A dictionary of permissions for the new account.",
+                                              default=None)):
+    """Edit the given user."""
+
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    user = c_users.get_user(uuid_str=uuid_str)
+    if user is None:
+        return {"success": False, "reason": "user_does_not_exist"}
+
+    if username is not None and username != user.username:
+        if c_users.check_username_available(username) is True:
+            user.username = username
+        else:
+            return {"success": False, "reason": "username_taken"}
+
+    if display_name is not None:
+        user.display_name = display_name
+    if password is not None:
+        user.password_hash = c_users.hash_password(password)
+    if permissions is not None:
+        user.permissions = permissions
+
+    return {"success": success, "user": user.get_dict()}
 
 
 @app.post("/users/list")
@@ -437,13 +472,13 @@ def list_users(permissions: dict[str, str] = Body(description="A dictionary of p
     return {"success": True, "users": matched_users}
 
 
-@app.get("/user/{username}/getDisplayName")
-def get_user_display_name(username: str):
+@app.get("/user/{user_uuid}/getDisplayName")
+def get_user_display_name(user_uuid: str):
     """Get the display name for a user account."""
 
-    user = c_users.get_user(username=username)
+    user = c_users.get_user(uuid_str=user_uuid)
     if user is None:
-        return {"success": False, "reason": "username_does_not_exist"}
+        return {"success": False, "reason": "user_does_not_exist"}
     return {"success": True, "display_name": user.display_name}
 
 

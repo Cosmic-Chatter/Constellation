@@ -123,34 +123,144 @@
 
     <main role="main" class="container mb-4 pt-1 pt-md-2 px-md-5">
 
-      <!-- Reset password modal -->
-      <div class="modal" tabindex="-1" role="dialog" id="createAccountModal">
+      <!-- Edit user modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="editUserModal">
         <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Reset your password</h5>
+              <h5 id="editUserModalTitle" class="modal-title">Create a user</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <div class="row">
                 <div class="col-4">
-                  <form>
-                    <label class="form-label" for="resetPasswordUsernameInput"><b>Username</b></label>
-                    <input  class="form-control" id="resetPasswordUsernameInput" type="text">
-
-                    <label class="form-label mt-2" for="resetPasswordCurrentPasswordInput"><b>Current password</b></label>
-                    <input class="form-control" type="password" id="resetPasswordCurrentPasswordInput">
+                  <label class="form-label" for="editUserUsernameInput">Username</label>
+                  <input class="form-control editUserField" id="editUserUsernameInput" type="text" placeholder="jsmith" autocomplete="off">
+                  <label class="form-label mt-2" for="editUserDisplayNameInput">Display name</label>
+                  <input class="form-control editUserField" id="editUserDisplayNameInput" type="text" placeholder="Jane Smith" autocomplete="off">
+                  <label class="form-label mt-2" for="editUserPassword1Input">Password</label>
+                    <input class="form-control editUserField" type="password" id="editUserPassword1Input" autocomplete="new-password">
     
-                    <label class="form-label mt-2" for="resetPasswordPassword1Input"><b>New password</b></label>
-                    <input class="form-control" type="password" id="resetPasswordPassword1InputPassword1Input">
-    
-                    <label class="form-label mt-2" for="resetPasswordPassword1InputPassword2Input"><b>Confirm new password</b></label>
-                    <input class="form-control" type="password" id="resetPasswordPassword1InputPassword2Input" >
-                  </form>
+                    <label class="form-label mt-2" for="editUserPassword2Input">Confirm password</label>
+                    <input class="form-control editUserField" type="password" id="editUserPassword2Input" autocomplete="new-password">
+                </div>
+                <div class="col-8">
+                  <h4>Permissions</h4>
+                  <div class="row row-cols-3 gy-2">
+                    <!-- Analytics permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionAnalytics">
+                        Analytics
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Access to analytics data and Flexible Tracker." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionAnalytics" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Exhibits permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionExhibits">
+                        Exhibits
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, edit, and switch exhibits." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionExhibits" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Maintenance permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionMaintenance">
+                        Maintenance
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, and modify issues and change maintenance status." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionMaintenance" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Schedule permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionSchedule">
+                        Schedule
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="View or modify the schedule." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionSchedule" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Settings permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionSettings">
+                        Settings
+                        <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Change fundamental Control Server settings, such as IP address or port." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionSettings" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Users permission -->
+                    <div class="col">
+                      <label class="form-label" for="editUserPermissionUsers">
+                        Users
+                        <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, edit, or delete other users' accounts." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionUsers" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                  </div>    
+                  <div class="row mt-2">
+                    <div class="col-12">
+                      <label class="form-label" for="editUserPermissionGroups">
+                        Component groups
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="View or modify components in the given group." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <div class="row">
+                        <div class="col-4">
+                          <select id="editUserPermissionGroups" class="form-select editUserField">
+                            <option value="none">None</option>
+                            <option value="view">View all</option>
+                            <option value="edit">Edit all</option>
+                            <option value="custom">Custom</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row row-cols-3 gy-2 mt-2" id="editUserGroupsRow"></div>
+                    </div>
+                  </div>            
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div id="editUserBlankUsername" class="col-12 text-danger">
+                  Username may not be blank.
+                </div>
+                <div id="editUserBlankDisplayname" class="col-12 text-danger">
+                  Display name may not be blank.
+                </div>
+                <div id="editUserPasswordMismatch" class="col-12 text-danger">
+                  Passwords do not match
+                </div>
+                <div id="editUserBlankPassword" class="col-12 text-danger">
+                  Password may not be blank.
+                </div>
+                <div id="editUserUsernameExists" class="col-12 text-danger">
+                  This username already exists.
                 </div>
               </div>
             </div>
             <div class="modal-footer">
+              <button id="editUserSubmitButton" type="button" class="btn btn-primary">Save</button>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
@@ -1788,8 +1898,16 @@
         </div>
 
         <div class="tab-pane fade" id="nav-users" role="tabpanel" aria-labelledby="nav-users-tab">
-          <div class="row mt-2">
-            <H3>Users</H3>
+          <div class="row mt-3">
+            <div class="col-2">
+              <button id="showEditUserModalButton" class="btn btn-primary">Create user</button>
+            </div>
+            <div class="col-12 mt-2">
+              <h4>Users</h4>
+              <div id="usersRow" class="row gy-2 row-cols-2 row-cols-md-3 row-cols-lg-5 col-xl-6">
+              </div>
+            </div>
+            
           </div>
         </div>
         

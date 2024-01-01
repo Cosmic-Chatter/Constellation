@@ -381,24 +381,24 @@ export function checkPermission (action, neededLevel) {
   return false
 }
 
-export function getUserDisplayName (username) {
-  // Return the display name for a user or the username if the name cannot be resolved.
+export function getUserDisplayName (uuid) {
+  // Return the display name for a user or the uuid if the name cannot be resolved.
 
   return new Promise(function (resolve, reject) {
   // First, check the cache
-    if (constConfig.usersDisplayNameCache[username] !== undefined) {
-      resolve(constConfig.usersDisplayNameCache[username])
+    if (constConfig.usersDisplayNameCache[uuid] !== undefined) {
+      resolve(constConfig.usersDisplayNameCache[uuid])
     }
     makeServerRequest({
       method: 'GET',
-      endpoint: `/user/${username}/getDisplayName`
+      endpoint: `/user/${uuid}/getDisplayName`
     })
       .then((response) => {
         if (response.success === true) {
-          constConfig.usersDisplayNameCache[username] = response.display_name
+          constConfig.usersDisplayNameCache[uuid] = response.display_name
           resolve(response.display_name)
         } else {
-          resolve(username)
+          resolve(uuid)
         }
       })
   })
