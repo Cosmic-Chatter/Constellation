@@ -448,6 +448,7 @@ def edit_user(request: Request,
         user.password_hash = c_users.hash_password(password)
     if permissions is not None:
         user.permissions = permissions
+    c_users.save_users()
 
     return {"success": success, "user": user.get_dict()}
 

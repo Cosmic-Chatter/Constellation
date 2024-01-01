@@ -223,7 +223,7 @@ def get_user(username: str = '', uuid_str: str = '') -> User | None:
 
     username = username.lower()
 
-    if username == 'admin':
+    if username == 'admin' or uuid_str == 'admin':
         filtered = [get_admin()]
     elif username != '':
         filtered = [x for x in config.user_list if x.username == username]
@@ -278,7 +278,8 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
     """
 
     if token != "" and credentials != ("", ""):
-        raise ValueError("Supply only a token or credentials, not both.")
+        # Prefer credentials
+        token = ""
 
     if token == "" and credentials == ("", ""):
         return False, ""
@@ -314,14 +315,14 @@ def check_user_permission(action: str,
     Returns a tuple of success, the authorizing user, and a reason for failure
     """
 
-    success, username = authenticate_user(token=token, credentials=credentials)
+    success, user_uuid = authenticate_user(token=token, credentials=credentials)
     if success is False:
-        return False, username, "authentication_failed"
+        return False, user_uuid, "authentication_failed"
 
-    if get_user(username=username).check_permission(action, needed_level) is False:
-        return False, username, "insufficient_permission"
+    if get_user(uuid_str=user_uuid).check_permission(action, needed_level) is False:
+        return False, user_uuid, "insufficient_permission"
 
-    return True, username, ""
+    return True, user_uuid, ""
 
 
 def get_admin():
@@ -343,7 +344,7 @@ def get_admin():
         "schedule": "edit",
         "settings": "edit",
         "users": "edit"
-    })
+    }, uuid_str='admin')
 
 
 def hash_password(password: str) -> str:

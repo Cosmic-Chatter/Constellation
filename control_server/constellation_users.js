@@ -86,7 +86,8 @@ function populateEditUserGroupsRow (permissions) {
   const row = document.getElementById('editUserGroupsRow')
   row.innerHTML = ''
 
-  for (const group of constConfig.groups) {
+  const groups = [{ name: 'Default', uuid: 'Default' }, ...constConfig.groups]
+  for (const group of groups) {
     const col = document.createElement('div')
     col.classList = 'col'
     row.appendChild(col)
@@ -97,7 +98,8 @@ function populateEditUserGroupsRow (permissions) {
     col.appendChild(label)
 
     const select = document.createElement('select')
-    select.classList = 'form-select'
+    select.classList = 'form-select editUserGroupSelect'
+    select.setAttribute('data-uuid', group.uuid)
     select.addEventListener('change', () => {
       document.getElementById('editUserSubmitButton').style.display = 'block'
     })
@@ -144,15 +146,29 @@ export function submitChangeFromEditUserModal () {
     details.permissions.components = { edit: ['__all'], view: [] }
   } else {
     // Custom
+    const obj = { edit: [], view: [] }
+    Array.from(document.querySelectorAll('.editUserGroupSelect')).forEach((el) => {
+      const groupUUID = el.getAttribute('data-uuid')
+      if (el.value === 'edit') {
+        obj.edit.push(groupUUID)
+      } else if (el.value === 'view') {
+        obj.view.push(groupUUID)
+      }
+    })
+    details.permissions.components = obj
   }
 
   if (details.username === '') {
     document.getElementById('editUserBlankUsername').style.display = 'block'
     return
+  } else {
+    document.getElementById('editUserBlankUsername').style.display = 'none'
   }
   if (details.display_name === '') {
     document.getElementById('editUserBlankDisplayname').style.display = 'block'
     return
+  } else {
+    document.getElementById('editUserBlankDisplayname').style.display = 'none'
   }
   const password1 = document.getElementById('editUserPassword1Input').value
   const password2 = document.getElementById('editUserPassword2Input').value
@@ -160,6 +176,8 @@ export function submitChangeFromEditUserModal () {
   if (password1 !== password2) {
     document.getElementById('editUserPasswordMismatch').style.display = 'block'
     return
+  } else {
+    document.getElementById('editUserPasswordMismatch').style.display = 'none'
   }
 
   if (uuid === '') {
@@ -168,17 +186,51 @@ export function submitChangeFromEditUserModal () {
     if (password1 === '') {
       document.getElementById('editUserBlankPassword').style.display = 'block'
       return
+    } else {
+      document.getElementById('editUserBlankPassword').style.display = 'none'
     }
+    details.password = password1
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/user/create',
+      params: details
+    })
+      .then((response) => {
+        if (response.success === false && response.reason === 'username_taken') {
+          document.getElementById('editUserUsernameExists').style.display = 'block'
+        } else if (response.success === true) {
+          $('#editUserModal').modal('hide')
+          populateUsers()
+        }
+      })
   } else {
     // Editing an existing user
+    if (password1 !== '') {
+      details.password = password1
+    }
+
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/user/' + uuid + '/edit',
+      params: details
+    })
+      .then((response) => {
+        console.log(response)
+        if (response.success === false && response.reason === 'username_taken') {
+          document.getElementById('editUserUsernameExists').style.display = 'block'
+        } else if (response.success === true) {
+          $('#editUserModal').modal('hide')
+          populateUsers()
+        }
+      })
   }
-  document.getElementById('editUserUsernameExists').style.display = 'none'
 }
 
 export function populateUsers () {
   // Retrieve a list of current users and create a representation of each.
 
   const usersRow = document.getElementById('usersRow')
+  usersRow.innerHTML = ''
 
   constTools.makeServerRequest({
     method: 'POST',
