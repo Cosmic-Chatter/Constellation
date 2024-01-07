@@ -62,14 +62,15 @@ class User:
             result = False
         return result
 
-    def check_permission(self, action, needed_level) -> bool:
+    def check_permission(self, action, needed_level, group: str | None = None) -> bool:
         """Check if the user has sufficient permission to perform an action"""
 
         self.update_last_activity()
 
+        if needed_level == "none":
+            return True
+
         if action != "components":
-            if needed_level == "none":
-                return True
             allowed_level = self.permissions.get(action, "none")
             if needed_level == "edit":
                 if allowed_level == "edit":
@@ -77,6 +78,21 @@ class User:
                 return False
             if needed_level == "view":
                 if allowed_level == "edit" or allowed_level == "view":
+                    return True
+                return False
+        if action == 'components':
+            if needed_level == "edit":
+                if "__all" in self.permissions["components"].get("edit", []):
+                    return True
+                if (group is not None) and (group in self.permissions["components"].get("edit", [])):
+                    return True
+                return False
+            if needed_level == "view":
+                if "__all" in self.permissions["components"].get("edit", []) or \
+                        "__all" in self.permissions["components"].get("view", []):
+                    return True
+                if (group is not None) and ((group in self.permissions["components"].get("edit", [])) or
+                                            (group in self.permissions["components"].get("view", []))):
                     return True
                 return False
         return False

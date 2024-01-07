@@ -3,6 +3,7 @@ import * as constDMX from './constellation_dmx.js'
 import * as constGroup from './constellation_group.js'
 import * as constMaint from './constellation_maintenance.js'
 import * as constTools from './constellation_tools.js'
+import * as constUsers from './constellation_users.js'
 
 class BaseComponent {
   // A basic Constellation component.
@@ -26,6 +27,14 @@ class BaseComponent {
     // Function to build the HTML representation of this component
     // and add it to the row of the parent group
 
+    // First, make sure we have permission to view this group.
+    if (constUsers.checkUserPermission('components', 'view', group) === false) return
+
+    let permission = 'view'
+    if (constUsers.checkUserPermission('components', 'edit', group)) {
+      permission = 'edit'
+    }
+
     // If the element is static and the 'Show STATIC' checkbox is not ticked, bail out
     if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
       return
@@ -47,7 +56,7 @@ class BaseComponent {
     mainButton.setAttribute('type', 'button')
     mainButton.setAttribute('id', cleanId + '_' + group + '_MainButton')
     mainButton.addEventListener('click', function () {
-      showExhibitComponentInfo(thisId)
+      showExhibitComponentInfo(thisId, group)
     }, false)
     btnGroup.appendChild(mainButton)
 
@@ -57,7 +66,7 @@ class BaseComponent {
     mainButton.appendChild(displayNameEl)
 
     const statusFieldEl = document.createElement('div')
-    statusFieldEl.setAttribute('id', cleanId + 'StatusField')
+    statusFieldEl.setAttribute('id', cleanId + '_' + group + '_StatusField')
     statusFieldEl.innerHTML = this.getStatus().name
     mainButton.appendChild(statusFieldEl)
 
@@ -77,8 +86,8 @@ class BaseComponent {
 
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
-    dropdownMenu.setAttribute('id', cleanId + 'DropdownMenu')
-    this.populateActionMenu(dropdownMenu)
+    dropdownMenu.setAttribute('id', cleanId + '_' + group + '_DropdownMenu')
+    this.populateActionMenu(dropdownMenu, group, permission)
     btnGroup.appendChild(dropdownMenu)
     return col
   }
@@ -94,91 +103,89 @@ class BaseComponent {
     return constConfig.MAINTANANCE_STATUS['Off floor, not working']
   }
 
-  populateActionMenu (dropdownMenu = null) {
+  populateActionMenu (dropdownMenu, groupUUID, permission = 'view') {
     // Build out the dropdown menu options based on the this.permissions.
 
-    if (dropdownMenu == null) {
-      const cleanID = this.id.replaceAll(' ', '_')
-      dropdownMenu = document.getElementById(cleanID + 'DropdownMenu')
-    }
     $(dropdownMenu).empty()
     const thisId = this.id
     let numOptions = 0
 
-    if ('refresh' in this.permissions && this.permissions.refresh === true) {
-      numOptions += 1
-      const refreshAction = document.createElement('a')
-      refreshAction.classList = 'dropdown-item handCursor'
-      refreshAction.innerHTML = 'Refresh component'
-      refreshAction.addEventListener('click', function () {
-        queueCommand(thisId, 'refresh')
-      }, false)
-      dropdownMenu.appendChild(refreshAction)
-    }
+    if (permission === 'edit') {
+      if ('refresh' in this.permissions && this.permissions.refresh === true) {
+        numOptions += 1
+        const refreshAction = document.createElement('a')
+        refreshAction.classList = 'dropdown-item handCursor'
+        refreshAction.innerHTML = 'Refresh component'
+        refreshAction.addEventListener('click', function () {
+          queueCommand(thisId, 'refresh')
+        }, false)
+        dropdownMenu.appendChild(refreshAction)
+      }
 
-    if ('sleep' in this.permissions && this.permissions.sleep === true) {
-      numOptions += 2
-      const sleepAction = document.createElement('a')
-      sleepAction.classList = 'dropdown-item handCursor'
-      sleepAction.innerHTML = 'Sleep display'
-      sleepAction.addEventListener('click', function () {
-        queueCommand(thisId, 'sleepDisplay')
-      }, false)
-      dropdownMenu.appendChild(sleepAction)
+      if ('sleep' in this.permissions && this.permissions.sleep === true) {
+        numOptions += 2
+        const sleepAction = document.createElement('a')
+        sleepAction.classList = 'dropdown-item handCursor'
+        sleepAction.innerHTML = 'Sleep display'
+        sleepAction.addEventListener('click', function () {
+          queueCommand(thisId, 'sleepDisplay')
+        }, false)
+        dropdownMenu.appendChild(sleepAction)
 
-      const wakeAction = document.createElement('a')
-      wakeAction.classList = 'dropdown-item handCursor'
-      wakeAction.innerHTML = 'Wake display'
-      wakeAction.addEventListener('click', function () {
-        queueCommand(thisId, 'wakeDisplay')
-      }, false)
-      dropdownMenu.appendChild(wakeAction)
-    }
+        const wakeAction = document.createElement('a')
+        wakeAction.classList = 'dropdown-item handCursor'
+        wakeAction.innerHTML = 'Wake display'
+        wakeAction.addEventListener('click', function () {
+          queueCommand(thisId, 'wakeDisplay')
+        }, false)
+        dropdownMenu.appendChild(wakeAction)
+      }
 
-    if ('restart' in this.permissions && this.permissions.restart === true) {
-      numOptions += 1
-      const restartAction = document.createElement('a')
-      restartAction.classList = 'dropdown-item handCursor'
-      restartAction.innerHTML = 'Restart component'
-      restartAction.addEventListener('click', function () {
-        queueCommand(thisId, 'restart')
-      }, false)
-      dropdownMenu.appendChild(restartAction)
-    }
+      if ('restart' in this.permissions && this.permissions.restart === true) {
+        numOptions += 1
+        const restartAction = document.createElement('a')
+        restartAction.classList = 'dropdown-item handCursor'
+        restartAction.innerHTML = 'Restart component'
+        restartAction.addEventListener('click', function () {
+          queueCommand(thisId, 'restart')
+        }, false)
+        dropdownMenu.appendChild(restartAction)
+      }
 
-    if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
-      numOptions += 1
-      const shutdownAction = document.createElement('a')
-      shutdownAction.classList = 'dropdown-item handCursor'
-      shutdownAction.innerHTML = 'Power off component'
-      shutdownAction.addEventListener('click', function () {
-        queueCommand(thisId, 'restart')
-      }, false)
-      dropdownMenu.appendChild(shutdownAction)
-    }
+      if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
+        numOptions += 1
+        const shutdownAction = document.createElement('a')
+        shutdownAction.classList = 'dropdown-item handCursor'
+        shutdownAction.innerHTML = 'Power off component'
+        shutdownAction.addEventListener('click', function () {
+          queueCommand(thisId, 'restart')
+        }, false)
+        dropdownMenu.appendChild(shutdownAction)
+      }
 
-    if ('power_on' in this.permissions && this.permissions.power_on === true) {
-      numOptions += 1
-      const powerOnAction = document.createElement('a')
-      powerOnAction.classList = 'dropdown-item handCursor'
-      powerOnAction.innerHTML = 'Power on component'
-      powerOnAction.addEventListener('click', function () {
-        queueCommand(thisId, 'power_on')
-      }, false)
-      dropdownMenu.appendChild(powerOnAction)
-    }
+      if ('power_on' in this.permissions && this.permissions.power_on === true) {
+        numOptions += 1
+        const powerOnAction = document.createElement('a')
+        powerOnAction.classList = 'dropdown-item handCursor'
+        powerOnAction.innerHTML = 'Power on component'
+        powerOnAction.addEventListener('click', function () {
+          queueCommand(thisId, 'power_on')
+        }, false)
+        dropdownMenu.appendChild(powerOnAction)
+      }
 
-    if (numOptions > 0) {
-      const divider = document.createElement('hr')
-      divider.classList = 'dropdown-divider'
-      dropdownMenu.appendChild(divider)
+      if (numOptions > 0) {
+        const divider = document.createElement('hr')
+        divider.classList = 'dropdown-divider'
+        dropdownMenu.appendChild(divider)
+      }
     }
 
     const detailsAction = document.createElement('a')
     detailsAction.classList = 'dropdown-item handCursor'
     detailsAction.innerHTML = 'View details'
     detailsAction.addEventListener('click', function () {
-      showExhibitComponentInfo(thisId)
+      showExhibitComponentInfo(thisId, groupUUID)
     }, false)
     dropdownMenu.appendChild(detailsAction)
   }
@@ -230,7 +237,6 @@ class BaseComponent {
     // Set the compnent's permisions and then rebuild the action list
 
     this.permissions = permissions
-    this.populateActionMenu()
   }
 
   setStatus (status, maintenanceStatus) {
@@ -241,23 +247,26 @@ class BaseComponent {
     this.status = constConfig.STATUS[status]
     this.maintenanceStatus = constConfig.MAINTANANCE_STATUS[maintenanceStatus]
 
-    // Update the GUI based on which view mode we're in
-    const statusFieldEl = document.getElementById(cleanId + 'StatusField')
-    if (statusFieldEl == null) return // This is a hidden static component
-
-    let btnClass
-    if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
-      // Real-time status mode
-      statusFieldEl.innerHTML = this.status.name
-      btnClass = this.status.colorClass
-    } else {
-      // Maintenance status mode
-      statusFieldEl.innerHTML = this.maintenanceStatus.name
-      btnClass = this.maintenanceStatus.colorClass
-    }
-
-    // Strip all existing classes, then add the new one
     for (const group of this.groups) {
+      // Make sure this is a group we can actually see
+      if (constUsers.checkUserPermission('components', 'view', group) === false) return
+
+      // Update the GUI based on which view mode we're in
+      const statusFieldEl = document.getElementById(cleanId + '_' + group + '_StatusField')
+      if (statusFieldEl == null) return // This is a hidden static component
+
+      let btnClass
+      if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
+      // Real-time status mode
+        statusFieldEl.innerHTML = this.status.name
+        btnClass = this.status.colorClass
+      } else {
+      // Maintenance status mode
+        statusFieldEl.innerHTML = this.maintenanceStatus.name
+        btnClass = this.maintenanceStatus.colorClass
+      }
+
+      // Strip all existing classes, then add the new one
       $('#' + cleanId + '_' + group + '_MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
       $('#' + cleanId + '_' + group + '_DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
     }
@@ -492,6 +501,14 @@ class ExhibitComponentGroup {
     // Function to build the HTML representation of this group
     // and add it to the componentGroupsRow
 
+    // First, make sure we have permission to view this group.
+    if (constUsers.checkUserPermission('components', 'view', this.group) === false) return
+
+    let permission = 'view'
+    if (constUsers.checkUserPermission('components', 'edit', this.group) === true) {
+      permission = 'edit'
+    }
+
     let onCmdName = ''
     let offCmdName = ''
     const thisGroup = this.group
@@ -539,47 +556,51 @@ class ExhibitComponentGroup {
     mainButton.innerHTML = constGroup.getGroupName(this.group)
     btnGroup.appendChild(mainButton)
 
-    const dropdownButton = document.createElement('button')
-    dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
-    dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
-    dropdownButton.setAttribute('aria-haspopup', 'true')
-    dropdownButton.setAttribute('aria-expanded', 'false')
-    btnGroup.appendChild(dropdownButton)
+    if (permission === 'edit') {
+      mainButton.classList.add('rounded-end')
 
-    const srHint = document.createElement('span')
-    srHint.classList = 'visually-hidden'
-    srHint.innerHTML = 'Toggle Dropdown'
-    dropdownButton.appendChild(srHint)
+      const dropdownButton = document.createElement('button')
+      dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
+      dropdownButton.setAttribute('type', 'button')
+      dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
+      dropdownButton.setAttribute('aria-haspopup', 'true')
+      dropdownButton.setAttribute('aria-expanded', 'false')
+      btnGroup.appendChild(dropdownButton)
 
-    const dropdownMenu = document.createElement('div')
-    dropdownMenu.classList = 'dropdown-menu'
-    btnGroup.appendChild(dropdownMenu)
+      const srHint = document.createElement('span')
+      srHint.classList = 'visually-hidden'
+      srHint.innerHTML = 'Toggle Dropdown'
+      dropdownButton.appendChild(srHint)
 
-    const refreshOption = document.createElement('a')
-    refreshOption.classList = 'dropdown-item handCursor'
-    refreshOption.style.display = displayRefresh
-    refreshOption.innerHTML = 'Refresh all components'
-    refreshOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, 'refresh_page')
-    }, false)
-    dropdownMenu.appendChild(refreshOption)
+      const dropdownMenu = document.createElement('div')
+      dropdownMenu.classList = 'dropdown-menu'
+      btnGroup.appendChild(dropdownMenu)
 
-    const wakeOption = document.createElement('a')
-    wakeOption.classList = 'dropdown-item handCursor'
-    wakeOption.innerHTML = 'Wake all components'
-    wakeOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, onCmdName)
-    }, false)
-    dropdownMenu.appendChild(wakeOption)
+      const refreshOption = document.createElement('a')
+      refreshOption.classList = 'dropdown-item handCursor'
+      refreshOption.style.display = displayRefresh
+      refreshOption.innerHTML = 'Refresh all components'
+      refreshOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, 'refresh_page')
+      }, false)
+      dropdownMenu.appendChild(refreshOption)
 
-    const sleepOption = document.createElement('a')
-    sleepOption.classList = 'dropdown-item handCursor'
-    sleepOption.innerHTML = 'Sleep all components'
-    sleepOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, offCmdName)
-    }, false)
-    dropdownMenu.appendChild(sleepOption)
+      const wakeOption = document.createElement('a')
+      wakeOption.classList = 'dropdown-item handCursor'
+      wakeOption.innerHTML = 'Wake all components'
+      wakeOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, onCmdName)
+      }, false)
+      dropdownMenu.appendChild(wakeOption)
+
+      const sleepOption = document.createElement('a')
+      sleepOption.classList = 'dropdown-item handCursor'
+      sleepOption.innerHTML = 'Sleep all components'
+      sleepOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, offCmdName)
+      }, false)
+      dropdownMenu.appendChild(sleepOption)
+    }
 
     const componentList = document.createElement('div')
     componentList.classList = 'row'
@@ -672,11 +693,27 @@ export function getExhibitComponentGroup (group) {
   return result
 }
 
-function showExhibitComponentInfo (id) {
+function showExhibitComponentInfo (id, groupUUID) {
   // This sets up the componentInfoModal with the info from the selected
   // component and shows it on the screen.
 
+  // Check permission
+  let permission
+  if (constUsers.checkUserPermission('components', 'edit', groupUUID) === true) {
+    permission = 'edit'
+    document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'block'
+    document.getElementById('componentInfoModalSettingsTabButton').style.display = 'block'
+  } else if (constUsers.checkUserPermission('components', 'view', groupUUID) === true) {
+    permission = 'view'
+    document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'none'
+    document.getElementById('componentInfoModalSettingsTabButton').style.display = 'none'
+  } else {
+    // No permission to view
+    return
+  }
+
   const obj = getExhibitComponent(id)
+
   $('#componentInfoModal').data('id', id)
   document.getElementById('componentInfoModal').setAttribute('data-uuid', obj.uuid)
 
@@ -780,6 +817,11 @@ function showExhibitComponentInfo (id) {
   document.getElementById('definitionTabAppFilterSelect').value = 'all'
   document.getElementById('definitionTabThumbnailsCheckbox').checked = true
   document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
+  if (permission === 'edit') {
+    document.getElementById('componentInfoModalNewDefinitionButton').style.display = 'block'
+  } else {
+    document.getElementById('componentInfoModalNewDefinitionButton').style.display = 'none'
+  }
 
   // Settings tab
   document.getElementById('componentInfoModalFullSettingsButton').style.display = 'none'
@@ -795,7 +837,7 @@ function showExhibitComponentInfo (id) {
   if (obj.type === 'exhibit_component') {
     if (obj.status !== constConfig.STATUS.STATIC) {
       // This is an active component
-      configureComponentInfoModalForExhibitComponent(obj)
+      configureComponentInfoModalForExhibitComponent(obj, permission)
     } else {
       // This is a static component
       configureComponentInfoModalForStatic(obj)
@@ -815,7 +857,7 @@ function showExhibitComponentInfo (id) {
   $('#componentInfoModal').modal('show')
 }
 
-function configureComponentInfoModalForExhibitComponent (obj) {
+function configureComponentInfoModalForExhibitComponent (obj, permission) {
   // Set up the componentInfoModal to show an exhibit component
 
   // Configure the settings page with the current settings
@@ -858,7 +900,7 @@ function configureComponentInfoModalForExhibitComponent (obj) {
   $('#componentInfoModalDefinitionsTabButton').tab('show')
 
   // This component may be accessible over the network.
-  updateComponentInfoModalFromHelper(obj.id)
+  updateComponentInfoModalFromHelper(obj.id, permission)
   configureNewDefinitionOptions(obj)
 
   // Fetch any DMX lighting scenes and show the tab if necessary
@@ -1336,7 +1378,7 @@ export function removeExhibitComponentFromModal () {
     })
 }
 
-function populateComponentDefinitionList (definitions, thumbnails) {
+function populateComponentDefinitionList (definitions, thumbnails, permission) {
   // Take a dictionary of definitions and convert it to GUI elements.
 
   const component = getExhibitComponent($('#componentInfoModal').data('id'))
@@ -1385,9 +1427,12 @@ function populateComponentDefinitionList (definitions, thumbnails) {
       name.classList.remove('btn-primary')
       name.classList.add('btn-success')
     }
-    name.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
+    if (permission === 'edit') {
+      name.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
+    }
+
     name.style.fontSize = '18px'
     name.innerHTML = definition.name
     btnGroup.appendChild(name)
@@ -1408,18 +1453,26 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
-    dropdownMenu.innerHTML = `
+    let html = `
     <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
-    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
     `
+    if (permission === 'edit') {
+      html += `
+      <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
+      `
+    }
+    dropdownMenu.innerHTML = html
     btnGroup.appendChild(dropdownMenu)
 
     if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
-      thumbCol.addEventListener('click', () => {
-        handleDefinitionItemSelection(uuid)
-      })
+      if (permission === 'edit') {
+        thumbCol.addEventListener('click', () => {
+          handleDefinitionItemSelection(uuid)
+        })
+      }
+
       row.append(thumbCol)
 
       const thumb = document.createElement('video')
@@ -1437,9 +1490,11 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
-      thumbCol.addEventListener('click', () => {
-        handleDefinitionItemSelection(uuid)
-      })
+      if (permission === 'edit') {
+        thumbCol.addEventListener('click', () => {
+          handleDefinitionItemSelection(uuid)
+        })
+      }
       row.append(thumbCol)
 
       const thumb = document.createElement('img')
@@ -1454,9 +1509,12 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     app.classList = 'col-12 bg-secondary text-dark rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
-    app.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
+    if (permission === 'edit') {
+      app.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
+    }
+
     row.appendChild(app)
 
     $('#componentInfoModalDefinitionList').append(col)
@@ -1496,7 +1554,7 @@ export function submitDefinitionSelectionFromModal () {
   document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
 }
 
-function updateComponentInfoModalFromHelper (id) {
+function updateComponentInfoModalFromHelper (id, permission) {
   // Ask the given helper to send an update and use it to update the interface.
 
   const obj = getExhibitComponent(id)
@@ -1527,7 +1585,7 @@ function updateComponentInfoModalFromHelper (id) {
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
-        populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails)
+        populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails, permission)
       }
 
       // If it is provided, show the system stats
@@ -1764,48 +1822,6 @@ export function rebuildComponentInterface () {
     constConfig.componentGroups[i].sortComponentList()
     constConfig.componentGroups[i].buildHTML()
   }
-}
-
-function submitComponentDescriptionChange (currentID, update) {
-  // Update the description for a component
-  // update is an object with keys `id` and `description`
-
-  // First, get the current description configuration
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/descriptions/getConfiguration'
-  })
-    .then((result) => {
-      let descConfig
-      if (result.success === true) {
-        descConfig = result.configuration
-      } else {
-        descConfig = []
-      }
-
-      // Next, check if there is a configuration matching this id
-      let matchFound = false
-      for (let i = 0; i < descConfig.length; i++) {
-        if (descConfig[i].id === currentID) {
-          descConfig[i].description = update.description
-          descConfig[i].id = update.id
-          matchFound = true
-          break
-        }
-      }
-      if (matchFound === false) {
-        descConfig.push(update)
-      }
-
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/descriptions/updateConfiguration',
-        params: {
-          configuration: descConfig
-        }
-      })
-    })
 }
 
 export function queueCommand (id, cmd) {

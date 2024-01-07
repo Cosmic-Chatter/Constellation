@@ -1,6 +1,43 @@
 import constConfig from './config.js'
 import * as constTools from './constellation_tools.js'
 
+export function checkUserPermission (action, neededLevel, group = null) {
+  // Return true if the user's permissions allow this action and false if they do not.
+
+  if ((action in constConfig.user.permissions) === false) return false
+
+  if (neededLevel === 'none') {
+    return true
+  }
+
+  if (action !== 'components') {
+    const allowedLevel = constConfig.user.permissions[action]
+
+    if (neededLevel === 'edit') {
+      if (allowedLevel === 'edit') return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (allowedLevel === 'edit' || allowedLevel === 'view') return true
+      return false
+    }
+  }
+  if (action === 'components') {
+    if (neededLevel === 'edit') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if (constConfig.user.permissions.components.view.includes('__all')) return true
+      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || (constConfig.user.permissions.components.view.includes(group)))) return true
+      return false
+    }
+  }
+  return false
+}
+
 export function showEditUserModal (user = null) {
   // Show the modal for creating a new user account.
 
