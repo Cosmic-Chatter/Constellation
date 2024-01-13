@@ -693,6 +693,49 @@ export function getExhibitComponentGroup (group) {
   return result
 }
 
+function setComponentInfoStatusMessage (msg) {
+  // Set the given string as the status message and show it.
+
+  if (msg.trim() === '') {
+    clearComponentInfoStatusMessage()
+    return
+  }
+
+  const el = document.getElementById('componentInfoStatusMessage')
+
+  el.innerHTML = msg
+  el.style.display = 'block'
+}
+
+function clearComponentInfoStatusMessage () {
+  // Hide the status message
+
+  const el = document.getElementById('componentInfoStatusMessage')
+
+  el.style.display = 'none'
+}
+
+function componentCannotConnect () {
+  // Configure the componentInfoModal for a failed connection.
+
+  setComponentInfoStatusMessage('Cannot connect to component')
+
+  // Hide the tabs
+  document.getElementById('componentInfoModalTabList').style.display = 'none'
+  document.getElementById('componentInfoModalTabContainer').style.display = 'none'
+  document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
+}
+
+function componentGoodConnection (screenshot = true) {
+  // Configure the componentInfoModal for a good connection
+
+  clearComponentInfoStatusMessage()
+  // Show the tabs
+  document.getElementById('componentInfoModalTabList').style.display = 'flex'
+  document.getElementById('componentInfoModalTabContainer').style.display = 'block'
+  if (screenshot) document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
+}
+
 function showExhibitComponentInfo (id, groupUUID) {
   // This sets up the componentInfoModal with the info from the selected
   // component and shows it on the screen.
@@ -710,6 +753,18 @@ function showExhibitComponentInfo (id, groupUUID) {
   } else {
     // No permission to view
     return
+  }
+
+  let maintenancePermission
+  if (constUsers.checkUserPermission('maintenance', 'edit', groupUUID) === true) {
+    maintenancePermission = 'edit'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
+  } else if (constUsers.checkUserPermission('maintenance', 'view', groupUUID) === true) {
+    maintenancePermission = 'view'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
+  } else {
+    maintenancePermission = 'none'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'none'
   }
 
   const obj = getExhibitComponent(id)
@@ -796,10 +851,8 @@ function showExhibitComponentInfo (id, groupUUID) {
 
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
-  $('#componentInfoConnectingNotice').show()
-  $('#componentInfoConnectionStatusFailed').hide()
-  $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
+  clearComponentInfoStatusMessage()
 
   document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'none'
@@ -830,9 +883,6 @@ function showExhibitComponentInfo (id, groupUUID) {
   $('#componentInfoModalDMXTabButton').hide()
   $('#contentUploadSystemStatsView').hide()
 
-  $('#componentInfoConnectionStatusFailed').show()
-  $('#componentInfoConnectionStatusInPrograss').hide()
-
   // Based on the component type, configure the various tabs and panes
   if (obj.type === 'exhibit_component') {
     if (obj.status !== constConfig.STATUS.STATIC) {
@@ -840,7 +890,7 @@ function showExhibitComponentInfo (id, groupUUID) {
       configureComponentInfoModalForExhibitComponent(obj, permission)
     } else {
       // This is a static component
-      configureComponentInfoModalForStatic(obj)
+      configureComponentInfoModalForStatic(obj, permission, maintenancePermission)
     }
   } else if (obj.type === 'projector') {
     configureComponentInfoModalForProjector(obj)
@@ -849,7 +899,7 @@ function showExhibitComponentInfo (id, groupUUID) {
   }
 
   // Must be after all the settings are configured
-  toggleExhibitComponentInfoSettingWarnings()
+  $('[data-bs-toggle="tooltip"]').tooltip()
   $('#componentInfoModalSettingsSaveButton').hide()
   document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'none'
 
@@ -1055,8 +1105,27 @@ function configureComponentInfoModalForProjector (obj) {
   document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
 }
 
-function configureComponentInfoModalForStatic (obj) {
+function configureComponentInfoModalForStatic (obj, componentPermission, maintenancePermission) {
   // Configure componentInfoModal to show a static component
+
+  // Check permissions and show the right tab
+  if ((componentPermission !== 'edit') && (maintenancePermission === 'none')) {
+    // Nothing to show
+    document.getElementById('componentInfoModalTabList').style.display = 'none'
+    document.getElementById('componentInfoModalTabContainer').style.display = 'none'
+    setComponentInfoStatusMessage('Nothing to show')
+  } else {
+    // Something to show
+    document.getElementById('componentInfoModalTabList').style.display = 'flex'
+    document.getElementById('componentInfoModalTabContainer').style.display = 'block'
+    clearComponentInfoStatusMessage()
+
+    if (maintenancePermission !== 'none') {
+      $('#componentInfoModalMaintenanceTabButton').tab('show')
+    } else {
+      $('#componentInfoModalSettingsTabButton').tab('show')
+    }
+  }
 
   document.getElementById('componentInfoModalStaticSettings').style.display = 'block'
   document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
@@ -1077,8 +1146,6 @@ function configureComponentInfoModalForStatic (obj) {
     }
     groupSelect.appendChild(option)
   }
-
-  $('#componentInfoModalMaintenanceTabButton').tab('show')
 }
 
 function configureComponentInfoModalForWakeOnLAN (obj) {
@@ -1107,8 +1174,6 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
 
   document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value = obj.mac_address
   document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value = obj.ip_address
-
-  $('#componentInfoModalMaintenanceTabButton').tab('show')
 }
 
 function configureNewDefinitionOptions (obj) {
@@ -1562,26 +1627,23 @@ function updateComponentInfoModalFromHelper (id, permission) {
   const url = obj.getHelperURL()
   if (url == null) {
     // We don't have enough information to contact the helper
-    $('#componentInfoConnectionStatusFailed').show()
-    $('#componentInfoConnectionStatusInPrograss').hide()
-    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
+    componentCannotConnect()
 
-    // Show the maintenance tab
-    $('#componentInfoModalMaintenanceTabButton').tab('show')
     // Make the modal visible
     $('#componentInfoModal').modal('show')
     return
   }
 
+  setComponentInfoStatusMessage('Connecting to component...')
   constTools.makeRequest({
     method: 'GET',
     url,
     endpoint: '/getAvailableContent',
-    timeout: 10000
+    timeout: 3000
   })
     .then((availableContent) => {
       // Good connection, so show the interface elements
-      $('#componentInfoConnectingNotice').hide()
+      componentGoodConnection()
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
@@ -1639,6 +1701,9 @@ function updateComponentInfoModalFromHelper (id, permission) {
         $('#contentUploadSystemStatsView').hide()
       }
     })
+    .catch(() => {
+      componentCannotConnect()
+    })
 }
 
 export function onDefinitionTabThumbnailsCheckboxChange () {
@@ -1670,25 +1735,6 @@ export function filterDefinitionListByApp () {
       entry.style.display = 'none'
     }
   })
-}
-
-export function toggleExhibitComponentInfoSettingWarnings () {
-  // Show or hide the exhibit component setting warnings based on their state
-
-  // Enable all tooltips
-  $('[data-bs-toggle="tooltip"]').tooltip()
-
-  if ($('#componentInfoModalSettingsAllowShutdown').prop('checked')) {
-    $('#componentInfoModalSettingsAllowShutdownWarning').show()
-  } else {
-    $('#componentInfoModalSettingsAllowShutdownWarning').hide()
-  }
-
-  if ($('#componentInfoModalSettingsAutoplayAudio').prop('checked')) {
-    $('#componentInfoModalSettingsAutoplayAudioWarning').show()
-  } else {
-    $('#componentInfoModalSettingsAutoplayAudioWarning').hide()
-  }
 }
 
 export function submitComponentBasicSettingsChange () {

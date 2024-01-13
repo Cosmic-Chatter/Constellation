@@ -1008,12 +1008,6 @@ $('#componentInfoModalMaintenanceSaveButton').click(function () {
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
-$('#componentInfoModalSettingsAutoplayAudio').change(function () {
-  constExhibit.toggleExhibitComponentInfoSettingWarnings()
-})
-$('#componentInfoModalSettingsAllowShutdown').change(function () {
-  constExhibit.toggleExhibitComponentInfoSettingWarnings()
-})
 document.getElementById('componentInfoModalBasicSettingsSaveButton').addEventListener('click', constExhibit.submitComponentBasicSettingsChange)
 Array.from(document.querySelectorAll('.componentInfoBasicSetting')).forEach((el) => {
   el.addEventListener('change', () => {
