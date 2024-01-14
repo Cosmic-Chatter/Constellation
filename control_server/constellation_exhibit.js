@@ -1103,6 +1103,9 @@ function configureComponentInfoModalForProjector (obj) {
   document.getElementById('componentInfoModalProjectorSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalProjectorSettingsGroupWarning').style.display = 'none'
   document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
+  // Description
+  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
+  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
 }
 
 function configureComponentInfoModalForStatic (obj, componentPermission, maintenancePermission) {
@@ -1128,6 +1131,8 @@ function configureComponentInfoModalForStatic (obj, componentPermission, mainten
   }
 
   document.getElementById('componentInfoModalStaticSettings').style.display = 'block'
+  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
+  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
   document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
   document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
@@ -1156,6 +1161,9 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
   document.getElementById('componentInfoModalWakeOnLANSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalWakeOnLANSettingsGroupWarning').style.display = 'none'
   document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
+  // Description
+  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
+  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
 
   document.getElementById('componentInfoModalWakeOnLANSettingsID').value = obj.id
 

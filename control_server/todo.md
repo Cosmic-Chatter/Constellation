@@ -44,6 +44,7 @@
 ### General
 - Change preview aspect ratio in definition setup.
 - Add heartbeat app
+- Add map app
 
 ### DMX Control
 

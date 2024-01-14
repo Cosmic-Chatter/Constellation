@@ -328,7 +328,12 @@ export function previewDefinition (automatic = false) {
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Configure the preview frame
-        document.getElementById('previewFrame').src = '../' + config.app + '.html?standalone=true&definition=' + '__preview_' + config.app
+        if (config.app !== 'other') {
+          document.getElementById('previewFrame').src = '../' + config.app + '.html?standalone=true&definition=' + '__preview_' + config.app
+        } else {
+          if (def.path === '') return
+          document.getElementById('previewFrame').src = '../' + def.path + '?standalone=true&definition=' + '__preview_other'
+        }
       }
     })
 }
