@@ -13,6 +13,7 @@ Constellation 5 introduces a user account system that enables administrators to 
 ## Constellation Apps
 
 ### General
+- When creating or editing a definition, the preview can be configured for displays of different aspect ratio.
 
 # **Constellation 4**
 Constellation 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.

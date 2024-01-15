@@ -231,9 +231,24 @@ function createEventListeners () {
     previewDefinition(false)
   })
 
-  // Rotate preview button
-  document.getElementById('previewRotateButton').addEventListener('click', () => {
-    rotatePreview()
+  // configure preview options
+  document.getElementById('previewAspect16x9').addEventListener('click', () => {
+    configurePreview('16x9')
+  })
+  document.getElementById('previewAspect9x16').addEventListener('click', () => {
+    configurePreview('9x16')
+  })
+  document.getElementById('previewAspect16x10').addEventListener('click', () => {
+    configurePreview('16x10')
+  })
+  document.getElementById('previewAspect10x16').addEventListener('click', () => {
+    configurePreview('10x16')
+  })
+  document.getElementById('previewAspect4x3').addEventListener('click', () => {
+    configurePreview('4x3')
+  })
+  document.getElementById('previewAspect3x4').addEventListener('click', () => {
+    configurePreview('3x4')
   })
 
   // Help button
@@ -272,12 +287,22 @@ function createDefinitionDeletePopup () {
   })
 }
 
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
+function configurePreview (ratio) {
+  // Toggle the preview between various aspect ratios and orientations.
 
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
+  const previewFrame = document.getElementById('previewFrame')
+  // First, remove all ratio classes
+  previewFrame.classList.remove('preview-16x9')
+  previewFrame.classList.remove('preview-9x16')
+  previewFrame.classList.remove('preview-16x10')
+  previewFrame.classList.remove('preview-10x16')
+  previewFrame.classList.remove('preview-4x3')
+  previewFrame.classList.remove('preview-3x4')
+
+  previewFrame.classList.add('preview-' + ratio)
+
   resizePreview()
+  previewDefinition()
 }
 
 function resizePreview () {
@@ -295,7 +320,7 @@ function resizePreview () {
   const paneWidth = $('#previewPane').width()
   const paneHeight = $('#previewPane').height()
 
-  // Size of frame (this will be 1920x1080 or 1080x1920)
+  // Size of frame (this will be 1920 on the long axis)
   const frameWidth = $('#previewFrame').width()
   const frameHeight = $('#previewFrame').height()
   const frameAspect = frameWidth / frameHeight
