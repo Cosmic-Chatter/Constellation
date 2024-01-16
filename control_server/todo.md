@@ -20,7 +20,6 @@
 - Hide the view screenshot option is screenshot permission is not available
 - Replace table layout for projector status
 
-
 ### Analytics
 - Record app analytics
 
@@ -42,14 +41,13 @@
 ## Constellation Apps
 
 ### General
-- Change preview aspect ratio in definition setup.
 - Add heartbeat app
 - Add map app
 
 ### DMX Control
 
 ### Media Browser
-- Ability to filter results
+- Ability to search results
 
 ### Media Player
 

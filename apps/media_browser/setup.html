@@ -257,10 +257,10 @@
                 <div id="languageNav" class="nav nav-tabs" role="tablist">
                 </div>
               </nav>
-              <div class="tab-content" id="languageNavContent">
+              <div class="tab-content border-bottom" id="languageNavContent">
               </div>
 
-              <h3>Appearance</h3>
+              <h3 class="mt-2">Appearance</h3>
 
               <h4>Grid layout</h4>
               <div class="row gy-2 mb-3">
@@ -320,7 +320,24 @@
                     <input id="colorPicker_titleColor" type="text" class="coloris form-control" value="#000000" data-property="titleColor" data-default="#000000">
                   </div>
                 </div>
-      
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterBackgroundColor" class="form-label">Filter background</label>
+                  <div>
+                    <input id="colorPicker_filterBackgroundColor" type="text" class="coloris form-control" value="#ffffff" data-property="filterBackgroundColor" data-default="#ffffff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterLabelColor" class="form-label">Filter label</label>
+                  <div>
+                    <input id="colorPicker_filterLabelColor" type="text" class="coloris form-control" value="#000000" data-property="filterLabelColor" data-default="#000000">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterTextColor" class="form-label">Filter text</label>
+                  <div>
+                    <input id="colorPicker_filterTextColor" type="text" class="coloris form-control" value="#000000" data-property="filterTextColor" data-default="#000000">
+                  </div>
+                </div>
               </div>
 
               <h4>Fonts</h4>
@@ -348,6 +365,14 @@
                   <label for="fontSelect_Lightbox_credit" class="form-label">Lightbox credit</label>
                   <select id="fontSelect_Lightbox_credit" class="form-select font-select" data-property="Lightbox_credit" data-default="../_fonts/OpenSans-LightItalic.ttf"></select>
                 </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_filter_label" class="form-label">Filter label</label>
+                  <select id="fontSelect_filter_label" class="form-select font-select" data-property="filter_label" data-default="../_fonts/OpenSans-Bold.ttf"></select>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                  <label for="fontSelect_filter_text" class="form-label">Filter text</label>
+                  <select id="fontSelect_filter_text" class="form-select font-select" data-property="filter_text" data-default="../_fonts/OpenSans-Regular.ttf"></select>
+                </div>
 
               </div>
 
@@ -368,6 +393,14 @@
                 <div class="col-12 col-md-6 col-lg-4">
                   <label for="Lightbox_creditTextSizeSlider" class="form-label">Lightbox credit</label>
                   <input id="Lightbox_creditTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Lightbox_credit" min="-0.5", max="2" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="filter_labelTextSizeSlider" class="form-label">Filter label</label>
+                  <input id="filter_labelTextSizeSlider" type="range" class="form-range text-size-slider" data-property="filter_label" min="-0.5", max="2" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="filter_textTextSizeSlider" class="form-label">Filter text</label>
+                  <input id="filter_textTextSizeSlider" type="range" class="form-range text-size-slider" data-property="filter_text" min="-0.5", max="2" start="0" step="0.5">
                 </div>
               </div>
             </div>

@@ -2,13 +2,18 @@
     /* Colors */
     --background-color: white;
     --titleColor: black;
+    --filterBackgroundColor: white;
+    --filterLabelColor: black;
+    --filterTextColor: black;
 
     /* Font faces */
     --Header-font: 'Header-default';
     --Title-font: "Title-default";
     --Lightbox_title-font: "Lightbox_title-default";
     --Lightbox_caption-font: "Lightbox_caption-default";
-    --Lightbox_credit-font: "Lightbox_credit-default"
+    --Lightbox_credit-font: "Lightbox_credit-default";
+    --filter_label-font: "filter_label-default";
+    --filter_text-font: "filter_text-default";
 
     /* Font modifiers */
     --fontModifier: '1.0';
@@ -17,6 +22,8 @@
     --Lightbox_title-font-adjust: 0;
     --Lightbox_caption-font-adjust: 0;
     --Lightbox_credit-font-adjust: 0;
+    --filter_label-font-adjust: 0;
+    --filter_text-font-adjust: 0;
 }
 
 /* Font definitions */
@@ -43,6 +50,16 @@
 @font-face {
     font-family: "Lightbox_credit-default";
     src: url("../_fonts/OpenSans-LightItalic.ttf");
+}
+
+@font-face {
+    font-family: "filter_label-default";
+    src: url("../_fonts/OpenSans-Bold.ttf");
+}
+
+@font-face {
+    font-family: "filter_text-default";
+    src: url("../_fonts/OpenSans-Regular.ttf");
 }
 
 html {
@@ -92,6 +109,18 @@ body {
 .input {
     font-size: 30px;
     border: 0px;
+}
+.filter-entry {
+    font-size: 3vmin;
+    font-family: var(--filter_text-font);
+    font-size: calc(3vmax + var(--filter_text-font-adjust)*1vmax);
+    color: var(--filterTextColor);
+  }
+.filter-label {
+    font-size: 4vmin;
+    font-family: var(--filter_label-font);
+    font-size: calc(3vmax + var(--filter_label-font-adjust)*1vmax);
+    color: var(--filterLabelColor);
 }
 .langSwitch-entry {
     font-size: 3vmin;
@@ -152,9 +181,9 @@ body {
     overflow: hidden;
     height: 100vh;
 }
-#filterRegion {
-    height: 100%;
-        align-items: flex-end;
+#filterOptions {
+    width: 25vmax;
+    background-color: var(--filterBackgroundColor);
 }
 #mediaLightbox {
     position: absolute;
@@ -195,6 +224,15 @@ body {
     color: white;
     height: 9%;
     font-family: var(--Lightbox_title-font);
+}
+#filterDropdown {
+    position: absolute;
+    width: 5vmax;
+    height: 5vmax;
+    bottom: 0px;
+    left: 0vw;
+    margin-left: 1vmax;
+    margin-bottom: 1vmax;
 }
 #langSwitchDropdown {
     position: absolute;

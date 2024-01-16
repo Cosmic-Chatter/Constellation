@@ -858,3 +858,47 @@ export function setBackground (details, root, defaultColor = '#22222E') {
     root.style.setProperty('--background-color', `url(../content/${details.image})`)
   }
 }
+
+export function uuid () {
+  // Generate a new UUID v4 without using the crypto library (we may not be in HTTPS).
+  // Format: 8-4-4-4-12
+
+  const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 12; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  return result
+}
+
+export function sortAlphabetically (array) {
+  // Sort the given array alphabetically
+
+  return array.sort((a, b) => {
+    try {
+      const aName = a.toLowerCase()
+      const bName = b.toLowerCase()
+      if (aName > bName) return 1
+      if (aName < bName) return -1
+    } catch {
+
+    }
+    return 0
+  })
+}

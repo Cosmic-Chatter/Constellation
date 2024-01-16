@@ -74,7 +74,7 @@ function clearDefinitionInput (full = true) {
   document.getElementById('imageHeightSlider').value = 80
 
   // Reset style options
-  const colorInputs = ['titleColor']
+  const colorInputs = ['titleColor', 'filterBackgroundColor', 'filterLabelColor', 'filterTextColor']
   colorInputs.forEach((input) => {
     const el = $('#colorPicker_' + input)
     el.val(el.data('default'))
@@ -124,7 +124,6 @@ function editDefinition (uuid = '') {
   }
 
   // Set the layout options
-  // document.getElementById('showSearchPaneCheckbox').checked = def.style.layout.show_search_and_filter
   if ('items_per_page' in def.style.layout) {
     document.getElementById('itemsPerPageInput').value = def.style.layout.items_per_page
   } else {
@@ -239,7 +238,6 @@ function addLanguage () {
 
 function createLanguageTab (code, displayName) {
   // Create a new language tab for the given details.
-  // Set first=true when creating the first tab
 
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
@@ -420,6 +418,40 @@ function createLanguageTab (code, displayName) {
     populateKeySelects(keyList)
   }
 
+  // Create the filter options
+  const filterCol = document.createElement('div')
+  filterCol.classList = 'col-12 mt-2'
+  row.appendChild(filterCol)
+
+  const filterHeader = document.createElement('H5')
+  filterHeader.innerHTML = 'Filter options'
+  filterCol.appendChild(filterHeader)
+
+  const filterLabel = document.createElement('div')
+  filterLabel.classList = 'fst-italic'
+  filterLabel.innerHTML = 'Filters let the user sort the entries based on groupings such as decade, artist, etc.'
+  filterCol.appendChild(filterLabel)
+
+  const addFilterbutton = document.createElement('button')
+  addFilterbutton.classList = 'btn btn-primary mt-2'
+  addFilterbutton.innerHTML = 'Add filter column'
+  addFilterbutton.addEventListener('click', () => {
+    addFilter(code)
+  })
+  filterCol.appendChild(addFilterbutton)
+
+  const filterEntriesRow = document.createElement('div')
+  filterEntriesRow.classList = 'row mt-2 gy-2 row-cols-1 row-cols-md-2'
+  filterEntriesRow.setAttribute('id', 'filterEntriesRow_' + code)
+  filterCol.appendChild(filterEntriesRow)
+
+  // Create any existing filter entries
+  if ('filter_order' in workingDefinition.languages[code]) {
+    for (const uuid of workingDefinition.languages[code].filter_order) {
+      addFilter(code, workingDefinition.languages[code].filters[uuid], false)
+    }
+  }
+
   // Activate tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
   tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -428,6 +460,135 @@ function createLanguageTab (code, displayName) {
 
   // Switch to this new tab
   $(tabButton).click()
+}
+
+function addFilter (lang, details = {}, addition = true) {
+  // Add a new filter element to the current language
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  if (('uuid' in details) === false) details.uuid = constCommon.uuid()
+  if (('display_name' in details) === false) details.display_name = ''
+  if (('key' in details) === false) details.key = ''
+
+  if (addition === true) {
+    constSetup.updateWorkingDefinition(['languages', lang, 'filters', details.uuid], details)
+    let filterOrder = []
+    if ('filter_order' in workingDefinition.languages[lang]) filterOrder = workingDefinition.languages[lang].filter_order
+    filterOrder.push(details.uuid)
+    constSetup.updateWorkingDefinition(['languages', lang, 'filter_order'], filterOrder)
+  }
+
+  const col = document.createElement('div')
+  col.classList = 'col'
+  document.getElementById('filterEntriesRow_' + lang).appendChild(col)
+
+  const html = `
+  <div class='col'>
+    <div class='border rounded px-2 py-2'>
+      <label class='form-label'>
+        Display name
+      </label>
+      <input id='filterName_${details.uuid}' type='text' class='form-control' data-uuid='${details.uuid}' value='${details.display_name}'>
+      <label class='filter-name form-label mt-2'>
+        Column
+      </label>
+      <select id='filterSelect_${details.uuid}' class='filter-select form-select' data-uuid='${details.uuid}' value='${details.key}'></select>
+      <div class='row mt-2'>
+        <div class='col-12 col-lg-6'>
+          <button id='filterDeleteButton_${details.uuid}' class='btn btn-danger w-100'>Delete</button>
+        </div>
+        <div class='col-6 col-lg-3 pe-1 mt-2 mt-lg-0'>
+          <button id='filterLeftButton_${details.uuid}' class='btn btn-info w-100'><</button>
+        </div>
+        <div id='filterRightButton_${details.uuid}' class='col-6 col-lg-3 ps-1 mt-2 mt-lg-0'>
+          <button class='btn btn-info w-100'>></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `
+  col.innerHTML = html
+
+  document.getElementById('filterName_' + details.uuid).addEventListener('change', () => {
+    onFilterValueChange(lang, details.uuid)
+    constSetup.previewDefinition(true)
+  })
+  document.getElementById('filterSelect_' + details.uuid).addEventListener('change', () => {
+    onFilterValueChange(lang, details.uuid)
+    constSetup.previewDefinition(true)
+  })
+  document.getElementById('filterLeftButton_' + details.uuid).addEventListener('click', () => {
+    changeFilterOrder(lang, details.uuid, -1)
+  })
+  document.getElementById('filterRightButton_' + details.uuid).addEventListener('click', () => {
+    changeFilterOrder(lang, details.uuid, 1)
+  })
+  document.getElementById('filterDeleteButton_' + details.uuid).addEventListener('click', () => {
+    deleteFilter(lang, details.uuid)
+  })
+
+  // If we have already loaded a spreadhseet, populate the key options
+  const keyList = $('#spreadsheetSelect').data('availableKeys')
+  if (keyList != null) {
+    populateFilterSelects(keyList)
+  }
+
+  constSetup.previewDefinition(true)
+}
+
+function deleteFilter (lang, uuid) {
+  // Remove the given filter and rebuild the GUI
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+  const index = workingDefinition.languages[lang].filter_order.indexOf(uuid)
+  if (index > -1) { // only splice array when item is found
+    workingDefinition.languages[lang].filter_order.splice(index, 1)
+    delete workingDefinition.languages[lang].filters[uuid]
+  }
+
+  document.getElementById('filterEntriesRow_' + lang).innerHTML = ''
+  for (const uuid of workingDefinition.languages[lang].filter_order) {
+    addFilter(lang, workingDefinition.languages[lang].filters[uuid], false)
+  }
+  constSetup.previewDefinition(true)
+}
+
+function onFilterValueChange (lang, uuid) {
+  // Update the details of the filter.
+
+  const details = {
+    display_name: document.getElementById('filterName_' + uuid).value.trim(),
+    key: document.getElementById('filterSelect_' + uuid).value,
+    uuid
+  }
+  constSetup.updateWorkingDefinition(['languages', lang, 'filters', details.uuid], details)
+}
+
+function changeFilterOrder (lang, uuid, direction) {
+  // Move the given filter in the given direction
+
+  const def = $('#definitionSaveButton').data('workingDefinition')
+  const searchFunc = (el) => el === uuid
+  const currentIndex = def.languages[lang].filter_order.findIndex(searchFunc)
+
+  // Handle the edge cases
+  if (currentIndex === 0 && direction < 0) return
+  if (currentIndex === def.languages[lang].filter_order.length - 1 && direction > 0) return
+
+  // Handle middle cases
+  const newIndex = currentIndex + direction
+  const currentValueOfNewIndex = def.languages[lang].filter_order[newIndex]
+  def.languages[lang].filter_order[newIndex] = uuid
+  def.languages[lang].filter_order[currentIndex] = currentValueOfNewIndex
+
+  // Rebuild the filter entries GUI
+  document.getElementById('filterEntriesRow_' + lang).innerHTML = ''
+  def.languages[lang].filter_order.forEach((uuid) => {
+    const details = def.languages[lang].filters[uuid]
+    addFilter(lang, details, false)
+  })
+  constSetup.previewDefinition(true)
 }
 
 function deleteLanguageTab (lang) {
@@ -602,6 +763,7 @@ function onSpreadsheetFileChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
+      populateFilterSelects(keys)
       constSetup.previewDefinition(true)
     })
 }
@@ -737,7 +899,7 @@ function optimizeMediaFromModal () {
 function populateFontSelects () {
   // Get a list of all the content and add the available font files to the appropriate selects.
 
-  const types = ['Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit']
+  const types = ['Title', 'Lightbox_title', 'Lightbox_caption', 'Lightbox_credit', 'filter_label', 'filter_text']
   $('.font-select').empty()
 
   // First, search the content directory for any user-provided fonts
@@ -820,17 +982,42 @@ function populateKeySelects (keyList) {
   })
 }
 
+function populateFilterSelects (keyList) {
+  // Populate all the selects used for choosing filter columns.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+  if (('languages' in workingDefinition) === false) return
+
+  Object.keys(workingDefinition.languages).forEach((lang) => {
+    if (('filters' in workingDefinition.languages[lang]) === false) return
+    const filterDict = workingDefinition.languages[lang].filters
+    Object.keys(filterDict).forEach((uuid) => {
+      const details = filterDict[uuid]
+      const el = document.getElementById('filterSelect_' + uuid)
+      if (el == null) return // No GUI for this entry yet
+      el.innerHTML = ''
+
+      keyList.forEach((key) => {
+        const option = document.createElement('option')
+        option.value = key
+        option.innerHTML = key
+        el.appendChild(option)
+      })
+
+      if ('key' in details) {
+        el.value = details.key
+      } else {
+        el.value = null
+      }
+    })
+  })
+}
+
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
 // The input fields to specifiy content for each langauge
 const inputFields = {
-  // headerText: {
-  //   name: 'Header',
-  //   kind: 'input',
-  //   type: 'text',
-  //   property: 'header_text'
-  // },
   keyTitleSelect: {
     name: 'Title column',
     kind: 'select',
@@ -857,20 +1044,6 @@ const inputFields = {
     property: 'thumbnail_key',
     hint: 'An optional column to provide a separate thumbnail image from the main image or video.'
   }
-  // keySearchSelect: {
-  //   name: 'Search keys',
-  //   kind: 'select',
-  //   property: 'search_keys',
-  //   multiple: true,
-  //   tooltip: 'If search is enabled, the text in the selected keys will be searchable.'
-  // },
-  // keyFilterSelect: {
-  //   name: 'Filter keys',
-  //   kind: 'select',
-  //   property: 'filter_keys',
-  //   multiple: true,
-  //   tooltip: 'If filtering is enabled, the values in these keys will be converted to dropdowns. The selected keys should have a set of defined values rather than arbitrary text.'
-  // }
 }
 
 // Set up the color pickers
