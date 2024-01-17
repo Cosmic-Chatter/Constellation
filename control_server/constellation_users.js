@@ -126,7 +126,7 @@ function populateEditUserGroupsRow (permissions) {
   const groups = [{ name: 'Default', uuid: 'Default' }, ...constConfig.groups]
   for (const group of groups) {
     const col = document.createElement('div')
-    col.classList = 'col'
+    col.classList = 'col d-flex flex-column justify-content-end'
     row.appendChild(col)
 
     const label = document.createElement('label')

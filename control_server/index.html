@@ -148,7 +148,7 @@
                   <h4>Permissions</h4>
                   <div class="row row-cols-3 gy-2">
                     <!-- Analytics permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionAnalytics">
                         Analytics
                         <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Access to analytics data and Flexible Tracker." style="font-size: 0.55em; color: black">?</span>
@@ -160,7 +160,7 @@
                       </select>
                     </div>
                     <!-- Exhibits permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionExhibits">
                         Exhibits
                         <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, edit, and switch exhibits." style="font-size: 0.55em; color: black">?</span>
@@ -172,7 +172,7 @@
                       </select>
                     </div>
                     <!-- Maintenance permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionMaintenance">
                         Maintenance
                         <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, and modify issues and change maintenance status." style="font-size: 0.55em; color: black">?</span>
@@ -184,7 +184,7 @@
                       </select>
                     </div>
                     <!-- Schedule permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionSchedule">
                         Schedule
                         <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="View or modify the schedule." style="font-size: 0.55em; color: black">?</span>
@@ -196,7 +196,7 @@
                       </select>
                     </div>
                     <!-- Settings permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionSettings">
                         Settings
                         <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Change fundamental Control Server settings, such as IP address or port." style="font-size: 0.55em; color: black">?</span>
@@ -208,7 +208,7 @@
                       </select>
                     </div>
                     <!-- Users permission -->
-                    <div class="col">
+                    <div class="col d-flex flex-column justify-content-end">
                       <label class="form-label" for="editUserPermissionUsers">
                         Users
                         <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, edit, or delete other users' accounts." style="font-size: 0.55em; color: black">?</span>
@@ -678,28 +678,35 @@
                       <!-- Projector settings -->
                     <div id="componentInfoModalProjectorSettings" class="mt-2">
                       <span class="h5">Projector settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalProjectorSettingsID" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsGroup" class="form-label">Groups</label>
                           <select id="componentInfoModalProjectorSettingsGroup" class="form-control componentInfoProjectorSetting" multiple></select>
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsIPAddress" class="form-label">IP address</label>
                           <input id="componentInfoModalProjectorSettingsIPAddress" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsPassword" class="form-label">Password</label>
                           <input id="componentInfoModalProjectorSettingsPassword" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalProjectorDescriptionInputLabel" class="form-label" for="componentInfoModalProjectorDescriptionInput">
+                            Projector description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this projector." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalProjectorDescriptionInput" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalProjectorSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
@@ -710,20 +717,27 @@
                     <!-- Static settings -->
                     <div id="componentInfoModalStaticSettings" class="mt-2">
                       <span class="h5">Static component settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-3">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-md-4">
                           <label for="componentInfoModalStaticSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalStaticSettingsID" class="form-control componentInfoStaticSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-md-4">
                           <label for="componentInfoModalStaticSettingsGroup" class="form-label">Groups</label>
                           <select id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" multiple></select>
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalStaticDescriptionInputLabel" class="form-label" for="componentInfoModalStaticDescriptionInput">
+                            Component description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalStaticDescriptionInput" class="form-control componentInfoStaticSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalStaticSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
@@ -733,41 +747,41 @@
                     <!-- Wake on LAN settings -->
                     <div id="componentInfoModalWakeOnLANSettings" class="mt-2">
                       <span class="h5">Wake on LAN settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalWakeOnLANSettingsID" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsGroup" class="form-label">Group</label>
                           <select id="componentInfoModalWakeOnLANSettingsGroup" class="form-control componentInfoWakeOnLANSetting" multiple></select>
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsMAC" class="form-label">MAC address</label>
                           <input id="componentInfoModalWakeOnLANSettingsMAC" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsIPAddress" class="form-label">IP address</label>
                           <input id="componentInfoModalWakeOnLANSettingsIPAddress" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalWakeOnLANSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalWakeOnLANDescriptionInputLabel" class="form-label" for="componentInfoModalWakeOnLANDescriptionInput">
+                            Component description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalWakeOnLANDescriptionInput" class="form-control componentInfoWakeOnLANSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalWakeOnLANSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalWakeOnLANSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
                       <div id="componentInfoModalWakeOnLANSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
                       <div id="componentInfoModalWakeOnLANSettingsMACWarning" class="text-danger mt-2">MAC address must be six pairs of two characters, separated by - or :.</div>
                     </div>
-
-                    <!-- Component description input (for everything except exhibit components) -->
-                    <label id="componentInfoModalDescriptionInputLabel" class="form-label" for="componentInfoModalDescriptionInput">
-                      Component description
-                      <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
-                    </label>
-                    <input id="componentInfoModalDescriptionInput" class="form-control componentInfoSetting" type="text">
 
                     <div class="row mt-3 mt-auto">
                       <div class="col">

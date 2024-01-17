@@ -62,7 +62,7 @@ class User:
             result = False
         return result
 
-    def check_permission(self, action, needed_level, group: str | None = None) -> bool:
+    def check_permission(self, action, needed_level, groups: list[str] | None = None) -> bool:
         """Check if the user has sufficient permission to perform an action"""
 
         self.update_last_activity()
@@ -84,16 +84,26 @@ class User:
             if needed_level == "edit":
                 if "__all" in self.permissions["components"].get("edit", []):
                     return True
-                if (group is not None) and (group in self.permissions["components"].get("edit", [])):
-                    return True
+                if groups is not None:
+                    # We match if any of the provided groups matches any of the allowed groups
+                    match = False
+                    for group in groups:
+                        if group in self.permissions["components"].get("edit", []):
+                            match = True
+                    return match
                 return False
             if needed_level == "view":
                 if "__all" in self.permissions["components"].get("edit", []) or \
                         "__all" in self.permissions["components"].get("view", []):
                     return True
-                if (group is not None) and ((group in self.permissions["components"].get("edit", [])) or
-                                            (group in self.permissions["components"].get("view", []))):
-                    return True
+                if groups is not None:
+                    # We match if any of the provided groups matches any of the allowed groups
+                    match = False
+                    for group in groups:
+                        if group in self.permissions["components"].get("edit", []) or \
+                                group in self.permissions["components"].get("view", []):
+                            match = True
+                    return match
                 return False
         return False
 
@@ -324,6 +334,7 @@ def authenticate_user(token: str = "", credentials: tuple[str, str] = ("", "")) 
 
 def check_user_permission(action: str,
                           needed_level: str,
+                          groups: list[str] | None = None,
                           token: str = "",
                           credentials: tuple[str, str] = ("", "")) -> tuple[bool, str, str]:
     """Confirm that the given user has the necessary permission to perform the given action.
@@ -335,7 +346,7 @@ def check_user_permission(action: str,
     if success is False:
         return False, user_uuid, "authentication_failed"
 
-    if get_user(uuid_str=user_uuid).check_permission(action, needed_level) is False:
+    if get_user(uuid_str=user_uuid).check_permission(action, needed_level, groups=groups) is False:
         return False, user_uuid, "insufficient_permission"
 
     return True, user_uuid, ""

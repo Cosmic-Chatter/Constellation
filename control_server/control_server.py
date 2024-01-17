@@ -504,20 +504,20 @@ async def edit_component(request: Request,
                          id: str | None = Body(description="The ID of the component.", default=None),
                          groups: list[str] | None = Body(description="The groups of the component.", default=None),
                          description: str | None = Body(description="A short description of the component.",
-                                                        default=None),
-                         ip_address: str | None = Body(description="The IP address for the projector.", default=None),
-                         password: str | None = Body(description="The PJLink password", default=None)):
+                                                        default=None)):
     """Edit the given component."""
 
-    # Check permission
-    token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
-    if success is False:
-        return {"success": False, "reason": reason}
-
+    # Must get the component first, so we can use the groups to check for permissions
     component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
+                                                                      groups=component.groups, token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if id is not None:
         component.id = id
@@ -1253,15 +1253,17 @@ async def edit_projector(request: Request,
                          password: str | None = Body(description="The PJLink password", default=None)):
     """Edit the given projector."""
 
-    # Check permission
-    token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
-    if success is False:
-        return {"success": False, "reason": reason}
-
+    # Get the projector first, so we can use the groups to authenticate
     proj = c_exhibit.get_projector(projector_uuid=uuid_str)
     if proj is None:
         return {"success": False, "reason": "Projector does not exist"}
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
+                                                                      groups=proj.groups, token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if id is not None:
         proj.id = id
@@ -1315,15 +1317,17 @@ async def edit_static_component(request: Request,
                                                                 default=None)):
     """Edit the given static component."""
 
-    # Check permission
-    token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
-    if success is False:
-        return {"success": False, "reason": reason}
-
+    # Load the component first, so we can use the groups to authenticate
     component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
+                                                                      groups=component.groups, token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if id is not None:
         component.id = id
@@ -1369,15 +1373,17 @@ async def edit_wake_on_LAN_component(request: Request,
                                                             default="")):
     """Edit the given wake on LAN component."""
 
-    # Check permission
-    token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
-    if success is False:
-        return {"success": False, "reason": reason}
-
+    # Load the component first, so we can use the groups to authenticate
     component = c_exhibit.get_wake_on_LAN_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
+                                                                      groups=component.groups, token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
 
     if id is not None:
         component.id = id

@@ -835,19 +835,7 @@ function showExhibitComponentInfo (id, groupUUID) {
   }
 
   // Add any available description
-  if (obj.description === '') {
-    document.getElementById('componentInfoModalDescription').style.display = 'none'
-    document.getElementById('componentInfoModalDescriptionInput').value = ''
-    document.getElementById('componentInfoModalExhibitDescriptionInput').value = ''
-  } else {
-    document.getElementById('componentInfoModalDescription').innerHTML = obj.description
-    document.getElementById('componentInfoModalDescription').style.display = 'block'
-
-    // For exhibit components
-    document.getElementById('componentInfoModalExhibitDescriptionInput').value = obj.description
-    // For everything else
-    document.getElementById('componentInfoModalDescriptionInput').value = obj.description
-  }
+  updateComponentInfoDescription(obj.description)
 
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
@@ -939,8 +927,6 @@ function configureComponentInfoModalForExhibitComponent (obj, permission) {
   document.getElementById('componentInfoModalDefinitionsTabButton').style.display = 'block'
 
   // Description
-  document.getElementById('componentInfoModalDescriptionInput').style.display = 'none'
-  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'none'
   document.getElementById('componentInfoModalExhibitDescriptionInput').style.display = 'block'
 
   // Warnings
@@ -1103,9 +1089,6 @@ function configureComponentInfoModalForProjector (obj) {
   document.getElementById('componentInfoModalProjectorSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalProjectorSettingsGroupWarning').style.display = 'none'
   document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
-  // Description
-  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
-  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
 }
 
 function configureComponentInfoModalForStatic (obj, componentPermission, maintenancePermission) {
@@ -1131,8 +1114,6 @@ function configureComponentInfoModalForStatic (obj, componentPermission, mainten
   }
 
   document.getElementById('componentInfoModalStaticSettings').style.display = 'block'
-  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
-  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
   document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
   document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
@@ -1161,9 +1142,6 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
   document.getElementById('componentInfoModalWakeOnLANSettingsIDWarning').style.display = 'none'
   document.getElementById('componentInfoModalWakeOnLANSettingsGroupWarning').style.display = 'none'
   document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
-  // Description
-  document.getElementById('componentInfoModalDescriptionInputLabel').style.display = 'block'
-  document.getElementById('componentInfoModalDescriptionInput').style.display = 'block'
 
   document.getElementById('componentInfoModalWakeOnLANSettingsID').value = obj.id
 
@@ -1213,8 +1191,7 @@ export function updateProjectorFromInfoModal () {
     groups: selectedGroupUUIDs,
     ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
-    description: document.getElementById('componentInfoModalDescriptionInput').value.trim(),
-    uuid
+    description: document.getElementById('componentInfoModalProjectorDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1246,6 +1223,8 @@ export function updateProjectorFromInfoModal () {
       if (response.success === true) {
         document.getElementById('componentInfoModalTitle').innerHTML = update.id
         document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
+        updateComponentInfoDescription(update.description)
+        rebuildComponentInterface()
       }
     })
 }
@@ -1262,7 +1241,7 @@ export function updateStaticComponentFromInfoModal () {
   const update = {
     id: document.getElementById('componentInfoModalStaticSettingsID').value.trim(),
     groups: selectedGroupUUIDs,
-    description: document.getElementById('componentInfoModalDescriptionInput').value.trim()
+    description: document.getElementById('componentInfoModalStaticDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1284,10 +1263,15 @@ export function updateStaticComponentFromInfoModal () {
     endpoint: '/component/static/' + uuid + '/edit',
     params: update
   })
-    .then(() => {
-      document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
-      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalStaticSettingsID').value.trim()
-      rebuildComponentInterface()
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
+        document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalStaticSettingsID').value.trim()
+        updateComponentInfoDescription(update.description)
+        rebuildComponentInterface()
+      } else {
+        console.log('Saving failed:', response.reason)
+      }
     })
 }
 
@@ -1305,7 +1289,7 @@ export function updateWakeOnLANComponentFromInfoModal () {
     groups: selectedGroupUUIDs,
     mac_address: document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value.trim(),
     ip_address: document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value.trim(),
-    description: document.getElementById('componentInfoModalDescriptionInput').value.trim()
+    description: document.getElementById('componentInfoModalWakeOnLANDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1337,8 +1321,29 @@ export function updateWakeOnLANComponentFromInfoModal () {
     .then(() => {
       document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').style.display = 'none'
       document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalWakeOnLANSettingsID').value.trim()
+      updateComponentInfoDescription(update.description)
       rebuildComponentInterface()
     })
+}
+
+function updateComponentInfoDescription (value) {
+  // Update the GUI to reflect the given description. For simplicity, we change it for
+  // all the component types, since only the correct one will be displayed.
+
+  // Description at the top of the modal
+  const descriptionEl = document.getElementById('componentInfoModalDescription')
+  descriptionEl.innerHTML = value
+  if (value !== '') {
+    descriptionEl.style.display = 'block'
+  } else {
+    descriptionEl.style.display = 'none'
+  }
+
+  // All the various input fields
+  document.getElementById('componentInfoModalExhibitDescriptionInput').value = value
+  document.getElementById('componentInfoModalProjectorDescriptionInput').value = value
+  document.getElementById('componentInfoModalStaticDescriptionInput').value = value
+  document.getElementById('componentInfoModalWakeOnLANDescriptionInput').value = value
 }
 
 export function convertAppIDtoDisplayName (appName) {
@@ -1761,13 +1766,7 @@ export function submitComponentBasicSettingsChange () {
     uuid
   }
 
-  const descriptionEl = document.getElementById('componentInfoModalDescription')
-  if (update.description !== '') {
-    descriptionEl.innerHTML = update.description
-    descriptionEl.style.display = 'block'
-  } else {
-    descriptionEl.style.display = 'none'
-  }
+  updateComponentInfoDescription(update.description)
 
   // Check that fields are properly filled out
   if (update.id === '') {
@@ -1826,20 +1825,6 @@ export function submitComponentSettingsChange () {
           }
         }
       })
-  }
-
-  // Update component description
-  const description = document.getElementById('componentInfoModalDescriptionInput').value.trim()
-  const descriptionEl = document.getElementById('componentInfoModalDescription')
-  // submitComponentDescriptionChange(obj.id, {
-  //   description,
-  //   id: obj.id
-  // })
-  descriptionEl.innerHTML = description
-  if (description !== '') {
-    descriptionEl.style.display = 'block'
-  } else {
-    descriptionEl.style.display = 'none'
   }
 }
 

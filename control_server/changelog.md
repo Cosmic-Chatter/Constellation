@@ -13,7 +13,7 @@ Constellation 5 introduces a user account system that enables administrators to 
 ## Constellation Apps
 
 ### General
-- When creating or editing a definition, the preview can be configured for displays of different aspect ratio.
+- When creating or editing a definition, the preview can be configured for displays of different aspect ratios.
 
 ### Media Browser
 - Designate spreadsheet columns as filterable to allow users to sort the media collection.
