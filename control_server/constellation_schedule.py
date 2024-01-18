@@ -1,6 +1,8 @@
 # Standard imports
+import csv
 import datetime
 import json
+import io
 import time
 from typing import Union
 
@@ -13,6 +15,24 @@ import threading
 import config
 import constellation_exhibit as c_exhibit
 import constellation_tools as c_tools
+
+
+def create_schedule(name: str, entries: dict[str, dict]) -> tuple[bool, dict]:
+    """Create a new schedule."""
+
+    # First, try to open the named schedule
+    success, schedule = load_json_schedule(name)
+
+    if success is False:
+        # Write a blank schedule
+        try:
+            with open(c_tools.with_extension(name, 'json'), 'w', encoding='UTF-8') as f:
+                f.write('')
+        except PermissionError:
+            return False, {}
+
+    updated = update_json_schedule(name, entries)
+    return True, updated
 
 
 def retrieve_json_schedule():
@@ -135,9 +155,7 @@ def update_json_schedule(schedule_name: str, updates: dict) -> dict:
             update["value"] = None
 
         # Calculate the time from midnight for use when sorting, etc.
-        time_dt = dateutil.parser.parse(update["time"])
-        update["time_in_seconds"] = (
-                    time_dt - time_dt.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+        update["time_in_seconds"] = seconds_from_midnight(update["time"])
 
         schedule[key] = update
 
@@ -213,6 +231,51 @@ def queue_json_schedule(schedule: dict) -> None:
         config.schedule_timers = new_timers
 
 
+def convert_schedule_to_csv(schedule_name: str) -> tuple[bool, str]:
+    """Convert the given schedule to a comma-separated values string."""
+
+    success, schedule = load_json_schedule(schedule_name)
+    if success is False:
+        return False, ''
+
+    # Convert the dict of dicts to a list of dicts
+    dict_list = []
+    for key in list(schedule.keys()):
+        # Create dict with only the keys we want
+        sub_dict = {
+            "time": schedule[key].get("time", "7 AM"),
+            "action": schedule[key].get("action", ""),
+            "target": schedule[key].get("target", ""),
+            "value": schedule[key].get("value", ""),
+        }
+        # Convert list entries into comma-separated strings
+        for entry in ["target", "value"]:
+            if isinstance(sub_dict[entry], list):
+                string = ""
+                length = len(sub_dict[entry])
+                if length == 0:
+                    pass
+                elif length == 1:
+                    string = sub_dict[entry][0]
+                else:
+                    for item in sub_dict[entry]:
+                        string += item + ","
+                    # Remove the trailing comma
+                    string = string[:-1]
+                sub_dict[entry] = string
+        dict_list.append(sub_dict)
+
+    try:
+        output = io.StringIO()
+        writer = csv.DictWriter(output, ["time", "action", "target", "value"])
+        writer.writeheader()
+        writer.writerows(dict_list)
+    except csv.Error:
+        return False, ""
+
+    return True, output.getvalue()
+
+
 def execute_scheduled_action(action: str, target: Union[list, str, None], value: Union[list, str, None]):
     """Dispatch the appropriate action when called by a schedule timer"""
 
@@ -262,6 +325,13 @@ def execute_scheduled_action(action: str, target: Union[list, str, None], value:
                 c_exhibit.get_exhibit_component(component_id=target_i[5:]).queue_command(action)
     else:
         c_exhibit.command_all_exhibit_components(action)
+
+
+def seconds_from_midnight(input_time: str) -> float:
+    """Parse a natural language expression of time and return the number of seconds from midight."""
+
+    time_dt = dateutil.parser.parse(input_time)
+    return (time_dt - time_dt.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
 
 
 # Set up log file

@@ -1064,6 +1064,11 @@ document.getElementById('manageFutureDateCreateScheduleButton').addEventListener
 document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
   event.target.focus()
 })
+// Create schedule from file modal
+document.getElementById('scheduleFromFileModalFileInput').addEventListener('change', constSchedule.onScheduleFromFileModalFileInputChange)
+document.getElementById('scheduleFromFileModalSubmitButton').addEventListener('click', constSchedule.createScheduleFromFile)
+document.getElementById('scheduleFromFileKindSelect').addEventListener('change', constSchedule.onCreateScheduleFromFileTypeSelect)
+
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)

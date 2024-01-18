@@ -1432,6 +1432,71 @@ async def convert_schedule(
     return response_dict
 
 
+@app.post("/schedule/create")
+async def create_schedule(request: Request,
+                          entries: dict[str, dict] = Body(description="A dict of dicts that each define one entry in the schedule."),
+                          name: str = Body(description="The name for the schedule to be created.")):
+    """Create a new schedule from an uploaded CSV file"""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    success, schedule = c_sched.create_schedule(name, entries)
+    return {"success": success, "schedule": schedule}
+
+
+@app.post("/schedule/getSecondsFromMidnight")
+async def get_seconds_from_midnight(time_str: str = Body(description="The time to parse.", embed=True)):
+    """Return the number of seconds from midnight for the given natural language time.
+
+    This ensures that the value in the browser is consistent with how Python will process.
+    """
+
+    return {"success": True, "seconds": c_sched.seconds_from_midnight(time_str)}
+
+
+@app.get("/schedule/{schedule_name}/getCSV")
+async def get_schedule_as_csv(request: Request,
+                              schedule_name: str):
+    """Return the requested schedule as a CSV."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    success, csv = c_sched.convert_schedule_to_csv(schedule_name + '.json')
+    return {"success": success, "csv": csv}
+
+
+@app.get("/schedule/{schedule_name}/getJSONString")
+async def get_schedule_as_json_string(request: Request,
+                                      schedule_name: str):
+    """Return the requested schedule as a JSON, excluding unnecessary fields."""
+
+    # Check permission
+    token = request.cookies.get("authToken", "")
+    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    if success is False:
+        return {"success": False, "reason": reason}
+
+    success, schedule = c_sched.load_json_schedule(schedule_name + '.json')
+    result = {}
+
+    for key in list(schedule.keys()):
+        result[key] = {
+            "time": schedule[key].get("time", ""),
+            "action": schedule[key].get("action", ""),
+            "target": schedule[key].get("target", ""),
+            "value": schedule[key].get("value", ""),
+        }
+    return {"success": success, "json": json.dumps(result, indent=2, sort_keys=True)}
+
+
 @app.post("/schedule/deleteAction")
 async def delete_schedule_action(request: Request,
                                  schedule_name: str = Body(description="The schedule to delete the action from."),

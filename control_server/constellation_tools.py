@@ -198,3 +198,11 @@ def check_file_structure() -> None:
             except PermissionError:
                 print(f"Error: unable to create '{key}' directory. Do you have write permission?")
 
+
+def with_extension(filename: str, ext: str) -> str:
+    """Return the filename with the current extension replaced by the given one"""
+
+    if ext.startswith("."):
+        ext = ext[1:]
+
+    return os.path.splitext(filename)[0] + "." + ext

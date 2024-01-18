@@ -5,7 +5,7 @@ export const config = {
     audio: true,
     refresh: true,
     restart: false,
-    shutfown: false,
+    shutdown: false,
     sleep: false
   },
   autoplayAudio: false,
@@ -26,7 +26,7 @@ export const config = {
   remoteDisplay: false, // false == we are using the webview app, true == browser
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 4,
+  softwareVersion: 5,
   standalone: false, // false == we are using Control Server
   updateParser: null // Function used by readUpdate() to parse app-specific updates
 }

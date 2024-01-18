@@ -43,6 +43,8 @@
 ### General
 - Add heartbeat app
 - Add map app
+- Download files from content directory
+- Download definition file
 
 ### DMX Control
 

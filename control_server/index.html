@@ -10,118 +10,33 @@
     <link rel="icon" type="image/x-icon" href="icon/green.ico">
 
     <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="css/webpage.css">
 
     <title></title>
 
-    <style>
-      /* Styling for code snippets and tables in help text */
-      pre {
-        background-color: #414242;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-      }
-      table {
-        background-color: #414242;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-        border-collapse: collapse;
-        border: 3px solid #8e184f;
-      }
-      tr, td, th {
-        padding-top: 5px;
-        padding-bottom: 5px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-        border-collapse: collapse;
-        border: 1px solid #8e184f;
-      }
-      .componentContentButton {
-        width: 80% !important;
-        overflow-wrap: break-word;
-      }
-      .componentStatusButton {
-        overflow-wrap: break-word;
-        width: 75%;
-      }
-      .constellation-dialog {
-        max-width: min(95%, 750px); 
-        width: min(95%, 750px);
-      }
-      .container {
-        max-width: 1600px;
-      }
-      .contentThumbnail {
-        width: 100%;
-      }
-      .dropdown-item {
-        padding-top: 10px;
-        padding-bottom: 10px;
-      }
-      .handCursor {
-        cursor: pointer;
-      }
-      .schedule-date-specific {
-        background-color: rgba(91, 192, 222, 0.2);
-      }
-      #completedIssuesModalIssueRow {
-        max-height: 55vh;
-        min-height: 35vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalDefinitionList {
-        height: 45vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalDMXSceneList {
-        height: 45vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalMaintenanceRelatedIssues {
-        height: 35vh;
-        overflow-y: scroll;
-      }
-      #exhibitNameField {
-        font-size: 30px;
-      }
-      #galleryNameField {
-        font-size: 20px;
-      }
-      #issueMediaUploadFilename {
-        overflow-wrap: break-word!important;
-      }
-      #projectorStatusDetailTable {
-        background-color: #414242;
-        padding-top: 0px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        margin-left: 0px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 0px;
-        border-collapse: collapse;
-        border: 2px solid #8e184f;
-      }
-      #updateInfoModalChangelogContainer {
-        max-height: 60vh;
-        min-height: 15vh;
-        overflow-y: auto;
-      }
-    </style>
   </head>
 
   <body>
 
     <main role="main" class="container mb-4 pt-1 pt-md-2 px-md-5">
+
+      <!-- What's new modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="whatsNewModal">
+        <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Welcome to Constellation 5</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Edit user modal -->
       <div class="modal" tabindex="-1" role="dialog" id="editUserModal">
@@ -1357,6 +1272,63 @@
             </div>
           </div>
 
+          <!-- Create schedule from CSV modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="scheduleFromFileModal">
+            <div class="modal-dialog constellation-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Create a schedule from file</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"> 
+                  <div class="row gy-2">
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <div>
+                        <label for="scheduleFromFileKindSelect">Schedule to create</label>
+                        <select id="scheduleFromFileKindSelect" class="form-select mt-1">
+                          <option value="monday">All Mondays</option>
+                          <option value="tuesday">All Tuesdays</option>
+                          <option value="wednesday">All Wednesdays</option>
+                          <option value="thursday">All Thursdays</option>
+                          <option value="friday">All Fridays</option>
+                          <option value="saturday">All Saturdays</option>
+                          <option value="sunday">All Sundays</option>
+                          <option value="date-specific">Specific date</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <input id="scheduleFromFileDateSelect" type="date" class="form-control mt-2">
+                    </div>
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <label class="btn btn-outline-primary w-100">
+                        <span id="scheduleFromFileModalFileInputLabel" style="overflow-wrap: break-word!important;">Select file</span>
+                        <input hidden type="file" class="form-control" id="scheduleFromFileModalFileInput" accept=".csv">
+                      </label>
+                    </div>
+                    <div class="col-3 d-flex align-self-end">
+                      <button id="scheduleFromFileModalSubmitButton" class="btn btn-primary w-100">Upload</button>
+                    </div>
+                  </div>
+                  <div id="scheduleFromFileScheduleCompare" class="row gy-2 mt-2">
+                    <div class="col-6 border-end">
+                      <H5 class="text-center">Current schedule</H5>
+                      <div id="scheduleFromFileCurrentSchedule"></div>
+                    </div>
+                    <div class="col-6">
+                      <H5 class="text-center">Replace with</H5>
+                      <div id="scheduleFromFileNewSchedule"></div>
+                    </div>
+                    
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Add action modal -->
           <div class="modal" tabindex="-1" role="dialog" id="scheduleEditModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -1421,7 +1393,10 @@
             <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
               <button id='manageFutureDateButton' class='btn btn-primary w-100'>Manage future date</button>
             </div>
-            <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto" role="alert">
+            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
+              <button id="showScheduleFromFileModalButton" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#scheduleFromFileModal">Create from file</button>
+            </div>
+            <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto py-2" role="alert">
               Date-specific schedule
             </div>
           </div>
@@ -1927,6 +1902,7 @@
           <div class="row mt-4">
             <div class="col-12">
               <span class="alert alert-secondary">Version: <span id="versionSpan"></span></span>
+              <button class="btn btn-info ms-3" data-bs-toggle="modal" data-bs-target="#whatsNewModal">What's New</button>
             </div>
             
             <div id='helpTextDiv' class='col-auto mt-3'>

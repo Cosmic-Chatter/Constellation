@@ -5,6 +5,11 @@ Constellation 5 introduces a user account system that enables administrators to 
 
 ### General
 - A new user account system for managing access to Constellation.
+- Components can now be added to more than one group.
+
+### Schedule
+- Download schedules as CSV or JSON files.
+- Create schedules from CSV or JSON files.
 
 ### Maintenance
 - Assign issues to users.

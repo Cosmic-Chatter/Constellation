@@ -16,7 +16,7 @@ commandList: list[str] = []  # List of queued commands to send to the client
 missingContentWarningList: list[dict] = []  # Holds a list of warning about missing content
 NEXT_EVENT: Union[tuple[datetime.time, list[str]], None] = None  # A tuple with the next event to occur and the time is happens
 schedule: list[tuple[datetime.time, str]] = []  # List of upcoming actions and their times
-HELPER_SOFTWARE_VERSION: float = 4
+HELPER_SOFTWARE_VERSION: float = 5
 debug: bool = True
 
 # DMX resources

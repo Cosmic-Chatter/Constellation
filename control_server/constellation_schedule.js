@@ -65,6 +65,7 @@ export function populateSchedule (schedule) {
   sched.forEach((day) => {
     // Apply a background color to date-specific schedules so that we
     // know that they are special
+
     let scheduleClass
     let addItemText
     let convertState
@@ -86,14 +87,14 @@ export function populateSchedule (schedule) {
     }
 
     const dayContainer = document.createElement('div')
-    dayContainer.classList = `col-12 col-sm-6 col-lg-4 pb-3 border ${scheduleClass}`
+    dayContainer.classList = `col-12 col-sm-6 col-xl-4 pb-3 border ${scheduleClass}`
 
     const row = document.createElement('div')
     row.classList = 'row'
     dayContainer.appendChild(row)
 
     const dayNameCol = document.createElement('div')
-    dayNameCol.classList = 'col-12 border-bottom py-2'
+    dayNameCol.classList = 'col-10 border-bottom py-2'
     row.appendChild(dayNameCol)
 
     // Parse the date into a string
@@ -105,6 +106,47 @@ export function populateSchedule (schedule) {
     dayNameSpan.style.fontSize = '24px'
     dayNameSpan.innerHTML = dateStr
     dayNameCol.appendChild(dayNameSpan)
+
+    const menuCol = document.createElement('div')
+    menuCol.classList = 'col-2 border-bottom py-2 d-flex flex-column justify-content-center'
+    row.appendChild(menuCol)
+
+    const dropdownDiv = document.createElement('div')
+    dropdownDiv.classList = 'dropdown text-end'
+    menuCol.appendChild(dropdownDiv)
+
+    const dropdownButton = document.createElement('button')
+    dropdownButton.classList = 'btn btn-sm btn-outline-secondary dropdown-toggle'
+    dropdownButton.setAttribute('type', 'button')
+    dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
+    dropdownButton.setAttribute('aria-expanded', 'false')
+    dropdownDiv.appendChild(dropdownButton)
+
+    const dropdownMenu = document.createElement('ul')
+    dropdownMenu.classList = 'dropdown-menu'
+    dropdownDiv.appendChild(dropdownMenu)
+
+    const csvLi = document.createElement('li')
+    dropdownMenu.appendChild(csvLi)
+
+    const csv = document.createElement('button')
+    csv.classList = 'dropdown-item'
+    csv.innerHTML = 'Download as CSV'
+    csv.addEventListener('click', () => {
+      downloadScheduleAsCSV(scheduleName)
+    })
+    csvLi.appendChild(csv)
+
+    const jsonLi = document.createElement('li')
+    dropdownMenu.appendChild(jsonLi)
+
+    const json = document.createElement('button')
+    json.classList = 'dropdown-item'
+    json.innerHTML = 'Download as JSON'
+    json.addEventListener('click', () => {
+      downloadScheduleAsJSON(scheduleName)
+    })
+    jsonLi.appendChild(json)
 
     if (allowEdit) {
       const editButtonCol = document.createElement('div')
@@ -173,15 +215,13 @@ export function populateSchedule (schedule) {
   $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
 }
 
-function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType) {
+function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType, allowEdit = constTools.checkPermission('schedule', 'edit')) {
   // Take a dictionary of properties and build an HTML representation of the schedule entry.
 
   let description = null
   const action = item.action
   const target = item.target
   const value = item.value
-
-  const allowEdit = constTools.checkPermission('schedule', 'edit')
 
   // Create the plain-language description of the action
   if (['power_off', 'power_on', 'refresh_page', 'restart', 'set_definition', 'set_dmx_scene'].includes(action)) {
@@ -549,10 +589,9 @@ export function scheduleConfigureEditModal (scheduleName,
   // Function to set up and then show the modal that enables editing a
   // scheduled event or adding a new one
 
-  // If currentScheduleID == null, we are adding a new schedule item, so create a unique
-  // ID from the current time.
+  // If currentScheduleID == null, we are adding a new schedule item, so create a unique ID
   if (currentScheduleID == null) {
-    currentScheduleID = String(new Date().getTime())
+    currentScheduleID = constTools.uuid()
   }
 
   // Hide elements that aren't always visible
@@ -856,5 +895,160 @@ export function convertFutureScheduleFromModal () {
   })
     .then((result) => {
       populateFutureDatesList()
+    })
+}
+
+function downloadScheduleAsCSV (name) {
+  // Get the given schedule as a CSV from Control Server and download for the user.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/schedule/' + name + '/getCSV'
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Convert the text to a file and initiate download
+        const fileBlob = new Blob([result.csv], {
+          type: 'text/plain'
+        })
+        const a = document.createElement('a')
+        a.href = window.URL.createObjectURL(fileBlob)
+        a.download = name + '.csv'
+        a.click()
+      }
+    })
+}
+
+function downloadScheduleAsJSON (name) {
+  // Get the given schedule as JSON from Control Server and download for the user.
+
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/schedule/' + name + '/getJSONString'
+  })
+    .then((result) => {
+      if ('success' in result && result.success === true) {
+        // Convert the text to a file and initiate download
+        const fileBlob = new Blob([result.json], {
+          type: 'text/plain'
+        })
+        const a = document.createElement('a')
+        a.href = window.URL.createObjectURL(fileBlob)
+        a.download = name + '.json'
+        a.click()
+      }
+    })
+}
+
+export function onScheduleFromFileModalFileInputChange (event) {
+  // Called when a user selects a file for upload from the scheduleFromFileModal.
+
+  const file = event.target.files[0]
+
+  document.getElementById('scheduleFromFileModalFileInputLabel').innerHTML = file.name
+}
+
+export function createScheduleFromFile () {
+  // Use details from scheduleFromCSVModal to create a new schedule.
+
+  const fileInput = document.getElementById('scheduleFromFileModalFileInput')
+  if (fileInput.files.length === 0) return
+
+  const fileReader = new FileReader()
+  fileReader.onload = (result) => {
+    previewCSVSchedule(result.target.result)
+  }
+  fileReader.readAsText(fileInput.files[0], 'UTF-8')
+}
+
+async function previewCSVSchedule (csv) {
+  // Build an HTML representation of the uploaded schedule
+
+  const result = constTools.csvToJSON(csv)
+  const schedule = result.json
+
+  // Convert any comma-separated values into arrays
+  const scheduleDict = {}
+  for (const entry of schedule) {
+    // First, convert the given time into seconds from midnight
+    entry.time_in_seconds = await _getSecondsFromMidnight(entry.time)
+
+    if (entry.action === 'note') {
+      // Notes may have commas that are okay.
+      scheduleDict[constTools.uuid()] = entry
+      continue
+    }
+    for (const key of ['target', 'value']) {
+      if ((entry[key] == null) || (entry[key].includes(',') === false)) continue
+      entry[key] = entry[key].split(',').map(function (item) {
+        return item.trim()
+      })
+    }
+    scheduleDict[constTools.uuid()] = entry
+  }
+
+  const newScheduleEl = document.getElementById('scheduleFromFileNewSchedule')
+  const type = document.getElementById('scheduleFromFileKindSelect').value
+  newScheduleEl.innerHTML = ''
+
+  // Loop through the schedule elements and add a row for each
+  const scheduleIDs = Object.keys(scheduleDict)
+
+  scheduleIDs.forEach((scheduleID) => {
+    newScheduleEl.appendChild(createScheduleEntryHTML(scheduleDict[scheduleID], scheduleID, type, 'day-specific', false))
+
+    // Sort the elements by time
+    const events = $(newScheduleEl).children('.eventListing')
+    events.sort(function (a, b) {
+      return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+    })
+    $(newScheduleEl).append(events)
+  })
+}
+
+async function _getSecondsFromMidnight (timeString) {
+  return new Promise(function (resolve, reject) {
+    constTools.makeServerRequest({
+      method: 'POST',
+      endpoint: '/schedule/getSecondsFromMidnight',
+      params: { time_str: String(timeString) }
+    })
+      .then((response) => {
+        resolve(parseFloat(response.seconds))
+      })
+  })
+}
+
+export function onCreateScheduleFromFileTypeSelect () {
+  // Called when the user selects a schedule from the dropdown
+
+  const type = document.getElementById('scheduleFromFileKindSelect').value
+  const currentScheduleEl = document.getElementById('scheduleFromFileCurrentSchedule')
+
+  if (type === 'date-specific') {
+    document.getElementById('scheduleFromFileDateSelect').style.display = 'block'
+    return
+  }
+  constTools.makeServerRequest({
+    method: 'GET',
+    endpoint: '/schedule/' + type + '/get'
+  })
+    .then((response) => {
+      if (response.success === true) {
+        currentScheduleEl.innerHTML = ''
+        // Loop through the schedule elements and add a row for each
+        const scheduleIDs = Object.keys(response.schedule)
+
+        scheduleIDs.forEach((scheduleID) => {
+          currentScheduleEl.appendChild(createScheduleEntryHTML(response.schedule[scheduleID], scheduleID, type, 'day-specific', false))
+
+          // Sort the elements by time
+          const events = $(currentScheduleEl).children('.eventListing')
+          events.sort(function (a, b) {
+            return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+          })
+          $(currentScheduleEl).append(events)
+        })
+      }
     })
 }
