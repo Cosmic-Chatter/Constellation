@@ -4,7 +4,11 @@ import * as constTools from './constellation_tools.js'
 export function checkUserPermission (action, neededLevel, group = null) {
   // Return true if the user's permissions allow this action and false if they do not.
 
-  if ((action in constConfig.user.permissions) === false) return false
+  try {
+    if ((action in constConfig.user.permissions) === false) return false
+  } catch {
+    return false
+  }
 
   if (neededLevel === 'none') {
     return true
@@ -342,7 +346,28 @@ function configureUser (userDict, login = true) {
   // Take a dictionary of user details and set up Constellation to reflect it.
   // set login=false to set up a logged out user
 
+  if (Object.keys(userDict).length === 0) {
+    // Configure minimal permissions
+    userDict.permissions = {
+      analytics: 'none',
+      components: {
+        edit: [],
+        view: []
+      },
+      exhibits: 'none',
+      maintenance: 'none',
+      schedule: 'none',
+      settings: 'none',
+      users: 'none'
+    }
+  }
   constConfig.user = userDict
+
+  if (login === true) {
+    document.getElementById('helpNewAccountMessage').style.display = 'none'
+  } else {
+    document.getElementById('helpNewAccountMessage').style.display = 'block'
+  }
 
   if (login) {
     document.getElementById('loginMenu').style.display = 'none'
@@ -360,9 +385,20 @@ function configureUser (userDict, login = true) {
     document.getElementById('userMenu').style.display = 'none'
   }
 
+  // Iterate through the tabs until we find one we can display.
+  let match = ''
+
+  if (userDict.permissions.components.edit.length > 0 || userDict.permissions.components.view.length > 0) {
+    document.getElementById('nav-components-tab').style.setProperty('display', 'block', 'important')
+    if (match === '') match = 'components'
+  } else {
+    document.getElementById('nav-components-tab').style.setProperty('display', 'none', 'important')
+  }
+
   if (constTools.checkPermission('schedule', 'view')) {
     document.getElementById('nav-schedule-tab').style.display = 'block'
     configureSchedulePermissions()
+    if (match === '') match = 'schedule'
   } else {
     document.getElementById('nav-schedule-tab').style.setProperty('display', 'none', 'important')
   }
@@ -370,6 +406,7 @@ function configureUser (userDict, login = true) {
   if (constTools.checkPermission('exhibits', 'view')) {
     document.getElementById('nav-exhibits-tab').style.display = 'block'
     document.getElementById('nav-exhibits-dropdown-tab').style.display = 'block'
+    if (match === '') match = 'exhibits'
   } else {
     document.getElementById('nav-exhibits-tab').style.setProperty('display', 'none', 'important')
     document.getElementById('nav-exhibits-dropdown-tab').style.setProperty('display', 'none', 'important')
@@ -379,6 +416,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-issues-tab').style.display = 'block'
     document.getElementById('nav-issues-dropdown-tab').style.display = 'block'
     configureMaintenancePermissions()
+    if (match === '') match = 'issues'
   } else {
     document.getElementById('nav-issues-tab').style.setProperty('display', 'none', 'important')
     document.getElementById('nav-issues-dropdown-tab').style.setProperty('display', 'none', 'important')
@@ -387,26 +425,37 @@ function configureUser (userDict, login = true) {
   if (constTools.checkPermission('analytics', 'view')) {
     document.getElementById('nav-analytics-tab').style.display = 'block'
     document.getElementById('nav-analytics-dropdown-tab').style.display = 'block'
+    if (match === '') match = 'analytics'
   } else {
     document.getElementById('nav-analytics-tab').style.setProperty('display', 'none', 'important')
     document.getElementById('nav-analytics-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('settings', 'view')) {
-    document.getElementById('nav-settings-tab').style.display = 'block'
-    document.getElementById('nav-settings-dropdown-tab').style.display = 'block'
-  } else {
-    document.getElementById('nav-settings-tab').style.setProperty('display', 'none', 'important')
-    document.getElementById('nav-settings-dropdown-tab').style.setProperty('display', 'none', 'important')
-  }
-
   if (constTools.checkPermission('users', 'view')) {
     document.getElementById('nav-users-tab').style.display = 'block'
     document.getElementById('nav-users-dropdown-tab').style.display = 'block'
+    if (match === '') match = 'users'
   } else {
     document.getElementById('nav-users-tab').style.setProperty('display', 'none', 'important')
     document.getElementById('nav-users-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
+
+  if (constTools.checkPermission('settings', 'view')) {
+    document.getElementById('nav-settings-tab').style.display = 'block'
+    document.getElementById('nav-settings-dropdown-tab').style.display = 'block'
+    if (match === '') match = 'settings'
+  } else {
+    document.getElementById('nav-settings-tab').style.setProperty('display', 'none', 'important')
+    document.getElementById('nav-settings-dropdown-tab').style.setProperty('display', 'none', 'important')
+  }
+  if (match === '') match = 'help'
+  _showTab(match)
+}
+
+function _showTab (tab) {
+  setTimeout(() => {
+    $('#nav-' + tab + '-tab').tab('show')
+  }, 20)
 }
 
 export function logoutUser () {

@@ -359,7 +359,7 @@ export function sortDefinitionsByApp (defDict, dropPreview = true) {
   return result
 }
 
-export function checkPermission (action, neededLevel) {
+export function checkPermission (action, neededLevel, group = null) {
   // Check that the user has permission for the requested action
 
   if (Object.keys(constConfig.user).length === 0) return false
@@ -375,6 +375,19 @@ export function checkPermission (action, neededLevel) {
     }
     if (neededLevel === 'view') {
       if (allowedLevel === 'edit' || allowedLevel === 'view') return true
+      return false
+    }
+  } else {
+    // Components
+    if (neededLevel === 'edit') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if (constConfig.user.permissions.components.view.includes('__all')) return true
+      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || (constConfig.user.permissions.components.view.includes(group)))) return true
       return false
     }
   }
