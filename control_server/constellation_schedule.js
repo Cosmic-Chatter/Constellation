@@ -940,6 +940,24 @@ function downloadScheduleAsJSON (name) {
     })
 }
 
+export function showScheduleFromFileModal () {
+  // Prepare the scheduleFromFileModal and show it.
+
+  // Reset fields
+  document.getElementById('scheduleFromFileKindSelect').value = 'monday'
+  onCreateScheduleFromFileTypeSelect()
+  const fileDateSelect = document.getElementById('scheduleFromFileDateSelect')
+  fileDateSelect.value = null
+  fileDateSelect.style.display = 'none'
+  document.getElementById('scheduleFromFileModalFileInputLabel').innerHTML = 'Select file'
+  document.getElementById('scheduleFromFileModalFileInput').value = null
+  document.getElementById('scheduleFromFileNewSchedule').innerHTML = ''
+  document.getElementById('scheduleFromFileModal').setAttribute('data-schedule', '')
+  document.getElementById('scheduleFromFileModalSubmitButton').style.display = 'none'
+
+  $('#scheduleFromFileModal').modal('show')
+}
+
 export function onScheduleFromFileModalFileInputChange (event) {
   // Called when a user selects a file for upload from the scheduleFromFileModal.
 
@@ -948,17 +966,62 @@ export function onScheduleFromFileModalFileInputChange (event) {
   document.getElementById('scheduleFromFileModalFileInputLabel').innerHTML = file.name
 }
 
-export function createScheduleFromFile () {
-  // Use details from scheduleFromCSVModal to create a new schedule.
+export function onscheduleFromFileDateSelectChange () {
+  // Called when a user selects a new date
+
+  const name = document.getElementById('scheduleFromFileDateSelect').value
+  _scheduleFromFilePreviewCurrentSchedule(name, 'date-specific')
+}
+
+export function previewScheduleFromFile () {
+  // Use details from scheduleFromCSVModal to preview a new schedule.
 
   const fileInput = document.getElementById('scheduleFromFileModalFileInput')
   if (fileInput.files.length === 0) return
+  const file = fileInput.files[0]
+  const extension = file.name.split('.').slice(-1)[0].toLowerCase()
 
   const fileReader = new FileReader()
   fileReader.onload = (result) => {
-    previewCSVSchedule(result.target.result)
+    if (extension === 'csv') {
+      previewCSVSchedule(result.target.result)
+    } else if (extension === 'json') {
+      previewJSONSchedule(result.target.result)
+    }
   }
-  fileReader.readAsText(fileInput.files[0], 'UTF-8')
+  fileReader.readAsText(file, 'UTF-8')
+  document.getElementById('scheduleFromFileModalSubmitButton').style.display = 'block'
+}
+
+export function createScheduleFromFile () {
+  // Submit the upoaded schedule to Control Server for creation.
+
+  const jsonStr = document.getElementById('scheduleFromFileModal').getAttribute('data-schedule')
+  if (jsonStr == null || jsonStr === '') return
+  const schedule = JSON.parse(jsonStr)
+
+  const nameStr = document.getElementById('scheduleFromFileKindSelect').value
+  let name
+  if (nameStr !== 'date-specific') {
+    name = nameStr
+  } else {
+    name = document.getElementById('scheduleFromFileDateSelect').value
+    if (name == null || name === '') return
+  }
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/schedule/create',
+    params: {
+      name,
+      entries: schedule
+    }
+  })
+    .then((response) => {
+      if (response.success === true) {
+        $('#scheduleFromFileModal').modal('hide')
+      }
+    })
 }
 
 async function previewCSVSchedule (csv) {
@@ -1004,6 +1067,32 @@ async function previewCSVSchedule (csv) {
     })
     $(newScheduleEl).append(events)
   })
+  document.getElementById('scheduleFromFileModal').setAttribute('data-schedule', JSON.stringify(scheduleDict))
+}
+
+function previewJSONSchedule (jsonStr) {
+  // Read the given JSON string and turn it into a schedule
+
+  const schedule = JSON.parse(jsonStr)
+
+  const newScheduleEl = document.getElementById('scheduleFromFileNewSchedule')
+  const type = document.getElementById('scheduleFromFileKindSelect').value
+  newScheduleEl.innerHTML = ''
+
+  // Loop through the schedule elements and add a row for each
+  const scheduleIDs = Object.keys(schedule)
+
+  scheduleIDs.forEach((scheduleID) => {
+    newScheduleEl.appendChild(createScheduleEntryHTML(schedule[scheduleID], scheduleID, type, 'day-specific', false))
+
+    // Sort the elements by time
+    const events = $(newScheduleEl).children('.eventListing')
+    events.sort(function (a, b) {
+      return $(a).data('time_in_seconds') - $(b).data('time_in_seconds')
+    })
+    $(newScheduleEl).append(events)
+  })
+  document.getElementById('scheduleFromFileModal').setAttribute('data-schedule', JSON.stringify(schedule))
 }
 
 async function _getSecondsFromMidnight (timeString) {
@@ -1022,25 +1111,34 @@ async function _getSecondsFromMidnight (timeString) {
 export function onCreateScheduleFromFileTypeSelect () {
   // Called when the user selects a schedule from the dropdown
 
-  const type = document.getElementById('scheduleFromFileKindSelect').value
-  const currentScheduleEl = document.getElementById('scheduleFromFileCurrentSchedule')
+  const name = document.getElementById('scheduleFromFileKindSelect').value
 
-  if (type === 'date-specific') {
+  if (name === 'date-specific') {
     document.getElementById('scheduleFromFileDateSelect').style.display = 'block'
+    document.getElementById('scheduleFromFileCurrentSchedule').innerHTML = ''
     return
   }
+  document.getElementById('scheduleFromFileDateSelect').style.display = 'none'
+  _scheduleFromFilePreviewCurrentSchedule(name, 'day-specific')
+}
+
+function _scheduleFromFilePreviewCurrentSchedule (name, kind, retry = false) {
+  // Build the HTML representation of the schedule to preview.
+  // `kind` should be one of ['day-specific', 'date-specific']
+
+  const currentScheduleEl = document.getElementById('scheduleFromFileCurrentSchedule')
   constTools.makeServerRequest({
     method: 'GET',
-    endpoint: '/schedule/' + type + '/get'
+    endpoint: '/schedule/' + name + '/get'
   })
     .then((response) => {
       if (response.success === true) {
         currentScheduleEl.innerHTML = ''
+
         // Loop through the schedule elements and add a row for each
         const scheduleIDs = Object.keys(response.schedule)
-
         scheduleIDs.forEach((scheduleID) => {
-          currentScheduleEl.appendChild(createScheduleEntryHTML(response.schedule[scheduleID], scheduleID, type, 'day-specific', false))
+          currentScheduleEl.appendChild(createScheduleEntryHTML(response.schedule[scheduleID], scheduleID, kind, 'day-specific', false))
 
           // Sort the elements by time
           const events = $(currentScheduleEl).children('.eventListing')
@@ -1049,6 +1147,16 @@ export function onCreateScheduleFromFileTypeSelect () {
           })
           $(currentScheduleEl).append(events)
         })
+      } else if (kind === 'date-specific' && retry === false) {
+        // A fail probably means there isn't a date-specific scheudle,
+        // so look for a day-sepcific one. Only retry once to prevent an infinite loop
+
+        // Parse the date into a string
+        const dateSplit = name.split('-')
+        const date = new Date(parseInt(dateSplit[0]), parseInt(dateSplit[1]) - 1, parseInt(dateSplit[2]))
+        const dayStr = date.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase()
+        // Retry the function with this new schedule
+        _scheduleFromFilePreviewCurrentSchedule(dayStr, 'day-specific', true)
       }
     })
 }

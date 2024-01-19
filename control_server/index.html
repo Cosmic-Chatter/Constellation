@@ -1303,11 +1303,11 @@
                     <div class="col-6 col-md-3 d-flex align-self-end">
                       <label class="btn btn-outline-primary w-100">
                         <span id="scheduleFromFileModalFileInputLabel" style="overflow-wrap: break-word!important;">Select file</span>
-                        <input hidden type="file" class="form-control" id="scheduleFromFileModalFileInput" accept=".csv">
+                        <input hidden type="file" class="form-control" id="scheduleFromFileModalFileInput" accept=".csv,.json">
                       </label>
                     </div>
                     <div class="col-3 d-flex align-self-end">
-                      <button id="scheduleFromFileModalSubmitButton" class="btn btn-primary w-100">Upload</button>
+                      <button id="scheduleFromFileModalUploadButton" class="btn btn-primary w-100">Upload</button>
                     </div>
                   </div>
                   <div id="scheduleFromFileScheduleCompare" class="row gy-2 mt-2">
@@ -1323,6 +1323,7 @@
                   </div>
                 </div>
                 <div class="modal-footer">
+                  <button id="scheduleFromFileModalSubmitButton" type="button" class="btn btn-primary">Create</button>
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
               </div>
@@ -1386,17 +1387,17 @@
             </div>
           </div>
 
-          <div class="row mt-4">
+          <div class="row mt-4 gy-2">
             <div class='col-12'>
               <h4><b>Next scheduled action: </b><span id="Schedule_next_event"></span></h4>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
+            <div class='col-6 col-sm-3 col-md-4 col-lg-3 col-xl-2 my-auto'>
               <button id='manageFutureDateButton' class='btn btn-primary w-100'>Manage future date</button>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
-              <button id="showScheduleFromFileModalButton" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#scheduleFromFileModal">Create from file</button>
+            <div class='col-6 col-sm-4 col-md-3 col-lg-2 my-auto'>
+              <button id="showScheduleFromFileModalButton" class="btn btn-primary w-100">Create from file</button>
             </div>
-            <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto py-2" role="alert">
+            <div id='dateSpecificScheduleAlert' class="col-sm-auto alert schedule-date-specific my-auto py-1 mt-2 mt-md-0" role="alert">
               Date-specific schedule
             </div>
           </div>

@@ -421,8 +421,10 @@ function configureSchedulePermissions () {
 
   if (constTools.checkPermission('schedule', 'edit')) {
     // User may edit
+    document.getElementById('showScheduleFromFileModalButton').parentElement.style.display = 'block'
   } else {
-    // User may view only
+    // User may view
+    document.getElementById('showScheduleFromFileModalButton').parentElement.style.display = 'none'
   }
 }
 

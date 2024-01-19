@@ -1444,7 +1444,8 @@ async def create_schedule(request: Request,
     if success is False:
         return {"success": False, "reason": reason}
 
-    success, schedule = c_sched.create_schedule(name, entries)
+    success, schedule = c_sched.create_schedule(c_tools.with_extension(name, 'json'), entries)
+    c_sched.retrieve_json_schedule()
     return {"success": success, "schedule": schedule}
 
 
