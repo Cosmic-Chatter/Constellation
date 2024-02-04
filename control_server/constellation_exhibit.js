@@ -280,7 +280,7 @@ class BaseComponent {
     if ('uuid' in update) {
       this.uuid = update.uuid
     }
-    if ('groups' in update) {
+    if ('groups' in update && constTools.arraysEqual(this.groups, update.groups) === false) {
       this.setGroups(update.groups)
     }
     if ('ip_address' in update) {
@@ -557,8 +557,6 @@ class ExhibitComponentGroup {
     btnGroup.appendChild(mainButton)
 
     if (permission === 'edit') {
-      mainButton.classList.add('rounded-end')
-
       const dropdownButton = document.createElement('button')
       dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
       dropdownButton.setAttribute('type', 'button')
