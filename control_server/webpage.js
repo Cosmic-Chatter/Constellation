@@ -957,6 +957,8 @@ function loadVersion () {
 // Login
 document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
 document.getElementById('logoutButton').addEventListener('click', constUsers.logoutUser)
+document.getElementById('changePasswordButton').addEventListener('click', constUsers.showPasswordChangeModal)
+document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', constUsers.submitUserPasswordChange)
 
 // Components tab
 // =========================

@@ -489,3 +489,64 @@ function configureMaintenancePermissions () {
     createIssueButtonCol.style.setProperty('display', 'none', 'important')
   }
 }
+
+export function showPasswordChangeModal () {
+  // Prepare the modal for changing the current user's password and show it.
+
+  // Hide warnings and clear fields
+  document.getElementById('passwordChangeModalCurrentPassword').value = ''
+  document.getElementById('passwordChangeModalNewPassword1').value = ''
+  document.getElementById('passwordChangeModalNewPassword2').value = ''
+
+  document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'none'
+
+  $('#passwordChangeModal').modal('show')
+}
+
+export function submitUserPasswordChange () {
+  // Collect the relevant details from the password change modal and submit it
+
+  const currentPass = document.getElementById('passwordChangeModalCurrentPassword').value
+  const newPass1 = document.getElementById('passwordChangeModalNewPassword1').value
+  const newPass2 = document.getElementById('passwordChangeModalNewPassword2').value
+  if (currentPass === '') {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  }
+  if (newPass1 === '') {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  }
+  if (newPass1 !== newPass2) {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  }
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/' + constConfig.user.uuid + '/changePassword',
+    params: {
+      current_password: currentPass,
+      new_password: newPass1
+    }
+  })
+    .then((response) => {
+      if (response.success === false) {
+        if (response.reason === 'authentication_failed') {
+          document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'block'
+        }
+      } else {
+        $('changePasswordModal').modal('hide')
+        logoutUser()
+      }
+    })
+}

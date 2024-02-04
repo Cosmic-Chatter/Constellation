@@ -483,6 +483,27 @@ def get_user_display_name(user_uuid: str):
     return {"success": True, "display_name": user.display_name}
 
 
+@app.post('/user/{user_uuid}/changePassword')
+def change_user_password(user_uuid: str,
+                         current_password: str = Body(description="The plaintext of the current password."),
+                         new_password: str = Body(description="The plaintext of the password to set.")):
+    """Change the password for the given user"""
+
+    user = c_users.get_user(uuid_str=user_uuid)
+
+    # First, check that the current password is correct
+    if c_users.hash_password(current_password) != user.password_hash:
+        return {"success": False, "reason": "authentication_failed"}
+
+    # Then, update the password
+    if user.uuid != "admin":
+        user.password_hash = c_users.hash_password(new_password)
+        c_users.save_users()
+    else:
+        c_users.create_root_admin(new_password)
+
+    return {"success": True}
+
 # Exhibit component actions
 
 class Exhibit(BaseModel):

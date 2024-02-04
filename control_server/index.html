@@ -38,6 +38,42 @@
         </div>
       </div>
 
+      <!-- Password change modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="passwordChangeModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Change your password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="fst-italic">Use the fields below to change you password. If you don't know your current password, your administrator can set a temporary password for you.</p>
+              
+              <label class="form-label mt-2" for="passwordChangeModalCurrentPassword">Current password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalCurrentPassword">
+              
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword1">New password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword1" autocomplete="new-password">
+
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword2">Confirm new password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword2" autocomplete="new-password">
+
+              <div class="text-danger mt-3">
+                <div id="passwordChangeModalNoCurrentPassWarning">You must enter your current password.</div>
+                <div id="passwordChangeModalBadCurrentPassWarning">The current password was incorrect.</div>
+                <div id="passwordChangeModalNoBlankPassWarning">The password cannot be blank.</div>
+                <div id="passwordChangeModalPassMismatchWarning">The new passwords do not match.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="passwordChangeModalSubmitButton" type="button" class="btn btn-primary">Change</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Edit user modal -->
       <div class="modal" tabindex="-1" role="dialog" id="editUserModal">
         <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
@@ -54,10 +90,10 @@
                   <label class="form-label mt-2" for="editUserDisplayNameInput">Display name</label>
                   <input class="form-control editUserField" id="editUserDisplayNameInput" type="text" placeholder="Jane Smith" autocomplete="off">
                   <label class="form-label mt-2" for="editUserPassword1Input">Password</label>
-                    <input class="form-control editUserField" type="password" id="editUserPassword1Input" autocomplete="new-password">
-    
-                    <label class="form-label mt-2" for="editUserPassword2Input">Confirm password</label>
-                    <input class="form-control editUserField" type="password" id="editUserPassword2Input" autocomplete="new-password">
+                  <input class="form-control editUserField" type="password" id="editUserPassword1Input" autocomplete="new-password">
+  
+                  <label class="form-label mt-2" for="editUserPassword2Input">Confirm password</label>
+                  <input class="form-control editUserField" type="password" id="editUserPassword2Input" autocomplete="new-password">
                 </div>
                 <div class="col-8">
                   <h4>Permissions</h4>
