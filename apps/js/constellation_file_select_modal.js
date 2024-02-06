@@ -67,6 +67,10 @@ export function createFileSelectionModal (userOptions) {
                   <div style="height: 200px; display: flex; justify-content: center; align-items: center;">
                     <audio id="constFileSelectModalFilePreviewAudio" controls style="width: 100%;"></audio>
                   </div>
+                  <div id="constFileSelectModalFilePreviewFont" style="height: 200px; word-break: break-word; font-size: 16px;">
+                    <p>AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789</p>
+                    <p>The quick brown fox jumps over the lazy dog.</p>
+                  </div>
                 </div>
                 <div class='col-6 col-lg-12 mt-2 text-center h6' style="word-wrap: break-word">
                 <span id="constFileSelectModalFilePreviewFilename" ></span>
@@ -384,8 +388,21 @@ function _populateComponentContent (fileDict, options) {
     } else if (mimetype === 'audio') {
       thumb = document.createElement('img')
       thumb.src = constCommon.config.helperAddress + getDefaultAudioIcon()
+    } else if (mimetype === 'font') {
+      thumb = document.createElement('div')
+      thumb.classList = 'd-flex justify-content-center align-items-center'
+      const thumbInner = document.createElement('div')
+      thumb.appendChild(thumbInner)
+      thumbInner.innerHTML = 'AaBb123'
+
+      const clearFontName = file.replaceAll('.', '').replaceAll(' ', '') + 'Preview'
+      const fontDef = new FontFace(clearFontName, 'url(' + encodeURI(constCommon.config.helperAddress + '/content/' + file) + ')')
+      document.fonts.add(fontDef)
+      thumbInner.style.setProperty('Font-Family', clearFontName)
+      thumbInner.style.fontSize = '25px'
+      thumbInner.style.overflow = 'hidden'
     } else {
-      // Not an image or video, or we don't have a thumbnail
+      // We don't have a thumbnail
       thumb = document.createElement('img')
       thumb.src = constCommon.config.helperAddress + getDefaultDocumentImage()
     }
@@ -417,6 +434,7 @@ function previewFile (file, thumbnailList) {
   const img = document.getElementById('constFileSelectModalFilePreviewImage')
   const vid = document.getElementById('constFileSelectModalFilePreviewVideo')
   const aud = document.getElementById('constFileSelectModalFilePreviewAudio')
+  const font = document.getElementById('constFileSelectModalFilePreviewFont')
 
   document.getElementById('constFileSelectModalFilePreviewFilename').innerHTML = file
   document.getElementById('constFileSelectModalFilePreview').setAttribute('data-filename', file)
@@ -427,23 +445,36 @@ function previewFile (file, thumbnailList) {
   if (mimetype === 'image' && thumbnailList.includes(thumbRoot + '.jpg')) {
     img.style.display = 'block'
     vid.style.display = 'none'
+    font.style.display = 'none'
     aud.parentElement.style.display = 'none'
     img.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.jpg'
   } else if (mimetype === 'video' && thumbnailList.includes(thumbRoot + '.mp4')) {
     img.style.display = 'none'
     vid.style.display = 'block'
+    font.style.display = 'none'
     aud.parentElement.style.display = 'none'
     vid.src = constCommon.config.helperAddress + '/thumbnails/' + thumbRoot + '.mp4'
   } else if (mimetype === 'audio') {
     img.style.display = 'none'
     vid.style.display = 'none'
+    font.style.display = 'none'
     aud.parentElement.style.display = 'flex'
     aud.src = constCommon.config.helperAddress + '/content/' + file
+  } else if (mimetype === 'font') {
+    img.style.display = 'none'
+    vid.style.display = 'none'
+    aud.style.display = 'none'
+    font.style.display = 'block'
+
+    const fontDef = new FontFace('fontPreview', 'url(' + encodeURI(constCommon.config.helperAddress + '/content/' + file) + ')')
+    document.fonts.add(fontDef)
+    font.style.setProperty('Font-Family', 'fontPreview')
   } else {
     // We have something other than an image or video, or we are missing a thumbnail
     img.style.display = 'block'
     vid.style.display = 'none'
     aud.parentElement.style.display = 'none'
+    font.style.display = 'none'
     img.src = constCommon.config.helperAddress + getDefaultDocumentImage()
   }
 }

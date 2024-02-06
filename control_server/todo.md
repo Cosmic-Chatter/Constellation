@@ -1,7 +1,6 @@
 # To-do list
 
 ## General
-
 - Rename ideas:
   - ExhibitMate
     - ExhibitMate Apps
@@ -33,10 +32,10 @@
 - Search issues and archived issues
 
 ### Schedule
-- Add schedule via CSV
 - Create public API for adding schedule entries
 - Clone other schedule
 - Name date-specific schedule
+- Fix GUI issues when actions/targets
 
 ## Constellation Apps
 
@@ -52,6 +51,8 @@
 - Ability to search results
 
 ### Media Player
+- Media from URL
+- Dynamic fields from data files (place anywhere)
 
 ### Timelapse Viewer
 - Option to prevent looping when scrolling

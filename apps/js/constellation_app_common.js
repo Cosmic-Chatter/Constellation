@@ -712,6 +712,8 @@ export function guessMimetype (filename) {
     return 'image'
   } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'wav'].includes(ext)) {
     return 'audio'
+  } else if (['otf', 'ttf', 'woff', 'woff2'].includes(ext)) {
+    return 'font'
   }
 }
 
