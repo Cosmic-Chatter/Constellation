@@ -342,38 +342,22 @@
 
               <h4>Fonts</h4>
               <div class="row gy-2">
-                <div class="col-12 col-lg-3">
-                  <label class="btn btn-outline-primary w-100">
-                    <span id="uploadFontName" class="w-100">Upload</span>
-                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
-                  </label>
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                  <button id="manageFontsButton" class="btn btn-info w-100">Manage fonts</button>
                 </div>
                 <div class="col-0 col-lg-9"></div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Title" class="form-label">Item title</label>
-                  <select id="fontSelect_Title" class="form-select font-select" data-property="Title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_title" class="form-label">Lightbox title</label>
-                  <select id="fontSelect_Lightbox_title" class="form-select font-select" data-property="Lightbox_title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_caption" class="form-label">Lightbox caption</label>
-                  <select id="fontSelect_Lightbox_caption" class="form-select font-select" data-property="Lightbox_caption" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_credit" class="form-label">Lightbox credit</label>
-                  <select id="fontSelect_Lightbox_credit" class="form-select font-select" data-property="Lightbox_credit" data-default="../_fonts/OpenSans-LightItalic.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_filter_label" class="form-label">Filter label</label>
-                  <select id="fontSelect_filter_label" class="form-select font-select" data-property="filter_label" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_filter_text" class="form-label">Filter text</label>
-                  <select id="fontSelect_filter_text" class="form-select font-select" data-property="filter_text" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
 
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Item title" data-constAFP-path="style>font>Title" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox title" data-constAFP-path="style>font>Lightbox_title" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox caption" data-constAFP-path="style>font>Lightbox_caption" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox credit" data-constAFP-path="style>font>Lightbox_credit" data-default="OpenSans-LightItalic.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Filter label" data-constAFP-path="style>font>filter_label" data-default="OpenSans-Bold.ttf"></div>
+                
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Filter text" data-constAFP-path="style>font>filter_text" data-default="OpenSans-Regular.ttf"></div>
               </div>
 
               <h4 class="mt-2">Text size</h4>

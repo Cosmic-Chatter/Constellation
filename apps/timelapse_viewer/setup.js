@@ -4,11 +4,11 @@ import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
 import * as constSetup from '../js/constellation_setup_common.js'
 
-function clearDefinitionInput (full = true) {
-  // Clear all input related to a defnition
+function initializeDefinition () {
+  // Create a blank definition at save it to workingDefinition.
 
-  if (full === true) {
-  // Get a new temporary uuid
+  return new Promise(function (resolve, reject) {
+    // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
@@ -37,7 +37,16 @@ function clearDefinitionInput (full = true) {
           }
         })
         constSetup.previewDefinition(false)
+        resolve()
       })
+  })
+}
+
+async function clearDefinitionInput (full = true) {
+  // Clear all input related to a defnition
+
+  if (full === true) {
+    await initializeDefinition()
   }
 
   // Definition details
@@ -60,7 +69,7 @@ function clearDefinitionInput (full = true) {
   document.querySelector('#attractorInput_attractor_background').dispatchEvent(new Event('input', { bubbles: true }))
   document.getElementById('attractorInput_text_color').value = '#fff'
   document.querySelector('#attractorInput_text_color').dispatchEvent(new Event('input', { bubbles: true }))
-  document.getElementById('attractorInput_font').value = '../_fonts/OpenSans-Bold.ttf'
+  constSetup.resetAdvancedFontPickers()
 
   // Appearance details
   constSetup.updateAdvancedColorPicker('style>background', {
@@ -103,6 +112,9 @@ function editDefinition (uuid = '') {
           disableAttractorOptions(true)
         }
       }
+    } else if (key === 'font') {
+      const picker = document.querySelector('.AFP-select[data-path="attractor>font"')
+      constSetup.setAdvancedFontPicker(picker, def.attractor.font)
     } else {
       el = document.getElementById('attractorInput_' + key)
       el.value = def.attractor[key]
@@ -122,39 +134,6 @@ function editDefinition (uuid = '') {
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=' + def.uuid
   constSetup.previewDefinition()
-}
-
-function onFontUploadChange () {
-  // Classed when the user selects font files to upload
-
-  const fileInput = $('#uploadFontInput')[0]
-  const files = fileInput.files
-  const formData = new FormData()
-
-  $('#uploadFontName').html('Uploading')
-
-  Object.keys(files).forEach((key) => {
-    const file = files[key]
-    formData.append('files', file)
-  })
-
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', '/uploadContent', true)
-
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
-
-      if ('success' in response) {
-        $('#uploadFontName').html('Upload')
-        populateFontSelects()
-      }
-    } else if (this.status === 422) {
-      console.log(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send(formData)
 }
 
 function disableAttractorOptions (disable) {
@@ -192,63 +171,6 @@ function saveDefinition () {
             }
           })
       }
-    })
-}
-
-function populateFontSelects () {
-  // Get a list of all the content and add the available font files to the appropriate selects.
-
-  const selects = ['attractorInput_font']
-  $('.font-select').empty()
-
-  // First, search the content directory for any user-provided fonts
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      selects.forEach((id) => {
-        const el = document.getElementById(id)
-        // First, add the default
-        const defaultFont = document.createElement('option')
-        defaultFont.value = el.getAttribute('data-default')
-        defaultFont.innerHTML = 'Default'
-        el.appendChild(defaultFont)
-
-        const header = document.createElement('option')
-        header.value = 'User-provided'
-        header.innerHTML = 'User-provided'
-        header.setAttribute('disabled', true)
-        el.appendChild(header)
-
-        result.all_exhibits.forEach((item) => {
-          if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
-            const option = document.createElement('option')
-            option.value = '../content/' + item
-            option.innerHTML = item
-            el.appendChild(option)
-          }
-        })
-      })
-
-      // Then, add the defaults
-      const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
-
-      selects.forEach((id) => {
-        const el = document.getElementById(id)
-        const header = document.createElement('option')
-        header.value = 'Built-in'
-        header.innerHTML = 'Built-in'
-        header.setAttribute('disabled', true)
-        el.appendChild(header)
-
-        defaultFonts.forEach((font) => {
-          const option = document.createElement('option')
-          option.value = '../_fonts/' + font
-          option.innerHTML = font
-          el.appendChild(option)
-        })
-      })
     })
 }
 
@@ -513,7 +435,10 @@ Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
 })
 
 // Font upload
-document.getElementById('uploadFontInput').addEventListener('change', onFontUploadChange)
+document.getElementById('manageFontsButton').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(constSetup.refreshAdvancedFontPickers)
+})
 
 // Realtime-sliders should adjust as we drag them
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
@@ -531,12 +456,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-populateFontSelects()
-clearDefinitionInput()
-
 constSetup.configure({
   app: 'timelapse_viewer',
   clearDefinition: clearDefinitionInput,
+  initializeDefinition,
   loadDefinition: editDefinition,
   saveDefinition
 })

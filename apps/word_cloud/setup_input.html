@@ -242,29 +242,18 @@
 
               <h4>Fonts</h4>
               <div class="row gy-2">
-                <div class="col-12 col-lg-3">
-                  <label class="btn btn-outline-primary w-100">
-                    <span id="uploadFontName" class="w-100">Upload</span>
-                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
-                  </label>
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                  <button id="manageFontsButton" class="btn btn-info w-100">Manage fonts</button>
                 </div>
                 <div class="col-0 col-lg-9"></div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_prompt" class="form-label">Prompt</label>
-                  <select id="fontSelect_prompt" class="form-select font-select" data-property="prompt" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_input" class="form-label">Input</label>
-                  <select id="fontSelect_input" class="form-select font-select" data-property="input" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_submit" class="form-label">Submit button</label>
-                  <select id="fontSelect_submit" class="form-select font-select" data-property="submit" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_clear" class="form-label">Clear button</label>
-                  <select id="fontSelect_clear" class="form-select font-select" data-property="clear" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Prompt" data-constAFP-path="appearance>font>prompt" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Input" data-constAFP-path="appearance>font>input" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Submit" data-constAFP-path="appearance>font>submit" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Clear" data-constAFP-path="appearance>font>clear" data-default="OpenSans-Regular.ttf"></div>     
               </div>
             </div>
           </div>

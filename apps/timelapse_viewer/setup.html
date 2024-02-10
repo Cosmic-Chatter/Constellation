@@ -281,19 +281,12 @@
                     <input id="attractorInput_text_color" type="text" class="coloris form-control attractor-input" value="#fff" data-property="text_color" data-default="#fff">
                   </div>
                 </div>
-                <div class="col-12 col-lg-6">
-                  <label for="attractorInput_font" class="form-label">
-                    Font
-                  </label>
-                  <div class="row">
-                    <div class="col-8 pe-1">
-                      <select id="attractorInput_font" class="form-select attractor-input font-select" data-property="font" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                    </div>
-                    <div class="col-4 ps-1">
-                      <label class="btn btn-outline-primary w-100">
-                        <span id="uploadFontName" class="w-100">Upload</span>
-                        <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
-                      </label>
+                <div class="col-lg-12">
+                  <div class="row gy-2">
+                    <div class="col-12 col-md-7 col-lg-6 col-xl-4 advanced-font-picker" data-constAFP-name="Font" data-constAFP-path="attractor>font" data-default="OpenSans-Bold.ttf"></div>
+
+                    <div class="col-12 col-md-5 col-lg-4 col-xl-3 d-flex align-items-end">
+                      <button id="manageFontsButton" class="btn btn-info w-100">Manage fonts</button>
                     </div>
                   </div>
                 </div>

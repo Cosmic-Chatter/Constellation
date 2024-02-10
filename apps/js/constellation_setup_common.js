@@ -39,7 +39,7 @@ export async function configure (options) {
 
   // Make sure we have the options we need
   if (options.app == null) throw new Error("The options must include the 'app' field.")
-  if (options.initializeDefinition == null) throw new Error("The options must include the 'initializeDefinition' field referencing teh appropriate function.")
+  if (options.initializeDefinition == null) throw new Error("The options must include the 'initializeDefinition' field referencing the appropriate function.")
   if (options.loadDefinition == null) throw new Error("The options must include the 'loadDefinition' field referencing the appropriate function.")
   if (options.saveDefinition == null) throw new Error("The options must include the 'saveDefinition' field referencing the appropriate function.")
 
@@ -56,6 +56,7 @@ export async function configure (options) {
   createAdvancedFontPickers(userFonts)
   createDefinitionDeletePopup()
   createEventListeners()
+  resizePreview()
 
   constCommon.getAvailableDefinitions(options.app)
     .then((response) => {

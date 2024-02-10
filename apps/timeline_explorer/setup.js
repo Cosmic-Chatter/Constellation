@@ -4,11 +4,11 @@ import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
 import * as constSetup from '../js/constellation_setup_common.js'
 
-function clearDefinitionInput (full = true) {
-  // Clear all input related to a defnition
+function initializeDefinition () {
+  // Create a blank definition at save it to workingDefinition.
 
-  if (full === true) {
-  // Get a new temporary uuid
+  return new Promise(function (resolve, reject) {
+    // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
@@ -38,7 +38,17 @@ function clearDefinitionInput (full = true) {
             font: {}
           }
         })
+        constSetup.previewDefinition(false)
+        resolve()
       })
+  })
+}
+
+async function clearDefinitionInput (full = true) {
+  // Clear all input related to a defnition
+
+  if (full === true) {
+    await initializeDefinition()
   }
 
   // Spreadsheet
@@ -71,6 +81,9 @@ function clearDefinitionInput (full = true) {
     gradient_color_1: '#719abf',
     gradient_color_2: '#719abf'
   })
+
+  // Reset font face options
+  constSetup.resetAdvancedFontPickers()
 }
 
 function editDefinition (uuid = '') {
@@ -108,10 +121,13 @@ function editDefinition (uuid = '') {
     constSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
-  // Set the appropriate values for the font selects
-  Object.keys(def.style.font).forEach((key) => {
-    $('#fontSelect_' + key).val(def.style.font[key])
-  })
+  // Set the appropriate values for the advanced font pickers
+  if ('font' in def.style) {
+    Object.keys(def.style.font).forEach((key) => {
+      const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
+      constSetup.setAdvancedFontPicker(picker, def.style.font[key])
+    })
+  }
 
   // Build out the key input interface
   let first = null
@@ -400,39 +416,6 @@ function deleteLanguageFlag (lang) {
   })
 }
 
-function onFontUploadChange () {
-  // Classed when the user selects font files to upload
-
-  const fileInput = $('#uploadFontInput')[0]
-  const files = fileInput.files
-  const formData = new FormData()
-
-  $('#uploadFontName').html('Uploading')
-
-  Object.keys(files).forEach((key) => {
-    const file = files[key]
-    formData.append('files', file)
-  })
-
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', '/uploadContent', true)
-
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
-
-      if ('success' in response) {
-        $('#uploadFontName').html('Upload new')
-        populateFontSelects()
-      }
-    } else if (this.status === 422) {
-      console.log(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send(formData)
-}
-
 function onFlagUploadChange (lang) {
   // Called when the user selects a flag image file to upload
 
@@ -595,61 +578,6 @@ function checkContentExists () {
             missingContentField.innerHTML = html
           }
         })
-    })
-}
-
-function populateFontSelects () {
-  // Get a list of all the content and add the available font files to the appropriate selects.
-
-  const types = ['Header', 'Time', 'Title', 'Body']
-  $('.font-select').empty()
-
-  // First, search the content directory for any user-provided fonts
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      types.forEach((type) => {
-        // First, add the default
-        const defaultFont = document.createElement('option')
-        defaultFont.value = $('#fontSelect_' + type).data('default')
-        defaultFont.innerHTML = 'Default'
-        $('#fontSelect_' + type).append(defaultFont)
-
-        const header = document.createElement('option')
-        header.value = 'User-provided'
-        header.innerHTML = 'User-provided'
-        header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
-
-        result.all_exhibits.forEach((item) => {
-          if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
-            const option = document.createElement('option')
-            option.value = '../content/' + item
-            option.innerHTML = item
-            $('#fontSelect_' + type).append(option)
-          }
-        })
-      })
-
-      // Then, add the defaults
-      const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
-
-      types.forEach((type) => {
-        const header = document.createElement('option')
-        header.value = 'Built-in'
-        header.innerHTML = 'Built-in'
-        header.setAttribute('disabled', true)
-        $('#fontSelect_' + type).append(header)
-
-        defaultFonts.forEach((font) => {
-          const option = document.createElement('option')
-          option.value = '../_fonts/' + font
-          option.innerHTML = font
-          $('#fontSelect_' + type).append(option)
-        })
-      })
     })
 }
 
@@ -881,12 +809,9 @@ $('.coloris').change(function () {
   constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
   constSetup.previewDefinition(true)
 })
-$('#uploadFontInput').change(onFontUploadChange)
-
-$('.font-select').change(function () {
-  const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['style', 'font', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+document.getElementById('manageFontsButton').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(constSetup.refreshAdvancedFontPickers)
 })
 
 // Set color mode
@@ -899,12 +824,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 // Set helper address for use with constCommon.makeHelperRequest
 constCommon.config.helperAddress = window.location.origin
 
-populateFontSelects()
-clearDefinitionInput()
-
 constSetup.configure({
   app: 'timeline_explorer',
   clearDefinition: clearDefinitionInput,
+  initializeDefinition,
   loadDefinition: editDefinition,
   saveDefinition
 })

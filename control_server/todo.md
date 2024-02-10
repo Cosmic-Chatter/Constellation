@@ -49,6 +49,7 @@
 
 ### Media Browser
 - Ability to search results
+- Fix bug where reloading the spreadsheet doesn't update it
 
 ### Media Player
 - Media from URL
@@ -56,6 +57,9 @@
 
 ### Timelapse Viewer
 - Option to prevent looping when scrolling
+
+### Timeline Explorer
+- Ability to adjust default font sizes
 
 ### Voting Kiosk
 - Ability to shuffle options

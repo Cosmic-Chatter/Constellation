@@ -151,10 +151,12 @@ function editDefinition (uuid = '') {
   }
 
   // Set the appropriate values for the advanced font pickers
-  Object.keys(def.style.font).forEach((key) => {
-    const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
-    constSetup.setAdvancedFontPicker(picker, def.style.font[key])
-  })
+  if ('font' in def.style) {
+    Object.keys(def.style.font).forEach((key) => {
+      const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
+      constSetup.setAdvancedFontPicker(picker, def.style.font[key])
+    })
+  }
 
   // Set the appropriate values for the text size sliders
   Object.keys(def.style.text_size).forEach((key) => {
