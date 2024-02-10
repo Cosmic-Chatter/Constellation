@@ -20,15 +20,17 @@ export const config = {
   availableDefinitions: {},
   clearDefinition: null,
   loadDefinition: null,
-  saveDefinition: null
+  saveDefinition: null,
+  fontCache: {} // Keys with any value indicate that font has already been made
 }
 
-export function configure (options) {
+export async function configure (options) {
   // Set up the common fields for the setup app.
 
   const defaults = {
     app: null,
     clearDefinition: null,
+    initializeDefinition: null,
     loadDefinition: null,
     saveDefinition: null
   }
@@ -37,15 +39,21 @@ export function configure (options) {
 
   // Make sure we have the options we need
   if (options.app == null) throw new Error("The options must include the 'app' field.")
+  if (options.initializeDefinition == null) throw new Error("The options must include the 'initializeDefinition' field referencing teh appropriate function.")
   if (options.loadDefinition == null) throw new Error("The options must include the 'loadDefinition' field referencing the appropriate function.")
   if (options.saveDefinition == null) throw new Error("The options must include the 'saveDefinition' field referencing the appropriate function.")
 
   config.app = options.app
   config.clearDefinition = options.clearDefinition
+  config.initializeDefinition = options.initializeDefinition
   config.loadDefinition = options.loadDefinition
   config.saveDefinition = options.saveDefinition
 
+  await config.initializeDefinition()
+  const userFonts = await getUserFonts()
+
   createAdvancedColorPickers()
+  createAdvancedFontPickers(userFonts)
   createDefinitionDeletePopup()
   createEventListeners()
 
@@ -507,6 +515,188 @@ export function updateAdvancedColorPicker (path, details) {
 
   const id = el.getAttribute('data-constACP-id')
   _onAdvancedColorPickerModeChange(id, path, details.mode)
+}
+
+function createAdvancedFontPickers (userFonts) {
+  // Automatically create advanced font pickers for all marked elements
+
+  Array.from(document.querySelectorAll('.advanced-font-picker')).forEach((el) => {
+    const name = el.getAttribute('data-constAFP-name')
+    const path = el.getAttribute('data-constAFP-path')
+    const defaultFont = el.getAttribute('data-default')
+    createAdvancedFontPicker({ parent: el, name, path, default: defaultFont })
+  })
+
+  populateAdvancedFontPickers(userFonts)
+}
+
+export function createAdvancedFontPicker (details) {
+  // Create an advanced font select
+
+  const id = constCommon.uuid()
+  details.parent.setAttribute('data-constAFP-id', id)
+
+  const html = `
+  <label for="AFPSelect_${id}" class="form-label">${details.name}</label>
+    <select id="AFPSelect_${id}" class="form-select AFP-select" data-default="${details.default}"></select>
+  `
+
+  details.parent.innerHTML = html
+  const el = document.getElementById(`AFPSelect_${id}`)
+  el.setAttribute('data-path', details.path)
+  // Add event listeners
+  el.addEventListener('change', (event) => {
+    _onAdvancedFontPickerChange(event.target)
+  })
+}
+
+function getUserFonts () {
+  // Query the app for any uploaded user fonts.
+
+  return new Promise(function (resolve, reject) {
+    constCommon.makeHelperRequest({
+      method: 'GET',
+      endpoint: '/getAvailableContent'
+    })
+      .then((result) => {
+        const availableFonts = []
+        result.all_exhibits.forEach((item) => {
+          if (constCommon.guessMimetype(item) === 'font') {
+            availableFonts.push(item)
+          }
+        })
+        resolve(availableFonts)
+      })
+  })
+}
+
+export async function refreshAdvancedFontPickers () {
+  // Retrive any new fonts and update the pickers
+
+  const userFonts = await getUserFonts()
+
+  // Cache the current values
+  const currentDict = {}
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((el) => {
+    currentDict[el.getAttribute('id')] = el.value
+  })
+  populateAdvancedFontPickers(userFonts)
+  for (const id of Object.keys(currentDict)) {
+    const picker = document.getElementById(id)
+    // Check if option still exists (font may have been deleted)
+    if (Array.from(picker.options).map(o => o.value).includes(currentDict[id]) === false) {
+      picker.value = '../_fonts/' + picker.getAttribute('data-default')
+    } else {
+      picker.value = currentDict[id]
+    }
+    _onAdvancedFontPickerChange(picker)
+  }
+}
+
+function populateAdvancedFontPickers (userFonts) {
+  // Add user and default fonts
+
+  const builtInFonts = [
+    { name: 'Open Sans Light', path: 'OpenSans-Light.ttf' },
+    { name: 'Open Sans Light Italic', path: 'OpenSans-LightItalic.ttf' },
+    { name: 'Open Sans Regular', path: 'OpenSans-Regular.ttf' },
+    { name: 'Open Sans Italic', path: 'OpenSans-Italic.ttf' },
+    { name: 'Open Sans Medium', path: 'OpenSans-Medium.ttf' },
+    { name: 'Open Sans Medium Italic', path: 'OpenSans-MediumItalic.ttf' },
+    { name: 'Open Sans Semibold', path: 'OpenSans-SemiBold.ttf' },
+    { name: 'Open Sans Semibold Italic', path: 'OpenSans-SemiBoldItalic.ttf' },
+    { name: 'Open Sans Bold', path: 'OpenSans-Bold.ttf' },
+    { name: 'Open Sans Bold Italic', path: 'OpenSans-BoldItalic.ttf' },
+    { name: 'Open Sans Extra Bold', path: 'OpenSans-ExtraBold.ttf' },
+    { name: 'Open Sans Extra Bold Italic', path: 'OpenSans-ExtraBoldItalic.ttf' }
+  ]
+
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((parent) => {
+    parent.innerHTML = ''
+
+    // First, add the detault
+    const defaultFont = parent.getAttribute('data-default')
+    _createAdvancedFontOption(parent, 'Default', '../_fonts/' + defaultFont)
+
+    // Then, add the user fonts
+    if (userFonts.length > 0) {
+      const user = new Option('User-provided')
+      user.setAttribute('disabled', true)
+      parent.appendChild(user)
+
+      userFonts.forEach((font) => {
+        _createAdvancedFontOption(parent, font, '../content/' + font)
+      })
+    }
+
+    // Finally, add the built-in font list
+    const builtInLabel = new Option('Built-in')
+    builtInLabel.setAttribute('disabled', true)
+    parent.appendChild(builtInLabel)
+    builtInFonts.forEach((font) => {
+      _createAdvancedFontOption(parent, font.name, '../_fonts/' + font.path)
+    })
+
+    _onAdvancedFontPickerChange(parent, false)
+  })
+}
+
+function _createAdvancedFontOption (parent, name, path) {
+  // Create a stylized option to represent the font and add it to the parent select.
+
+  let safeName = name.replaceAll(' ', '').replaceAll('.', '').replaceAll('/', '').replaceAll('\\', '')
+  if (safeName === 'Default') {
+    safeName += parent.getAttribute('id').slice(10)
+  }
+
+  const option = new Option(name, path)
+
+  // Check if font already exists
+  if ((safeName in config.fontCache) === false) {
+    const fontDef = new FontFace(safeName, 'url(' + encodeURI(path) + ')')
+    document.fonts.add(fontDef)
+    config.fontCache[safeName] = true
+  }
+  option.style.fontFamily = safeName
+  option.setAttribute('data-safeName', safeName)
+
+  parent.appendChild(option)
+}
+
+function _onAdvancedFontPickerChange (el, saveChange = true) {
+  // Respond to a change in an advanced font select.
+  // Set writeChange = false when first setting up the element
+
+  const path = el.getAttribute('data-path').split('>')
+
+  if (saveChange) {
+  // Save the change
+    updateWorkingDefinition([...path], el.value)
+    previewDefinition(true)
+  }
+
+  // Change the select font to match this font
+  let safeName = el.options[el.selectedIndex].getAttribute('data-safeName')
+
+  if (safeName === 'Default') {
+    safeName += el.getAttribute('id').slice(10)
+  }
+  el.style.fontFamily = safeName
+}
+
+export function setAdvancedFontPicker (el, value) {
+  // Set the given advanced font picker to the specified font.
+
+  el.value = value
+  _onAdvancedFontPickerChange(el)
+}
+
+export function resetAdvancedFontPickers () {
+  // Find and reset all advanced font pickers to their default values.
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((el) => {
+    const defaultFont = '../_fonts/' + el.getAttribute('data-default')
+    setAdvancedFontPicker(el, defaultFont)
+  })
 }
 
 const markdownConverter = new showdown.Converter()

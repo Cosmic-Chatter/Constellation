@@ -281,33 +281,20 @@
 
               <h4>Fonts</h4>
               <div class="row gy-2">
-                <div class="col-12 col-lg-3">
-                  <label class="btn btn-outline-primary w-100">
-                    <span id="uploadFontName" class="w-100">Upload</span>
-                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
-                  </label>
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                  <button id="manageFontsButton" class="btn btn-info w-100">Manage fonts</button>
                 </div>
                 <div class="col-0 col-lg-9"></div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_header" class="form-label">Header</label>
-                  <select id="fontSelect_header" class="form-select font-select" data-property="header" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_subheader" class="form-label">Subheader</label>
-                  <select id="fontSelect_subheader" class="form-select font-select" data-property="subheader" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_footer" class="form-label">Footer</label>
-                  <select id="fontSelect_footer" class="form-select font-select" data-property="footer" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_subfooter" class="form-label">Subfooter</label>
-                  <select id="fontSelect_subfooter" class="form-select font-select" data-property="subfooter" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_button" class="form-label">Buttons</label>
-                  <select id="fontSelect_button" class="form-select font-select" data-property="button" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Header" data-constAFP-path="style>font>header" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Subheader" data-constAFP-path="style>font>subheader" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Footer" data-constAFP-path="style>font>footer" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Subfooter" data-constAFP-path="style>font>subfooter" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Buttons" data-constAFP-path="style>font>button" data-default="OpenSans-Regular.ttf"></div>
               </div>
 
               <h4 class="mt-2">Text size</h4>

@@ -609,7 +609,6 @@ function uploadFile (options) {
         const response = JSON.parse(this.responseText)
 
         if ('success' in response) {
-          console.log('success')
           document.getElementById('constFileSelectModalUploadProgressBarContainer').style.display = 'none'
           document.getElementById('constFileSelectModalUploadfilename').innerHTML = 'Upload new'
           populateComponentContent(options)
