@@ -25,6 +25,8 @@ Constellation 5 introduces a user account system that enables administrators to 
 - Designate spreadsheet columns as filterable to allow users to sort the media collection.
 - Redesigned lightbox allows media to be bigger.
 
+### Media Player
+- Create dynamic signage by annotating media with data from JSON files.
 
 # **Constellation 4**
 Constellation 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.

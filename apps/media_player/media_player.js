@@ -88,7 +88,7 @@ function gotoNextSource () {
   gotoSource(constCommon.config.activeIndex)
 }
 
-function changeMedia (source) {
+async function changeMedia (source) {
   // Load and play a media file given in source
   // delayPlay and playOnly are used when synchronizing multiple displays
 
@@ -165,7 +165,66 @@ function changeMedia (source) {
       audio.loop = true
     }
   }
+
+  // Annotations
+
+  // Remove existing
+  document.querySelectorAll('.annotation').forEach(function (a) {
+    a.remove()
+  })
+  if ('annotations' in source) {
+    for (const annotation of source.annotations) {
+      annotation.value = await fetchAnnotation(annotation)
+      createAnnotation(annotation)
+    }
+  }
 }
+
+function createAnnotation (details) {
+  // Render an annotation on the display.
+
+  const annotation = document.createElement('div')
+  annotation.classList = 'annotation'
+  annotation.innerHTML = details.value
+  annotation.style.position = 'absolute'
+
+  let xPos, ypos
+  if ('x_position' in details) {
+    xPos = details.x_position
+  } else xPos = 50
+  annotation.style.left = xPos + 'vw'
+  if ('y_position' in details) {
+    ypos = details.y_position
+  } else ypos = 50
+  annotation.style.top = ypos + 'vh'
+
+  document.body.appendChild(annotation)
+}
+
+function fetchAnnotation (details) {
+  // Access the given file and retrieve the annotation.
+
+  return new Promise((resolve, reject) => {
+    if (details.type === 'file') {
+      constCommon.makeServerRequest({
+        method: 'GET',
+        endpoint: '/content/' + details.file,
+        noCache: true
+      })
+        .then((text) => {
+          let subset = text
+          for (const key of details.path) {
+            subset = subset[key]
+          }
+          resolve(subset)
+        })
+        .catch(() => {
+          reject(new Error('Bad file fetch'))
+        })
+    }
+  })
+}
+
 constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
 constCommon.config.sourceList = []
 constCommon.config.autoplayEnabled = true

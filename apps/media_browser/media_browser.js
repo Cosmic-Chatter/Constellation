@@ -458,7 +458,8 @@ function loadDefinition (def) {
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + def.spreadsheet,
-    rawResponse: true
+    rawResponse: true,
+    noCache: true
   })
     .then((response) => {
       const csvAsJSON = constCommon.csvToJSON(response)

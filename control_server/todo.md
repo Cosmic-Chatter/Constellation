@@ -49,7 +49,6 @@
 
 ### Media Browser
 - Ability to search results
-- Fix bug where reloading the spreadsheet doesn't update it
 
 ### Media Player
 - Media from URL

@@ -83,7 +83,12 @@ export function makeRequest (opt) {
 
   return new Promise(function (resolve, reject) {
     const xhr = new XMLHttpRequest()
-    xhr.open(opt.method, opt.url + opt.endpoint, true)
+    const path = opt.url + opt.endpoint
+    if ('noCache' in opt && opt.noCache === true) {
+      xhr.open(opt.method, path + (/\?/.test(path) ? '&' : '?') + new Date().getTime(), true)
+    } else {
+      xhr.open(opt.method, path, true)
+    }
     xhr.timeout = opt.timeout ?? 2000 // ms
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {

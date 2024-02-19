@@ -506,7 +506,8 @@ function onSpreadsheetFileChange () {
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + file,
-    rawResponse: true
+    rawResponse: true,
+    noCache: true
   })
     .then((result) => {
       const csvAsJSON = constCommon.csvToJSON(result)
@@ -552,7 +553,8 @@ function checkContentExists () {
       constCommon.makeHelperRequest({
         method: 'GET',
         endpoint: '/content/' + workingDefinition.spreadsheet,
-        rawResponse: true
+        rawResponse: true,
+        noCache: true
       })
         .then((raw) => {
           const spreadsheet = constCommon.csvToJSON(raw).json
@@ -649,7 +651,8 @@ function optimizeMediaFromModal () {
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + workingDefinition.spreadsheet,
-    rawResponse: true
+    rawResponse: true,
+    noCache: true
   })
     .then((raw) => {
       const spreadsheet = constCommon.csvToJSON(raw).json

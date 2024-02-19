@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="../css/bootstrap_5_3/bootstrap.min.css">
     <link rel="stylesheet" href="../css/coloris.min.css">
     <link rel="stylesheet" href="../css/setup.css">
+    <link rel="stylesheet" href="setup.css">
 
     <title>Media Player Setup</title>
 
@@ -20,6 +21,51 @@
 
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
+
+      <div id="annotateFromJSONModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: min(95%, 750px);
+        width: min(95%, 750px);">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Create an annotation from JSON</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row gy-2">
+                <div class="col-12">
+                  <i>Every time the content loads, Media Player will fetch the selected JSON file and populate the annotation with the data from the chosen field.</i>
+                </div>
+                <div class="col-12 h5">
+                  1. Choose JSON file
+                </div>
+                <div class="col-3">
+                  <button id="annotateFromJSONModalFileSelect" class="btn btn-outline-primary w-100">Select file</button>
+                </div>
+                <div class="col-1 d-flex align-items-center"><span class="text-center w-100">or</span></div>
+                <div class="col-6">
+                  <input class="form-control" type="text" placeholder="Enter URL">
+                </div>
+                <div class="col-2">
+                  <button class="btn btn-primary w-100">Fetch</button>
+                </div>
+                <div class="col-12 mt-3">
+                  <h5>2. Select field</h5>
+                  <ul id="annotateFromJSONModalTreeView" class="ps-0"></ul>
+                </div>
+                <div class="col-12 mt-3">
+                  <h5>3. Confirm path</h5>
+                  <input id="annotateFromJSONModalPath" class="form-control" type="text">
+                </div>
+              </div>
+
+            </div>
+            <div class="modal-footer">
+              <button id="annotateFromJSONModalSubmitButton" type="button" class="btn btn-primary">Create</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div id="appHelpModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered mw-100 w-75">

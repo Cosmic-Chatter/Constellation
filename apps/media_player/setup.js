@@ -4,11 +4,11 @@ import * as constCommon from '../js/constellation_app_common.js'
 import * as constFileSelect from '../js/constellation_file_select_modal.js'
 import * as constSetup from '../js/constellation_setup_common.js'
 
-function clearDefinitionInput (full = true) {
-  // Clear all input related to a defnition
+function initializeDefinition () {
+  // Create a blank definition at save it to workingDefinition.
 
-  if (full === true) {
-  // Get a new temporary uuid
+  return new Promise(function (resolve, reject) {
+    // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
@@ -38,8 +38,17 @@ function clearDefinitionInput (full = true) {
           },
           watermark: {}
         })
-        constSetup.previewDefinition()
+        constSetup.previewDefinition(false)
+        resolve()
       })
+  })
+}
+
+async function clearDefinitionInput (full = true) {
+  // Clear all input related to a defnition
+
+  if (full === true) {
+    await initializeDefinition()
   }
 
   // Definition details
@@ -177,7 +186,7 @@ function createItemHTML (item, num) {
   // Add a blank item to the itemList
 
   const itemCol = document.createElement('div')
-  itemCol.classList = 'col-12 col-md-6 mt-2 content-item'
+  itemCol.classList = 'col-12 content-item'
 
   const card = document.createElement('div')
   card.classList = 'card'
@@ -192,13 +201,21 @@ function createItemHTML (item, num) {
   cardBody.appendChild(numberCol)
 
   const number = document.createElement('div')
-  number.classList = 'text-center w-100 fw-bold'
+  number.classList = 'text-center w-100 fw-bold h6 mb-3'
   number.innerHTML = num
   numberCol.appendChild(number)
 
+  const modifyPane = document.createElement('div')
+  modifyPane.classList = 'col-12 col-md-6'
+  cardBody.appendChild(modifyPane)
+
+  const modifyRow = document.createElement('div')
+  modifyRow.classList = 'row gy-2'
+  modifyPane.appendChild(modifyRow)
+
   const selectButtonCol = document.createElement('div')
   selectButtonCol.classList = 'col-12 mt-2'
-  cardBody.appendChild(selectButtonCol)
+  modifyRow.appendChild(selectButtonCol)
 
   const selectButton = document.createElement('button')
   selectButton.classList = 'btn btn-primary w-100 text-break select-button'
@@ -218,7 +235,7 @@ function createItemHTML (item, num) {
 
   const orderButtonsCol = document.createElement('div')
   orderButtonsCol.classList = 'col-12 mt-2'
-  cardBody.appendChild(orderButtonsCol)
+  modifyRow.appendChild(orderButtonsCol)
 
   const orderButtonsRow = document.createElement('div')
   orderButtonsRow.classList = 'row'
@@ -250,7 +267,7 @@ function createItemHTML (item, num) {
 
   const durationCol = document.createElement('div')
   durationCol.classList = 'col-12 mt-2 duration-col'
-  cardBody.appendChild(durationCol)
+  modifyRow.appendChild(durationCol)
 
   const durationLabel = document.createElement('label')
   durationLabel.classList = 'form-label'
@@ -282,14 +299,25 @@ function createItemHTML (item, num) {
     durationCol.style.display = 'none'
   }
 
+  const annotateCol = document.createElement('div')
+  annotateCol.classList = 'col-12'
+  modifyRow.appendChild(annotateCol)
+
+  const annotateButton = document.createElement('button')
+  annotateButton.classList = 'btn btn-primary w-100'
+  annotateButton.innerHTML = 'Add annotation'
+  annotateButton.addEventListener('click', () => {
+    showAnnotateFromJSONModal(item.uuid)
+  })
+  annotateCol.appendChild(annotateButton)
+
   const previewCol = document.createElement('div')
-  previewCol.classList = 'col-12 pt-2'
+  previewCol.classList = 'col-12 col-md-6'
   previewCol.style.maxHeight = '200px'
-  previewCol.style.width = '100%'
   cardBody.appendChild(previewCol)
 
   const image = document.createElement('img')
-  image.classList = 'image-preview py-1'
+  image.classList = 'image-preview'
   image.style.maxHeight = '200px'
   image.style.width = '100%'
   image.style.objectFit = 'contain'
@@ -297,7 +325,7 @@ function createItemHTML (item, num) {
   previewCol.appendChild(image)
 
   const video = document.createElement('video')
-  video.classList = 'video-preview py-1'
+  video.classList = 'video-preview'
   video.style.maxHeight = '200px'
   video.style.width = '100%'
   video.style.display = 'none'
@@ -312,7 +340,7 @@ function createItemHTML (item, num) {
 
   const deleteCol = document.createElement('div')
   deleteCol.classList = 'col-12'
-  cardBody.appendChild(deleteCol)
+  modifyRow.appendChild(deleteCol)
 
   const deleteButton = document.createElement('button')
   deleteButton.classList = 'btn btn-danger btn-sm w-100 mt-2'
@@ -320,7 +348,16 @@ function createItemHTML (item, num) {
   deleteButton.addEventListener('click', (event) => {
     deleteitem(item.uuid)
   })
-  deleteCol.appendChild(deleteButton)
+  previewCol.appendChild(deleteButton)
+
+  const annotationsPane = document.createElement('div')
+  annotationsPane.classList = 'col-12'
+  cardBody.appendChild(annotationsPane)
+
+  const annotationsRow = document.createElement('div')
+  annotationsRow.classList = 'row gy-2'
+  annotationsRow.setAttribute('id', 'annotationRow_' + item.uuid)
+  annotationsPane.appendChild(annotationsRow)
 
   if (item.filename !== '') setItemContent(item, itemCol, item.filename)
 
@@ -331,6 +368,103 @@ function createItemHTML (item, num) {
   tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
   })
+}
+
+function showAnnotateFromJSONModal (uuid) {
+  // Prepare and show the modal for creating an annotation from JSON.
+
+  document.getElementById('annotateFromJSONModalPath').setAttribute('data-uuid', uuid)
+  $('#annotateFromJSONModal').modal('show')
+}
+
+function populateAnnotateFromJSONModal (file, type = 'file') {
+  // Retrieve the given JSON file and parse it into a tree.
+  // 'type' should be one of [file | url]
+
+  constCommon.makeServerRequest({
+    method: 'GET',
+    endpoint: '/content/' + file,
+    noCache: true
+  })
+    .then((text) => {
+      // Store the file for later use.
+      const el = document.getElementById('annotateFromJSONModalPath')
+      el.setAttribute('data-file', file)
+      el.setAttribute('data-type', type)
+
+      const parent = document.getElementById('annotateFromJSONModalTreeView')
+      createTreeSubEntries(parent, text)
+    })
+}
+
+function createTreeSubEntries (parent, dict, path = []) {
+  // Take the keys of the given dict and turn them into <li> elements,
+  // creating sub-trees with recursive calls.
+  // 'path' gives the hierarchy of keys to reach 'dict'
+
+  for (const key of Object.keys(dict)) {
+    const li = document.createElement('li')
+    if (typeof dict[key] === 'object') {
+      // A nested dict
+      const name = document.createElement('span')
+      name.classList = 'caret'
+      name.innerHTML = key
+      li.appendChild(name)
+      const ul = document.createElement('ul')
+      ul.classList = 'nested'
+      name.addEventListener('click', function () {
+        ul.classList.toggle('active')
+        this.classList.toggle('caret-down')
+      })
+      li.appendChild(ul)
+      createTreeSubEntries(ul, dict[key], [...path, key])
+    } else {
+      const span = document.createElement('span')
+      span.innerHTML = `<u>${key}</u>: ${dict[key]}`
+      span.style.cursor = 'pointer'
+      span.addEventListener('click', () => {
+        selectAnnotationJSONPath([...path, key])
+      })
+      li.appendChild(span)
+    }
+    parent.appendChild(li)
+  }
+}
+
+function selectAnnotationJSONPath (path) {
+  // Called when a field is clicked in the JSON tree view
+
+  const el = document.getElementById('annotateFromJSONModalPath')
+  el.value = path.join(' > ')
+  el.setAttribute('data-path', JSON.stringify(path))
+}
+
+function addAnnotationFromModal () {
+  // Collect the needed information and add the annotation.
+
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const el = document.getElementById('annotateFromJSONModalPath')
+  const itemUUID = el.getAttribute('data-uuid')
+  const path = JSON.parse(el.getAttribute('data-path'))
+  const file = el.getAttribute('data-file')
+  const type = el.getAttribute('data-type')
+  const annotationUUID = constCommon.uuid()
+
+  const annotation = {
+    uuid: annotationUUID,
+    path,
+    file,
+    type
+  }
+  let annotations
+  if ('annotations' in workingDefinition.content[itemUUID]) {
+    annotations = [...workingDefinition.content[itemUUID].annotations, annotation]
+  } else {
+    annotations = [annotation]
+  }
+  constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
+  constSetup.previewDefinition(true)
 }
 
 function setItemContent (item, itemEl, file) {
@@ -469,6 +603,17 @@ document.getElementById('addItemButton').addEventListener('click', (event) => {
   addItem()
 })
 
+// Annotations
+document.getElementById('annotateFromJSONModalFileSelect').addEventListener('click', () => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['json'] })
+    .then((result) => {
+      if (result.length === 1) {
+        populateAnnotateFromJSONModal(result)
+      }
+    })
+})
+document.getElementById('annotateFromJSONModalSubmitButton').addEventListener('click', addAnnotationFromModal)
+
 // Watermark
 document.getElementById('watermarkSelect').addEventListener('click', (event) => {
   constFileSelect.createFileSelectionModal({ filetypes: ['image'], multiple: false })
@@ -502,6 +647,7 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'media_player',
   clearDefinition: clearDefinitionInput,
+  initializeDefinition,
   loadDefinition: editDefinition,
   saveDefinition
 })
