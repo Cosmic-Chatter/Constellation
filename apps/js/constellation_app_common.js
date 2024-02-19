@@ -16,6 +16,7 @@ export const config = {
   currentInteraction: false,
   definitionLoader: null, // A function used by loadDefinition() to set up the specific app.
   errorDict: {},
+  fontCache: {},
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
@@ -908,4 +909,17 @@ export function sortAlphabetically (array) {
     }
     return 0
   })
+}
+
+export function createFont (name, font) {
+  // Create the desired font, if it doesn't already exist.
+
+  const safeName = name.replaceAll(' ', '').replaceAll('.', '').replaceAll('/', '').replaceAll('\\', '')
+
+  if ((safeName in config.fontCache) === false) {
+    const fontDef = new FontFace(safeName, 'url(' + encodeURI(font) + ')')
+    document.fonts.add(fontDef)
+    config.fontCache[safeName] = true
+  }
+  return safeName
 }

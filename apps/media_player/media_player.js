@@ -173,7 +173,8 @@ async function changeMedia (source) {
     a.remove()
   })
   if ('annotations' in source) {
-    for (const annotation of source.annotations) {
+    for (const key of Object.keys(source.annotations)) {
+      const annotation = source.annotations[key]
       annotation.value = await fetchAnnotation(annotation)
       createAnnotation(annotation)
     }
@@ -197,6 +198,26 @@ function createAnnotation (details) {
     ypos = details.y_position
   } else ypos = 50
   annotation.style.top = ypos + 'vh'
+  if ('align' in details) {
+    if (details.align === 'center') annotation.classList.add('align-center')
+    if (details.align === 'right') annotation.classList.add('align-right')
+  }
+
+  if ('font' in details) {
+    annotation.style.fontFamily = constCommon.createFont(details.font, details.font)
+  } else {
+    annotation.style.fontFamily = 'annotation-default'
+  }
+  if ('color' in details) {
+    annotation.style.color = details.color
+  } else {
+    annotation.style.color = 'black'
+  }
+  if ('font_size' in details) {
+    annotation.style.fontSize = details.font_size + 'px'
+  } else {
+    annotation.style.fontSize = '20px'
+  }
 
   document.body.appendChild(annotation)
 }

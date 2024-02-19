@@ -363,6 +363,13 @@ function createItemHTML (item, num) {
 
   document.getElementById('itemList').appendChild(itemCol)
 
+  // Annotations
+  if ('annotations' in item) {
+    for (const key of Object.keys(item.annotations)) {
+      createAnnoationHTML(item.uuid, item.annotations[key])
+    }
+  }
+
   // Activate tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
   tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -459,12 +466,212 @@ function addAnnotationFromModal () {
   }
   let annotations
   if ('annotations' in workingDefinition.content[itemUUID]) {
-    annotations = [...workingDefinition.content[itemUUID].annotations, annotation]
+    annotations = workingDefinition.content[itemUUID].annotations[annotationUUID] = annotation
   } else {
-    annotations = [annotation]
+    annotations = { }
+    annotations[annotationUUID] = annotation
   }
   constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
   constSetup.previewDefinition(true)
+}
+
+function createAnnoationHTML (itemUUID, details) {
+  // Create the HTML represetnation of an annotation and add it to the item.
+  console.log(details)
+  const col = document.createElement('div')
+  col.classList = 'col-12 border rounded py-2'
+
+  const row = document.createElement('div')
+  row.classList = 'row gy-2'
+  col.appendChild(row)
+
+  const title = document.createElement('div')
+  title.classList = 'col-12 text-center fw-bold'
+  title.innerHTML = details.path.slice(-1)
+  row.appendChild(title)
+
+  const xPosCol = document.createElement('div')
+  xPosCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(xPosCol)
+
+  const xPosDiv = document.createElement('div')
+  xPosDiv.classList = 'w-100'
+  xPosCol.appendChild(xPosDiv)
+
+  const xPosLabel = document.createElement('label')
+  xPosLabel.classList = 'form-label'
+  xPosLabel.innerHTML = 'Horizontal position'
+  xPosLabel.setAttribute('for', 'xPosInput' + details.uuid)
+  xPosDiv.appendChild(xPosLabel)
+
+  const xPosInput = document.createElement('input')
+  xPosInput.classList = 'form-control'
+  xPosInput.setAttribute('type', 'number')
+  xPosInput.setAttribute('id', 'xPosInput' + details.uuid)
+  xPosInput.setAttribute('min', '0')
+  xPosInput.setAttribute('max', '100')
+  xPosInput.setAttribute('step', '1')
+  if ('x_position' in details) {
+    xPosInput.value = details.x_position
+  } else {
+    xPosInput.value = 50
+  }
+  xPosInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'x_position'], event.target.value)
+    constSetup.previewDefinition(true)
+  })
+  xPosDiv.appendChild(xPosInput)
+
+  const yPosCol = document.createElement('div')
+  yPosCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(yPosCol)
+
+  const yPosDiv = document.createElement('div')
+  yPosDiv.classList = 'w-100'
+  yPosCol.appendChild(yPosDiv)
+
+  const yPosLabel = document.createElement('label')
+  yPosLabel.classList = 'form-label'
+  yPosLabel.innerHTML = 'Vertical position'
+  yPosLabel.setAttribute('for', 'yPosInput' + details.uuid)
+  yPosDiv.appendChild(yPosLabel)
+
+  const yPosInput = document.createElement('input')
+  yPosInput.classList = 'form-control'
+  yPosInput.setAttribute('type', 'number')
+  yPosInput.setAttribute('id', 'yPosInput' + details.uuid)
+  yPosInput.setAttribute('min', '0')
+  yPosInput.setAttribute('max', '100')
+  yPosInput.setAttribute('step', '1')
+  if ('y_position' in details) {
+    yPosInput.value = details.y_position
+  } else {
+    yPosInput.value = 50
+  }
+  yPosInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'y_position'], event.target.value)
+    constSetup.previewDefinition(true)
+  })
+  yPosDiv.appendChild(yPosInput)
+
+  const alignCol = document.createElement('div')
+  alignCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(alignCol)
+
+  const alignDiv = document.createElement('div')
+  alignDiv.classList = 'w-100'
+  alignCol.appendChild(alignDiv)
+
+  const alignLabel = document.createElement('label')
+  alignLabel.classList = 'form-label'
+  alignLabel.innerHTML = 'Text alignment'
+  alignLabel.setAttribute('for', 'alignSelect' + details.uuid)
+  alignDiv.appendChild(alignLabel)
+
+  const alignSelect = document.createElement('select')
+  alignSelect.classList = 'form-select'
+  alignSelect.appendChild(new Option('Left', 'left'))
+  alignSelect.appendChild(new Option('Center', 'center'))
+  alignSelect.appendChild(new Option('Right', 'right'))
+  if ('align' in details) {
+    alignSelect.value = details.align
+  }
+  alignSelect.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'align'], event.target.value)
+    constSetup.previewDefinition(true)
+  })
+  alignDiv.appendChild(alignSelect)
+
+  const fontSizeCol = document.createElement('div')
+  fontSizeCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(fontSizeCol)
+
+  const fontSizeDiv = document.createElement('div')
+  fontSizeCol.appendChild(fontSizeDiv)
+
+  const fontSizeLabel = document.createElement('label')
+  fontSizeLabel.classList = 'form-label'
+  fontSizeLabel.innerHTML = 'Text size'
+  fontSizeLabel.setAttribute('for', 'fontSizeInput' + details.uuid)
+  fontSizeDiv.appendChild(fontSizeLabel)
+
+  const fontSizeInput = document.createElement('input')
+  fontSizeInput.classList = 'form-control'
+  fontSizeInput.setAttribute('type', 'number')
+  fontSizeInput.setAttribute('id', 'fontSizeInput' + details.uuid)
+  fontSizeInput.setAttribute('min', '1')
+  fontSizeInput.setAttribute('step', '1')
+  if ('font_size' in details) {
+    fontSizeInput.value = details.font_size
+  } else {
+    fontSizeInput.value = 20
+  }
+  fontSizeInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'font_size'], event.target.value)
+    constSetup.previewDefinition(true)
+  })
+  fontSizeDiv.appendChild(fontSizeInput)
+
+  const fontColorCol = document.createElement('div')
+  fontColorCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(fontColorCol)
+
+  const fontColorDiv = document.createElement('div')
+  fontColorCol.appendChild(fontColorDiv)
+
+  const fontColorLabel = document.createElement('label')
+  fontColorLabel.classList = 'form-label'
+  fontColorLabel.innerHTML = 'Text color'
+  fontColorLabel.setAttribute('for', 'fontColorInput' + details.uuid)
+  fontColorDiv.appendChild(fontColorLabel)
+
+  const fontColorInput = document.createElement('input')
+  fontColorInput.classList = 'coloris'
+  fontColorInput.style.height = '35px'
+  fontColorInput.setAttribute('id', 'fontColorInput' + details.uuid)
+  if ('color' in details) {
+    fontColorInput.value = details.color
+  } else {
+    fontColorInput.value = 'black'
+  }
+  fontColorInput.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'color'], event.target.value)
+    constSetup.previewDefinition(true)
+  })
+  fontColorDiv.appendChild(fontColorInput)
+  setTimeout(setUpColorPickers, 100)
+
+  const fontFaceCol = document.createElement('div')
+  fontFaceCol.classList = 'col-6'
+  row.appendChild(fontFaceCol)
+
+  const actionCol = document.createElement('div')
+  actionCol.classList = 'col-3 d-flex align-items-end'
+  row.appendChild(actionCol)
+
+  const actionDropdown = `
+    <div class="dropdown w-100">
+      <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Action
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item text-info" href="#">Edit JSON field</a></li>
+        <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+      </ul>
+    </div>`
+  actionCol.innerHTML = actionDropdown
+
+  document.getElementById('annotationRow_' + itemUUID).appendChild(col)
+
+  // Must be after we had the main element to the DOM
+
+  constSetup.createAdvancedFontPicker({
+    parent: fontFaceCol,
+    name: 'Font',
+    path: ['content', itemUUID, 'annotations', details.uuid, 'font'],
+    defaultFont: '../_fonts/OpenSans-Regular.ttf'
+  })
+  constSetup.refreshAdvancedFontPickers()
 }
 
 function setItemContent (item, itemEl, file) {
