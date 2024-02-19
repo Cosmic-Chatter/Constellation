@@ -678,7 +678,6 @@ function _onAdvancedFontPickerChange (el, saveChange = true) {
 
   // Change the select font to match this font
   let safeName = el.options[el.selectedIndex].getAttribute('data-safeName')
-
   if (safeName === 'Default') {
     safeName += el.getAttribute('id').slice(10)
   }

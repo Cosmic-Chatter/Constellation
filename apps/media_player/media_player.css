@@ -24,6 +24,10 @@ body,html {
 .align-right {
     transform: translate(-100%, 0);
 }
+.annotation {
+    user-select: none;
+    cursor: none;
+}
 
 #imageOverlay {
     width: 100vw;

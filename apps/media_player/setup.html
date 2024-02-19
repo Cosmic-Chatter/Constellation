@@ -22,6 +22,24 @@
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
 
+      <div id="deleteAnnotationModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Are you sure?</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              Deleting an annotation cannot be undone.
+            </div>
+            <div class="modal-footer">
+              <button id="deleteAnnotationModalSubmitButton" type="button" class="btn btn-danger">Delete</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="annotateFromJSONModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered" style="max-width: min(95%, 750px);
         width: min(95%, 750px);">
@@ -43,10 +61,10 @@
                 </div>
                 <div class="col-1 d-flex align-items-center"><span class="text-center w-100">or</span></div>
                 <div class="col-6">
-                  <input class="form-control" type="text" placeholder="Enter URL">
+                  <input id="annotateFromJSONModalURLInput" class="form-control" type="text" placeholder="Enter URL">
                 </div>
                 <div class="col-2">
-                  <button class="btn btn-primary w-100">Fetch</button>
+                  <button id="annotateFromJSONModalFetchURLButton" class="btn btn-primary w-100">Fetch</button>
                 </div>
                 <div class="col-12 mt-3">
                   <h5>2. Select field</h5>
@@ -57,11 +75,10 @@
                   <input id="annotateFromJSONModalPath" class="form-control" type="text">
                 </div>
               </div>
-
             </div>
             <div class="modal-footer">
               <button id="annotateFromJSONModalSubmitButton" type="button" class="btn btn-primary">Create</button>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button id="annotateFromJSONModalCloseButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
         </div>

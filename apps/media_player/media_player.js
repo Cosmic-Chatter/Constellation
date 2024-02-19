@@ -242,6 +242,14 @@ function fetchAnnotation (details) {
         .catch(() => {
           reject(new Error('Bad file fetch'))
         })
+    } else {
+      $.getJSON(details.file, function (text) {
+        let subset = text
+        for (const key of details.path) {
+          subset = subset[key]
+        }
+        resolve(subset)
+      })
     }
   })
 }

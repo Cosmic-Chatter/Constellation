@@ -380,6 +380,9 @@ function createItemHTML (item, num) {
 function showAnnotateFromJSONModal (uuid) {
   // Prepare and show the modal for creating an annotation from JSON.
 
+  document.getElementById('annotateFromJSONModalURLInput').value = ''
+  document.getElementById('annotateFromJSONModalPath').value = ''
+  document.getElementById('annotateFromJSONModalTreeView').innerHTML = ''
   document.getElementById('annotateFromJSONModalPath').setAttribute('data-uuid', uuid)
   $('#annotateFromJSONModal').modal('show')
 }
@@ -388,20 +391,38 @@ function populateAnnotateFromJSONModal (file, type = 'file') {
   // Retrieve the given JSON file and parse it into a tree.
   // 'type' should be one of [file | url]
 
-  constCommon.makeServerRequest({
-    method: 'GET',
-    endpoint: '/content/' + file,
-    noCache: true
-  })
-    .then((text) => {
-      // Store the file for later use.
-      const el = document.getElementById('annotateFromJSONModalPath')
-      el.setAttribute('data-file', file)
-      el.setAttribute('data-type', type)
+  // Store the file for later use.
+  const el = document.getElementById('annotateFromJSONModalPath')
+  el.setAttribute('data-file', file)
+  el.setAttribute('data-type', type)
 
-      const parent = document.getElementById('annotateFromJSONModalTreeView')
+  const parent = document.getElementById('annotateFromJSONModalTreeView')
+  parent.innerHTML = ''
+
+  if (type === 'file') {
+    constCommon.makeServerRequest({
+      method: 'GET',
+      endpoint: '/content/' + file,
+      noCache: true
+    })
+      .then((text) => {
+        createTreeSubEntries(parent, text)
+      })
+  } else if (type === 'url') {
+    $.getJSON(file, function (text) {
       createTreeSubEntries(parent, text)
     })
+      .fail((error) => {
+        console.log(error)
+        if (error.statusText === 'Not Found') {
+          parent.innerHTML = 'The entered URL is unreachable.'
+        } else if (error.statusText === 'parsererror') {
+          parent.innerHTML = 'The entered URL does not return valid JSON.'
+        } else {
+          parent.innerHTML = 'An unknown error has occurred. This often occurs because a CORS request has been blocked. Make sure the server you are accessing allows cross-origin requests.'
+        }
+      })
+  }
 }
 
 function createTreeSubEntries (parent, dict, path = []) {
@@ -466,28 +487,32 @@ function addAnnotationFromModal () {
   }
   let annotations
   if ('annotations' in workingDefinition.content[itemUUID]) {
-    annotations = workingDefinition.content[itemUUID].annotations[annotationUUID] = annotation
+    annotations = workingDefinition.content[itemUUID].annotations
+    annotations[annotationUUID] = annotation
   } else {
-    annotations = { }
+    annotations = {}
     annotations[annotationUUID] = annotation
   }
   constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
+  createAnnoationHTML(itemUUID, annotation)
   constSetup.previewDefinition(true)
+  $('#annotateFromJSONModal').modal('hide')
 }
 
 function createAnnoationHTML (itemUUID, details) {
   // Create the HTML represetnation of an annotation and add it to the item.
-  console.log(details)
+
   const col = document.createElement('div')
   col.classList = 'col-12 border rounded py-2'
+  col.setAttribute('id', 'Annotation' + details.uuid)
 
   const row = document.createElement('div')
   row.classList = 'row gy-2'
   col.appendChild(row)
 
   const title = document.createElement('div')
-  title.classList = 'col-12 text-center fw-bold'
-  title.innerHTML = details.path.slice(-1)
+  title.classList = 'col-12 text-center'
+  title.innerHTML = '<b>Annotation: </b>' + details.path.slice(-1)
   row.appendChild(title)
 
   const xPosCol = document.createElement('div')
@@ -649,17 +674,43 @@ function createAnnoationHTML (itemUUID, details) {
   actionCol.classList = 'col-3 d-flex align-items-end'
   row.appendChild(actionCol)
 
-  const actionDropdown = `
-    <div class="dropdown w-100">
-      <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Action
-      </button>
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item text-info" href="#">Edit JSON field</a></li>
-        <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-      </ul>
-    </div>`
-  actionCol.innerHTML = actionDropdown
+  const actionDropdown = document.createElement('div')
+  actionDropdown.classList = 'dropdown w-100'
+  actionCol.appendChild(actionDropdown)
+
+  const actionButton = document.createElement('button')
+  actionButton.classList = 'btn btn-primary dropdown-toggle w-100'
+  actionButton.setAttribute('type', 'button')
+  actionButton.setAttribute('data-bs-toggle', 'dropdown')
+  actionButton.setAttribute('aria-expanded', false)
+  actionButton.innerHTML = 'Action'
+  actionDropdown.appendChild(actionButton)
+
+  const actionMenu = document.createElement('ul')
+  actionMenu.classList = 'dropdown-menu'
+  actionDropdown.appendChild(actionMenu)
+
+  const li1 = document.createElement('li')
+  const li2 = document.createElement('li')
+  actionMenu.appendChild(li1)
+  actionMenu.appendChild(li2)
+
+  const editAction = document.createElement('a')
+  editAction.classList = 'dropdown-item text-info'
+  editAction.innerHTML = 'Edit JSON field'
+  editAction.style.cursor = 'pointer'
+  li1.appendChild(editAction)
+
+  const deleteAction = document.createElement('a')
+  deleteAction.classList = 'dropdown-item text-danger'
+  deleteAction.innerHTML = 'Delete'
+  deleteAction.style.cursor = 'pointer'
+  deleteAction.addEventListener('click', () => {
+    document.getElementById('deleteAnnotationModal').setAttribute('data-annotationUUID', details.uuid)
+    document.getElementById('deleteAnnotationModal').setAttribute('data-itemUUID', itemUUID)
+    $('#deleteAnnotationModal').modal('show')
+  })
+  li1.appendChild(deleteAction)
 
   document.getElementById('annotationRow_' + itemUUID).appendChild(col)
 
@@ -668,8 +719,8 @@ function createAnnoationHTML (itemUUID, details) {
   constSetup.createAdvancedFontPicker({
     parent: fontFaceCol,
     name: 'Font',
-    path: ['content', itemUUID, 'annotations', details.uuid, 'font'],
-    defaultFont: '../_fonts/OpenSans-Regular.ttf'
+    path: `content>${itemUUID}>annotations>${details.uuid}>font`,
+    default: 'OpenSans-Regular.ttf'
   })
   constSetup.refreshAdvancedFontPickers()
 }
@@ -820,6 +871,27 @@ document.getElementById('annotateFromJSONModalFileSelect').addEventListener('cli
     })
 })
 document.getElementById('annotateFromJSONModalSubmitButton').addEventListener('click', addAnnotationFromModal)
+document.getElementById('annotateFromJSONModalFetchURLButton').addEventListener('click', () => {
+  const url = document.getElementById('annotateFromJSONModalURLInput').value
+  populateAnnotateFromJSONModal(url, 'url')
+})
+document.getElementById('deleteAnnotationModalSubmitButton').addEventListener('click', () => {
+  const modal = document.getElementById('deleteAnnotationModal')
+  const definition = $('#definitionSaveButton').data('workingDefinition')
+  const itemUUID = modal.getAttribute('data-itemUUID')
+  const annotationUUID = modal.getAttribute('data-annotationUUID')
+  const annotations = definition.content[itemUUID].annotations
+  delete annotations[annotationUUID]
+
+  constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
+  constSetup.previewDefinition(true)
+  document.getElementById('Annotation' + annotationUUID).remove()
+  $(modal).modal('hide')
+})
+document.getElementById('annotateFromJSONModalCloseButton').addEventListener('click', () => {
+  // When we close the annotate from JSON modal, clear the tree, as complex JSON structures can limit performance.
+  document.getElementById('annotateFromJSONModalTreeView').innerHTML = ''
+})
 
 // Watermark
 document.getElementById('watermarkSelect').addEventListener('click', (event) => {
