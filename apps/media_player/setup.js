@@ -558,7 +558,7 @@ function createAnnoationHTML (itemUUID, details) {
   row.appendChild(title)
 
   const xPosCol = document.createElement('div')
-  xPosCol.classList = 'col-3 d-flex align-items-end'
+  xPosCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(xPosCol)
 
   const xPosDiv = document.createElement('div')
@@ -590,7 +590,7 @@ function createAnnoationHTML (itemUUID, details) {
   xPosDiv.appendChild(xPosInput)
 
   const yPosCol = document.createElement('div')
-  yPosCol.classList = 'col-3 d-flex align-items-end'
+  yPosCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(yPosCol)
 
   const yPosDiv = document.createElement('div')
@@ -622,7 +622,7 @@ function createAnnoationHTML (itemUUID, details) {
   yPosDiv.appendChild(yPosInput)
 
   const alignCol = document.createElement('div')
-  alignCol.classList = 'col-3 d-flex align-items-end'
+  alignCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(alignCol)
 
   const alignDiv = document.createElement('div')
@@ -650,7 +650,7 @@ function createAnnoationHTML (itemUUID, details) {
   alignDiv.appendChild(alignSelect)
 
   const fontSizeCol = document.createElement('div')
-  fontSizeCol.classList = 'col-3 d-flex align-items-end'
+  fontSizeCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(fontSizeCol)
 
   const fontSizeDiv = document.createElement('div')
@@ -680,7 +680,7 @@ function createAnnoationHTML (itemUUID, details) {
   fontSizeDiv.appendChild(fontSizeInput)
 
   const fontColorCol = document.createElement('div')
-  fontColorCol.classList = 'col-3 d-flex align-items-end'
+  fontColorCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(fontColorCol)
 
   const fontColorDiv = document.createElement('div')
@@ -709,11 +709,11 @@ function createAnnoationHTML (itemUUID, details) {
   setTimeout(setUpColorPickers, 100)
 
   const fontFaceCol = document.createElement('div')
-  fontFaceCol.classList = 'col-6'
+  fontFaceCol.classList = 'col-12 col-md-6'
   row.appendChild(fontFaceCol)
 
   const actionCol = document.createElement('div')
-  actionCol.classList = 'col-3 d-flex align-items-end'
+  actionCol.classList = 'col-12 col-md-6 col-lg-3 d-flex align-items-end'
   row.appendChild(actionCol)
 
   const actionDropdown = document.createElement('div')
