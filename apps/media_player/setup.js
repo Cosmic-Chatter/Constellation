@@ -377,13 +377,40 @@ function createItemHTML (item, num) {
   })
 }
 
-function showAnnotateFromJSONModal (uuid) {
+function showAnnotateFromJSONModal (itemUUID, annotationUUID = null) {
   // Prepare and show the modal for creating an annotation from JSON.
 
-  document.getElementById('annotateFromJSONModalURLInput').value = ''
-  document.getElementById('annotateFromJSONModalPath').value = ''
+  const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
+
+  const urlInput = document.getElementById('annotateFromJSONModalURLInput')
+  const path = document.getElementById('annotateFromJSONModalPath')
+  const title = document.getElementById('annotateFromJSONModalTitle')
+  const button = document.getElementById('annotateFromJSONModalSubmitButton')
   document.getElementById('annotateFromJSONModalTreeView').innerHTML = ''
-  document.getElementById('annotateFromJSONModalPath').setAttribute('data-uuid', uuid)
+  path.setAttribute('data-itemUUID', itemUUID)
+
+  if (annotationUUID != null) {
+    // We are editing rather than creating new
+
+    const details = workingDefinition.content[itemUUID].annotations[annotationUUID]
+    title.innerHTML = 'Update a JSON annotation'
+    button.innerHTML = 'Update'
+    path.value = details.path.join(' > ')
+    if (details.type === 'url') {
+      urlInput.value = details.file
+    }
+
+    path.setAttribute('data-annotationUUID', annotationUUID)
+    populateAnnotateFromJSONModal(details.file, details.type)
+  } else {
+    // We are creating a new annotation
+    title.innerHTML = 'Create an annotation from JSON'
+    button.innerHTML = 'Create'
+    urlInput.value = ''
+    path.value = ''
+    path.setAttribute('data-annotationUUID', '')
+  }
+
   $('#annotateFromJSONModal').modal('show')
 }
 
@@ -473,18 +500,32 @@ function addAnnotationFromModal () {
   const workingDefinition = $('#definitionSaveButton').data('workingDefinition')
 
   const el = document.getElementById('annotateFromJSONModalPath')
-  const itemUUID = el.getAttribute('data-uuid')
+  const itemUUID = el.getAttribute('data-itemUUID')
   const path = JSON.parse(el.getAttribute('data-path'))
   const file = el.getAttribute('data-file')
   const type = el.getAttribute('data-type')
-  const annotationUUID = constCommon.uuid()
+  let annotationUUID = el.getAttribute('data-annotationUUID')
+  let annotation
 
-  const annotation = {
-    uuid: annotationUUID,
-    path,
-    file,
-    type
+  if ((annotationUUID == null) || (annotationUUID === '')) {
+    // We are creating a new annotation.
+    annotationUUID = constCommon.uuid()
+    annotation = {
+      uuid: annotationUUID,
+      path,
+      file,
+      type
+    }
+    createAnnoationHTML(itemUUID, annotation)
+  } else {
+    // We are editing an existing annotation.
+    annotation = workingDefinition.content[itemUUID].annotations[annotationUUID]
+    annotation.path = path
+    annotation.file = file
+    annotation.type = type
+    document.getElementById('Annotation' + annotation.uuid + 'Title').innerHTML = '<b>Annotation: </b>' + path.slice(-1)
   }
+
   let annotations
   if ('annotations' in workingDefinition.content[itemUUID]) {
     annotations = workingDefinition.content[itemUUID].annotations
@@ -494,8 +535,8 @@ function addAnnotationFromModal () {
     annotations[annotationUUID] = annotation
   }
   constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
-  createAnnoationHTML(itemUUID, annotation)
   constSetup.previewDefinition(true)
+  document.getElementById('annotateFromJSONModalTreeView').innerHTML = ''
   $('#annotateFromJSONModal').modal('hide')
 }
 
@@ -512,6 +553,7 @@ function createAnnoationHTML (itemUUID, details) {
 
   const title = document.createElement('div')
   title.classList = 'col-12 text-center'
+  title.setAttribute('id', 'Annotation' + details.uuid + 'Title')
   title.innerHTML = '<b>Annotation: </b>' + details.path.slice(-1)
   row.appendChild(title)
 
@@ -699,6 +741,9 @@ function createAnnoationHTML (itemUUID, details) {
   editAction.classList = 'dropdown-item text-info'
   editAction.innerHTML = 'Edit JSON field'
   editAction.style.cursor = 'pointer'
+  editAction.addEventListener('click', () => {
+    showAnnotateFromJSONModal(itemUUID, details.uuid)
+  })
   li1.appendChild(editAction)
 
   const deleteAction = document.createElement('a')

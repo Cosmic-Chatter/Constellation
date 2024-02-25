@@ -227,7 +227,7 @@ function fetchAnnotation (details) {
 
   return new Promise((resolve, reject) => {
     if (details.type === 'file') {
-      constCommon.makeServerRequest({
+      constCommon.makeHelperRequest({
         method: 'GET',
         endpoint: '/content/' + details.file,
         noCache: true
