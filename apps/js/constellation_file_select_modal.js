@@ -93,8 +93,8 @@ export function createFileSelectionModal (userOptions) {
                   <div class='col-12 col-sm-6'>
                     <button id="constFileSelectModalRenameFileButton" class='btn btn-sm btn-info w-100 mt-3'>Rename</button>
                   </div>
-                  <div id="constFileSelectModalDeleteFileButton" class='col-12 col-sm-6'>
-                    <button class='btn btn-sm btn-danger w-100 mt-3' data-bs-toggle='popover' title='Are you sure?' data-bs-content='<a id="fileDeletePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger='focus' data-bs-html='true'>Delete</button>
+                  <div class='col-12 col-sm-6'>
+                    <button id="constFileSelectModalDeleteFileButton" class='btn btn-sm btn-danger w-100 mt-3' data-bs-toggle='popover' title='Are you sure?' data-bs-content='<a id="fileDeletePopover" class="btn btn-danger w-100">Confirm</a>' data-bs-trigger='focus' data-bs-html='true'>Delete</button>
                   </div>
                   </div>
                 </div>
@@ -193,7 +193,9 @@ export function createFileSelectionModal (userOptions) {
 
     // File delete
     const deleteBUtton = document.getElementById('constFileSelectModalDeleteFileButton')
-    deleteBUtton.addEventListener('click', function () { deleteBUtton.focus() })
+    deleteBUtton.addEventListener('click', function () {
+      deleteBUtton.focus()
+    })
 
     if (document.body.getAttribute('data-fileDeletePopoverEventAdded') !== 'true') {
       // Only add this listener the first time we create a file select modal
