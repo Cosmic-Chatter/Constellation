@@ -22,6 +22,42 @@
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
 
+      <div id="chooseURLModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Select media from URL</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row gy-2">
+                <div class="col-12 fst-italic">
+                  Media URLs must link directly to the file. Embedded media, such as a   YouTube video, is not supported.
+                </div>
+                <div class="col-9">
+                  <input id="chooseURLModalInput" placeholder="Enter URL" class="form-control">
+                </div>
+                <div class="col-3">
+                  <button id="chooseURLModalFetchButton" class="btn btn-primary w-100">Fetch</button>
+                </div>
+                <div class="col-12">
+                  <video id="chooseURLModalPreviewVideo" class="w-100" style="max-height: 300px;" controls></video>
+                  <img id="chooseURLModalPreviewImage" class="w-100" style="max-height: 300px; object-fit: contain;"></img>
+                  <audio id="chooseURLModalPreviewAudio" class="w-100" controls></audio>
+                </div>
+                <div id="chooseURLModalError" class="col-12 text-danger text-center">
+                  Cannot detect the file type of this media. Make sure the URL includes a correct file extension.
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="chooseURLModalSubmitButton" type="button" class="btn btn-primary">Select</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="deleteAnnotationModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">

@@ -101,7 +101,16 @@ async function changeMedia (source) {
   const image = document.getElementById('fullscreenImage')
   const imageContainer = document.getElementById('imageOverlay')
   const audio = document.getElementById('audioPlayer')
-  const filename = 'content/' + source.filename
+  let filename
+  if (('type' in source) === false || source.type === 'file') {
+    filename = 'content/' + source.filename
+  } else if (source.type === 'url') {
+    filename = source.filename
+  }
+
+  if ('no_cache' in source && source.no_cache === true) {
+    filename += (/\?/.test(filename) ? '&' : '?') + new Date().getTime()
+  }
 
   // Split off the extension
   const split = source.filename.split('.')

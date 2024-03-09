@@ -27,6 +27,7 @@ Constellation 5 introduces a user account system that enables administrators to 
 
 ### Media Player
 - Create dynamic signage by annotating media with data from JSON files.
+- Use media from URLs in addition to uploaded files.
 
 # **Constellation 4**
 Constellation 4 expands customization for your apps and significantly improves Control Server's maintenance tracking capabilities.

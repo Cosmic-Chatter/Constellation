@@ -184,9 +184,9 @@ function addItem () {
 
 function createItemHTML (item, num) {
   // Add a blank item to the itemList
-
   const itemCol = document.createElement('div')
   itemCol.classList = 'col-12 content-item'
+  itemCol.setAttribute('id', 'Item_' + item.uuid)
 
   const card = document.createElement('div')
   card.classList = 'card'
@@ -197,13 +197,22 @@ function createItemHTML (item, num) {
   card.appendChild(cardBody)
 
   const numberCol = document.createElement('div')
-  numberCol.classList = 'col-12'
+  numberCol.classList = 'col-1'
   cardBody.appendChild(numberCol)
 
   const number = document.createElement('div')
-  number.classList = 'text-center w-100 fw-bold h6 mb-3'
+  number.classList = 'w-100 fw-bold h4 mb-3'
   number.innerHTML = num
   numberCol.appendChild(number)
+
+  const nameCol = document.createElement('div')
+  nameCol.classList = 'col-11'
+  cardBody.appendChild(nameCol)
+
+  const name = document.createElement('div')
+  name.classList = 'w-100 mb-3 file-field'
+  name.innerHTML = item.filename
+  nameCol.appendChild(name)
 
   const modifyPane = document.createElement('div')
   modifyPane.classList = 'col-12 col-md-6'
@@ -217,10 +226,32 @@ function createItemHTML (item, num) {
   selectButtonCol.classList = 'col-12 mt-2'
   modifyRow.appendChild(selectButtonCol)
 
+  const selectDropdown = document.createElement('div')
+  selectDropdown.classList = 'dropdown w-100'
+  selectButtonCol.appendChild(selectDropdown)
+
   const selectButton = document.createElement('button')
-  selectButton.classList = 'btn btn-primary w-100 text-break select-button'
-  selectButton.innerHTML = 'Select file'
-  selectButton.addEventListener('click', (event) => {
+  selectButton.classList = 'btn btn-primary dropdown-toggle w-100'
+  selectButton.setAttribute('type', 'button')
+  selectButton.setAttribute('data-bs-toggle', 'dropdown')
+  selectButton.setAttribute('aria-expanded', false)
+  selectButton.innerHTML = 'Select media'
+  selectDropdown.appendChild(selectButton)
+
+  const selectMenu = document.createElement('ul')
+  selectMenu.classList = 'dropdown-menu'
+  selectDropdown.appendChild(selectMenu)
+
+  const li1 = document.createElement('li')
+  const li2 = document.createElement('li')
+  selectMenu.appendChild(li1)
+  selectMenu.appendChild(li2)
+
+  const selectFile = document.createElement('a')
+  selectFile.classList = 'dropdown-item'
+  selectFile.innerHTML = 'From file'
+  selectFile.style.cursor = 'pointer'
+  selectFile.addEventListener('click', () => {
     constFileSelect.createFileSelectionModal({
       filetypes: ['audio', 'image', 'video'],
       multiple: false
@@ -228,10 +259,19 @@ function createItemHTML (item, num) {
       .then((result) => {
         const file = result[0]
         if (file == null) return
-        setItemContent(item, cardBody, file)
+        setItemContent(item.uuid, cardBody, file)
       })
   })
-  selectButtonCol.appendChild(selectButton)
+  li1.appendChild(selectFile)
+
+  const selectURL = document.createElement('a')
+  selectURL.classList = 'dropdown-item'
+  selectURL.innerHTML = 'From URL'
+  selectURL.style.cursor = 'pointer'
+  selectURL.addEventListener('click', () => {
+    showChooseURLModal(item.uuid)
+  })
+  li1.appendChild(selectURL)
 
   const orderButtonsCol = document.createElement('div')
   orderButtonsCol.classList = 'col-12 mt-2'
@@ -299,6 +339,32 @@ function createItemHTML (item, num) {
     durationCol.style.display = 'none'
   }
 
+  const cacheCol = document.createElement('div')
+  cacheCol.classList = 'col-12 mt-2 cache-col'
+  modifyRow.appendChild(cacheCol)
+
+  const cacheGroup = document.createElement('div')
+  cacheGroup.classList = 'form-check'
+  cacheCol.appendChild(cacheGroup)
+
+  const cacheCheck = document.createElement('input')
+  cacheCheck.classList = 'form-check-input'
+  cacheCheck.setAttribute('type', 'checkbox')
+  if ('no_cache' in item && item.no_cache === true) cacheCheck.checked = true
+  cacheCheck.addEventListener('change', (event) => {
+    constSetup.updateWorkingDefinition(['content', item.uuid, 'no_cache'], cacheCheck.checked)
+    constSetup.previewDefinition(true)
+  })
+  cacheGroup.appendChild(cacheCheck)
+
+  const cacheLabel = document.createElement('label')
+  cacheLabel.classList = 'form-check-label'
+  cacheLabel.innerHTML = `
+  Disable cache
+  <span class="badge bg-info ml-1 align-middle text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose this option only if the media will change. Please respect usage limits for linked media." style="font-size: 0.55em;">?</span>
+  `
+  cacheGroup.appendChild(cacheLabel)
+
   const annotateCol = document.createElement('div')
   annotateCol.classList = 'col-12'
   modifyRow.appendChild(annotateCol)
@@ -313,7 +379,6 @@ function createItemHTML (item, num) {
 
   const previewCol = document.createElement('div')
   previewCol.classList = 'col-12 col-md-6'
-  previewCol.style.maxHeight = '200px'
   cardBody.appendChild(previewCol)
 
   const image = document.createElement('img')
@@ -343,7 +408,7 @@ function createItemHTML (item, num) {
   modifyRow.appendChild(deleteCol)
 
   const deleteButton = document.createElement('button')
-  deleteButton.classList = 'btn btn-danger btn-sm w-100 mt-2'
+  deleteButton.classList = 'btn btn-danger btn-sm w-100 my-2'
   deleteButton.innerHTML = 'Delete'
   deleteButton.addEventListener('click', (event) => {
     deleteitem(item.uuid)
@@ -359,7 +424,7 @@ function createItemHTML (item, num) {
   annotationsRow.setAttribute('id', 'annotationRow_' + item.uuid)
   annotationsPane.appendChild(annotationsRow)
 
-  if (item.filename !== '') setItemContent(item, itemCol, item.filename)
+  if (item.filename !== '') setItemContent(item.uuid, itemCol, item.filename, item.type)
 
   document.getElementById('itemList').appendChild(itemCol)
 
@@ -770,19 +835,91 @@ function createAnnoationHTML (itemUUID, details) {
   constSetup.refreshAdvancedFontPickers()
 }
 
-function setItemContent (item, itemEl, file) {
+function showChooseURLModal (uuid) {
+  // Prepare and show the modal for choosing content from a URL.
+
+  document.getElementById('chooseURLModal').setAttribute('data-uuid', uuid)
+  document.getElementById('chooseURLModalInput').value = ''
+  document.getElementById('chooseURLModalPreviewVideo').style.display = 'none'
+  document.getElementById('chooseURLModalPreviewImage').style.display = 'none'
+  document.getElementById('chooseURLModalPreviewAudio').style.display = 'none'
+  document.getElementById('chooseURLModalError').style.display = 'none'
+
+  $('#chooseURLModal').modal('show')
+}
+
+async function fetchContentFromURL () {
+  // From the chooseContentModal, fetch the given link and show a preview.
+
+  const url = document.getElementById('chooseURLModalInput').value.trim()
+  const video = document.getElementById('chooseURLModalPreviewVideo')
+  const image = document.getElementById('chooseURLModalPreviewImage')
+  const audio = document.getElementById('chooseURLModalPreviewAudio')
+  const modal = document.getElementById('chooseURLModal')
+  const error = document.getElementById('chooseURLModalError')
+
+  const mimetype = constCommon.guessMimetype(url)
+  modal.setAttribute('data-mimetype', mimetype)
+  console.log(mimetype)
+  if (mimetype === 'video') {
+    video.src = url
+    error.style.display = 'none'
+    video.style.display = 'block'
+    image.style.display = 'none'
+    audio.style.display = 'none'
+    audio.pause()
+  } else if (mimetype === 'image') {
+    image.src = url
+    error.style.display = 'none'
+    video.style.display = 'none'
+    image.style.display = 'block'
+    audio.style.display = 'none'
+    audio.pause()
+    video.pause()
+  } else if (mimetype === 'audio') {
+    audio.src = url
+    error.style.display = 'none'
+    video.style.display = 'none'
+    image.style.display = 'none'
+    audio.style.display = 'block'
+    video.pause()
+  } else {
+    modal.setAttribute('data-mimetype', '')
+    error.style.display = 'block'
+    video.style.display = 'none'
+    image.style.display = 'none'
+    audio.style.display = 'none'
+    audio.pause()
+    video.pause()
+  }
+}
+
+function setContentFromURLModal () {
+  // Set the currently selected file as the item's content.
+
+  const url = document.getElementById('chooseURLModalInput').value.trim()
+  const uuid = document.getElementById('chooseURLModal').getAttribute('data-uuid')
+  const itemEl = document.getElementById('Item_' + uuid)
+  setItemContent(uuid, itemEl, url, 'url')
+
+  $('#chooseURLModal').modal('hide')
+}
+
+function setItemContent (uuid, itemEl, file, type = 'file') {
   // Populate the given element, item, with content.
 
-  constSetup.updateWorkingDefinition(['content', item.uuid, 'filename'], file)
+  constSetup.updateWorkingDefinition(['content', uuid, 'filename'], file)
+  constSetup.updateWorkingDefinition(['content', uuid, 'type'], type)
   constSetup.previewDefinition(true)
 
   const image = itemEl.querySelector('.image-preview')
   const video = itemEl.querySelector('.video-preview')
-  const selectButton = itemEl.querySelector('.select-button')
+  const fileField = itemEl.querySelector('.file-field')
 
   itemEl.setAttribute('data-filename', file)
+  itemEl.setAttribute('data-type', type)
   const mimetype = constCommon.guessMimetype(file)
-  selectButton.innerHTML = file
+  fileField.innerHTML = file
   if (mimetype === 'audio') {
     image.src = constFileSelect.getDefaultAudioIcon()
     image.style.display = 'block'
@@ -790,13 +927,21 @@ function setItemContent (item, itemEl, file) {
     // Hide the duration input
     itemEl.querySelector('.duration-col').style.display = 'none'
   } else if (mimetype === 'image') {
-    image.src = '/thumbnails/' + constCommon.withExtension(file, 'jpg')
+    if (type === 'file') {
+      image.src = '/thumbnails/' + constCommon.withExtension(file, 'jpg')
+    } else if (type === 'url') {
+      image.src = file
+    }
     image.style.display = 'block'
     video.style.display = 'none'
     // Show the duration input
     itemEl.querySelector('.duration-col').style.display = 'block'
   } else if (mimetype === 'video') {
-    video.src = '/thumbnails/' + constCommon.withExtension(file, 'mp4')
+    if (type === 'file') {
+      video.src = '/thumbnails/' + constCommon.withExtension(file, 'mp4')
+    } else if (type === 'url') {
+      video.src = file
+    }
     video.style.display = 'block'
     image.style.display = 'none'
     // Hide the duration input
@@ -905,6 +1050,10 @@ document.getElementById('manageContentButton').addEventListener('click', (event)
 document.getElementById('addItemButton').addEventListener('click', (event) => {
   addItem()
 })
+document.getElementById('chooseURLModalFetchButton').addEventListener('click', () => {
+  fetchContentFromURL()
+})
+document.getElementById('chooseURLModalSubmitButton').addEventListener('click', setContentFromURLModal)
 
 // Annotations
 document.getElementById('annotateFromJSONModalFileSelect').addEventListener('click', () => {
