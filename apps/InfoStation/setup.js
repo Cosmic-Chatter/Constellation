@@ -756,3 +756,14 @@ constSetup.configure({
   loadDefinition: editDefinition,
   saveDefinition
 })
+
+constCommon.askForDefaults(false)
+  .then(() => {
+    if (constCommon.config.standalone === false) {
+      // We are using Control Server, so attempt to log in
+      constSetup.authenticateUser()
+    } else {
+      // Hide the login details
+      document.getElementById('loginMenu').style.display = 'none'
+    }
+  })

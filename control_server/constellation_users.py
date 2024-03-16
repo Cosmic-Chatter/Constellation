@@ -35,6 +35,7 @@ class User:
                 "analytics": "none",
                 "components": {
                     "edit": [],
+                    "edit_content": [],
                     "view": []
                 },
                 "exhibits": "none",
@@ -92,8 +93,22 @@ class User:
                             match = True
                     return match
                 return False
+            if needed_level == "edit_content":
+                if "__all" in self.permissions["components"].get("edit", []) or \
+                        "__all" in self.permissions["components"].get("edit_content", []):
+                    return True
+                if groups is not None:
+                    # We match if any of the provided groups matches any of the allowed groups
+                    match = False
+                    for group in groups:
+                        if group in self.permissions["components"].get("edit", []) or \
+                                group in self.permissions["components"].get("edit_content", []):
+                            match = True
+                    return match
+                return False
             if needed_level == "view":
                 if "__all" in self.permissions["components"].get("edit", []) or \
+                        "__all" in self.permissions["components"].get("edit_content", []) or \
                         "__all" in self.permissions["components"].get("view", []):
                     return True
                 if groups is not None:
@@ -101,6 +116,7 @@ class User:
                     match = False
                     for group in groups:
                         if group in self.permissions["components"].get("edit", []) or \
+                                group in self.permissions["components"].get("edit_content", []) or \
                                 group in self.permissions["components"].get("view", []):
                             match = True
                     return match
@@ -364,6 +380,7 @@ def get_admin():
         "analytics": "edit",
         "components": {
             "edit": ["__all"],
+            "edit_content": [],
             "view": []
         },
         "exhibits": "edit",

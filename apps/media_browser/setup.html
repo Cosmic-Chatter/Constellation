@@ -21,6 +21,41 @@
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
 
+      <!-- Password change modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="passwordChangeModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Change your password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="fst-italic">Use the fields below to change you password. If you don't know your current password, your administrator can set a temporary password for you.</p>
+              
+              <label class="form-label mt-2" for="passwordChangeModalCurrentPassword">Current password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalCurrentPassword">
+              
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword1">New password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword1" autocomplete="new-password">
+
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword2">Confirm new password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword2" autocomplete="new-password">
+
+              <div class="text-danger mt-3">
+                <div id="passwordChangeModalNoCurrentPassWarning">You must enter your current password.</div>
+                <div id="passwordChangeModalBadCurrentPassWarning">The current password was incorrect.</div>
+                <div id="passwordChangeModalNoBlankPassWarning">The password cannot be blank.</div>
+                <div id="passwordChangeModalPassMismatchWarning">The new passwords do not match.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="passwordChangeModalSubmitButton" type="button" class="btn btn-primary">Change</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Help modal -->
       <div id="appHelpModal" class="modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered mw-100 w-75">
@@ -109,9 +144,53 @@
           </div>
         </div>
       </div>
-      <div id="setupHeader">
-        <H2>Media Browser  Setup</H2>
-        Use this utility to create and edit Media Browser configurations.
+            
+      <div class="row">
+        <div class="col-10" id="setupHeader">
+          <H2>Media Browser  Setup</H2>
+          Use this utility to create and edit Media Browser configurations.
+          </div>
+
+        <div class="col-2">
+          <div id="loginMenu">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">Log in</button>
+            <div class="dropdown-menu">
+              <div class="px-4 py-3">
+                <div class="mb-3">
+                  <label for="loginDropdownUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="loginDropdownUsername">
+                </div>
+                <div class="mb-3">
+                  <label for="loginDropdownPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="loginDropdownPassword">
+                </div>
+                <button id="loginSubmitButton" class="btn btn-primary">Log in</button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="loginCreateAccountButton">Create account</button>
+              <a class="dropdown-item" href="#">Forgot password?</a>
+            </div>
+          </div>
+          <div id="userMenu" style="display: none;">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span id="userMenuUserDisplayName" class="d-none d-sm-inline-block">Morgan Rehnberg</span>
+              <span id="userMenuUserShortName" class="d-sm-none">MR</span>
+              </button>
+            <div class="dropdown-menu">
+              <button class="dropdown-item" id="changePasswordButton">Change password</button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="logoutButton">Log out</button>
+            </div>
+          </div>
+        </div>
+        <div id="helpNewAccountMessage" class="col-6 offset-3 alert alert-primary my-4">
+          <H4 class="text-center">Need an account?</H4>
+          Constellation requires a user account to access functionality. If you need an account, or your password to be reset, please contact your system administrator.
+        </div>
+        <div id="helpInsufficientPermissionstMessage" class="col-6 offset-3 alert alert-warning my-4" style="display: none;">
+          <H4 class="text-center">Insufficient Permissions</H4>
+          You do not have permission to edit this component. If you believe this is an error, contact your system administrator.
+        </div>
       </div>
        
       <div id="setupTools" class="row my-1 gx-2 gy-2">

@@ -1,6 +1,7 @@
 /* global bootstrap, showdown */
 
 import * as constCommon from './constellation_app_common.js'
+import * as constSetup from './constellation_setup_common.js'
 import * as constFileSelectModal from './constellation_file_select_modal.js'
 
 function updateParser (update) {
@@ -9,9 +10,6 @@ function updateParser (update) {
   if ('app' in update) {
     if ('id' in update.app) {
       document.getElementById('IDInput').value = update.app.id
-    }
-    if ('group' in update.app) {
-      document.getElementById('groupInput').value = update.app.group
     }
   }
   if ('control_server' in update) {
@@ -123,7 +121,6 @@ function saveConfiguration () {
   if (defaults.system.standalone === false) {
     // We are using Control Server, so update relevant defaults
     defaults.app.id = document.getElementById('IDInput').value.trim()
-    defaults.app.group = document.getElementById('groupInput').value.trim()
     defaults.control_server = {
       ip_address: document.getElementById('controlServerIPInput').value.trim(),
       port: parseInt(document.getElementById('controlServerPortInput').value)
@@ -191,7 +188,6 @@ function configureInterface () {
   // Control Server
   if (document.getElementById('useControlServerToggle').checked === true) {
     document.getElementById('IDInputGroup').style.display = 'block'
-    document.getElementById('groupInputGroup').style.display = 'block'
     document.getElementById('definitionSelectGroup').style.display = 'none'
     document.getElementById('controlServerIPInputGroup').style.display = 'block'
     document.getElementById('controlServerPortInputGroup').style.display = 'block'
@@ -200,7 +196,6 @@ function configureInterface () {
     document.getElementById('votingKioskCSVDownloadDiv').style.display = 'none'
   } else {
     document.getElementById('IDInputGroup').style.display = 'none'
-    document.getElementById('groupInputGroup').style.display = 'none'
     document.getElementById('definitionSelectGroup').style.display = 'block'
     document.getElementById('controlServerIPInputGroup').style.display = 'none'
     document.getElementById('controlServerPortInputGroup').style.display = 'none'
@@ -380,6 +375,47 @@ function gotoAppLink (el) {
   }
 }
 
+function configureUser (user) {
+  // Configure the interface for the permissions of the given user
+
+  // Check whether the user has permission to edit this component
+  constCommon.makeServerRequest({
+    method: 'GET',
+    endpoint: '/component/' + constCommon.config.uuid + '/groups'
+  })
+    .then((response) => {
+      let groups = []
+      if ('success' in response) {
+        groups = response.groups
+      }
+
+      let allowed = false
+
+      if (user.permissions.components.edit.includes('__all') || user.permissions.components.edit_content.includes('__all')) {
+        allowed = true
+      } else {
+        for (const group of groups) {
+          if (user.permissions.components.edit.includes(group) || user.permissions.components.edit_content.includes(group)) {
+            allowed = true
+          }
+        }
+      }
+
+      if (allowed) {
+        document.getElementById('helpInsufficientPermissionstMessage').style.display = 'none'
+      } else {
+        if (constSetup.config.loggedIn === true) {
+          document.getElementById('helpInsufficientPermissionstMessage').style.display = 'block'
+        }
+        document.getElementById('nav-settings-tab').style.setProperty('display', 'none', 'important')
+        document.getElementById('nav-apps-tab').style.setProperty('display', 'none', 'important')
+        setTimeout(() => {
+          $('#nav-help-tab').tab('show')
+        }, 20)
+      }
+    })
+}
+
 constCommon.config.helperAddress = window.location.origin
 constCommon.config.updateParser = updateParser // Function to read app-specific updatess
 constCommon.config.constellationAppID = 'settings'
@@ -394,12 +430,28 @@ const markdownConverter = new showdown.Converter()
 markdownConverter.setFlavor('github')
 
 constCommon.askForDefaults(false)
+  .then(() => {
+    if (constCommon.config.standalone === false) {
+      // We are using Control Server, so attempt to log in
+      constSetup.authenticateUser()
+        .then(() => {
+          configureUser(constSetup.config.user)
+        })
+        .catch(() => {
+          // This has likely failed because of no connection to Control Server
+        })
+    } else {
+      // Hide the login details
+      document.getElementById('loginMenu').style.display = 'none'
+    }
+  })
 loadVersion()
 populateHelpTab()
 populateAvailableData()
 populateAvailableDefinitions()
 
 // Add event handlers
+constSetup.createLoginEventListeners()
 
 // Activate app links
 Array.from(document.querySelectorAll('.app-link')).forEach((el) => {

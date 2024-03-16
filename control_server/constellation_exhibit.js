@@ -1533,8 +1533,20 @@ function populateComponentDefinitionList (definitions, thumbnails, permission) {
     <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
     `
     if (permission === 'edit') {
+      let app = definition.app
+      let page = 'setup.html'
+      if (app === 'infostation') {
+        app = 'InfoStation'
+      } else if (app === 'word_cloud_input') {
+        app = 'word_cloud'
+        page = 'setup_input.html'
+      } else if (app === 'word_cloud_viewer') {
+        app = 'word_cloud'
+        page = 'setup_viewer.html'
+      }
+
       html += `
-      <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
+      <a class="dropdown-item" href="${component.getHelperURL() + '/' + app + '/' + page + '?definition=' + uuid}" target="_blank">Edit</a>
       `
     }
     dropdownMenu.innerHTML = html

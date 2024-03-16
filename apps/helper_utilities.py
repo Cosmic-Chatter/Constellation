@@ -89,11 +89,13 @@ def get_system_stats() -> dict[str, Union[int, float]]:
     return result
 
 
-def read_defaults():
+def read_defaults() -> bool:
     """Load config.json and set up Constellation Apps based on its contents."""
 
     defaults_path = helper_files.get_path(["configuration", "config.json"], user_file=True)
     config.defaults = helper_files.load_json(defaults_path)
+    if config.defaults is None:
+        return False
 
     if "smart_restart" in config.defaults:
         config.smart_restart["mode"] = config.defaults["smart_restart"]["state"]
@@ -102,6 +104,8 @@ def read_defaults():
     if "active_hours" in config.defaults["system"]:
         config.smart_restart["active_hours_start"] = config.defaults["system"]["active_hours"]["start"]
         config.smart_restart["active_hours_end"] = config.defaults["system"]["active_hours"]["end"]
+
+    return True
 
 
 def update_defaults(data: dict[str, Any], cull: bool = False):
@@ -112,11 +116,11 @@ def update_defaults(data: dict[str, Any], cull: bool = False):
 
     prior_defaults = copy.deepcopy(config.defaults)
 
-    if "uuid" in prior_defaults["app"]:
+    if prior_defaults is not None and "app" in prior_defaults and "uuid" in prior_defaults["app"]:
         uuid_str = prior_defaults["app"]["uuid"]
     else:
         uuid_str = str(uuid.uuid4())
-    if cull is True:
+    if cull is True or prior_defaults is None:
         # Replace the current dictionary with the new one
         new_defaults = data
     else:

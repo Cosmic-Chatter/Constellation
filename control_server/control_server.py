@@ -359,7 +359,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -388,11 +388,14 @@ def log_in(response: Response,
         return {"success": False, "reason": "authentication_failed"}
 
     user = c_users.get_user(uuid_str=user_uuid)
+    response_dict = {"success": True, "user": user.get_dict()}
     if token == "":
         token = c_users.encrypt_token(user_uuid)
-        print(token)
+        if c_config.debug:
+            print(token)
         response.set_cookie(key="authToken", value=token, max_age=int(3e7))  # Expire cookie in approx 1 yr
-    return {"success": True, "user": user.get_dict()}
+        response_dict['authToken'] = token
+    return response_dict
 
 
 @app.post("/user/create")
@@ -517,6 +520,19 @@ class ExhibitComponent(BaseModel):
         description="A unique identifier for this component",
         title="ID"
     )
+
+
+@app.get("/component/{uuid_str}/groups")
+async def get_component_groups(uuid_str: str):
+    """Return the list of groups the given component belongs to."""
+
+    # Don't authenticate, as we use this as part of the component auth process
+
+    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    if component is None:
+        return {"success": False, "reason": "Component does not exist", "groups": []}
+
+    return {"success": True, "groups": component.groups}
 
 
 @app.post("/component/{uuid_str}/edit")
@@ -1678,6 +1694,13 @@ async def update_schedule(
 
 # System actions
 
+@app.get("/system/getVersion")
+async def get_version():
+    """Return the current version of Control Server"""
+
+    return {"success": True, "version": c_config.software_version}
+
+
 @app.get("/system/checkConnection")
 async def check_connection():
     """Respond to request to confirm that the connection is active"""
@@ -1738,15 +1761,20 @@ async def get_version():
 async def handle_ping(data: dict[str, Any], request: Request):
     """Respond to an incoming heartbeat signal with ahy updates."""
 
-    if "id" not in data:
+    if "uuid" not in data:
         response = {"success": False,
-                    "reason": "Request missing 'id' field."}
+                    "reason": "Request missing 'uuid' field."}
         return response
 
-    this_id = data['id']
     c_exhibit.update_exhibit_component_status(data, request.client.host)
 
-    component = c_exhibit.get_exhibit_component(component_id=this_id)
+    if "uuid" in data:
+        # Preferred way from Constellation 5
+        component = c_exhibit.get_exhibit_component(component_uuid=data['uuid'])
+    else:
+        # Legacy support
+        component = c_exhibit.get_exhibit_component(component_id=data['id'])
+
     dict_to_send = component.config.copy()
     if len(dict_to_send["commands"]) > 0:
         # Clear the command list now that we are sending

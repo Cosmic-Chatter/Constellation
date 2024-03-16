@@ -55,6 +55,7 @@ export async function configure (options) {
   createAdvancedColorPickers()
   createAdvancedFontPickers(userFonts)
   createDefinitionDeletePopup()
+  createLoginEventListeners()
   createEventListeners()
   resizePreview()
 
@@ -66,6 +67,48 @@ export async function configure (options) {
     })
     .then(() => {
       configureFromQueryString()
+    })
+}
+
+function configureGUIForUser (user) {
+  // Configure the interface for the permissions of the given user
+
+  // Check whether the user has permission to edit this component
+  constCommon.makeServerRequest({
+    method: 'GET',
+    endpoint: '/component/' + constCommon.config.uuid + '/groups'
+  })
+    .then((response) => {
+      let groups = []
+      if ('success' in response) {
+        groups = response.groups
+      }
+
+      let allowed = false
+
+      if (user.permissions.components.edit.includes('__all') || user.permissions.components.edit_content.includes('__all')) {
+        allowed = true
+      } else {
+        for (const group of groups) {
+          if (user.permissions.components.edit.includes(group) || user.permissions.components.edit_content.includes(group)) {
+            allowed = true
+          }
+        }
+      }
+      if (allowed) {
+        document.getElementById('helpInsufficientPermissionstMessage').style.display = 'none'
+      } else {
+        if (config.loggedIn === true) {
+          document.getElementById('helpInsufficientPermissionstMessage').style.display = 'block'
+          try {
+            document.getElementById('setupTools').style.display = 'none'
+            document.getElementById('editPane').style.display = 'none'
+            document.getElementById('previewPane').style.display = 'none'
+          } catch {
+            // Doesn't exist for the settings page
+          }
+        }
+      }
     })
 }
 
@@ -214,6 +257,17 @@ export function updateWorkingDefinition (property, value) {
   // for definition.style.color.headerColor
 
   constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
+}
+
+export function createLoginEventListeners () {
+  // Bind event listeners for login elements
+
+  // Login
+  document.getElementById('loginSubmitButton').addEventListener('click', loginFromDropdown)
+  document.getElementById('logoutButton').addEventListener('click', logoutUser)
+
+  document.getElementById('changePasswordButton').addEventListener('click', showPasswordChangeModal)
+  document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', submitUserPasswordChange)
 }
 
 function createEventListeners () {
@@ -697,6 +751,177 @@ export function resetAdvancedFontPickers () {
     const defaultFont = '../_fonts/' + el.getAttribute('data-default')
     setAdvancedFontPicker(el, defaultFont)
   })
+}
+
+export function loginFromDropdown () {
+  // Collect the username and password and attempt to log in the user.
+
+  const username = document.getElementById('loginDropdownUsername').value.trim().toLowerCase()
+  const password = document.getElementById('loginDropdownPassword').value
+
+  constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/login',
+    params: {
+      credentials: [username, password]
+    }
+  })
+    .then((response) => {
+      if ('authToken' in response) {
+        // Set a cookie
+        document.cookie = 'authToken="' + response.authToken + '"; max-age=31536000; path=/'
+      }
+      if (response.success === true) {
+        // Reload the page now that the authentication cookie is set.
+        location.reload()
+      }
+    })
+}
+
+export function logoutUser () {
+  // Remove the user and delete the cookie.
+
+  document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
+  location.reload()
+}
+
+export function authenticateUser () {
+  // If authToken exists in the cookie, use it to log in
+
+  let token = ''
+  document.cookie.split(';').forEach((item) => {
+    item = item.trim()
+    if (item.startsWith('authToken="')) {
+      token = item.slice(11, -1)
+    }
+  })
+
+  if (token === '') {
+    token = 'This will fail' // Token cannot be an empty string
+    configureUser({}, false)
+  }
+
+  return constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/login',
+    withCredentials: true
+  })
+    .then((response) => {
+      if (response.success === true) {
+        configureUser(response.user)
+      }
+    })
+}
+
+function configureUser (userDict, login = true) {
+  // Take a dictionary of user details and set up Constellation to reflect it.
+  // set login=false to set up a logged out user
+
+  if (Object.keys(userDict).length === 0) {
+    // Configure minimal permissions
+    userDict.permissions = {
+      analytics: 'none',
+      components: {
+        edit: [],
+        edit_content: [],
+        view: []
+      },
+      exhibits: 'none',
+      maintenance: 'none',
+      schedule: 'none',
+      settings: 'none',
+      users: 'none'
+    }
+  }
+  config.user = userDict
+  config.loggedIn = login
+
+  if (login === true) {
+    document.getElementById('helpNewAccountMessage').style.display = 'none'
+    document.getElementById('loginMenu').style.display = 'none'
+    document.getElementById('userMenu').style.display = 'block'
+
+    // Set the name of the account
+    document.getElementById('userMenuUserDisplayName').innerHTML = userDict.display_name
+    let initials = ''
+    userDict.display_name.split(' ').forEach((word) => {
+      initials += word.slice(0, 1)
+    })
+    document.getElementById('userMenuUserShortName').innerHTML = initials
+  } else {
+    document.getElementById('helpNewAccountMessage').style.display = 'block'
+    document.getElementById('loginMenu').style.display = 'block'
+    document.getElementById('userMenu').style.display = 'none'
+    try {
+      document.getElementById('setupTools').style.display = 'none'
+      document.getElementById('editPane').style.display = 'none'
+      document.getElementById('previewPane').style.display = 'none'
+    } catch {
+      // Doesn't exist for the settings page
+    }
+  }
+  configureGUIForUser(userDict)
+}
+
+export function showPasswordChangeModal () {
+  // Prepare the modal for changing the current user's password and show it.
+
+  // Hide warnings and clear fields
+  document.getElementById('passwordChangeModalCurrentPassword').value = ''
+  document.getElementById('passwordChangeModalNewPassword1').value = ''
+  document.getElementById('passwordChangeModalNewPassword2').value = ''
+
+  document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'none'
+
+  $('#passwordChangeModal').modal('show')
+}
+
+export function submitUserPasswordChange () {
+  // Collect the relevant details from the password change modal and submit it
+
+  const currentPass = document.getElementById('passwordChangeModalCurrentPassword').value
+  const newPass1 = document.getElementById('passwordChangeModalNewPassword1').value
+  const newPass2 = document.getElementById('passwordChangeModalNewPassword2').value
+  if (currentPass === '') {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  }
+  if (newPass1 === '') {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  }
+  if (newPass1 !== newPass2) {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  }
+
+  constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/' + config.user.uuid + '/changePassword',
+    params: {
+      current_password: currentPass,
+      new_password: newPass1
+    }
+  })
+    .then((response) => {
+      if (response.success === false) {
+        if (response.reason === 'authentication_failed') {
+          document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'block'
+        }
+      } else {
+        $('changePasswordModal').modal('hide')
+        logoutUser()
+      }
+    })
 }
 
 const markdownConverter = new showdown.Converter()

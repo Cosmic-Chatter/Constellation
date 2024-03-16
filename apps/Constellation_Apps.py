@@ -1097,11 +1097,34 @@ def _start_server(port=None):
                 reload=False, workers=1)
 
 
-if __name__ == "__main__":
+def create_config():
+    """Create a new configuration file."""
 
+    if sys.platform == 'linux':
+        # Linux apps can't use the GUI
+        helper_utilities.handle_missing_defaults_file()
+    else:
+        print('config.json file not found! Bootstrapping server.')
+
+        available_port = helper_utilities.find_available_port()
+
+        webview.create_window('Constellation Apps Setup',
+                              confirm_close=False,
+                              height=720,
+                              width=720,
+                              min_size=(720, 720),
+                              url='http://localhost:' + str(
+                                  available_port) + '/first_time_setup.html')
+
+        webview.start(func=bootstrap_app, args=available_port)
+
+if __name__ == "__main__":
     defaults_path = helper_files.get_path(['configuration', 'config.json'], user_file=True)
     if os.path.exists(defaults_path):
-        helper_utilities.read_defaults()
+        success = helper_utilities.read_defaults()
+        if success is False:
+            create_config()
+            helper_utilities.read_defaults()
 
         # Check for missing content thumbnails and create them
         helper_files.create_missing_thumbnails()
@@ -1123,24 +1146,7 @@ if __name__ == "__main__":
                 f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
     else:
         # We need to create a config.json file based on user input.
-
-        if sys.platform == 'linux':
-            # Linux apps can't use the GUI
-            helper_utilities.handle_missing_defaults_file()
-        else:
-            print('config.json file not found! Bootstrapping server.')
-
-            available_port = helper_utilities.find_available_port()
-
-            webview.create_window('Constellation Apps Setup',
-                                  confirm_close=False,
-                                  height=720,
-                                  width=720,
-                                  min_size=(720, 720),
-                                  url='http://localhost:' + str(
-                                      available_port) + '/first_time_setup.html')
-
-            webview.start(func=bootstrap_app, args=available_port)
+        create_config()
 
     if const_config.defaults["system"].get("remote_display", True) is True:
         # Start the server but don't create a GUI window

@@ -1,11 +1,11 @@
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constSetup from '../js/constellation_setup_common.js'
 
-function clearDefinitionInput (full = true) {
-  // Clear all input related to a defnition
+function initializeDefinition () {
+  // Create a blank definition at save it to workingDefinition.
 
-  if (full === true) {
-  // Get a new temporary uuid
+  return new Promise(function (resolve, reject) {
+    // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
@@ -21,8 +21,17 @@ function clearDefinitionInput (full = true) {
           path: '',
           properties: {}
         })
-        constSetup.previewDefinition(false)
+        constSetup.previewDefinition()
+        resolve()
       })
+  })
+}
+
+async function clearDefinitionInput (full = true) {
+  // Clear all input related to a defnition
+
+  if (full === true) {
+    await initializeDefinition()
   }
 
   // Definition details
@@ -161,6 +170,18 @@ clearDefinitionInput()
 constSetup.configure({
   app: 'other',
   clearDefinition: clearDefinitionInput,
+  initializeDefinition,
   loadDefinition: editDefinition,
   saveDefinition
 })
+
+constCommon.askForDefaults(false)
+  .then(() => {
+    if (constCommon.config.standalone === false) {
+      // We are using Control Server, so attempt to log in
+      constSetup.authenticateUser()
+    } else {
+      // Hide the login details
+      document.getElementById('loginMenu').style.display = 'none'
+    }
+  })

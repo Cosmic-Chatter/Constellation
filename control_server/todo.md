@@ -51,8 +51,6 @@
 - Ability to search results
 
 ### Media Player
-- Media from URL
-- Dynamic fields from data files (place anywhere)
 
 ### Timelapse Viewer
 - Option to prevent looping when scrolling

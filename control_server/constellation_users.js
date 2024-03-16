@@ -32,10 +32,17 @@ export function checkUserPermission (action, neededLevel, group = null) {
       if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
       return false
     }
+    if (neededLevel === 'edit_content') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if (constConfig.user.permissions.components.edit_content.includes('__all')) return true
+      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || constConfig.user.permissions.components.edit_content.includes(group))) return true
+      return false
+    }
     if (neededLevel === 'view') {
       if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if (constConfig.user.permissions.components.edit_content.includes('__all')) return true
       if (constConfig.user.permissions.components.view.includes('__all')) return true
-      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || (constConfig.user.permissions.components.view.includes(group)))) return true
+      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || constConfig.user.permissions.components.edit_content.includes(group) || constConfig.user.permissions.components.view.includes(group))) return true
       return false
     }
   }
@@ -150,11 +157,15 @@ function populateEditUserGroupsRow (permissions) {
     select.appendChild(optionNone)
     const optionView = new Option('View', 'view')
     select.appendChild(optionView)
-    const optionEdit = new Option('Edit', 'edit')
+    const optionEditContent = new Option('Edit (content & definitions only)', 'edit_content')
+    select.appendChild(optionEditContent)
+    const optionEdit = new Option('Edit (content, definitions, & settings)', 'edit')
     select.appendChild(optionEdit)
 
     if (permissions.edit.includes(group.uuid)) {
       select.value = 'edit'
+    } else if (permissions.edit_content.includes(group.uuid)) {
+      select.value = 'edit_content'
     } else if (permissions.view.includes(group.uuid)) {
       select.value = 'view'
     } else select.value = 'none'
@@ -180,18 +191,22 @@ export function submitChangeFromEditUserModal () {
   }
   const groupsPermission = document.getElementById('editUserPermissionGroups').value
   if (groupsPermission === 'none') {
-    details.permissions.components = { edit: [], view: [] }
+    details.permissions.components = { edit: [], edit_content: [], view: [] }
   } else if (groupsPermission === 'view') {
-    details.permissions.components = { edit: [], view: ['__all'] }
+    details.permissions.components = { edit: [], edit_content: [], view: ['__all'] }
+  } else if (groupsPermission === 'edit_content') {
+    details.permissions.components = { edit: [], edit_content: ['__all'], view: [] }
   } else if (groupsPermission === 'edit') {
-    details.permissions.components = { edit: ['__all'], view: [] }
+    details.permissions.components = { edit: ['__all'], edit_content: [], view: [] }
   } else {
     // Custom
-    const obj = { edit: [], view: [] }
+    const obj = { edit: [], edit_content: [], view: [] }
     Array.from(document.querySelectorAll('.editUserGroupSelect')).forEach((el) => {
       const groupUUID = el.getAttribute('data-uuid')
       if (el.value === 'edit') {
         obj.edit.push(groupUUID)
+      } else if (el.value === 'edit_content') {
+        obj.edit_content.push(groupUUID)
       } else if (el.value === 'view') {
         obj.view.push(groupUUID)
       }
@@ -308,7 +323,6 @@ export function loginFromDropdown () {
   })
     .then((response) => {
       if (response.success === true) {
-        // configureUser(response.user)
         // Reload the page now that the authentication cookie is set.
         location.reload()
       }
@@ -352,6 +366,7 @@ function configureUser (userDict, login = true) {
       analytics: 'none',
       components: {
         edit: [],
+        edit_content: [],
         view: []
       },
       exhibits: 'none',

@@ -29,7 +29,8 @@ export const config = {
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
   softwareVersion: 5,
   standalone: false, // false == we are using Control Server
-  updateParser: null // Function used by readUpdate() to parse app-specific updates
+  updateParser: null, // Function used by readUpdate() to parse app-specific updates
+  uuid: ''
 }
 
 export function configureApp (opt = {}) {
@@ -84,6 +85,7 @@ export function makeRequest (opt) {
 
   return new Promise(function (resolve, reject) {
     const xhr = new XMLHttpRequest()
+    if ('withCredentials' in opt && opt.withCredentials === true) xhr.withCredentials = true
     const path = opt.url + opt.endpoint
     if ('noCache' in opt && opt.noCache === true) {
       xhr.open(opt.method, path + (/\?/.test(path) ? '&' : '?') + new Date().getTime(), true)
@@ -149,7 +151,7 @@ export function sendPing () {
   const pingRequest = function () {
     const requestDict = {
       id: config.id,
-      group: config.group,
+      uuid: config.uuid,
       helperAddress: config.helperAddress,
       permissions: config.permissions,
       constellation_app_id: config.constellationAppID,
@@ -348,8 +350,8 @@ function readHelperUpdate (update, changeApp = true) {
   // App settings
   if ('app' in update) {
     if ('id' in update.app) config.id = update.app.id
-    if ('group' in update.app) config.group = update.app.group
     if ('definition' in update.app) config.definition = update.app.definition
+    if ('uuid' in update.app) config.uuid = update.app.uuid
   }
   if ('control_server' in update) {
     if (('ip_address' in update.control_server) && ('port' in update.control_server)) {
@@ -742,14 +744,16 @@ export function saveScreenshotAsThumbnail (filename) {
   }).then((canvas) => {
     canvas.toBlob((img) => {
       const formData = new FormData()
-      formData.append('files', img, filename)
-      fetch('/files/uploadThumbnail', {
-        method: 'POST',
-        body: formData
-      })
-        .catch(error => {
-          console.error(error)
+      if (img != null) {
+        formData.append('files', img, filename)
+        fetch('/files/uploadThumbnail', {
+          method: 'POST',
+          body: formData
         })
+          .catch(error => {
+            console.error(error)
+          })
+      }
     })
   })
 }

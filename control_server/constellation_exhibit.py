@@ -94,11 +94,11 @@ class BaseComponent:
 
         self.clean_up()
         if isinstance(self, ExhibitComponent):
-            config.componentList = [x for x in config.componentList if x.id != self.id]
+            config.componentList = [x for x in config.componentList if x.uuid != self.uuid]
         elif isinstance(self, Projector):
-            config.projectorList = [x for x in config.projectorList if x.id != self.id]
+            config.projectorList = [x for x in config.projectorList if x.uuid != self.uuid]
         elif isinstance(self, WakeOnLANDevice):
-            config.wakeOnLANList = [x for x in config.wakeOnLANList if x.id != self.id]
+            config.wakeOnLANList = [x for x in config.wakeOnLANList if x.uuid != self.uuid]
         path = c_tools.get_path(["components", self.uuid + '.json'], user_file=True)
         os.remove(path)
 
@@ -902,14 +902,18 @@ def update_synchronization_list(this_id: str, other_ids: list[str]):
 def update_exhibit_component_status(data: dict[str, Any], ip: str):
     """Update an ExhibitComponent with the values in a dictionary."""
 
-    this_id = data["id"]
-
     if ip == "::1":
         ip = "localhost"
 
-    component = get_exhibit_component(component_id=this_id)
-    if component is None:  # This is a new id, so make the component
-        component = add_exhibit_component(this_id, ["Default"], uuid_str=data.get("uuid", ""))
+    if "uuid" in data:
+        # This is the preferred way from Constellation 5 onwards
+        component = get_exhibit_component(component_uuid=data["uuid"])
+    else:
+        # Legacy support
+        component = get_exhibit_component(component_id=data["id"])
+
+    if component is None:  # This is a new uuid, so make the component
+        component = add_exhibit_component(data["id"], ["Default"], uuid_str=data.get("uuid", ""))
 
     component.ip_address = ip
     if "helperAddress" in data:
@@ -930,7 +934,7 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
     if "constellation_app_id" in data:
         if component.config["app_name"] == "":
             component.config["app_name"] = data["constellation_app_id"]
-            update_exhibit_configuration(this_id, {"app_name": data["constellation_app_id"]})
+            update_exhibit_configuration(data["id"], {"app_name": data["constellation_app_id"]})
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])
