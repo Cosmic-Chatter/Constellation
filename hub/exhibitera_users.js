@@ -1,11 +1,11 @@
-import constConfig from './config.js'
-import * as constTools from './constellation_tools.js'
+import exConfig from './config.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function checkUserPermission (action, neededLevel, group = null) {
   // Return true if the user's permissions allow this action and false if they do not.
 
   try {
-    if ((action in constConfig.user.permissions) === false) return false
+    if ((action in exConfig.user.permissions) === false) return false
   } catch {
     return false
   }
@@ -15,7 +15,7 @@ export function checkUserPermission (action, neededLevel, group = null) {
   }
 
   if (action !== 'components') {
-    const allowedLevel = constConfig.user.permissions[action]
+    const allowedLevel = exConfig.user.permissions[action]
 
     if (neededLevel === 'edit') {
       if (allowedLevel === 'edit') return true
@@ -28,21 +28,21 @@ export function checkUserPermission (action, neededLevel, group = null) {
   }
   if (action === 'components') {
     if (neededLevel === 'edit') {
-      if (constConfig.user.permissions.components.edit.includes('__all')) return true
-      if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
+      if (exConfig.user.permissions.components.edit.includes('__all')) return true
+      if ((group != null) && exConfig.user.permissions.components.edit.includes(group)) return true
       return false
     }
     if (neededLevel === 'edit_content') {
-      if (constConfig.user.permissions.components.edit.includes('__all')) return true
-      if (constConfig.user.permissions.components.edit_content.includes('__all')) return true
-      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || constConfig.user.permissions.components.edit_content.includes(group))) return true
+      if (exConfig.user.permissions.components.edit.includes('__all')) return true
+      if (exConfig.user.permissions.components.edit_content.includes('__all')) return true
+      if ((group != null) && (exConfig.user.permissions.components.edit.includes(group) || exConfig.user.permissions.components.edit_content.includes(group))) return true
       return false
     }
     if (neededLevel === 'view') {
-      if (constConfig.user.permissions.components.edit.includes('__all')) return true
-      if (constConfig.user.permissions.components.edit_content.includes('__all')) return true
-      if (constConfig.user.permissions.components.view.includes('__all')) return true
-      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || constConfig.user.permissions.components.edit_content.includes(group) || constConfig.user.permissions.components.view.includes(group))) return true
+      if (exConfig.user.permissions.components.edit.includes('__all')) return true
+      if (exConfig.user.permissions.components.edit_content.includes('__all')) return true
+      if (exConfig.user.permissions.components.view.includes('__all')) return true
+      if ((group != null) && (exConfig.user.permissions.components.edit.includes(group) || exConfig.user.permissions.components.edit_content.includes(group) || exConfig.user.permissions.components.view.includes(group))) return true
       return false
     }
   }
@@ -134,7 +134,7 @@ function populateEditUserGroupsRow (permissions) {
   const row = document.getElementById('editUserGroupsRow')
   row.innerHTML = ''
 
-  const groups = [{ name: 'Default', uuid: 'Default' }, ...constConfig.groups]
+  const groups = [{ name: 'Default', uuid: 'Default' }, ...exConfig.groups]
   for (const group of groups) {
     const col = document.createElement('div')
     col.classList = 'col d-flex flex-column justify-content-end'
@@ -246,7 +246,7 @@ export function submitChangeFromEditUserModal () {
       document.getElementById('editUserBlankPassword').style.display = 'none'
     }
     details.password = password1
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/user/create',
       params: details
@@ -265,7 +265,7 @@ export function submitChangeFromEditUserModal () {
       details.password = password1
     }
 
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/user/' + uuid + '/edit',
       params: details
@@ -288,7 +288,7 @@ export function populateUsers () {
   const usersRow = document.getElementById('usersRow')
   usersRow.innerHTML = ''
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/users/list'
   }).then((response) => {
@@ -314,7 +314,7 @@ export function loginFromDropdown () {
   const username = document.getElementById('loginDropdownUsername').value.trim().toLowerCase()
   const password = document.getElementById('loginDropdownPassword').value
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/user/login',
     params: {
@@ -345,7 +345,7 @@ export function authenticateUser () {
     configureUser({}, false)
   }
 
-  return constTools.makeServerRequest({
+  return exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/user/login'
   })
@@ -376,7 +376,7 @@ function configureUser (userDict, login = true) {
       users: 'none'
     }
   }
-  constConfig.user = userDict
+  exConfig.user = userDict
 
   if (login === true) {
     document.getElementById('helpNewAccountMessage').style.display = 'none'
@@ -410,7 +410,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-components-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('schedule', 'view')) {
+  if (exTools.checkPermission('schedule', 'view')) {
     document.getElementById('nav-schedule-tab').style.display = 'block'
     configureSchedulePermissions()
     if (match === '') match = 'schedule'
@@ -418,7 +418,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-schedule-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('exhibits', 'view')) {
+  if (exTools.checkPermission('exhibits', 'view')) {
     document.getElementById('nav-exhibits-tab').style.display = 'block'
     document.getElementById('nav-exhibits-dropdown-tab').style.display = 'block'
     if (match === '') match = 'exhibits'
@@ -427,7 +427,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-exhibits-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('maintenance', 'view')) {
+  if (exTools.checkPermission('maintenance', 'view')) {
     document.getElementById('nav-issues-tab').style.display = 'block'
     document.getElementById('nav-issues-dropdown-tab').style.display = 'block'
     configureMaintenancePermissions()
@@ -437,7 +437,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-issues-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('analytics', 'view')) {
+  if (exTools.checkPermission('analytics', 'view')) {
     document.getElementById('nav-analytics-tab').style.display = 'block'
     document.getElementById('nav-analytics-dropdown-tab').style.display = 'block'
     if (match === '') match = 'analytics'
@@ -446,7 +446,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-analytics-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('users', 'view')) {
+  if (exTools.checkPermission('users', 'view')) {
     document.getElementById('nav-users-tab').style.display = 'block'
     document.getElementById('nav-users-dropdown-tab').style.display = 'block'
     if (match === '') match = 'users'
@@ -455,7 +455,7 @@ function configureUser (userDict, login = true) {
     document.getElementById('nav-users-dropdown-tab').style.setProperty('display', 'none', 'important')
   }
 
-  if (constTools.checkPermission('settings', 'view')) {
+  if (exTools.checkPermission('settings', 'view')) {
     document.getElementById('nav-settings-tab').style.display = 'block'
     document.getElementById('nav-settings-dropdown-tab').style.display = 'block'
     if (match === '') match = 'settings'
@@ -483,7 +483,7 @@ export function logoutUser () {
 function configureSchedulePermissions () {
   // Configure the schedule to respect the level of user permission.
 
-  if (constTools.checkPermission('schedule', 'edit')) {
+  if (exTools.checkPermission('schedule', 'edit')) {
     // User may edit
     document.getElementById('showScheduleFromFileModalButton').parentElement.style.display = 'block'
   } else {
@@ -496,7 +496,7 @@ function configureMaintenancePermissions () {
   // Configure the maintenance tab to respect the level of user permission.
 
   const createIssueButtonCol = document.getElementById('createIssueButton').parentNode
-  if (constTools.checkPermission('maintenance', 'edit')) {
+  if (exTools.checkPermission('maintenance', 'edit')) {
     // User may edit
     createIssueButtonCol.style.setProperty('display', 'block')
   } else {
@@ -546,9 +546,9 @@ export function submitUserPasswordChange () {
     document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
-    endpoint: '/user/' + constConfig.user.uuid + '/changePassword',
+    endpoint: '/user/' + exConfig.user.uuid + '/changePassword',
     params: {
       current_password: currentPass,
       new_password: newPass1

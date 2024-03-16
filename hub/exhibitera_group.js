@@ -1,10 +1,10 @@
-import constConfig from './config.js'
-import * as constTools from './constellation_tools.js'
+import exConfig from './config.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function getGroupName (uuid) {
   // Return the name of a group given its UUID.
 
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     if (group.uuid === uuid) return group.name
   }
   return uuid
@@ -21,7 +21,7 @@ export function showEditGroupModal (uuid = '') {
     document.getElementById('editGroupModalTitle').innerHTML = 'Edit group'
     document.getElementById('editGroupModalSubmitButton').innerHTML = 'Save'
 
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'GET',
       endpoint: '/group/' + uuid + '/getDetails'
     })
@@ -58,7 +58,7 @@ export function submitChangeFromGroupEditModal () {
 
   if (uuid === '') {
     // Create new group
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/group/create',
       params: {
@@ -70,7 +70,7 @@ export function submitChangeFromGroupEditModal () {
       })
   } else {
     // Edit group
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/group/' + uuid + '/edit',
       params: {
@@ -89,7 +89,7 @@ export function populateGroupsRow () {
   const groupRow = document.getElementById('settingsGroupsRow')
   groupRow.innerHTML = ''
 
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     const groupCol = document.createElement('div')
     groupCol.classList = 'col'
     groupRow.appendChild(groupCol)
@@ -166,7 +166,7 @@ export function deleteGroupFromModal () {
 
   const uuid = document.getElementById('deleteGroupModal').getAttribute('data-uuid')
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/group/' + uuid + '/delete'
   })

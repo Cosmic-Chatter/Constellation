@@ -931,10 +931,10 @@ def update_exhibit_component_status(data: dict[str, Any], ip: str):
     else:
         if "error" in component.config:
             component.config.pop("error")
-    if "constellation_app_id" in data:
+    if "exhibitera_app_id" in data:
         if component.config["app_name"] == "":
-            component.config["app_name"] = data["constellation_app_id"]
-            update_exhibit_configuration(data["id"], {"app_name": data["constellation_app_id"]})
+            component.config["app_name"] = data["exhibitera_app_id"]
+            update_exhibit_configuration(data["id"], {"app_name": data["exhibitera_app_id"]})
     if "platform_details" in data:
         if isinstance(data["platform_details"], dict):
             component.platform_details.update(data["platform_details"])

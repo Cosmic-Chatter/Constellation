@@ -1,21 +1,21 @@
 /* global bootstrap, showdown */
 
-import constConfig from './config.js'
-import * as constExhibit from './constellation_exhibit.js'
-import * as constGroup from './constellation_group.js'
-import * as constIssues from './constellation_issues.js'
-import * as constMaintenance from './constellation_maintenance.js'
-import * as constProjector from './constellation_projector.js'
-import * as constSchedule from './constellation_schedule.js'
-import * as constTools from './constellation_tools.js'
-import * as constTracker from './constellation_tracker.js'
-import * as constUsers from './constellation_users.js'
+import exConfig from './config.js'
+import * as exExhibit from './exhibitera_exhibit.js'
+import * as exGroup from './exhibitera_group.js'
+import * as exIssues from './exhibitera_groups.js'
+import * as exMaintenance from './exhibitera_maintenance.js'
+import * as exProjector from './exhibitera_projector.js'
+import * as exSchedule from './exhibitera_schedule.js'
+import * as exTools from './exhibitera_tools.js'
+import * as exTracker from './exhibitera_tracker.js'
+import * as exUsers from './exhibitera_users.js'
 
 function showManageExhibitsModal () {
   // Configure the manageExhibitsModal and show it.
 
   document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').checked = true
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/exhibit/getAvailable'
   })
@@ -57,7 +57,7 @@ function populateManageExhibitsExhibitContent (exhibit) {
   contentList.innerHTML = ''
   document.getElementById('manageExhibitModalExhibitNameInput').value = exhibit
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/exhibit/getDetails',
     params: { name: exhibit }
@@ -85,7 +85,7 @@ function populateManageExhibitsExhibitContent (exhibit) {
         bodyRow.classList = 'row gy-2'
         body.appendChild(bodyRow)
 
-        const componentObj = constExhibit.getExhibitComponent(component.id)
+        const componentObj = exExhibit.getExhibitComponent(component.id)
 
         if (componentObj != null) {
           // This component is active
@@ -120,16 +120,16 @@ function populateManageExhibitsExhibitContent (exhibit) {
           definitionSelect.classList = 'form-select'
           definitionSelectCol.appendChild(definitionSelect)
 
-          constTools.makeRequest({
+          exTools.makeRequest({
             method: 'GET',
             url: componentObj.getHelperURL(),
             endpoint: '/getAvailableContent'
           })
             .then((availableContent) => {
               // Build an option for each definition
-              const appDict = constTools.sortDefinitionsByApp(availableContent.definitions)
+              const appDict = exTools.sortDefinitionsByApp(availableContent.definitions)
               Object.keys(appDict).sort().forEach((app) => {
-                const header = new Option(constExhibit.convertAppIDtoDisplayName(app))
+                const header = new Option(exExhibit.convertAppIDtoDisplayName(app))
                 header.setAttribute('disabled', true)
                 definitionSelect.appendChild(header)
 
@@ -186,7 +186,7 @@ function onManageExhibitModalThumbnailCheckboxChange () {
 }
 
 function setCurrentExhibitName (name) {
-  constConfig.currentExhibit = name
+  exConfig.currentExhibit = name
   document.getElementById('exhibitNameField').innerHTML = name
 
   // Don't change the value of the exhibit selector if we're currently
@@ -210,11 +210,11 @@ function updateAvailableExhibits (exhibitList) {
     if (aVal < bVal) return -1
     return 0
   })
-  if (constTools.arraysEqual(sortedExhibitList, constConfig.availableExhibits) === true) {
+  if (exTools.arraysEqual(sortedExhibitList, exConfig.availableExhibits) === true) {
     return
   }
 
-  constConfig.availableExhibits = sortedExhibitList
+  exConfig.availableExhibits = sortedExhibitList
   exhibitSelect.innerHTML = ''
   exhibitDeleteSelect.innerHTML = ''
 
@@ -223,7 +223,7 @@ function updateAvailableExhibits (exhibitList) {
     exhibitDeleteSelect.appendChild(new Option(exhibit, exhibit))
   })
 
-  exhibitSelect.value = constConfig.currentExhibit
+  exhibitSelect.value = exConfig.currentExhibit
   checkDeleteSelection()
 }
 
@@ -241,7 +241,7 @@ function changeExhibit (warningShown) {
       }
     }
 
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/exhibit/set',
       params: requestDict
@@ -303,7 +303,7 @@ function deleteTrackerData () {
 
   const name = $('#trackerDataSelect').val()
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/deleteData',
     params: { name }
@@ -311,7 +311,7 @@ function deleteTrackerData () {
     .then((result) => {
       if ('success' in result && result.success === true) {
         $('#deleteTrackerDataModal').modal('hide')
-        constTracker.getAvailableTrackerData(populateTrackerDataSelect)
+        exTracker.getAvailableTrackerData(populateTrackerDataSelect)
       }
     })
 }
@@ -321,7 +321,7 @@ function launchTracker () {
 
   const name = $('#trackerTemplateSelect').val()
 
-  let url = constConfig.serverAddress + '/tracker.html'
+  let url = exConfig.serverAddress + '/tracker.html'
   if (name != null) {
     url += '?layout=' + name
   }
@@ -341,7 +341,7 @@ function createTrackerTemplate (name = '') {
     template: {}
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/createTemplate',
     params: requestDict
@@ -349,7 +349,7 @@ function createTrackerTemplate (name = '') {
     .then((result) => {
       if ('success' in result && result.success === true) {
         $('#createTrackerTemplateName').val('')
-        constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+        exTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
       }
     })
 }
@@ -361,14 +361,14 @@ function deleteTrackerTemplate (name = '') {
     name = $('#trackerTemplateSelect').val()
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/deleteTemplate',
     params: { name }
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
-        constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+        exTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
         $('#deleteTrackerTemplateModal').modal('hide')
       }
     })
@@ -393,10 +393,10 @@ function parseUpdate (update) {
           current_version: update.gallery.softwareVersion,
           available_version: update.gallery.softwareVersionAvailable
         }
-        constConfig.errorDict.__control_server = {
+        exConfig.errorDict.__control_server = {
           software_update: notification
         }
-        constTools.rebuildNotificationList()
+        exTools.rebuildNotificationList()
       }
     }
   }
@@ -405,12 +405,12 @@ function parseUpdate (update) {
     // Check if the list of groups has changed.
 
     const updateDate = new Date(update.groups.last_update_date)
-    const currentGroupsDate = new Date(constConfig.groupLastUpdateDate)
+    const currentGroupsDate = new Date(exConfig.groupLastUpdateDate)
 
     if (updateDate > currentGroupsDate) {
-      constConfig.groupLastUpdateDate = update.groups.last_update_date
-      constConfig.groups = update.groups.group_list
-      constGroup.populateGroupsRow()
+      exConfig.groupLastUpdateDate = update.groups.last_update_date
+      exConfig.groups = update.groups.group_list
+      exGroup.populateGroupsRow()
     }
   }
 
@@ -418,19 +418,19 @@ function parseUpdate (update) {
     // Check for the time of the most recent update. If it is more
     // recent than our existing date, rebuild the issue list
 
-    const currentLastDate = Math.max.apply(Math, constConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
+    const currentLastDate = Math.max.apply(Math, exConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
     const updatedDate = new Date(update.issues.lastUpdateDate)
 
     if (updatedDate > currentLastDate) {
-      constConfig.issueList = update.issues.issueList
-      constIssues.rebuildIssueList()
-      constIssues.rebuildIssueFilters()
+      exConfig.issueList = update.issues.issueList
+      exIssues.rebuildIssueList()
+      exIssues.rebuildIssueFilters()
     }
   }
 
   if ('schedule' in update) {
-    if (constConfig.scheduleUpdateTime !== update.schedule.updateTime) {
-      constSchedule.populateSchedule(update.schedule)
+    if (exConfig.scheduleUpdateTime !== update.schedule.updateTime) {
+      exSchedule.populateSchedule(update.schedule)
     }
   }
 
@@ -439,16 +439,16 @@ function parseUpdate (update) {
     let numOnline = 0
     let numStatic = 0
 
-    constExhibit.checkForRemovedComponents(update.components)
+    exExhibit.checkForRemovedComponents(update.components)
     update.components.forEach((component) => {
       numComps += 1
-      if ((component.status === constConfig.STATUS.ONLINE.name) || (component.status === constConfig.STATUS.STANDBY.name) || (component.status === constConfig.STATUS['SYSTEM ON'].name) || (component.status === constConfig.STATUS.STATIC.name)) {
+      if ((component.status === exConfig.STATUS.ONLINE.name) || (component.status === exConfig.STATUS.STANDBY.name) || (component.status === exConfig.STATUS['SYSTEM ON'].name) || (component.status === exConfig.STATUS.STATIC.name)) {
         numOnline += 1
       }
-      if (component.status === constConfig.STATUS.STATIC.name) {
+      if (component.status === exConfig.STATUS.STATIC.name) {
         numStatic += 1
       }
-      constExhibit.updateComponentFromServer(component)
+      exExhibit.updateComponentFromServer(component)
     })
 
     // Set the favicon to reflect the aggregate status
@@ -474,7 +474,7 @@ function populateHelpTab () {
   // Ask the server to send the latest README, convert the Markdown to
   // HTML, and add it to the Help tab.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/system/getHelpText'
   })
@@ -511,7 +511,7 @@ function showEditTrackerTemplateModal () {
 
   const layoutToLoad = $('#trackerTemplateSelect').val()
   const lamda = function (template) { _showEditTrackerTemplateModal(layoutToLoad, template) }
-  constTracker.loadLayoutDefinition(layoutToLoad, lamda)
+  exTracker.loadLayoutDefinition(layoutToLoad, lamda)
 }
 
 function _showEditTrackerTemplateModal (name, template) {
@@ -797,7 +797,7 @@ function editTrackerTemplateModalSubmitChanges () {
     template
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/createTemplate',
     params: requestDict
@@ -839,7 +839,7 @@ function createExhibit (name, cloneFrom) {
     requestDict.clone_from = cloneFrom
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/exhibit/create',
     params: requestDict
@@ -849,7 +849,7 @@ function createExhibit (name, cloneFrom) {
 function deleteExhibit (name) {
   // Ask the control server to delete the exhibit with the given name.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/exhibit/delete',
     params: { exhibit: { name } }
@@ -887,7 +887,7 @@ function populateControlServerSettings () {
   document.getElementById('controlServerSettingsPortWarning').style.display = 'none'
   document.getElementById('controlServerSettingsSaveButton').style.display = 'none'
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/system/system/getConfiguration'
   })
@@ -908,7 +908,7 @@ function updateSystemConfiguration () {
     ip_address: document.getElementById('controlServerSettingsIPAddress').value.trim(),
     port: parseInt(document.getElementById('controlServerSettingsPort').value),
     gallery_name: document.getElementById('controlServerSettingsGalleryName').value.trim(),
-    debug: constTools.stringToBool(document.getElementById('controlServerSettingsDebugMode').value)
+    debug: exTools.stringToBool(document.getElementById('controlServerSettingsDebugMode').value)
   }
 
   // Check that fields are properly filled out
@@ -925,7 +925,7 @@ function updateSystemConfiguration () {
     document.getElementById('controlServerSettingsPortWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/system/system/updateConfiguration',
     params: {
@@ -942,7 +942,7 @@ function updateSystemConfiguration () {
 function loadVersion () {
   // Load version.txt and update the GUI with the current version
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/version.txt',
     rawResponse: true
@@ -955,10 +955,10 @@ function loadVersion () {
 // Bind event listeners
 
 // Login
-document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
-document.getElementById('logoutButton').addEventListener('click', constUsers.logoutUser)
-document.getElementById('changePasswordButton').addEventListener('click', constUsers.showPasswordChangeModal)
-document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', constUsers.submitUserPasswordChange)
+document.getElementById('loginSubmitButton').addEventListener('click', exUsers.loginFromDropdown)
+document.getElementById('logoutButton').addEventListener('click', exUsers.logoutUser)
+document.getElementById('changePasswordButton').addEventListener('click', exUsers.showPasswordChangeModal)
+document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', exUsers.submitUserPasswordChange)
 
 // Components tab
 // =========================
@@ -973,9 +973,9 @@ $('#componentsTabSettingsShowStatic').change(function () {
   window.history.replaceState('', '', '?' + urlParams)
 
   // Rebuild the interface with the new option
-  constExhibit.rebuildComponentInterface()
+  exExhibit.rebuildComponentInterface()
 })
-document.getElementById('componentStatusModeRealtimeCheckbox').addEventListener('change', constExhibit.rebuildComponentInterface)
+document.getElementById('componentStatusModeRealtimeCheckbox').addEventListener('change', exExhibit.rebuildComponentInterface)
 Array.from(document.getElementsByClassName('view-mode-radio')).forEach((el) => {
   el.addEventListener('change', () => {
     // Modify the search params to soft-save the change
@@ -991,26 +991,26 @@ Array.from(document.getElementsByClassName('view-mode-radio')).forEach((el) => {
     window.history.replaceState('', '', '?' + urlParams)
 
     // Rebuild the interface with the new option
-    constExhibit.rebuildComponentInterface()
+    exExhibit.rebuildComponentInterface()
   })
 })
 
-document.getElementById('showAddStaticComponentModalButton').addEventListener('click', constExhibit.showAddStaticComponentsModal)
-document.getElementById('addStaticComponentModalAddButton').addEventListener('click', constExhibit.submitStaticComponentAdditionFromModal)
-document.getElementById('showAddProjetorModalButton').addEventListener('click', constProjector.showAddProjectorModal)
-document.getElementById('addProjectorModalAddButton').addEventListener('click', constProjector.submitProjectorAdditionFromModal)
-document.getElementById('showAddWakeOnLANModalButton').addEventListener('click', constExhibit.showAddWakeOnLANModal)
-document.getElementById('addWakeOnLANModalAddButton').addEventListener('click', constExhibit.submitWakeOnLANAdditionFromModal)
+document.getElementById('showAddStaticComponentModalButton').addEventListener('click', exExhibit.showAddStaticComponentsModal)
+document.getElementById('addStaticComponentModalAddButton').addEventListener('click', exExhibit.submitStaticComponentAdditionFromModal)
+document.getElementById('showAddProjetorModalButton').addEventListener('click', exProjector.showAddProjectorModal)
+document.getElementById('addProjectorModalAddButton').addEventListener('click', exProjector.submitProjectorAdditionFromModal)
+document.getElementById('showAddWakeOnLANModalButton').addEventListener('click', exExhibit.showAddWakeOnLANModal)
+document.getElementById('addWakeOnLANModalAddButton').addEventListener('click', exExhibit.submitWakeOnLANAdditionFromModal)
 
 // Component info modal
-$('#componentInfoModalRemoveComponentButton').click(constExhibit.removeExhibitComponentFromModal)
+$('#componentInfoModalRemoveComponentButton').click(exExhibit.removeExhibitComponentFromModal)
 $('#componentInfoModalMaintenanceSaveButton').click(function () {
-  constMaintenance.submitComponentMaintenanceStatusChange('component')
+  exMaintenance.submitComponentMaintenanceStatusChange('component')
 })
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
-document.getElementById('componentInfoModalBasicSettingsSaveButton').addEventListener('click', constExhibit.submitComponentBasicSettingsChange)
+document.getElementById('componentInfoModalBasicSettingsSaveButton').addEventListener('click', exExhibit.submitComponentBasicSettingsChange)
 Array.from(document.querySelectorAll('.componentInfoBasicSetting')).forEach((el) => {
   el.addEventListener('change', () => {
     document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'block'
@@ -1019,21 +1019,21 @@ Array.from(document.querySelectorAll('.componentInfoBasicSetting')).forEach((el)
 $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
 })
-$('#componentInfoModalSettingsSaveButton').click(constExhibit.submitComponentSettingsChange)
+$('#componentInfoModalSettingsSaveButton').click(exExhibit.submitComponentSettingsChange)
 document.getElementById('definitionTabAppFilterSelect').addEventListener('change', (event) => {
-  constExhibit.filterDefinitionListByApp()
+  exExhibit.filterDefinitionListByApp()
 })
 document.getElementById('definitionTabThumbnailsCheckbox').addEventListener('change', (event) => {
-  constExhibit.onDefinitionTabThumbnailsCheckboxChange()
+  exExhibit.onDefinitionTabThumbnailsCheckboxChange()
 })
-document.getElementById('componentInfoModalDefinitionSaveButton').addEventListener('click', constExhibit.submitDefinitionSelectionFromModal)
+document.getElementById('componentInfoModalDefinitionSaveButton').addEventListener('click', exExhibit.submitDefinitionSelectionFromModal)
 
 document.getElementById('componentInfoModalViewScreenshot').addEventListener('click', () => {
-  const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
-  constTools.openMediaInNewTab([component.getHelperURL() + '/system/getScreenshot'], ['image'])
+  const component = exExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
+  exTools.openMediaInNewTab([component.getHelperURL() + '/system/getScreenshot'], ['image'])
 })
 document.getElementById('componentInfoModalEditDMXButton').addEventListener('click', (event) => {
-  const component = constExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
+  const component = exExhibit.getExhibitComponent($('#componentInfoModal').data('id'))
   window.open(component.getHelperURL() + '/dmx_control.html?standalone=true', '_blank').focus()
 })
 Array.from(document.querySelectorAll('.componentInfoProjectorSetting')).forEach((el) => {
@@ -1041,52 +1041,52 @@ Array.from(document.querySelectorAll('.componentInfoProjectorSetting')).forEach(
     document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'block'
   })
 })
-document.getElementById('componentInfoModalProjectorSettingsSaveButton').addEventListener('click', constExhibit.updateProjectorFromInfoModal)
+document.getElementById('componentInfoModalProjectorSettingsSaveButton').addEventListener('click', exExhibit.updateProjectorFromInfoModal)
 Array.from(document.querySelectorAll('.componentInfoStaticSetting')).forEach((el) => {
   el.addEventListener('change', () => {
     document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'block'
   })
 })
-document.getElementById('componentInfoModalStaticSettingsSaveButton').addEventListener('click', constExhibit.updateStaticComponentFromInfoModal)
+document.getElementById('componentInfoModalStaticSettingsSaveButton').addEventListener('click', exExhibit.updateStaticComponentFromInfoModal)
 Array.from(document.querySelectorAll('.componentInfoWakeOnLANSetting')).forEach((el) => {
   el.addEventListener('change', () => {
     document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').style.display = 'block'
   })
 })
-document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').addEventListener('click', constExhibit.updateWakeOnLANComponentFromInfoModal)
+document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').addEventListener('click', exExhibit.updateWakeOnLANComponentFromInfoModal)
 // Schedule tab
 // =========================
-document.getElementById('manageFutureDateButton').addEventListener('click', constSchedule.showManageFutureDateModal)
-document.getElementById('manageFutureDateCalendarInput').addEventListener('change', constSchedule.populateFutureDateCalendarInput)
+document.getElementById('manageFutureDateButton').addEventListener('click', exSchedule.showManageFutureDateModal)
+document.getElementById('manageFutureDateCalendarInput').addEventListener('change', exSchedule.populateFutureDateCalendarInput)
 document.getElementById('manageFutureDateAddActionButton').addEventListener('click', (event) => {
   const scheduleName = document.getElementById('manageFutureDateCalendarInput').value
-  constSchedule.scheduleConfigureEditModal(scheduleName, 'date-specific')
+  exSchedule.scheduleConfigureEditModal(scheduleName, 'date-specific')
 })
-document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', constSchedule.convertFutureScheduleFromModal)
+document.getElementById('manageFutureDateCreateScheduleButton').addEventListener('click', exSchedule.convertFutureScheduleFromModal)
 document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
   event.target.focus()
 })
 // Create schedule from file modal
-document.getElementById('showScheduleFromFileModalButton').addEventListener('click', constSchedule.showScheduleFromFileModal)
-document.getElementById('scheduleFromFileModalFileInput').addEventListener('change', constSchedule.onScheduleFromFileModalFileInputChange)
-document.getElementById('scheduleFromFileModalUploadButton').addEventListener('click', constSchedule.previewScheduleFromFile)
-document.getElementById('scheduleFromFileKindSelect').addEventListener('change', constSchedule.onCreateScheduleFromFileTypeSelect)
-document.getElementById('scheduleFromFileDateSelect').addEventListener('change', constSchedule.onscheduleFromFileDateSelectChange)
-document.getElementById('scheduleFromFileModalSubmitButton').addEventListener('click', constSchedule.createScheduleFromFile)
+document.getElementById('showScheduleFromFileModalButton').addEventListener('click', exSchedule.showScheduleFromFileModal)
+document.getElementById('scheduleFromFileModalFileInput').addEventListener('change', exSchedule.onScheduleFromFileModalFileInputChange)
+document.getElementById('scheduleFromFileModalUploadButton').addEventListener('click', exSchedule.previewScheduleFromFile)
+document.getElementById('scheduleFromFileKindSelect').addEventListener('change', exSchedule.onCreateScheduleFromFileTypeSelect)
+document.getElementById('scheduleFromFileDateSelect').addEventListener('change', exSchedule.onscheduleFromFileDateSelectChange)
+document.getElementById('scheduleFromFileModalSubmitButton').addEventListener('click', exSchedule.createScheduleFromFile)
 
-$('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
-$('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
-$('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
-$('#scheduleTargetSelector').change(constSchedule.setScheduleActionValueSelector)
+$('#scheduleEditDeleteActionButton').click(exSchedule.scheduleDeleteActionFromModal)
+$('#scheduleEditSubmitButton').click(exSchedule.sendScheduleUpdateFromModal)
+$('#scheduleActionSelector').change(exSchedule.setScheduleActionTargetSelector)
+$('#scheduleTargetSelector').change(exSchedule.setScheduleActionValueSelector)
 // This event detects when the delete button has been clicked inside a popover to delete a date-specific schedule.
 document.addEventListener('click', (event) => {
   if (event.target.classList.contains('schedule-delete') === false) return
   if ($('#manageFutureDateModal').hasClass('show')) {
     // This popover is from the future dates edit modal
-    constSchedule.deleteSchedule(document.getElementById('manageFutureDateCalendarInput').value)
+    exSchedule.deleteSchedule(document.getElementById('manageFutureDateCalendarInput').value)
   } else {
     // This popover is from the main schedule page
-    constSchedule.deleteSchedule(event.target.getAttribute('id').slice(7))
+    exSchedule.deleteSchedule(event.target.getAttribute('id').slice(7))
   }
 })
 
@@ -1118,37 +1118,37 @@ document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventLi
 document.addEventListener('click', (event) => {
   if (event.target.getAttribute('id') === 'issueMediaDeleteButtonConfirmation') {
     const file = document.getElementById('issueMediaViewFromModalSelect').value
-    constIssues.issueMediaDelete([file])
+    exIssues.issueMediaDelete([file])
   }
 })
 document.getElementById('issueModifyModalDeleteButton').addEventListener('click', () => {
   const id = document.getElementById('issueModifyModal').getAttribute('data-id')
-  constIssues.modifyIssue(id, 'delete')
+  exIssues.modifyIssue(id, 'delete')
   $('#issueModifyModal').modal('hide')
 })
 document.getElementById('issueModifyModalArchiveButton').addEventListener('click', () => {
   const id = document.getElementById('issueModifyModal').getAttribute('data-id')
-  constIssues.modifyIssue(id, 'archive')
+  exIssues.modifyIssue(id, 'archive')
   $('#issueModifyModal').modal('hide')
 })
 $('#issueMediaViewFromModal').click(function () {
   const file = document.getElementById('issueMediaViewFromModalSelect').value
-  constTools.openMediaInNewTab(['issues/media/' + file])
+  exTools.openMediaInNewTab(['issues/media/' + file])
 })
-$('#issueMediaUploadSubmitButton').click(constIssues.uploadIssueMediaFile)
-$('#issueMediaUpload').change(constIssues.onIssueMediaUploadChange)
-$('#issueEditSubmitButton').click(constIssues.submitIssueFromModal)
+$('#issueMediaUploadSubmitButton').click(exIssues.uploadIssueMediaFile)
+$('#issueMediaUpload').change(exIssues.onIssueMediaUploadChange)
+$('#issueEditSubmitButton').click(exIssues.submitIssueFromModal)
 $('#createIssueButton').click(function () {
-  constIssues.showIssueEditModal('new')
+  exIssues.showIssueEditModal('new')
 })
 document.getElementById('viewIssueArchiveButton').addEventListener('click', () => {
-  constIssues.showArchivedIssuesModal()
+  exIssues.showArchivedIssuesModal()
 })
 $('#issueListFilterPrioritySelect').change(function () {
-  constIssues.rebuildIssueList()
+  exIssues.rebuildIssueList()
 })
 $('#issueListFilterAssignedToSelect').change(function () {
-  constIssues.rebuildIssueList()
+  exIssues.rebuildIssueList()
 })
 $('#componentInfoModalMaintenanceNote').on('input', function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
@@ -1168,10 +1168,10 @@ $('#deleteTrackerTemplateFromModalButton').click(function () {
   deleteTrackerTemplate()
 })
 $('#getAvailableTrackerDataButton').click(function () {
-  constTracker.getAvailableTrackerData(populateTrackerDataSelect)
+  exTracker.getAvailableTrackerData(populateTrackerDataSelect)
 })
 $('#downloadTrackerDataButton').click(function () {
-  constTracker.downloadTrackerData($('#trackerDataSelect').val())
+  exTracker.downloadTrackerData($('#trackerDataSelect').val())
 })
 $('#showDeleteTrackerDataModalButton').click(showDeleteTrackerDataModal)
 $('#deleteTrackerDataFromModalButton').click(deleteTrackerDataFromModal)
@@ -1200,7 +1200,7 @@ $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFr
 // Users tab
 // =========================
 document.getElementById('showEditUserModalButton').addEventListener('click', () => {
-  constUsers.showEditUserModal()
+  exUsers.showEditUserModal()
 })
 Array.from(document.querySelectorAll('.editUserField')).forEach((el) => {
   el.addEventListener('change', () => {
@@ -1214,17 +1214,17 @@ document.getElementById('editUserPermissionGroups').addEventListener('change', (
     document.getElementById('editUserGroupsRow').style.display = 'none'
   }
 })
-document.getElementById('editUserSubmitButton').addEventListener('click', constUsers.submitChangeFromEditUserModal)
+document.getElementById('editUserSubmitButton').addEventListener('click', exUsers.submitChangeFromEditUserModal)
 
 // Settings tab
 // =========================
 
 // Groups
 document.getElementById('settingsAddGroupButton').addEventListener('click', () => {
-  constGroup.showEditGroupModal()
+  exGroup.showEditGroupModal()
 })
-document.getElementById('editGroupModalSubmitButton').addEventListener('click', constGroup.submitChangeFromGroupEditModal)
-document.getElementById('deleteGroupConfirmationButton').addEventListener('click', constGroup.deleteGroupFromModal)
+document.getElementById('editGroupModalSubmitButton').addEventListener('click', exGroup.submitChangeFromGroupEditModal)
+document.getElementById('deleteGroupConfirmationButton').addEventListener('click', exGroup.deleteGroupFromModal)
 
 // Server settings
 Array.from(document.querySelectorAll('.controlServerSettingsInputField')).forEach((el) => {
@@ -1243,7 +1243,7 @@ $(function () {
 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
-constConfig.serverAddress = location.origin
+exConfig.serverAddress = location.origin
 
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -1254,15 +1254,15 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 loadVersion()
 populateHelpTab()
-constUsers.populateUsers()
+exUsers.populateUsers()
 populateControlServerSettings()
 parseQueryString()
-constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+exTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
 
-constUsers.authenticateUser()
+exUsers.authenticateUser()
   .then(() => {
     // Subscribe to updates from the control server once we're logged in (or not)
-    const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
+    const eventSource = new EventSource(exConfig.serverAddress + '/system/updateStream')
     eventSource.addEventListener('update', function (event) {
       const update = JSON.parse(event.data)
       parseUpdate(update)

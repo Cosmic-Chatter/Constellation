@@ -1,4 +1,4 @@
-import * as constTools from './constellation_tools.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function showAddProjectorModal () {
   // Prepare the modal for adding static components and show it.
@@ -42,7 +42,7 @@ export function submitProjectorAdditionFromModal () {
     document.getElementById('addProjectorModalIPError').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/projector/create',
     params: {

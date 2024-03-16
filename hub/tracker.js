@@ -1,4 +1,4 @@
-import * as constTracker from './constellation_tracker.js'
+import * as exTracker from './exhibitera_tracker.js'
 
 class TimingObject {
   // This class is to keep track of elapsed time for the timer input type
@@ -548,7 +548,7 @@ function loadLayout (toLoad = '') {
       configurationName = toLoad
     }
   }
-  constTracker.loadLayoutDefinition(toLoad, buildLayout)
+  exTracker.loadLayoutDefinition(toLoad, buildLayout)
 }
 
 function parseQueryString () {
@@ -589,7 +589,7 @@ let sliderList = []
 let textList = []
 let timerList = []
 
-let serverIP = window.location.origin
-constTracker.getAvailableDefinitions(populateLayoutDropdown)
+const serverIP = window.location.origin
+exTracker.getAvailableDefinitions(populateLayoutDropdown)
 setTimeout(parseQueryString, 300)
 setInterval(checkConnection, 500)

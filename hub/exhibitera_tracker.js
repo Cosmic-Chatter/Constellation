@@ -1,11 +1,11 @@
-import * as constTools from './constellation_tools.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function getAvailableDefinitions (complete) {
   // Ask the control server to send a list of availble definition files
   // Pass a function and it will be called with the list as the
   // only parameter
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/tracker/flexible-tracker/getAvailableDefinitions'
   })
@@ -21,7 +21,7 @@ export function getAvailableTrackerData (complete) {
   // Pass a function and it will be called with the list as the
   // only parameter
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/tracker/flexible-tracker/getAvailableData'
   })
@@ -42,7 +42,7 @@ export function loadLayoutDefinition (name, complete) {
   // After the layout is retrieved, the function `complete` will be called
   // with the layout as the only parameter
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/getLayoutDefinition',
     params: { name }
@@ -66,7 +66,7 @@ export function downloadTrackerData (name) {
   // Ask the server to send the data for the currently selected tracker as a CSV
   // and initiate a download.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/tracker/flexible-tracker/getDataAsCSV',
     params: { name }

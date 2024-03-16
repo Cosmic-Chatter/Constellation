@@ -1,6 +1,6 @@
 /* global showdown */
 
-import constConfig from './config.js'
+import exConfig from './config.js'
 
 export function makeRequest (opt) {
   // Function to make a request to a server and return a Promise with the result
@@ -39,7 +39,7 @@ export function makeRequest (opt) {
 export function makeServerRequest (opt) {
   // Shortcut for making a server request and returning a Promise
 
-  opt.url = constConfig.serverAddress
+  opt.url = exConfig.serverAddress
   return makeRequest(opt)
 }
 
@@ -227,30 +227,30 @@ function showUpdateInfoModal (id, kind, details) {
 }
 
 export function rebuildNotificationList () {
-  // Function to use the constConfig.errorDict   to build a set of buttons indicating
+  // Function to use the exConfig.errorDict   to build a set of buttons indicating
   // that there is a notification from a component.
 
   // Clear the existing buttons
   $('#notificationDisplayRow').empty()
 
-  // Iterate through the items in the constConfig.errorDict. Each item should correspond
+  // Iterate through the items in the exConfig.errorDict. Each item should correspond
   // to one component with an notification.
-  Object.keys(constConfig.errorDict).forEach((item, i) => {
+  Object.keys(exConfig.errorDict).forEach((item, i) => {
     // Then, iterate through the notifications on that given item
-    Object.keys(constConfig.errorDict[item]).forEach((itemError, j) => {
+    Object.keys(exConfig.errorDict[item]).forEach((itemError, j) => {
       let notification
       if (itemError === 'software_update') {
         if (item === '__control_server') {
           const labelName = 'Control Server: Software update available'
           notification = createNotificationHTML(labelName, 'update')
-          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal('Control Server', 'control_server', constConfig.errorDict[item].software_update) }))
+          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal('Control Server', 'control_server', exConfig.errorDict[item].software_update) }))
         } else {
           const labelName = item + ': Software update available'
           notification = createNotificationHTML(labelName, 'update')
-          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal(item, 'apps', constConfig.errorDict[item].software_update) }))
+          notification.addEventListener('click', notification.addEventListener('click', () => { showUpdateInfoModal(item, 'apps', exConfig.errorDict[item].software_update) }))
         }
       } else {
-        const itemErrorMsg = (constConfig.errorDict[item])[itemError]
+        const itemErrorMsg = (exConfig.errorDict[item])[itemError]
         if (itemErrorMsg.length > 0) {
           const labelName = item + ': ' + itemError + ': ' + itemErrorMsg
           // Create and add the button
@@ -314,7 +314,7 @@ export function sortComponentsByGroup () {
 
   const result = {}
 
-  constConfig.exhibitComponents.forEach((component) => {
+  exConfig.exhibitComponents.forEach((component) => {
     if (component.group in result) {
       result[component.group].push(component)
     } else {
@@ -362,13 +362,13 @@ export function sortDefinitionsByApp (defDict, dropPreview = true) {
 export function checkPermission (action, neededLevel, group = null) {
   // Check that the user has permission for the requested action
 
-  if (Object.keys(constConfig.user).length === 0) return false
+  if (Object.keys(exConfig.user).length === 0) return false
 
   if (action !== 'components') {
     if (neededLevel === 'none') return true
-    if (action in constConfig.user.permissions === false) return false
+    if (action in exConfig.user.permissions === false) return false
 
-    const allowedLevel = constConfig.user.permissions[action]
+    const allowedLevel = exConfig.user.permissions[action]
     if (neededLevel === 'edit') {
       if (allowedLevel === 'edit') return true
       return false
@@ -380,14 +380,14 @@ export function checkPermission (action, neededLevel, group = null) {
   } else {
     // Components
     if (neededLevel === 'edit') {
-      if (constConfig.user.permissions.components.edit.includes('__all')) return true
-      if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
+      if (exConfig.user.permissions.components.edit.includes('__all')) return true
+      if ((group != null) && exConfig.user.permissions.components.edit.includes(group)) return true
       return false
     }
     if (neededLevel === 'view') {
-      if (constConfig.user.permissions.components.edit.includes('__all')) return true
-      if (constConfig.user.permissions.components.view.includes('__all')) return true
-      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || (constConfig.user.permissions.components.view.includes(group)))) return true
+      if (exConfig.user.permissions.components.edit.includes('__all')) return true
+      if (exConfig.user.permissions.components.view.includes('__all')) return true
+      if ((group != null) && (exConfig.user.permissions.components.edit.includes(group) || (exConfig.user.permissions.components.view.includes(group)))) return true
       return false
     }
   }
@@ -399,8 +399,8 @@ export function getUserDisplayName (uuid) {
 
   return new Promise(function (resolve, reject) {
   // First, check the cache
-    if (constConfig.usersDisplayNameCache[uuid] !== undefined) {
-      resolve(constConfig.usersDisplayNameCache[uuid])
+    if (exConfig.usersDisplayNameCache[uuid] !== undefined) {
+      resolve(exConfig.usersDisplayNameCache[uuid])
     }
     makeServerRequest({
       method: 'GET',
@@ -408,7 +408,7 @@ export function getUserDisplayName (uuid) {
     })
       .then((response) => {
         if (response.success === true) {
-          constConfig.usersDisplayNameCache[uuid] = response.display_name
+          exConfig.usersDisplayNameCache[uuid] = response.display_name
           resolve(response.display_name)
         } else {
           resolve(uuid)

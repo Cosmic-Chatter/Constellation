@@ -418,7 +418,7 @@ function configureUser (user) {
 
 exCommon.config.helperAddress = window.location.origin
 exCommon.config.updateParser = updateParser // Function to read app-specific updatess
-exCommon.config.constellationAppID = 'settings'
+exCommon.config.exhibiteraAppID = 'settings'
 
 // Activate tooltips
 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

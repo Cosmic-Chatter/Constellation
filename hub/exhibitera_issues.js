@@ -1,5 +1,5 @@
-import constConfig from './config.js'
-import * as constTools from './constellation_tools.js'
+import exConfig from './config.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function rebuildIssueList () {
   // Take an array of issue dictionaries and build the GUI representation.
@@ -11,7 +11,7 @@ export function rebuildIssueList () {
   const issueList = document.getElementById('issuesRow')
   issueList.innerHTML = ''
 
-  constConfig.issueList.forEach((issue, i) => {
+  exConfig.issueList.forEach((issue, i) => {
     // Check against the filters
     if (filterPriority !== 'all' && filterPriority !== issue.priority && filterPriority != null) {
       return
@@ -36,11 +36,11 @@ export async function rebuildIssueFilters () {
   // First, aggregate the various options needed
   const assignableUserList = []
   const optionList = []
-  for (const issue of constConfig.issueList) {
+  for (const issue of exConfig.issueList) {
     for (const uuid of issue.assignedTo) {
       if (assignableUserList.includes(uuid) === false) {
         assignableUserList.push(uuid)
-        const displayName = await constTools.getUserDisplayName(uuid)
+        const displayName = await exTools.getUserDisplayName(uuid)
         optionList.push(new Option(displayName, uuid))
       }
     }
@@ -58,7 +58,7 @@ export async function rebuildIssueFilters () {
 export function createIssueHTML (issue, full = true, archived = false) {
   // Create an HTML representation of an issue
 
-  const allowEdit = constTools.checkPermission('maintenance', 'edit')
+  const allowEdit = exTools.checkPermission('maintenance', 'edit')
 
   const col = document.createElement('div')
   col.setAttribute('class', 'col mt-2')
@@ -99,7 +99,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
   issue.assignedTo.forEach((uuid, i) => {
     const tag = document.createElement('span')
     tag.setAttribute('class', 'badge bg-success me-1')
-    constTools.getUserDisplayName(uuid)
+    exTools.getUserDisplayName(uuid)
       .then((displayName) => {
         tag.innerHTML = displayName
       })
@@ -201,7 +201,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
       mediaFiles.push('issues/media/' + file)
     })
     mediaBut.addEventListener('click', function () {
-      constTools.openMediaInNewTab(mediaFiles)
+      exTools.openMediaInNewTab(mediaFiles)
     }, false)
     mediaCol.appendChild(mediaBut)
   }
@@ -218,7 +218,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
       archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)}`
       row2.appendChild(archivedDateCol)
 
-      constTools.getUserDisplayName(issue.archivedUsername)
+      exTools.getUserDisplayName(issue.archivedUsername)
         .then((displayName) => {
           archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
         })
@@ -234,7 +234,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
     row2.appendChild(createdDateCol)
 
     if ('createdUsername' in issue && issue.createdUsername !== '') {
-      constTools.getUserDisplayName(issue.createdUsername)
+      exTools.getUserDisplayName(issue.createdUsername)
         .then((displayName) => {
           createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
         })
@@ -251,7 +251,7 @@ export function createIssueHTML (issue, full = true, archived = false) {
       row2.appendChild(updatedDateCol)
 
       if ('lastUpdateUsername' in issue && issue.lastUpdateUsername !== '') {
-        constTools.getUserDisplayName(issue.lastUpdateUsername)
+        exTools.getUserDisplayName(issue.lastUpdateUsername)
           .then((displayName) => {
             updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
           })
@@ -330,7 +330,7 @@ function showModifyIssueModal (id, mode) {
 export function showArchivedIssuesModal () {
   // Retrieve a list of archived issues, configure the modal, and display it.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/issue/archive/list/__all'
   })
@@ -348,7 +348,7 @@ export function modifyIssue (id, mode) {
   // Ask Control Server to remove or archive the specified issue
   // mode is one of 'archive' or 'delete'
 
-  return constTools.makeServerRequest({
+  return exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/issue/' + id + '/' + mode
   })
@@ -356,7 +356,7 @@ export function modifyIssue (id, mode) {
       if ('success' in result && result.success === true) {
         getIssueList()
           .then((issueList) => {
-            constConfig.issueList = issueList
+            exConfig.issueList = issueList
             rebuildIssueList()
           })
       }
@@ -366,7 +366,7 @@ export function modifyIssue (id, mode) {
 function getIssueList (id = '__all') {
   // Get a list of all the current issues and rebuild the issue GUI
 
-  return constTools.makeServerRequest({
+  return exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/issue/list/' + id
   }).then((response) => response.issueList)
@@ -375,7 +375,7 @@ function getIssueList (id = '__all') {
 function getIssue (id) {
   // Function to search the issueList for a given id
 
-  const result = constConfig.issueList.find(obj => {
+  const result = exConfig.issueList.find(obj => {
     return obj.id === id
   })
 
@@ -390,7 +390,7 @@ export function showIssueEditModal (issueType, target) {
   const issueRelatedComponentsSelector = document.getElementById('issueRelatedComponentsSelector')
   issueRelatedComponentsSelector.innerHTML = ''
 
-  const components = constTools.sortComponentsByGroup()
+  const components = exTools.sortComponentsByGroup()
 
   Object.keys(components).sort().forEach((group) => {
     const header = new Option(group)
@@ -409,9 +409,9 @@ export function showIssueEditModal (issueType, target) {
     })
   })
 
-  for (let i = 0; i < constConfig.exhibitComponents.length; i++) {
+  for (let i = 0; i < exConfig.exhibitComponents.length; i++) {
     // Check if component already exists as an option. If not, add it
-    if ($(`#issueRelatedComponentsSelector option[value='${constConfig.exhibitComponents[i].id}']`).length === 0) {
+    if ($(`#issueRelatedComponentsSelector option[value='${exConfig.exhibitComponents[i].id}']`).length === 0) {
       $('#issueRelatedComponentsSelector').append()
     }
   }
@@ -419,7 +419,7 @@ export function showIssueEditModal (issueType, target) {
   // Make sure we have all the assignable staff listed as options for
   // issueAssignedToSelector
   document.getElementById('issueAssignedToSelector').innerHTML = ''
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/users/list',
     params: {
@@ -510,7 +510,7 @@ export function uploadIssueMediaFile () {
     }
 
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', constConfig.serverAddress + '/issue/uploadMedia', true)
+    xhr.open('POST', exConfig.serverAddress + '/issue/uploadMedia', true)
     xhr.onreadystatechange = function () {
       if (this.readyState !== 4) return
       if (this.status === 200) {
@@ -558,7 +558,7 @@ function rebuildIssueMediaUploadedList (id = '') {
   if (id === '') {
     _rebuildIssueMediaUploadedList([])
   } else {
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'GET',
       endpoint: '/issue/' + id + '/getMedia'
     })
@@ -598,7 +598,7 @@ function _rebuildIssueMediaUploadedList (filenames, append = false) {
     const imageOptions = []
     const videoOptions = []
     current.forEach((filename) => {
-      const fileType = constTools.guessMimetype(filename)
+      const fileType = exTools.guessMimetype(filename)
       if (fileType === 'image') {
         imageCounter += 1
         imageOptions.push(new Option('Image ' + imageCounter, filename))
@@ -638,7 +638,7 @@ export function issueMediaDelete (filenames) {
     requestDict.owner = $('#issueEditModal').data('target')
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/issue/deleteMedia',
     params: requestDict
@@ -685,7 +685,7 @@ export function submitIssueFromModal () {
     }
     $('#issueEditModal').modal('hide')
 
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint,
       params: { details: issueDict }

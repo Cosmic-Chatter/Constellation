@@ -1,9 +1,9 @@
-import constConfig from './config.js'
-import * as constDMX from './constellation_dmx.js'
-import * as constGroup from './constellation_group.js'
-import * as constMaint from './constellation_maintenance.js'
-import * as constTools from './constellation_tools.js'
-import * as constUsers from './constellation_users.js'
+import exConfig from './config.js'
+import * as constDMX from './exhibitera_dmx.js'
+import * as exGroup from './exhibitera_group.js'
+import * as constMaint from './exhibitera_maintenance.js'
+import * as exTools from './exhibitera_tools.js'
+import * as exUsers from './exhibitera_users.js'
 
 class BaseComponent {
   // A basic Constellation component.
@@ -14,8 +14,8 @@ class BaseComponent {
     this.groups = groups
     this.type = 'base_component'
 
-    this.status = constConfig.STATUS.OFFLINE
-    this.maintenanceStatus = constConfig.MAINTANANCE_STATUS['Off floor, not working']
+    this.status = exConfig.STATUS.OFFLINE
+    this.maintenanceStatus = exConfig.MAINTANANCE_STATUS['Off floor, not working']
     this.permissions = {}
 
     this.ip_address = null
@@ -28,15 +28,15 @@ class BaseComponent {
     // and add it to the row of the parent group
 
     // First, make sure we have permission to view this group.
-    if (constUsers.checkUserPermission('components', 'view', group) === false) return
+    if (exUsers.checkUserPermission('components', 'view', group) === false) return
 
     let permission = 'view'
-    if (constUsers.checkUserPermission('components', 'edit', group)) {
+    if (exUsers.checkUserPermission('components', 'edit', group)) {
       permission = 'edit'
     }
 
     // If the element is static and the 'Show STATIC' checkbox is not ticked, bail out
-    if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
+    if (this.status === exConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
       return
     }
 
@@ -100,7 +100,7 @@ class BaseComponent {
     } else if (this.maintenanceStatus != null) {
       return this.maintenanceStatus
     }
-    return constConfig.MAINTANANCE_STATUS['Off floor, not working']
+    return exConfig.MAINTANANCE_STATUS['Off floor, not working']
   }
 
   populateActionMenu (dropdownMenu, groupUUID, permission = 'view') {
@@ -198,7 +198,7 @@ class BaseComponent {
 
     // Remove the component from the exhibitComponents list
     const thisInstance = this
-    constConfig.exhibitComponents = $.grep(constConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
+    exConfig.exhibitComponents = $.grep(exConfig.exhibitComponents, function (el, idx) { return el.id === thisInstance.id }, true)
 
     // Cancel the pollingFunction
     clearInterval(this.pollingFunction)
@@ -224,7 +224,7 @@ class BaseComponent {
         if (componentGroup == null) {
           // If this is the first component in the group, create the group first.
           componentGroup = new ExhibitComponentGroup(group)
-          constConfig.componentGroups.push(componentGroup)
+          exConfig.componentGroups.push(componentGroup)
         }
         componentGroup.addComponent(this)
       }
@@ -244,12 +244,12 @@ class BaseComponent {
 
     const cleanId = this.id.replaceAll(' ', '_')
 
-    this.status = constConfig.STATUS[status]
-    this.maintenanceStatus = constConfig.MAINTANANCE_STATUS[maintenanceStatus]
+    this.status = exConfig.STATUS[status]
+    this.maintenanceStatus = exConfig.MAINTANANCE_STATUS[maintenanceStatus]
 
     for (const group of this.groups) {
       // Make sure this is a group we can actually see
-      if (constUsers.checkUserPermission('components', 'view', group) === false) return
+      if (exUsers.checkUserPermission('components', 'view', group) === false) return
 
       // Update the GUI based on which view mode we're in
       const statusFieldEl = document.getElementById(cleanId + '_' + group + '_StatusField')
@@ -280,7 +280,7 @@ class BaseComponent {
     if ('uuid' in update) {
       this.uuid = update.uuid
     }
-    if ('groups' in update && constTools.arraysEqual(this.groups, update.groups) === false) {
+    if ('groups' in update && exTools.arraysEqual(this.groups, update.groups) === false) {
       this.setGroups(update.groups)
     }
     if ('ip_address' in update) {
@@ -303,12 +303,12 @@ class BaseComponent {
     if ('error' in update) {
       try {
         const newError = JSON.parse(update.error)
-        constConfig.errorDict[this.id] = newError
+        exConfig.errorDict[this.id] = newError
       } catch (e) {
         console.log("Error parsing 'error' field from ping. It should be a stringified JSON expression. Received:", update.error)
         console.log(e)
       }
-      constTools.rebuildNotificationList()
+      exTools.rebuildNotificationList()
     }
   }
 }
@@ -322,7 +322,7 @@ class ExhibitComponent extends BaseComponent {
     this.type = 'exhibit_component'
     this.helperAddress = null
     this.state = {}
-    this.constellationAppId = ''
+    this.exhibiteraAppId = ''
     this.platformDetails = {}
   }
 
@@ -333,12 +333,12 @@ class ExhibitComponent extends BaseComponent {
   }
 
   remove (deleteConfigurtion = true) {
-    if (this.status === constConfig.STATUS.STATIC) {
+    if (this.status === exConfig.STATUS.STATIC) {
       // Remove the component from the static system configuration
 
       if (deleteConfigurtion === true) {
         // First, get the current static configuration
-        constTools.makeServerRequest({
+        exTools.makeServerRequest({
           method: 'GET',
           endpoint: '/system/static/getConfiguration'
         })
@@ -351,7 +351,7 @@ class ExhibitComponent extends BaseComponent {
             })
 
             // Finally, send the configuration back for writing
-            constTools.makeServerRequest({
+            exTools.makeServerRequest({
               method: 'POST',
               endpoint: '/system/static/updateConfiguration',
               params: {
@@ -374,10 +374,14 @@ class ExhibitComponent extends BaseComponent {
       this.autoplay_audio = update.autoplay_audio
     }
     if ('constellation_app_id' in update) {
-      this.constellationAppId = update.constellation_app_id
+      // Deprecated in Exhibitera 5
+      this.exhibiteraAppId = update.constellation_app_id
     }
     if ('definition' in update) {
       this.definition = update.definition
+    }
+    if ('exhibitera_app_id' in update) {
+      this.exhibiteraAppId = update.exhibitera_app_id
     }
     if ('helperAddress' in update) {
       this.helperAddress = update.helperAddress
@@ -396,7 +400,7 @@ export class WakeOnLANComponent extends BaseComponent {
 
     this.type = 'wol_component'
     this.mac_address = macAddress
-    this.constellationAppId = 'wol_only'
+    this.exhibiteraAppId = 'wol_only'
   }
 }
 
@@ -407,7 +411,7 @@ class Projector extends BaseComponent {
     super(uuid, id, groups)
 
     this.type = 'projector'
-    this.constellationAppId = 'projector'
+    this.exhibiteraAppId = 'projector'
     this.password = ''
     this.protocol = 'pjlink'
     this.state = {}
@@ -437,8 +441,8 @@ class Projector extends BaseComponent {
             errorList[item] = (state.error_status)[item]
           }
         })
-        constConfig.errorDict[this.id] = errorList
-        constTools.rebuildNotificationList()
+        exConfig.errorDict[this.id] = errorList
+        exTools.rebuildNotificationList()
       }
     }
     if ('password' in update) this.password = update.password
@@ -466,9 +470,9 @@ class ExhibitComponentGroup {
 
     this.components.sort(
       function (a, b) {
-        if (a.status === constConfig.STATUS.STATIC && b.status !== constConfig.STATUS.STATIC) {
+        if (a.status === exConfig.STATUS.STATIC && b.status !== exConfig.STATUS.STATIC) {
           return 1
-        } else if (b.status === constConfig.STATUS.STATIC && a.status !== constConfig.STATUS.STATIC) {
+        } else if (b.status === exConfig.STATUS.STATIC && a.status !== exConfig.STATUS.STATIC) {
           return -1
         }
         if (a.status.value > b.status.value) {
@@ -502,10 +506,10 @@ class ExhibitComponentGroup {
     // and add it to the componentGroupsRow
 
     // First, make sure we have permission to view this group.
-    if (constUsers.checkUserPermission('components', 'view', this.group) === false) return
+    if (exUsers.checkUserPermission('components', 'view', this.group) === false) return
 
     let permission = 'view'
-    if (constUsers.checkUserPermission('components', 'edit', this.group) === true) {
+    if (exUsers.checkUserPermission('components', 'edit', this.group) === true) {
       permission = 'edit'
     }
 
@@ -525,7 +529,7 @@ class ExhibitComponentGroup {
     const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
     let numToDisplay = 0
     this.components.forEach((component) => {
-      if (showStatic || component.status !== constConfig.STATUS.STATIC) {
+      if (showStatic || component.status !== exConfig.STATUS.STATIC) {
         numToDisplay += 1
       }
     })
@@ -553,7 +557,7 @@ class ExhibitComponentGroup {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn btn-secondary w-100 btn-lg'
     mainButton.setAttribute('type', 'button')
-    mainButton.innerHTML = constGroup.getGroupName(this.group)
+    mainButton.innerHTML = exGroup.getGroupName(this.group)
     btnGroup.appendChild(mainButton)
 
     if (permission === 'edit') {
@@ -631,7 +635,7 @@ export function createComponentFromUpdate (update) {
 
     if (matchingGroup == null) {
       matchingGroup = new ExhibitComponentGroup(group)
-      constConfig.componentGroups.push(matchingGroup)
+      exConfig.componentGroups.push(matchingGroup)
     }
   }
 
@@ -646,7 +650,7 @@ export function createComponentFromUpdate (update) {
   }
 
   newComponent.buildHTML()
-  constConfig.exhibitComponents.push(newComponent)
+  exConfig.exhibitComponents.push(newComponent)
 
   // Add the component to the right groups
   for (const group of update.groups) {
@@ -685,7 +689,7 @@ export function sendGroupCommand (group, cmd) {
 export function getExhibitComponentGroup (group) {
   // Function to search the componentGroups list for a given group id
 
-  const result = constConfig.componentGroups.find(obj => {
+  const result = exConfig.componentGroups.find(obj => {
     return obj.group === group
   })
   return result
@@ -740,11 +744,11 @@ function showExhibitComponentInfo (id, groupUUID) {
 
   // Check permission
   let permission
-  if (constUsers.checkUserPermission('components', 'edit', groupUUID) === true) {
+  if (exUsers.checkUserPermission('components', 'edit', groupUUID) === true) {
     permission = 'edit'
     document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'block'
     document.getElementById('componentInfoModalSettingsTabButton').style.display = 'block'
-  } else if (constUsers.checkUserPermission('components', 'view', groupUUID) === true) {
+  } else if (exUsers.checkUserPermission('components', 'view', groupUUID) === true) {
     permission = 'view'
     document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'none'
     document.getElementById('componentInfoModalSettingsTabButton').style.display = 'none'
@@ -754,10 +758,10 @@ function showExhibitComponentInfo (id, groupUUID) {
   }
 
   let maintenancePermission
-  if (constUsers.checkUserPermission('maintenance', 'edit', groupUUID) === true) {
+  if (exUsers.checkUserPermission('maintenance', 'edit', groupUUID) === true) {
     maintenancePermission = 'edit'
     document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
-  } else if (constUsers.checkUserPermission('maintenance', 'view', groupUUID) === true) {
+  } else if (exUsers.checkUserPermission('maintenance', 'view', groupUUID) === true) {
     maintenancePermission = 'view'
     document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
   } else {
@@ -773,7 +777,7 @@ function showExhibitComponentInfo (id, groupUUID) {
   document.getElementById('componentInfoModalTitle').innerHTML = id
 
   // Set up the upper-right dropdown menu with helpful details
-  document.getElementById('constellationComponentIdButton').innerHTML = convertAppIDtoDisplayName(obj.constellationAppId)
+  document.getElementById('exhibiteraComponentIdButton').innerHTML = convertAppIDtoDisplayName(obj.exhibiteraAppId)
 
   if (obj.ip_address != null && obj.ip_address !== '') {
     document.getElementById('componentInfoModalIPAddress').innerHTML = obj.ip_address
@@ -782,10 +786,10 @@ function showExhibitComponentInfo (id, groupUUID) {
     document.getElementById('componentInfoModalIPAddressGroup').style.display = 'none'
   }
   if (obj.ip_address != null &&
-      constTools.extractIPAddress(obj.helperAddress) != null &&
-      obj.ip_address !== constTools.extractIPAddress(obj.helperAddress)
+      exTools.extractIPAddress(obj.helperAddress) != null &&
+      obj.ip_address !== exTools.extractIPAddress(obj.helperAddress)
   ) {
-    document.getElementById('componentInfoModalHelperIPAddress').innerHTML = constTools.extractIPAddress(obj.helperAddress)
+    document.getElementById('componentInfoModalHelperIPAddress').innerHTML = exTools.extractIPAddress(obj.helperAddress)
     document.getElementById('componentInfoModalHelperIPAddressGroup').style.display = 'block'
     // Cannot take screenshots of components with a remote helper
     document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
@@ -826,7 +830,7 @@ function showExhibitComponentInfo (id, groupUUID) {
     document.getElementById('componentInfoModalLatencyGroup').style.display = 'none'
   }
   if (obj.lastContactDateTime != null) {
-    document.getElementById('componentInfoModalLastContact').innerHTML = constTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime))
+    document.getElementById('componentInfoModalLastContact').innerHTML = exTools.formatDateTimeDifference(new Date(), new Date(obj.lastContactDateTime))
     document.getElementById('componentInfoModalLastContactGroup').style.display = 'block'
   } else {
     document.getElementById('componentInfoModalLastContactGroup').style.display = 'none'
@@ -871,7 +875,7 @@ function showExhibitComponentInfo (id, groupUUID) {
 
   // Based on the component type, configure the various tabs and panes
   if (obj.type === 'exhibit_component') {
-    if (obj.status !== constConfig.STATUS.STATIC) {
+    if (obj.status !== exConfig.STATUS.STATIC) {
       // This is an active component
       configureComponentInfoModalForExhibitComponent(obj, permission)
     } else {
@@ -904,7 +908,7 @@ function configureComponentInfoModalForExhibitComponent (obj, permission) {
   const defaultOption = new Option('Default', 'Default')
   if (obj.groups.includes('Default')) defaultOption.selected = true
   groupSelect.appendChild(defaultOption)
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     const option = new Option(group.name, group.uuid)
     if (obj.groups.includes(group.uuid)) {
       option.selected = true
@@ -912,7 +916,7 @@ function configureComponentInfoModalForExhibitComponent (obj, permission) {
     groupSelect.appendChild(option)
   }
 
-  $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
+  $('#componentInfoModalSettingsAppName').val(obj.exhibiteraAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
   $('#componentInfoModalSettingsAutoplayAudio').val(String(obj.permissions.audio))
   $('#componentInfoModalSettingsAllowRefresh').val(String(obj.permissions.refresh))
@@ -938,7 +942,7 @@ function configureComponentInfoModalForExhibitComponent (obj, permission) {
   configureNewDefinitionOptions(obj)
 
   // Fetch any DMX lighting scenes and show the tab if necessary
-  constTools.makeRequest({
+  exTools.makeRequest({
     method: 'GET',
     url: obj.getHelperURL(),
     endpoint: '/DMX/getScenes'
@@ -1072,7 +1076,7 @@ function configureComponentInfoModalForProjector (obj) {
   const defaultOption = new Option('Default', 'Default')
   if (obj.groups.includes('Default')) defaultOption.selected = true
   groupSelect.appendChild(defaultOption)
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     const option = new Option(group.name, group.uuid)
     if (obj.groups.includes(group.uuid)) {
       option.selected = true
@@ -1123,7 +1127,7 @@ function configureComponentInfoModalForStatic (obj, componentPermission, mainten
   const defaultOption = new Option('Default', 'Default')
   if (obj.groups.includes('Default')) defaultOption.selected = true
   groupSelect.appendChild(defaultOption)
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     const option = new Option(group.name, group.uuid)
     if (obj.groups.includes(group.uuid)) {
       option.selected = true
@@ -1148,7 +1152,7 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
   const defaultOption = new Option('Default', 'Default')
   if (obj.groups.includes('Default')) defaultOption.selected = true
   groupSelect.appendChild(defaultOption)
-  for (const group of constConfig.groups) {
+  for (const group of exConfig.groups) {
     const option = new Option(group.name, group.uuid)
     if (obj.groups.includes(group.uuid)) {
       option.selected = true
@@ -1212,7 +1216,7 @@ export function updateProjectorFromInfoModal () {
     document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/projector/' + uuid + '/edit',
     params: update
@@ -1256,7 +1260,7 @@ export function updateStaticComponentFromInfoModal () {
     document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/static/' + uuid + '/edit',
     params: update
@@ -1311,7 +1315,7 @@ export function updateWakeOnLANComponentFromInfoModal () {
     document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/WOL/' + uuid + '/edit',
     params: update
@@ -1349,7 +1353,7 @@ export function convertAppIDtoDisplayName (appName) {
 
   let displayName = 'Unknown Component'
   if (appName !== '') {
-    const constellationAppIdDisplayNames = {
+    const exhibiteraAppIdDisplayNames = {
       dmx_control: 'DMX Control',
       heartbeat: 'Heartbeat',
       infostation: 'InfoStation',
@@ -1367,8 +1371,8 @@ export function convertAppIDtoDisplayName (appName) {
       word_cloud_input: 'Word Cloud Input',
       word_cloud_viewer: 'Word Cloud Viewer'
     }
-    if (appName in constellationAppIdDisplayNames) {
-      displayName = constellationAppIdDisplayNames[appName]
+    if (appName in exhibiteraAppIdDisplayNames) {
+      displayName = exhibiteraAppIdDisplayNames[appName]
     }
   }
 
@@ -1437,7 +1441,7 @@ export function removeExhibitComponentFromModal () {
 
   const id = $('#componentInfoModalTitle').html()
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/exhibit/removeComponent',
     params: {
@@ -1629,12 +1633,12 @@ export function submitDefinitionSelectionFromModal () {
   const definition = $('.definition-selected').data('definition')
   const id = $('#componentInfoModal').data('id')
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/' + id + '/setDefinition',
     params: { uuid: definition.uuid }
   })
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/' + id + '/setApp',
     params: { app_name: definition.app }
@@ -1658,7 +1662,7 @@ function updateComponentInfoModalFromHelper (id, permission) {
   }
 
   setComponentInfoStatusMessage('Connecting to component...')
-  constTools.makeRequest({
+  exTools.makeRequest({
     method: 'GET',
     url,
     endpoint: '/getAvailableContent',
@@ -1792,7 +1796,7 @@ export function submitComponentBasicSettingsChange () {
     document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/' + uuid + '/edit',
     params: update
@@ -1815,14 +1819,14 @@ export function submitComponentSettingsChange () {
   if (settingsAvailable === true) {
     const settings = {
       permissions: {
-        audio: constTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
-        refresh: constTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
-        restart: constTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
-        shutdown: constTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
-        sleep: constTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
+        audio: exTools.stringToBool($('#componentInfoModalSettingsAutoplayAudio').val()),
+        refresh: exTools.stringToBool($('#componentInfoModalSettingsAllowRefresh').val()),
+        restart: exTools.stringToBool($('#componentInfoModalSettingsAllowRestart').val()),
+        shutdown: exTools.stringToBool($('#componentInfoModalSettingsAllowShutdown').val()),
+        sleep: exTools.stringToBool($('#componentInfoModalSettingsAllowSleep').val())
       }
     }
-    constTools.makeRequest({
+    exTools.makeRequest({
       method: 'POST',
       url: obj.getHelperURL(),
       endpoint: '/setDefaults',
@@ -1841,21 +1845,21 @@ export function submitComponentSettingsChange () {
 export function getExhibitComponent (id) {
   // Function to search the exhibitComponents list for a given id
 
-  const result = constConfig.exhibitComponents.find(obj => {
+  const result = exConfig.exhibitComponents.find(obj => {
     return obj.id === id
   })
   return result
 }
 
 export function checkForRemovedComponents (update) {
-  // Check constConfig.exhibitComponents and remove any components not in `update`
+  // Check exConfig.exhibitComponents and remove any components not in `update`
 
   const updateIDs = []
   update.forEach((component) => {
     updateIDs.push(component.id)
   })
 
-  constConfig.exhibitComponents.forEach((component) => {
+  exConfig.exhibitComponents.forEach((component) => {
     if (updateIDs.includes(component.id) === false) {
       component.remove(false) // Remove from interface, but not the config
     }
@@ -1867,9 +1871,9 @@ export function rebuildComponentInterface () {
 
   document.getElementById('componentGroupsRow').innerHTML = ''
   let i
-  for (i = 0; i < constConfig.componentGroups.length; i++) {
-    constConfig.componentGroups[i].sortComponentList()
-    constConfig.componentGroups[i].buildHTML()
+  for (i = 0; i < exConfig.componentGroups.length; i++) {
+    exConfig.componentGroups[i].sortComponentList()
+    exConfig.componentGroups[i].buildHTML()
   }
 }
 
@@ -1880,7 +1884,7 @@ export function queueCommand (id, cmd) {
   const obj = getExhibitComponent(id)
   if (['shutdown', 'restart'].includes(cmd) && obj.type === 'exhibit_component') {
     // We send these commands directly to the helper
-    constTools.makeRequest({
+    exTools.makeRequest({
       method: 'GET',
       url: obj.getHelperURL(),
       endpoint: '/' + cmd
@@ -1903,7 +1907,7 @@ export function queueCommand (id, cmd) {
       command: cmd
     }
 
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: cmdPath,
       params: requestDict
@@ -1944,7 +1948,7 @@ export function submitStaticComponentAdditionFromModal () {
     document.getElementById('addStaticComponentModalGroupError').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/static/create',
     params: { id, group }
@@ -2007,7 +2011,7 @@ export function submitWakeOnLANAdditionFromModal () {
     document.getElementById('addWakeOnLANModalBadMACError').style.display = 'none'
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/component/WOL/create',
     params: {

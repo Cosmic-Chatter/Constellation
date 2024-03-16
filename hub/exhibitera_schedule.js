@@ -1,12 +1,12 @@
-import constConfig from './config.js'
-import * as constExhibit from './constellation_exhibit.js'
-import * as constTools from './constellation_tools.js'
+import exConfig from './config.js'
+import * as exExhibit from './exhibitera_exhibit.js'
+import * as exTools from './exhibitera_tools.js'
 
 export function deleteSchedule (name) {
   // Send a message to the control server asking to delete the schedule
   // file with the given name. The name should not include ".ini"
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/deleteSchedule',
     params: { name }
@@ -32,7 +32,7 @@ export function scheduleConvertToDateSpecific (date, dayName) {
     convert_from: dayName
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/convert',
     params: requestDict
@@ -50,10 +50,10 @@ export function populateSchedule (schedule) {
   document.getElementById('scheduleContainer').innerHTML = ''
   $('#dateSpecificScheduleAlert').hide()
 
-  const allowEdit = constTools.checkPermission('schedule', 'edit')
+  const allowEdit = exTools.checkPermission('schedule', 'edit')
 
   // Record the timestamp when this schedule was generated
-  constConfig.scheduleUpdateTime = schedule.updateTime
+  exConfig.scheduleUpdateTime = schedule.updateTime
   const sched = schedule.schedule
   const dateOptions = {
     weekday: 'long',
@@ -215,7 +215,7 @@ export function populateSchedule (schedule) {
   $('#Schedule_next_event').html(populateScheduleDescriptionHelper(schedule.nextEvent, true))
 }
 
-function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType, allowEdit = constTools.checkPermission('schedule', 'edit')) {
+function createScheduleEntryHTML (item, scheduleID, scheduleName, scheduleType, allowEdit = exTools.checkPermission('schedule', 'edit')) {
   // Take a dictionary of properties and build an HTML representation of the schedule entry.
 
   let description = null
@@ -411,7 +411,7 @@ function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
     const sep = new Option('Groups', null)
     sep.setAttribute('disabled', true)
     targetSelector.append(sep)
-    constConfig.componentGroups.forEach((item) => {
+    exConfig.componentGroups.forEach((item) => {
       targetSelector.append(new Option(item.group, '__group_' + item.group))
     })
   }
@@ -421,14 +421,14 @@ function setScheduleActionTargetSelectorPopulateOptions (optionsToAdd) {
     targetSelector.append(sep)
 
     if (optionsToAdd.includes('ExhibitComponents')) {
-      constConfig.exhibitComponents.forEach((item) => {
-        if (item.type === 'exhibit_component' && item.constellationAppId !== 'static_component') {
+      exConfig.exhibitComponents.forEach((item) => {
+        if (item.type === 'exhibit_component' && item.exhibiteraAppId !== 'static_component') {
           targetSelector.append(new Option(item.id, '__id_' + item.id))
         }
       })
     }
     if (optionsToAdd.includes('Projectors')) {
-      constConfig.exhibitComponents.forEach((item) => {
+      exConfig.exhibitComponents.forEach((item) => {
         if (item.type === 'projector') {
           targetSelector.append(new Option(item.id, '__id_' + item.id))
         }
@@ -508,12 +508,12 @@ export function setScheduleActionValueSelector () {
   if (['set_definition'].includes(action)) {
     let component
     try {
-      component = constExhibit.getExhibitComponent(target.slice(5))
+      component = exExhibit.getExhibitComponent(target.slice(5))
     } catch {
       return
     }
 
-    constTools.makeRequest({
+    exTools.makeRequest({
       method: 'GET',
       url: component.helperAddress,
       endpoint: '/getAvailableContent'
@@ -529,7 +529,7 @@ export function setScheduleActionValueSelector () {
             if (def.uuid.startsWith('__preview')) return
             if (seenApps.includes(def.app) === false) {
               seenApps.push(def.app)
-              const header = new Option(constExhibit.convertAppIDtoDisplayName(def.app))
+              const header = new Option(exExhibit.convertAppIDtoDisplayName(def.app))
               header.setAttribute('disabled', true)
               valueSelector.append(header)
             }
@@ -544,12 +544,12 @@ export function setScheduleActionValueSelector () {
   } else if (action === 'set_dmx_scene') {
     let component
     try {
-      component = constExhibit.getExhibitComponent(target.slice(5))
+      component = exExhibit.getExhibitComponent(target.slice(5))
     } catch {
       return
     }
 
-    constTools.makeRequest({
+    exTools.makeRequest({
       method: 'GET',
       url: component.helperAddress,
       endpoint: '/DMX/getScenes'
@@ -591,7 +591,7 @@ export function scheduleConfigureEditModal (scheduleName,
 
   // If currentScheduleID == null, we are adding a new schedule item, so create a unique ID
   if (currentScheduleID == null) {
-    currentScheduleID = constTools.uuid()
+    currentScheduleID = exTools.uuid()
   }
 
   // Hide elements that aren't always visible
@@ -701,7 +701,7 @@ export function sendScheduleUpdateFromModal () {
     schedule_id: scheduleID
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/update',
     params: requestDict
@@ -735,7 +735,7 @@ export function scheduleDeleteActionFromModal () {
     schedule_id: scheduleID
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/deleteAction',
     params: requestDict
@@ -754,7 +754,7 @@ export function scheduleDeleteActionFromModal () {
 export function showManageFutureDateModal () {
   // Prepare the modal and show it.
 
-  const allowEdit = constTools.checkPermission('schedule', 'edit')
+  const allowEdit = exTools.checkPermission('schedule', 'edit')
 
   // Clear any existing entries
   document.getElementById('manageFutureDateEntryList').innerHTML = ''
@@ -780,7 +780,7 @@ export function showManageFutureDateModal () {
 function populateFutureDatesList () {
   // Get a list of upcoming dates with special schedules and build GUI elements for them.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/availableDateSpecificSchedules'
   })
@@ -821,7 +821,7 @@ function populateFutureDatesList () {
 export function populateFutureDateCalendarInput () {
   // Called when the user selects a date on the manageFutureDateModal
 
-  const allowEdit = constTools.checkPermission('schedule', 'edit')
+  const allowEdit = exTools.checkPermission('schedule', 'edit')
 
   const date = document.getElementById('manageFutureDateCalendarInput').value
   const scheduleList = document.getElementById('manageFutureDateEntryList')
@@ -839,7 +839,7 @@ export function populateFutureDateCalendarInput () {
     return
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + date + '/get'
   })
@@ -885,7 +885,7 @@ export function convertFutureScheduleFromModal () {
   const dateObj = new Date(date + 'T00:00')
   const dayOfWeek = dateObj.toLocaleDateString(undefined, { weekday: 'long' })
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/convert',
     params: {
@@ -901,7 +901,7 @@ export function convertFutureScheduleFromModal () {
 function downloadScheduleAsCSV (name) {
   // Get the given schedule as a CSV from Control Server and download for the user.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + name + '/getCSV'
   })
@@ -922,7 +922,7 @@ function downloadScheduleAsCSV (name) {
 function downloadScheduleAsJSON (name) {
   // Get the given schedule as JSON from Control Server and download for the user.
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + name + '/getJSONString'
   })
@@ -1009,7 +1009,7 @@ export function createScheduleFromFile () {
     if (name == null || name === '') return
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/schedule/create',
     params: {
@@ -1027,7 +1027,7 @@ export function createScheduleFromFile () {
 async function previewCSVSchedule (csv) {
   // Build an HTML representation of the uploaded schedule
 
-  const result = constTools.csvToJSON(csv)
+  const result = exTools.csvToJSON(csv)
   const schedule = result.json
 
   // Convert any comma-separated values into arrays
@@ -1038,7 +1038,7 @@ async function previewCSVSchedule (csv) {
 
     if (entry.action === 'note') {
       // Notes may have commas that are okay.
-      scheduleDict[constTools.uuid()] = entry
+      scheduleDict[exTools.uuid()] = entry
       continue
     }
     for (const key of ['target', 'value']) {
@@ -1047,7 +1047,7 @@ async function previewCSVSchedule (csv) {
         return item.trim()
       })
     }
-    scheduleDict[constTools.uuid()] = entry
+    scheduleDict[exTools.uuid()] = entry
   }
 
   const newScheduleEl = document.getElementById('scheduleFromFileNewSchedule')
@@ -1097,7 +1097,7 @@ function previewJSONSchedule (jsonStr) {
 
 async function _getSecondsFromMidnight (timeString) {
   return new Promise(function (resolve, reject) {
-    constTools.makeServerRequest({
+    exTools.makeServerRequest({
       method: 'POST',
       endpoint: '/schedule/getSecondsFromMidnight',
       params: { time_str: String(timeString) }
@@ -1127,7 +1127,7 @@ function _scheduleFromFilePreviewCurrentSchedule (name, kind, retry = false) {
   // `kind` should be one of ['day-specific', 'date-specific']
 
   const currentScheduleEl = document.getElementById('scheduleFromFileCurrentSchedule')
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/schedule/' + name + '/get'
   })

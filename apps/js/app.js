@@ -12,7 +12,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 }
 
 exCommon.config.updateParser = updateParser // Function to read app-specific updatess
-exCommon.config.constellationAppID = 'none'
+exCommon.config.exhibiteraAppID = 'none'
 exCommon.config.debug = true
 exCommon.config.helperAddress = window.location.origin
 

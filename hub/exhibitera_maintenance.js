@@ -1,11 +1,11 @@
-import * as constTools from './constellation_tools.js'
-import * as constIssues from './constellation_issues.js'
+import * as exTools from './exhibitera_tools.js'
+import * as exIssues from './exhibitera_issues.js'
 
 export function setComponentInfoModalMaintenanceStatus (id) {
   // Ask the server for the current maintenance status of the given component
   // and then update the componentInfoModal with that info
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/maintenance/getStatus',
     params: { id }
@@ -28,13 +28,13 @@ export function setComponentInfoModalMaintenanceStatus (id) {
   const issueList = document.getElementById('componentInfoModalMaintenanceRelatedIssues')
   issueList.innerHTML = ''
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'GET',
     endpoint: '/issue/list/' + id
   }).then((response) => {
     if (response.success === true) {
       response.issueList.forEach((issue) => {
-        issueList.appendChild(constIssues.createIssueHTML(issue, false))
+        issueList.appendChild(exIssues.createIssueHTML(issue, false))
       })
     }
   })
@@ -57,7 +57,7 @@ export function submitComponentMaintenanceStatusChange (type = 'component') {
     notes
   }
 
-  constTools.makeServerRequest({
+  exTools.makeServerRequest({
     method: 'POST',
     endpoint: '/maintenance/updateStatus',
     params: requestDict

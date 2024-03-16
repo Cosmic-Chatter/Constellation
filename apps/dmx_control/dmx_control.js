@@ -1890,7 +1890,7 @@ popoverTriggerList.map(function (popoverTriggerEl) {
 })
 
 exCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-exCommon.config.constellationAppID = 'dmx_control'
+exCommon.config.exhibiteraAppID = 'dmx_control'
 exCommon.config.helperAddress = window.location.origin
 
 const universeList = []
