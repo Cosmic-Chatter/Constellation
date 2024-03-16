@@ -1,6 +1,6 @@
 *.pyc
 *.log
-/control_server/galleryConfiguration.ini
+/hub/galleryConfiguration.ini
 InfoStation/helper
 media_player/good-times-rg.ttf
 media_player/Gotham-Bold.otf

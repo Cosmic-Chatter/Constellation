@@ -1,4 +1,4 @@
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function buildLayout (definition) {
   // Take a layout defition in the form of a dictionary of dictionaries and
@@ -138,9 +138,9 @@ function logVote (name, numVotes) {
 }
 
 function setActive () {
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
   const reset = function () {
-    constCommon.config.currentInteraction = false
+    exCommon.config.currentInteraction = false
   }
   setTimeout(reset, 10000)
 }
@@ -148,12 +148,12 @@ function setActive () {
 function checkConnection () {
   // Send a message to the server checking that the connection is stable.
 
-  if (constCommon.config.standalone === true) {
+  if (exCommon.config.standalone === true) {
     badConnection = false
     return
   }
 
-  constCommon.makeServerRequest(
+  exCommon.makeServerRequest(
     {
       method: 'GET',
       endpoint: '/system/checkConnection'
@@ -163,7 +163,7 @@ function checkConnection () {
       badConnection = false
     })
     .catch(() => {
-      if (constCommon.config.debug) {
+      if (exCommon.config.debug) {
         $('#connectionWarning').show()
       }
       badConnection = true
@@ -175,7 +175,7 @@ function updateFunc (update) {
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -254,7 +254,7 @@ function loadDefinition (definition) {
 
   // Backgorund settings
   if ('background' in definition.style) {
-    constCommon.setBackground(definition.style.background, root)
+    exCommon.setBackground(definition.style.background, root)
   }
 
   // Font settings
@@ -346,18 +346,18 @@ function loadDefinition (definition) {
   buildLayout(definition)
 
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 function sendData () {
   // Collect the current value from each card, build a dictionary, and
   // send it for storage.
 
-  if (constCommon.config.debug) {
+  if (exCommon.config.debug) {
     console.log('Sending data...')
   }
   if (badConnection) {
-    if (constCommon.config.debug) {
+    if (exCommon.config.debug) {
       console.log('Error: bad connection. Will not attempt to send data.')
     }
     return
@@ -389,15 +389,15 @@ function sendData () {
   }
 
   // Submit the data to Control Server or the helper, depending on if we're standalone
-  if (constCommon.config.standalone === true) {
-    constCommon.makeHelperRequest(
+  if (exCommon.config.standalone === true) {
+    exCommon.makeHelperRequest(
       {
         method: 'POST',
         endpoint: '/data/write',
         params: requestDict
       })
   } else {
-    constCommon.makeServerRequest(
+    exCommon.makeServerRequest(
       {
         method: 'POST',
         endpoint: '/tracker/flexible-tracker/submitData',
@@ -429,7 +429,7 @@ document.addEventListener('wheel', function (e) {
   }
 }, { passive: false })
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'voting_kiosk',
   debug: true,
   checkConnection,
@@ -448,4 +448,4 @@ let blockTouches = false
 let touchBlocker = null // Will hold id for the setTimeout() that resets blockTouches
 let touchCooldown = 2 // seconds before blockTouches is reset
 
-setInterval(constCommon.checkForHelperUpdates, 1000)
+setInterval(exCommon.checkForHelperUpdates, 1000)

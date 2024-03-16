@@ -18,7 +18,7 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# Constellation modules
+# Exhibitera modules
 import config as const_config
 import helper_dmx
 import helper_files
@@ -128,7 +128,7 @@ async def root():
 
 @app.get("/{file_name}.html", response_class=HTMLResponse)
 async def serve_html(file_name):
-    # First try a local file and then a Constellation file
+    # First try a local file and then a Exhibitera file
     file_path = helper_files.get_path([file_name + ".html"], user_file=True)
     if not os.path.isfile(file_path):
         file_path = helper_files.get_path([file_name + ".html"], user_file=False)
@@ -139,7 +139,7 @@ async def serve_html(file_name):
 
 @app.get("/README.md", response_class=HTMLResponse)
 async def serve_readme():
-    # First try a local file and then a Constellation file
+    # First try a local file and then a Exhibitera file
     file_path = helper_files.get_path(["README.md"])
     with open(file_path, "r") as f:
         file = str(f.read())
@@ -373,17 +373,6 @@ async def do_shutdown():
 @app.get("/wakeDisplay")
 async def do_wake():
     helper_system.wake_display()
-
-
-@app.post("/")
-async def do_post(data: dict[str, Any], config: const_config = Depends(get_config)):
-    """POST requests to / are Constellation 1 legacy calls kept for compatibility with the web console"""
-
-    if "action" not in data:
-        raise HTTPException(
-            status_code=400, detail="Must include field 'action'")
-    else:
-        print("Legacy Constellation command received: ", data)
 
 
 @app.post("/definitions/write")
@@ -1041,7 +1030,7 @@ def close_setup_wizard():
     """Destroy the setup wizard webview"""
 
     for window in webview.windows:
-        if window.title == 'Constellation Apps Setup':
+        if window.title == 'Exhibitera Apps Setup':
             window.destroy()
 
 
@@ -1108,7 +1097,7 @@ def create_config():
 
         available_port = helper_utilities.find_available_port()
 
-        webview.create_window('Constellation Apps Setup',
+        webview.create_window('Exhibitera Apps Setup',
                               confirm_close=False,
                               height=720,
                               width=720,
@@ -1140,10 +1129,10 @@ if __name__ == "__main__":
             const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
 
         if const_config.defaults['system']['standalone'] is True:
-            print(f"Starting Constellation Apps on port {const_config.defaults['system']['port']}.")
+            print(f"Starting Exhibitera Apps on port {const_config.defaults['system']['port']}.")
         else:
             print(
-                f"Starting Constellation Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
+                f"Starting Exhibitera Apps for ID {const_config.defaults['app']['id']} of group {const_config.defaults['app']['group']} on port {const_config.defaults['system']['port']}.")
     else:
         # We need to create a config.json file based on user input.
         create_config()
@@ -1158,7 +1147,7 @@ if __name__ == "__main__":
         if "port" not in const_config.defaults['system']:
             const_config.defaults["system"]["port"] = helper_utilities.find_available_port()
 
-        app_window = webview.create_window('Constellation Apps',
+        app_window = webview.create_window('Exhibitera Apps',
                                            confirm_close=False,
                                            fullscreen=option_fullscreen,
                                            height=720,

@@ -1,15 +1,15 @@
 /* global Coloris, bootstrap */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -36,7 +36,7 @@ function initializeDefinition () {
             }
           }
         })
-        constSetup.previewDefinition(false)
+        exSetup.previewDefinition(false)
         resolve()
       })
   })
@@ -69,10 +69,10 @@ async function clearDefinitionInput (full = true) {
   document.querySelector('#attractorInput_attractor_background').dispatchEvent(new Event('input', { bubbles: true }))
   document.getElementById('attractorInput_text_color').value = '#fff'
   document.querySelector('#attractorInput_text_color').dispatchEvent(new Event('input', { bubbles: true }))
-  constSetup.resetAdvancedFontPickers()
+  exSetup.resetAdvancedFontPickers()
 
   // Appearance details
-  constSetup.updateAdvancedColorPicker('style>background', {
+  exSetup.updateAdvancedColorPicker('style>background', {
     mode: 'color',
     color: '#22222E',
     gradient_color_1: '#22222E',
@@ -84,7 +84,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -114,7 +114,7 @@ function editDefinition (uuid = '') {
       }
     } else if (key === 'font') {
       const picker = document.querySelector('.AFP-select[data-path="attractor>font"')
-      constSetup.setAdvancedFontPicker(picker, def.attractor.font)
+      exSetup.setAdvancedFontPicker(picker, def.attractor.font)
     } else {
       el = document.getElementById('attractorInput_' + key)
       el.value = def.attractor[key]
@@ -122,7 +122,7 @@ function editDefinition (uuid = '') {
 
     // Set the appropriate values for any advanced color pickers
     if ('background' in def.style) {
-      constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+      exSetup.updateAdvancedColorPicker('style>background', def.style.background)
     }
 
     if (['attractor_background', 'text_color'].includes(key)) {
@@ -133,7 +133,7 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../timelapse_viewer.html?standalone=true&definition=' + def.uuid
-  constSetup.previewDefinition()
+  exSetup.previewDefinition()
 }
 
 function disableAttractorOptions (disable) {
@@ -158,15 +158,15 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('timelapse_viewer')
+        exCommon.getAvailableDefinitions('timelapse_viewer')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
@@ -197,7 +197,7 @@ function guessFilenamePattern () {
     } else break
   }
   const pattern = prefix + '*.' + firstExt
-  constSetup.updateWorkingDefinition(['files'], pattern)
+  exSetup.updateWorkingDefinition(['files'], pattern)
   document.getElementById('filePatternInput').value = pattern
 
   retrieveMatchingFilesCount()
@@ -209,7 +209,7 @@ function retrieveMatchingFilesCount () {
   const pattern = document.getElementById('filePatternInput').value
   const split = pattern.split('*.')
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   }).then((result) => {
@@ -234,7 +234,7 @@ function convertVideo () {
   button.classList.remove('btn-primary')
   document.getElementById('conversionProgressBarDiv').style.display = 'flex'
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/files/convertVideoToFrames',
     params: {
@@ -245,7 +245,7 @@ function convertVideo () {
   })
 
   const numFiles = parseInt(document.getElementById('outputFileCountField').value)
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   }).then((result) => {
@@ -259,7 +259,7 @@ function trackConversionProgress (total, starting) {
   // starting is the number of files when the conversion started
   // The number completed = current total - now
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   }).then((result) => {
@@ -296,8 +296,8 @@ function setUpColorPickers () {
   })
 }
 
-// Set helperAddress for calls to constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helperAddress for calls to exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 let matchedFiles = []
 
@@ -311,8 +311,8 @@ setTimeout(setUpColorPickers, 100)
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['behavior', key], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['behavior', key], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -335,14 +335,14 @@ document.getElementById('showConvertVideoModal').addEventListener('click', (even
   videoConversionModal.show()
 })
 document.getElementById('selectConversionVideoButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['video'] })
+  exFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['video'] })
     .then((result) => {
       if (result != null && result.length > 0) {
         event.target.setAttribute('data-filename', result[0])
         event.target.innerHTML = result[0]
-        document.getElementById('fileConversionVideoPreview').src = constCommon.config.helperAddress + '/thumbnails/' + result[0].replace(/\.[^/.]+$/, '') + '.mp4'
+        document.getElementById('fileConversionVideoPreview').src = exCommon.config.helperAddress + '/thumbnails/' + result[0].replace(/\.[^/.]+$/, '') + '.mp4'
 
-        constCommon.makeHelperRequest({
+        exCommon.makeHelperRequest({
           method: 'POST',
           endpoint: '/files/getVideoDetails',
           params: {
@@ -365,12 +365,12 @@ document.getElementById('videoConversionModalSubmitButton').addEventListener('cl
 
 // Pattern generation
 document.getElementById('filePatternInput').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['files'], event.target.value)
+  exSetup.updateWorkingDefinition(['files'], event.target.value)
   retrieveMatchingFilesCount()
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 })
 document.getElementById('selectFirstImageButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
+  exFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
     .then((result) => {
       if (result != null && result.length > 0) {
         event.target.setAttribute('data-filename', result[0])
@@ -379,7 +379,7 @@ document.getElementById('selectFirstImageButton').addEventListener('click', (eve
     })
 })
 document.getElementById('selectLastImageButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
+  exFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
     .then((result) => {
       if (result != null && result.length > 0) {
         event.target.setAttribute('data-filename', result[0])
@@ -405,7 +405,7 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
   } else {
     guessFilenamePattern()
     PatternGeneratorModal.hide()
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   }
 })
 
@@ -413,15 +413,15 @@ document.getElementById('patternGeneratorModalSubmitButton').addEventListener('c
 Array.from(document.getElementsByClassName('attractor-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['attractor', property], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
 Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['attractor', property], event.target.checked)
+    exSetup.updateWorkingDefinition(['attractor', property], event.target.checked)
     // If we aren't using the attractor, disable the options
     if (event.target.getAttribute('id') === 'attractorCheck_use_attractor') {
       if (event.target.checked) {
@@ -430,22 +430,22 @@ Array.from(document.getElementsByClassName('attractor-check')).forEach((el) => {
         disableAttractorOptions(true)
       }
     }
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   })
 })
 
 // Font upload
 document.getElementById('manageFontsButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
-    .then(constSetup.refreshAdvancedFontPickers)
+  exFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(exSetup.refreshAdvancedFontPickers)
 })
 
 // Realtime-sliders should adjust as we drag them
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['attractor', property], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['attractor', property], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -456,7 +456,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-constSetup.configure({
+exSetup.configure({
   app: 'timelapse_viewer',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -464,11 +464,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

@@ -1,15 +1,15 @@
 /* global bootstrap, Coloris */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -38,7 +38,7 @@ function initializeDefinition () {
           },
           watermark: {}
         })
-        constSetup.previewDefinition(false)
+        exSetup.previewDefinition(false)
         resolve()
       })
   })
@@ -54,7 +54,7 @@ async function clearDefinitionInput (full = true) {
   // Definition details
   $('#definitionNameInput').val('')
 
-  constSetup.updateAdvancedColorPicker('style>background', {
+  exSetup.updateAdvancedColorPicker('style>background', {
     mode: 'color',
     color: '#000',
     gradient_color_1: '#000',
@@ -74,7 +74,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
 
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -89,13 +89,13 @@ function editDefinition (uuid = '') {
         color: '#000'
       }
     }
-    constSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
-    constSetup.updateWorkingDefinition(['style', 'background', 'color'], '#000')
+    exSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
+    exSetup.updateWorkingDefinition(['style', 'background', 'color'], '#000')
   }
 
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.style) {
-    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+    exSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
   // Set the appropriate values for the watermark
@@ -127,7 +127,7 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         console.log('Saved!')
@@ -136,10 +136,10 @@ function saveDefinition () {
 
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('media_player')
+        exCommon.getAvailableDefinitions('media_player')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
             }
           })
       }
@@ -155,7 +155,7 @@ function createThumbnail () {
     files.push(workingDefinition.content[uuid].filename)
   })
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/files/thumbnailVideoFromFrames',
     params: {
@@ -252,7 +252,7 @@ function createItemHTML (item, num) {
   selectFile.innerHTML = 'From file'
   selectFile.style.cursor = 'pointer'
   selectFile.addEventListener('click', () => {
-    constFileSelect.createFileSelectionModal({
+    exFileSelect.createFileSelectionModal({
       filetypes: ['audio', 'image', 'video'],
       multiple: false
     })
@@ -330,10 +330,10 @@ function createItemHTML (item, num) {
     } else {
       durationVal = parseFloat(inputStr)
     }
-    constSetup.updateWorkingDefinition(['content', item.uuid, 'duration'], durationVal)
+    exSetup.updateWorkingDefinition(['content', item.uuid, 'duration'], durationVal)
   })
   durationCol.appendChild(durationInput)
-  if (constCommon.guessMimetype(item.filename) === 'image') {
+  if (exCommon.guessMimetype(item.filename) === 'image') {
     durationCol.style.display = 'block'
   } else {
     durationCol.style.display = 'none'
@@ -352,8 +352,8 @@ function createItemHTML (item, num) {
   cacheCheck.setAttribute('type', 'checkbox')
   if ('no_cache' in item && item.no_cache === true) cacheCheck.checked = true
   cacheCheck.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', item.uuid, 'no_cache'], cacheCheck.checked)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', item.uuid, 'no_cache'], cacheCheck.checked)
+    exSetup.previewDefinition(true)
   })
   cacheGroup.appendChild(cacheCheck)
 
@@ -492,7 +492,7 @@ function populateAnnotateFromJSONModal (file, type = 'file') {
   parent.innerHTML = ''
 
   if (type === 'file') {
-    constCommon.makeServerRequest({
+    exCommon.makeServerRequest({
       method: 'GET',
       endpoint: '/content/' + file,
       noCache: true
@@ -574,7 +574,7 @@ function addAnnotationFromModal () {
 
   if ((annotationUUID == null) || (annotationUUID === '')) {
     // We are creating a new annotation.
-    annotationUUID = constCommon.uuid()
+    annotationUUID = exCommon.uuid()
     annotation = {
       uuid: annotationUUID,
       path,
@@ -599,8 +599,8 @@ function addAnnotationFromModal () {
     annotations = {}
     annotations[annotationUUID] = annotation
   }
-  constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
+  exSetup.previewDefinition(true)
   document.getElementById('annotateFromJSONModalTreeView').innerHTML = ''
   $('#annotateFromJSONModal').modal('hide')
 }
@@ -649,8 +649,8 @@ function createAnnoationHTML (itemUUID, details) {
     xPosInput.value = 50
   }
   xPosInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'x_position'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'x_position'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   xPosDiv.appendChild(xPosInput)
 
@@ -681,8 +681,8 @@ function createAnnoationHTML (itemUUID, details) {
     yPosInput.value = 50
   }
   yPosInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'y_position'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'y_position'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   yPosDiv.appendChild(yPosInput)
 
@@ -709,8 +709,8 @@ function createAnnoationHTML (itemUUID, details) {
     alignSelect.value = details.align
   }
   alignSelect.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'align'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'align'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   alignDiv.appendChild(alignSelect)
 
@@ -739,8 +739,8 @@ function createAnnoationHTML (itemUUID, details) {
     fontSizeInput.value = 20
   }
   fontSizeInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'font_size'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'font_size'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   fontSizeDiv.appendChild(fontSizeInput)
 
@@ -767,8 +767,8 @@ function createAnnoationHTML (itemUUID, details) {
     fontColorInput.value = 'black'
   }
   fontColorInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'color'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations', details.uuid, 'color'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   fontColorDiv.appendChild(fontColorInput)
   setTimeout(setUpColorPickers, 100)
@@ -826,13 +826,13 @@ function createAnnoationHTML (itemUUID, details) {
 
   // Must be after we had the main element to the DOM
 
-  constSetup.createAdvancedFontPicker({
+  exSetup.createAdvancedFontPicker({
     parent: fontFaceCol,
     name: 'Font',
     path: `content>${itemUUID}>annotations>${details.uuid}>font`,
     default: 'OpenSans-Regular.ttf'
   })
-  constSetup.refreshAdvancedFontPickers()
+  exSetup.refreshAdvancedFontPickers()
 }
 
 function showChooseURLModal (uuid) {
@@ -858,7 +858,7 @@ async function fetchContentFromURL () {
   const modal = document.getElementById('chooseURLModal')
   const error = document.getElementById('chooseURLModalError')
 
-  const mimetype = constCommon.guessMimetype(url)
+  const mimetype = exCommon.guessMimetype(url)
   modal.setAttribute('data-mimetype', mimetype)
   console.log(mimetype)
   if (mimetype === 'video') {
@@ -908,9 +908,9 @@ function setContentFromURLModal () {
 function setItemContent (uuid, itemEl, file, type = 'file') {
   // Populate the given element, item, with content.
 
-  constSetup.updateWorkingDefinition(['content', uuid, 'filename'], file)
-  constSetup.updateWorkingDefinition(['content', uuid, 'type'], type)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['content', uuid, 'filename'], file)
+  exSetup.updateWorkingDefinition(['content', uuid, 'type'], type)
+  exSetup.previewDefinition(true)
 
   const image = itemEl.querySelector('.image-preview')
   const video = itemEl.querySelector('.video-preview')
@@ -918,17 +918,17 @@ function setItemContent (uuid, itemEl, file, type = 'file') {
 
   itemEl.setAttribute('data-filename', file)
   itemEl.setAttribute('data-type', type)
-  const mimetype = constCommon.guessMimetype(file)
+  const mimetype = exCommon.guessMimetype(file)
   fileField.innerHTML = file
   if (mimetype === 'audio') {
-    image.src = constFileSelect.getDefaultAudioIcon()
+    image.src = exFileSelect.getDefaultAudioIcon()
     image.style.display = 'block'
     video.style.display = 'none'
     // Hide the duration input
     itemEl.querySelector('.duration-col').style.display = 'none'
   } else if (mimetype === 'image') {
     if (type === 'file') {
-      image.src = '/thumbnails/' + constCommon.withExtension(file, 'jpg')
+      image.src = '/thumbnails/' + exCommon.withExtension(file, 'jpg')
     } else if (type === 'url') {
       image.src = file
     }
@@ -938,7 +938,7 @@ function setItemContent (uuid, itemEl, file, type = 'file') {
     itemEl.querySelector('.duration-col').style.display = 'block'
   } else if (mimetype === 'video') {
     if (type === 'file') {
-      video.src = '/thumbnails/' + constCommon.withExtension(file, 'mp4')
+      video.src = '/thumbnails/' + exCommon.withExtension(file, 'mp4')
     } else if (type === 'url') {
       video.src = file
     }
@@ -996,9 +996,9 @@ function onWatermarkFileChange () {
   // Called when a new image is selected.
 
   const file = document.getElementById('watermarkSelect').getAttribute('data-filename')
-  constSetup.updateWorkingDefinition(['watermark', 'file'], file)
+  exSetup.updateWorkingDefinition(['watermark', 'file'], file)
 
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
 // Set color mode
@@ -1008,8 +1008,8 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // Activate tooltips
 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -1043,7 +1043,7 @@ setTimeout(setUpColorPickers, 100)
 // Main buttons
 
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ manage: true, filetypes: ['audio', 'image', 'video'] })
+  exFileSelect.createFileSelectionModal({ manage: true, filetypes: ['audio', 'image', 'video'] })
 })
 
 // Content
@@ -1057,7 +1057,7 @@ document.getElementById('chooseURLModalSubmitButton').addEventListener('click', 
 
 // Annotations
 document.getElementById('annotateFromJSONModalFileSelect').addEventListener('click', () => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['json'] })
+  exFileSelect.createFileSelectionModal({ filetypes: ['json'] })
     .then((result) => {
       if (result.length === 1) {
         populateAnnotateFromJSONModal(result)
@@ -1077,8 +1077,8 @@ document.getElementById('deleteAnnotationModalSubmitButton').addEventListener('c
   const annotations = definition.content[itemUUID].annotations
   delete annotations[annotationUUID]
 
-  constSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['content', itemUUID, 'annotations'], annotations)
+  exSetup.previewDefinition(true)
   document.getElementById('Annotation' + annotationUUID).remove()
   $(modal).modal('hide')
 })
@@ -1089,7 +1089,7 @@ document.getElementById('annotateFromJSONModalCloseButton').addEventListener('cl
 
 // Watermark
 document.getElementById('watermarkSelect').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['image'], multiple: false })
+  exFileSelect.createFileSelectionModal({ filetypes: ['image'], multiple: false })
     .then((files) => {
       if (files.length === 1) {
         event.target.innerHTML = files[0]
@@ -1107,17 +1107,17 @@ document.getElementById('watermarkSelectClear').addEventListener('click', (event
 Array.from(document.querySelectorAll('.watermark-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const field = event.target.getAttribute('data-field')
-    constSetup.updateWorkingDefinition(['watermark', field], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['watermark', field], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 clearDefinitionInput()
 
-constSetup.configure({
+exSetup.configure({
   app: 'media_player',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -1125,11 +1125,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

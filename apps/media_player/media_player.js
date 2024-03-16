@@ -1,11 +1,11 @@
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function updateParser (update) {
   // Read updates specific to the media player
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -20,15 +20,15 @@ function updateParser (update) {
 function loadDefinition (def) {
   // Take an object parsed from an INI string and use it to load a new set of contet
 
-  constCommon.config.sourceList = []
+  exCommon.config.sourceList = []
   def.content_order.forEach((uuid) => {
-    constCommon.config.sourceList.push(def.content[uuid])
+    exCommon.config.sourceList.push(def.content[uuid])
   })
 
   // Backgorund settings
   const root = document.querySelector(':root')
   if ('style' in def && 'background' in def.style) {
-    constCommon.setBackground(def.style.background, root, '#000')
+    exCommon.setBackground(def.style.background, root, '#000')
   }
 
   // Watermark settings
@@ -65,13 +65,13 @@ function gotoSource (index) {
   // Make sure the index is an integer
   index = parseInt(index)
 
-  if (constCommon.config.debug) {
+  if (exCommon.config.debug) {
     console.log('gotoSource', index)
   }
 
-  if (index < constCommon.config.sourceList.length) {
-    constCommon.config.activeIndex = index
-    changeMedia(constCommon.config.sourceList[index])
+  if (index < exCommon.config.sourceList.length) {
+    exCommon.config.activeIndex = index
+    changeMedia(exCommon.config.sourceList[index])
   }
 }
 
@@ -79,20 +79,20 @@ function gotoNextSource () {
   // Display the next file in sourceList, looping to the beginning if
   // necessary
 
-  if (constCommon.config.activeIndex + 1 >= constCommon.config.sourceList.length) {
-    constCommon.config.activeIndex = 0
+  if (exCommon.config.activeIndex + 1 >= exCommon.config.sourceList.length) {
+    exCommon.config.activeIndex = 0
   } else {
-    constCommon.config.activeIndex += 1
+    exCommon.config.activeIndex += 1
   }
 
-  gotoSource(constCommon.config.activeIndex)
+  gotoSource(exCommon.config.activeIndex)
 }
 
 async function changeMedia (source) {
   // Load and play a media file given in source
   // delayPlay and playOnly are used when synchronizing multiple displays
 
-  if (constCommon.config.debug) {
+  if (exCommon.config.debug) {
     console.log('changeMedia', source)
   }
 
@@ -128,10 +128,10 @@ async function changeMedia (source) {
       video.load()
       video.play()
     }
-    if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
+    if (exCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
       video.loop = false
       video.onended = function () {
-        if (constCommon.config.autoplayEnabled === true) {
+        if (exCommon.config.autoplayEnabled === true) {
           gotoNextSource()
         } else {
           video.play()
@@ -161,10 +161,10 @@ async function changeMedia (source) {
       audio.load()
       audio.play()
     }
-    if (constCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
+    if (exCommon.config.sourceList.length > 1) { // Don't loop or onended will never fire
       audio.loop = false
       audio.onended = function () {
-        if (constCommon.config.autoplayEnabled === true) {
+        if (exCommon.config.autoplayEnabled === true) {
           gotoNextSource()
         } else {
           audio.play()
@@ -213,7 +213,7 @@ function createAnnotation (details) {
   }
 
   if ('font' in details) {
-    annotation.style.fontFamily = constCommon.createFont(details.font, details.font)
+    annotation.style.fontFamily = exCommon.createFont(details.font, details.font)
   } else {
     annotation.style.fontFamily = 'annotation-default'
   }
@@ -236,7 +236,7 @@ function fetchAnnotation (details) {
 
   return new Promise((resolve, reject) => {
     if (details.type === 'file') {
-      constCommon.makeHelperRequest({
+      exCommon.makeHelperRequest({
         method: 'GET',
         endpoint: '/content/' + details.file,
         noCache: true
@@ -263,12 +263,12 @@ function fetchAnnotation (details) {
   })
 }
 
-constCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
-constCommon.config.sourceList = []
-constCommon.config.autoplayEnabled = true
-constCommon.config.allowAudio = false
+exCommon.config.activeIndex = 0 // Index of the file from the source list currently showing
+exCommon.config.sourceList = []
+exCommon.config.autoplayEnabled = true
+exCommon.config.allowAudio = false
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'media_player',
   debug: true,
   loadDefinition,

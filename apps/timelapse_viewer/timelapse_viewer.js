@@ -1,11 +1,11 @@
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function updateFunc (update) {
   // Function to parse timelapse-specific updates
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -75,19 +75,19 @@ function loadDefinition (definition) {
 
   // Backgorund settings
   if ('background' in definition.style) {
-    constCommon.setBackground(definition.style.background, root, '#22222E')
+    exCommon.setBackground(definition.style.background, root, '#22222E')
   }
 
   showAttractor()
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 1000)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 1000)
 }
 
 function updateSourceList (matchString) {
   // Given a string containing a wildcard expression (*), retrieve all the available content
   // and set the source to only the matching files.
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   })
@@ -112,7 +112,7 @@ function updateSourceList (matchString) {
 
 function handleTouchStart (event, touch = true) {
   hideAttractor()
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 
   if (touch) {
     touchStartX = event.touches[0].clientX
@@ -129,7 +129,7 @@ function handleTouchEnd (event) {
 }
 
 function handleTouchMove (event, touch = true) {
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
   if (touch === true && event.touches.length > 1) {
     event.preventDefault()
     return
@@ -200,7 +200,7 @@ function handleScroll (event) {
   // Cycle the images when a user scrolls the mouse scroll wheel.
 
   hideAttractor()
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 
   const dy = event.originalEvent.deltaY
   const velocity = Math.abs(dy)
@@ -236,7 +236,7 @@ function handleKeyDown (event) {
   // Listen for arrow keys and switch images accordingly
 
   hideAttractor()
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 
   const key = event.key
   const repeated = event.repeat
@@ -385,7 +385,7 @@ function showAttractor () {
 
   // Report analytics, if necessary
   if (enableAnalytics) {
-    constCommon.sendAnalytics({ action: 'showAttractor' })
+    exCommon.sendAnalytics({ action: 'showAttractor' })
   }
 }
 
@@ -400,8 +400,8 @@ function hideAttractor () {
   document.getElementById('handContainer').style.display = 'none'
 
   // Report analytics, if necessary
-  if (enableAnalytics && !constCommon.config.currentInteraction) {
-    constCommon.sendAnalytics({ action: 'hideAttractor' })
+  if (enableAnalytics && !exCommon.config.currentInteraction) {
+    exCommon.sendAnalytics({ action: 'hideAttractor' })
   }
 
   // Set the attractor to start again in 30 s
@@ -433,7 +433,7 @@ const viewerList = [document.getElementById('img1'), document.getElementById('im
 let activeViewerIndex = 0 // Index of the <img> instance that is currently being used
 const enableAnalytics = false
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'timelapse_viewer',
   debug: true,
   loadDefinition,

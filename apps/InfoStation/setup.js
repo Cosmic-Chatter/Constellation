@@ -1,15 +1,15 @@
 /* global Coloris */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -40,7 +40,7 @@ function initializeDefinition () {
             text_size: {}
           }
         })
-        constSetup.previewDefinition()
+        exSetup.previewDefinition()
         resolve()
       })
   })
@@ -72,14 +72,14 @@ async function clearDefinitionInput (full = true) {
     el.dispatchEvent(new Event('input', { bubbles: true }))
   })
 
-  constSetup.updateAdvancedColorPicker('style>background', {
+  exSetup.updateAdvancedColorPicker('style>background', {
     mode: 'color',
     color: '#719abf',
     gradient_color_1: '#719abf',
     gradient_color_2: '#719abf'
   })
 
-  constSetup.resetAdvancedFontPickers()
+  exSetup.resetAdvancedFontPickers()
 
   Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
     el.value = 0
@@ -90,7 +90,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
 
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -113,13 +113,13 @@ function editDefinition (uuid = '') {
       mode: 'color',
       color: '#719abf'
     }
-    constSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
-    constSetup.updateWorkingDefinition(['style', 'background', 'color'], '#719abf')
+    exSetup.updateWorkingDefinition(['style', 'background', 'mode'], 'color')
+    exSetup.updateWorkingDefinition(['style', 'background', 'color'], '#719abf')
   }
 
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.style) {
-    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+    exSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
   // Set the appropriate values for the color pickers
@@ -132,7 +132,7 @@ function editDefinition (uuid = '') {
   if ('font' in def.style) {
     Object.keys(def.style.font).forEach((key) => {
       const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
-      constSetup.setAdvancedFontPicker(picker, def.style.font[key])
+      exSetup.setAdvancedFontPicker(picker, def.style.font[key])
     })
   }
 
@@ -257,11 +257,11 @@ function createLanguageTab (code, displayName) {
     // If the checkbox is checked, uncheck all the others and save to the working definition.
     Array.from(document.querySelectorAll('.default-lang-checkbox')).forEach((el) => {
       el.checked = false
-      constSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
+      exSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
     })
     event.target.checked = true
-    constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['languages', code, 'default'], true)
+    exSetup.previewDefinition(true)
   })
   checkContainer.appendChild(defaultCheckbox)
 
@@ -363,8 +363,8 @@ function createLanguageTab (code, displayName) {
   headerInput.setAttribute('type', 'text')
   headerInput.setAttribute('id', 'languageTabHeader_' + code)
   headerInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['languages', code, 'header'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['languages', code, 'header'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   headerInput.value = workingDefinition.languages[code].header ?? ''
   headerCol.appendChild(headerInput)
@@ -427,7 +427,7 @@ function deleteLanguageFlag (lang) {
   $('#flagImg_' + lang).attr('src', '../_static/flags/' + lang + '.svg')
 
   // Delete from server
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/file/delete',
     params: {
@@ -498,9 +498,9 @@ function createInfoStationTab (lang, uuid = '') {
   buttonTextInput.setAttribute('type', 'text')
   buttonTextInput.setAttribute('id', 'infostationTabButtonTextInput_' + uuid)
   buttonTextInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'button_text'], event.target.value)
+    exSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'button_text'], event.target.value)
     document.getElementById('infostationTab_' + lang + '_' + uuid).innerHTML = event.target.value
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   })
   buttonTextInput.value = workingDefinition.languages[lang].tabs[uuid].button_text
   buttonTextCol.appendChild(buttonTextInput)
@@ -526,8 +526,8 @@ function createInfoStationTab (lang, uuid = '') {
   textInput.setAttribute('id', 'infostationTabTextInput_' + uuid)
   textInput.setAttribute('placeholder', '# Header\nThis is a sentence with a **bold** word and an _italics_ word.\n\n## Subheader\nThis is a sentance under the subheader.')
   textInput.addEventListener('change', (event) => {
-    constSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'text'], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['languages', lang, 'tabs', uuid, 'text'], event.target.value)
+    exSetup.previewDefinition(true)
   })
   textInput.value = workingDefinition.languages[lang].tabs[uuid].text
   textCol.appendChild(textInput)
@@ -552,7 +552,7 @@ function createInfoStationTab (lang, uuid = '') {
   $(deleteButton).popover()
 
   $(tabButton).click()
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
 function deleteInfoStationTab (lang, uuid) {
@@ -597,7 +597,7 @@ function onFlagUploadChange (lang) {
       if ('success' in response) {
         $('#uploadFlagFilename_' + lang).html('Upload')
         $('#flagImg_' + lang).attr('src', '../content/' + newName)
-        constSetup.updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
+        exSetup.updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
       }
     } else if (this.status === 422) {
       console.log(JSON.parse(this.responseText))
@@ -615,16 +615,16 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         console.log('Saved!')
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('infostation')
+        exCommon.getAvailableDefinitions('infostation')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
             }
           })
       }
@@ -640,11 +640,11 @@ function onAttractorFileChange () {
   workingDefinition.attractor = file
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
 
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // Set up the color pickers
 function setUpColorPickers () {
@@ -672,12 +672,12 @@ setTimeout(setUpColorPickers, 100)
 // Main buttons
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ manage: true })
+  exFileSelect.createFileSelectionModal({ manage: true })
 })
 
 // Definition fields
 document.getElementById('attractorSelect').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['image', 'video'], multiple: false })
+  exFileSelect.createFileSelectionModal({ filetypes: ['image', 'video'], multiple: false })
     .then((files) => {
       if (files.length === 1) {
         event.target.innerHTML = files[0]
@@ -694,27 +694,27 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 })
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
+  exSetup.previewDefinition(true)
 })
 document.getElementById('manageFontsButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
-    .then(constSetup.refreshAdvancedFontPickers)
+  exFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(exSetup.refreshAdvancedFontPickers)
 })
 
 // Text size fields
 Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -725,7 +725,7 @@ document.addEventListener('click', (event) => {
   if (event.target.classList.contains('lang-delete')) {
     const lang = event.target.getAttribute('id').split('_').slice(-1)[0]
     deleteLanguageTab(lang)
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   }
 
   if (event.target.classList.contains('tab-delete')) {
@@ -733,7 +733,7 @@ document.addEventListener('click', (event) => {
     const lang = split.slice(-2)[0]
     const uuid = split.slice(-1)[0]
     deleteInfoStationTab(lang, uuid)
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   }
 })
 
@@ -744,12 +744,12 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 clearDefinitionInput()
 
-constSetup.configure({
+exSetup.configure({
   app: 'infostation',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -757,11 +757,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

@@ -1,12 +1,12 @@
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -21,7 +21,7 @@ function initializeDefinition () {
           path: '',
           properties: {}
         })
-        constSetup.previewDefinition()
+        exSetup.previewDefinition()
         resolve()
       })
   })
@@ -44,7 +44,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -62,7 +62,7 @@ function editDefinition (uuid = '') {
   } else {
     document.getElementById('previewFrame').style.display = 'none'
   }
-  constSetup.previewDefinition()
+  exSetup.previewDefinition()
 }
 
 function saveDefinition () {
@@ -74,15 +74,15 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('other')
+        exCommon.getAvailableDefinitions('other')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
@@ -133,19 +133,19 @@ function rebuildPropertyDict () {
     if (key.trim() === '') return
     dict[key] = document.getElementById('value_' + uuid).value
   })
-  constSetup.updateWorkingDefinition(['properties'], dict)
+  exSetup.updateWorkingDefinition(['properties'], dict)
 }
 
-// Set helperAddress for calls to constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helperAddress for calls to exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // Add event listeners
 // -------------------------------------------------------------
 
 // Settings
 document.getElementById('pathInput').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['path'], event.target.value)
-  constSetup.previewDefinition()
+  exSetup.updateWorkingDefinition(['path'], event.target.value)
+  exSetup.previewDefinition()
 })
 document.getElementById('addKeyButton').addEventListener('click', (event) => {
   createKeyValueHTML()
@@ -167,7 +167,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 clearDefinitionInput()
 
-constSetup.configure({
+exSetup.configure({
   app: 'other',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -175,11 +175,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

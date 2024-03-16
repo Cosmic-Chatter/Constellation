@@ -1,4 +1,4 @@
-import * as constCommon from './constellation_app_common.js'
+import * as exCommon from './exhibitera_app_common.js'
 
 function pageForward (current) {
   // Based on the current page, check that it is complete and go to the next one.
@@ -160,7 +160,7 @@ function submitSettings () {
     settings.system.remote_display = false
   }
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/setDefaults',
     params: {
@@ -168,7 +168,7 @@ function submitSettings () {
     }
   })
     .then((result) => {
-      constCommon.makeHelperRequest({
+      exCommon.makeHelperRequest({
         method: 'GET',
         endpoint: '/app/closeSetupWizard'
       })
@@ -197,4 +197,4 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 }
 
 // Set helper address for Constellation
-constCommon.config.helperAddress = window.location.origin
+exCommon.config.helperAddress = window.location.origin

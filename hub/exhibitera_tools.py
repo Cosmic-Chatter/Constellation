@@ -64,7 +64,7 @@ def write_json(data, path: str, append: bool = False) -> None:
 
 
 def load_system_configuration(from_dict: Union[dict[str, Any], None] = None) -> None:
-    """Read system.json and set up c_config."""
+    """Read system.json and set up ex_config."""
 
     if from_dict is None:
         config_path = get_path(["configuration", "system.json"], user_file=True)

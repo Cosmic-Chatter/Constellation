@@ -13,7 +13,7 @@ JSON data is refreshed every time a piece of content is played. For definitions 
 **When using an external data URL, be sure to respect access limits.** Don't set a duration of a few seconds if the data doesn't need to be refreshed more than once an hour, for example.
 
 ## Supported media types
-Constellation Apps recognizes the following media file formats:
+Exhibitera Apps recognizes the following media file formats:
 
 | Type  | Recognized formats                                          |
 |-------|-------------------------------------------------------------|

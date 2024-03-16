@@ -1,15 +1,15 @@
 /* global Coloris */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constSetup from '../js/constellation_setup_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -46,7 +46,7 @@ function initializeDefinition () {
             localization: {}
           }
         })
-        constSetup.previewDefinition(false)
+        exSetup.previewDefinition(false)
         resolve()
       })
   })
@@ -83,7 +83,7 @@ async function clearDefinitionInput (full = true) {
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
 
-  constSetup.updateAdvancedColorPicker('appearance>background', {
+  exSetup.updateAdvancedColorPicker('appearance>background', {
     mode: 'color',
     color: '#fff',
     gradient_color_1: '#fff',
@@ -91,7 +91,7 @@ async function clearDefinitionInput (full = true) {
   })
 
   // Reset font face options
-  constSetup.resetAdvancedFontPickers()
+  exSetup.resetAdvancedFontPickers()
 
   document.getElementById('promptTextSizeSlider').value = 0
 }
@@ -100,7 +100,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -155,14 +155,14 @@ function editDefinition (uuid = '') {
 
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.appearance) {
-    constSetup.updateAdvancedColorPicker('appearance>background', def.appearance.background)
+    exSetup.updateAdvancedColorPicker('appearance>background', def.appearance.background)
   }
 
   // Set the appropriate values for the advanced font pickers
   if ('font' in def.appearance) {
     Object.keys(def.appearance.font).forEach((key) => {
       const picker = document.querySelector(`.AFP-select[data-path="appearance>font>${key}"`)
-      constSetup.setAdvancedFontPicker(picker, def.appearance.font[key])
+      exSetup.setAdvancedFontPicker(picker, def.appearance.font[key])
     })
   }
 
@@ -172,7 +172,7 @@ function editDefinition (uuid = '') {
 
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../word_cloud_viewer.html?standalone=true&definition=' + def.uuid
-  constSetup.previewDefinition()
+  exSetup.previewDefinition()
 }
 
 function saveDefinition () {
@@ -184,15 +184,15 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('word_cloud_viewer')
+        exCommon.getAvailableDefinitions('word_cloud_viewer')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
@@ -217,7 +217,7 @@ function updateExcludedWordsList () {
   // Use the input field from the modal to update the working definition.
 
   const text = document.getElementById('excludedWordsInput').value
-  constSetup.updateWorkingDefinition(['behavior', 'excluded_words_raw'], text)
+  exSetup.updateWorkingDefinition(['behavior', 'excluded_words_raw'], text)
 
   const lines = text.split('\n')
   const words = []
@@ -227,7 +227,7 @@ function updateExcludedWordsList () {
       words.push(word.trim().toLowerCase())
     })
   })
-  constSetup.updateWorkingDefinition(['behavior', 'excluded_words'], words)
+  exSetup.updateWorkingDefinition(['behavior', 'excluded_words'], words)
 
   $('#excludedWordsModal').modal('hide')
 }
@@ -250,8 +250,8 @@ function setUpColorPickers () {
   })
 }
 
-// Set helperAddress for calls to constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helperAddress for calls to exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // Call with a slight delay to make sure the elements are loaded
 setTimeout(setUpColorPickers, 100)
@@ -261,18 +261,18 @@ setTimeout(setUpColorPickers, 100)
 
 // Settings
 document.getElementById('collectionNameInput').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['behavior', 'collection_name'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['behavior', 'collection_name'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 document.getElementById('refreshRateInput').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['behavior', 'refresh_rate'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['behavior', 'refresh_rate'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 
 // Content
 document.getElementById('promptInput').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['content', 'prompt'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['content', 'prompt'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 document.getElementById('showExcludedWordsModalButton').addEventListener('click', showExcludedWordsModal)
 document.getElementById('excludedWordsListSaveButton').addEventListener('click', updateExcludedWordsList)
@@ -280,50 +280,50 @@ document.getElementById('excludedWordsListSaveButton').addEventListener('click',
 // Appearance
 // Rotation
 document.getElementById('wordRotationSelect').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['appearance', 'rotation'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['appearance', 'rotation'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 // Shape
 document.getElementById('cloudShapeSelect').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['appearance', 'cloud_shape'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['appearance', 'cloud_shape'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 // Text case
 document.getElementById('textCaseSelect').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['appearance', 'text_case'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['appearance', 'text_case'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 
 // Font upload
 document.getElementById('manageFontsButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
-    .then(constSetup.refreshAdvancedFontPickers)
+  exFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(exSetup.refreshAdvancedFontPickers)
 })
 
 // Color
 $('.coloris').change(function () {
   const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['appearance', 'color', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['appearance', 'color', $(this).data('property')], value)
+  exSetup.previewDefinition(true)
 })
 
 // Realtime-sliders should adjust as we drag them
 Array.from(document.querySelectorAll('.realtime-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['appearance', 'text_size', property], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['appearance', 'text_size', property], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
 document.getElementById('wordColorMode').addEventListener('change', (event) => {
   if (event.target.value === 'specific') {
     const value = document.getElementById('colorPicker_words').value
-    constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], value)
+    exSetup.updateWorkingDefinition(['appearance', 'color', 'words'], value)
   } else {
-    constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
+    exSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
   }
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 })
 
 document.getElementById('colorPicker_words').addEventListener('change', (event) => {
@@ -332,7 +332,7 @@ document.getElementById('colorPicker_words').addEventListener('change', (event) 
   const mode = document.getElementById('wordColorMode').value
   if (mode !== 'specific') return
 
-  constSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
+  exSetup.updateWorkingDefinition(['appearance', 'color', 'words'], event.target.value)
 })
 
 // Set color mode
@@ -342,7 +342,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-constSetup.configure({
+exSetup.configure({
   app: 'word_cloud_viewer',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -350,11 +350,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

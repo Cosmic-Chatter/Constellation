@@ -1,15 +1,15 @@
 /* global Coloris, bootstrap */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -48,7 +48,7 @@ function initializeDefinition () {
           },
           behavior: {}
         })
-        constSetup.previewDefinition(false)
+        exSetup.previewDefinition(false)
         resolve()
       })
   })
@@ -87,13 +87,13 @@ async function clearDefinitionInput (full = true) {
     el.val(el.data('default'))
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
-  constSetup.updateAdvancedColorPicker('style>background', {
+  exSetup.updateAdvancedColorPicker('style>background', {
     mode: 'color',
     color: '#22222E'
   })
 
   // Reset font face options
-  constSetup.resetAdvancedFontPickers()
+  exSetup.resetAdvancedFontPickers()
 
   // Reset text size options
   document.getElementById('headerTextSizeSlider').value = 0
@@ -116,7 +116,7 @@ function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
 
@@ -147,14 +147,14 @@ function editDefinition (uuid = '') {
 
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.style) {
-    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+    exSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
   // Set the appropriate values for the advanced font pickers
   if ('font' in def.style) {
     Object.keys(def.style.font).forEach((key) => {
       const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
-      constSetup.setAdvancedFontPicker(picker, def.style.font[key])
+      exSetup.setAdvancedFontPicker(picker, def.style.font[key])
     })
   }
 
@@ -218,9 +218,9 @@ function createSurveyOption (userDetails, populateEditor = false) {
 
   if (optionOrder.includes(details.uuid) === false) {
     optionOrder.push(details.uuid)
-    constSetup.updateWorkingDefinition(['option_order', optionOrder])
+    exSetup.updateWorkingDefinition(['option_order', optionOrder])
     Object.keys(defaults).forEach((key) => {
-      constSetup.updateWorkingDefinition(['options', details.uuid, key], details[key])
+      exSetup.updateWorkingDefinition(['options', details.uuid, key], details[key])
     })
   }
 
@@ -342,7 +342,7 @@ function deleteOption (uuid) {
     const option = def.options[optionUUID]
     createSurveyOption(option)
   })
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
 function changeOptionOrder (uuid, direction) {
@@ -369,7 +369,7 @@ function changeOptionOrder (uuid, direction) {
     const option = def.options[optionUUID]
     createSurveyOption(option)
   })
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
 function populateOptionEditor (id) {
@@ -408,15 +408,15 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('voting_kiosk')
+        exCommon.getAvailableDefinitions('voting_kiosk')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
               document.getElementById('availableDefinitionSelect').value = definition.uuid
             }
           })
@@ -424,8 +424,8 @@ function saveDefinition () {
     })
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // Set up the color pickers
 function setUpColorPickers () {
@@ -456,8 +456,8 @@ setTimeout(setUpColorPickers, 100)
 Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['behavior', key], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['behavior', key], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -465,8 +465,8 @@ Array.from(document.querySelectorAll('.behavior-input')).forEach((el) => {
 Array.from(document.querySelectorAll('.definition-text-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const key = event.target.getAttribute('data-def-key')
-    constSetup.updateWorkingDefinition(['text', key], event.target.value)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['text', key], event.target.value)
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -475,80 +475,80 @@ document.getElementById('addOptionButton').addEventListener('click', () => {
   createSurveyOption(null, true)
 })
 document.getElementById('optionInput_icon_user_file').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
+  exFileSelect.createFileSelectionModal({ multiple: false, filetypes: ['image'] })
     .then((result) => {
       if (result != null && result.length > 0) {
         const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-        constSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
+        exSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], result[0])
         document.getElementById('optionInput_icon').value = 'user'
-        constSetup.updateWorkingDefinition(['options', id, 'icon'], 'user')
+        exSetup.updateWorkingDefinition(['options', id, 'icon'], 'user')
         setIconUserFile(result[0])
-        constSetup.previewDefinition(true)
+        exSetup.previewDefinition(true)
       }
     })
 })
 document.getElementById('optionInput_icon_user_file_DeleteButton').addEventListener('click', () => {
   const id = document.getElementById('optionEditor').getAttribute('data-option-id')
-  constSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], '')
+  exSetup.updateWorkingDefinition(['options', id, 'icon_user_file'], '')
   setIconUserFile('')
   document.getElementById('optionInput_icon').value = ''
-  constSetup.updateWorkingDefinition(['options', id, 'icon'], '')
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['options', id, 'icon'], '')
+  exSetup.previewDefinition(true)
 })
 Array.from(document.getElementsByClassName('option-input')).forEach((el) => {
   el.addEventListener('change', (event) => {
     const id = document.getElementById('optionEditor').getAttribute('data-option-id')
     const field = event.target.getAttribute('data-field')
     if (id == null) return
-    constSetup.updateWorkingDefinition(['options', id, field], event.target.value)
+    exSetup.updateWorkingDefinition(['options', id, field], event.target.value)
     document.getElementById('OptionHeaderText_' + id).innerHTML = formatOptionHeader($('#definitionSaveButton').data('workingDefinition').options[id])
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   })
 })
 
 // Style fields
 $('.color-picker').change(function () {
   const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
+  exSetup.previewDefinition(true)
 })
 
 document.getElementById('manageFontsButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
-    .then(constSetup.refreshAdvancedFontPickers)
+  exFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(exSetup.refreshAdvancedFontPickers)
 })
 
 // Text size fields
 Array.from(document.querySelectorAll('.text-size-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['style', 'text_size', property], parseFloat(event.target.value))
+    exSetup.previewDefinition(true)
   })
 })
 
 // Layout fields
 document.getElementById('columnCountSelect').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['style', 'layout', 'num_columns'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['style', 'layout', 'num_columns'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 Array.from(document.querySelectorAll('.height-slider')).forEach((el) => {
   el.addEventListener('input', () => {
     const headerHeight = parseInt(document.getElementById('headerToButtonsSlider').value)
     const footerHeight = parseInt(document.getElementById('buttonsToFooterSlider').value)
     const buttonHeight = 100 - headerHeight - footerHeight
-    constSetup.updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
-    constSetup.updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
-    constSetup.updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
+    exSetup.updateWorkingDefinition(['style', 'layout', 'top_height'], headerHeight)
+    exSetup.updateWorkingDefinition(['style', 'layout', 'button_height'], buttonHeight)
+    exSetup.updateWorkingDefinition(['style', 'layout', 'bottom_height'], footerHeight)
     console.log(headerHeight, buttonHeight, footerHeight)
-    constSetup.previewDefinition(true)
+    exSetup.previewDefinition(true)
   })
 })
 Array.from(document.querySelectorAll('.padding-slider')).forEach((el) => {
   el.addEventListener('input', (event) => {
     const property = event.target.getAttribute('data-property')
-    constSetup.updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['style', 'layout', property], parseInt(event.target.value))
+    exSetup.previewDefinition(true)
   })
 })
 
@@ -559,7 +559,7 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-constSetup.configure({
+exSetup.configure({
   app: 'voting_kiosk',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -567,11 +567,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

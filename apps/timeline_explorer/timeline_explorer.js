@@ -1,13 +1,13 @@
 /* global showdown */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function updateFunc (update) {
   // Read updates for media player-specific actions and act on them
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -44,7 +44,7 @@ function loadDefinition (def) {
 
   // Backgorund settings
   if ('background' in def.style) {
-    constCommon.setBackground(def.style.background, root, '#719abf')
+    exCommon.setBackground(def.style.background, root, '#719abf')
   }
 
   // Font
@@ -65,7 +65,7 @@ function loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
-  constCommon.createLanguageSwitcher(def, localize)
+  exCommon.createLanguageSwitcher(def, localize)
 
   // Find the default language
   Object.keys(def.languages).forEach((lang) => {
@@ -73,7 +73,7 @@ function loadDefinition (def) {
   })
 
   // Load the CSV file containing the timeline data and use it to build the timeline entries.
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + def.spreadsheet,
     rawResponse: true,
@@ -81,7 +81,7 @@ function loadDefinition (def) {
   })
     .then((response) => {
       $('#timelineContainer').empty()
-      const csvAsJSON = constCommon.csvToJSON(response).json
+      const csvAsJSON = exCommon.csvToJSON(response).json
       $(document).data('spreadsheet', csvAsJSON)
       localize(defaultLang)
     })
@@ -89,7 +89,7 @@ function loadDefinition (def) {
   // Set up the attractor
   inactivityTimeout = def.inactivity_timeout || 30
   if ('attractor' in def && def.attractor.trim() !== '') {
-    const fileType = constCommon.guessMimetype(def.attractor)
+    const fileType = exCommon.guessMimetype(def.attractor)
     if (['image', 'video'].includes(fileType)) {
       setAttractor(def.attractor, fileType)
     }
@@ -98,7 +98,7 @@ function loadDefinition (def) {
   }
 
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 100)
 }
 
 function adjustFontSize (increment) {
@@ -241,7 +241,7 @@ function resetInactivityTimer () {
 
   clearTimeout(attractorTimer)
   attractorTimer = setTimeout(showAttractor, inactivityTimeout * 1000) // sec -> ms
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 }
 
 function hideAttractor () {
@@ -265,7 +265,7 @@ function showAttractor () {
   adjustFontSize(-100)
   localize(defaultLang)
 
-  constCommon.config.currentInteraction = false
+  exCommon.config.currentInteraction = false
 }
 
 // Add event listeners
@@ -291,7 +291,7 @@ let inactivityTimeout = 30
 let defaultLang
 
 // Constellation stuff
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'timeline_explorer',
   debug: true,
   loadDefinition,

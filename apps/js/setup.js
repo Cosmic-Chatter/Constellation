@@ -1,8 +1,8 @@
 /* global bootstrap, showdown */
 
-import * as constCommon from './constellation_app_common.js'
-import * as constSetup from './constellation_setup_common.js'
-import * as constFileSelectModal from './constellation_file_select_modal.js'
+import * as exCommon from './exhibitera_app_common.js'
+import * as exSetup from './exhibitera_setup_common.js'
+import * as exFileSelectModal from './exhibitera_file_select_modal.js'
 
 function updateParser (update) {
   // Take a list of defaults and build the interface for editing them.
@@ -76,7 +76,7 @@ function updateParser (update) {
 function showUpdateInfoModal (details) {
   // Populate the model with details about the update and show it.
 
-  return constCommon.makeHelperRequest({
+  return exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getDefaults'
   })
@@ -89,7 +89,7 @@ function showUpdateInfoModal (details) {
       $('#updateInfoModalDownloadButton').attr('href', 'https://github.com/Cosmic-Chatter/Constellation/releases/tag/' + details.available_version)
 
       // Get the changelog
-      constCommon.makeRequest({
+      exCommon.makeRequest({
         method: 'GET',
         url: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/changelog.md',
         endpoint: '',
@@ -126,11 +126,11 @@ function saveConfiguration () {
       port: parseInt(document.getElementById('controlServerPortInput').value)
     }
     defaults.permissions = {
-      audio: constCommon.stringToBool(document.getElementById('permissionsAudioInput').value),
-      refresh: constCommon.stringToBool(document.getElementById('permissionsRefreshInput').value),
-      restart: constCommon.stringToBool(document.getElementById('permissionsRestartInput').value),
-      shutdown: constCommon.stringToBool(document.getElementById('permissionsShutdownInput').value),
-      sleep: constCommon.stringToBool(document.getElementById('permissionsSleepInput').value)
+      audio: exCommon.stringToBool(document.getElementById('permissionsAudioInput').value),
+      refresh: exCommon.stringToBool(document.getElementById('permissionsRefreshInput').value),
+      restart: exCommon.stringToBool(document.getElementById('permissionsRestartInput').value),
+      shutdown: exCommon.stringToBool(document.getElementById('permissionsShutdownInput').value),
+      sleep: exCommon.stringToBool(document.getElementById('permissionsSleepInput').value)
     }
     defaults.smart_restart = {
       state: document.getElementById('smartRestartStateSelect').value,
@@ -150,7 +150,7 @@ function saveConfiguration () {
     defaults.system.port = parseInt(document.getElementById('remoteDisplayPortInput').value)
   }
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/setDefaults',
     params: { defaults }
@@ -209,7 +209,7 @@ function configureInterface () {
   } else {
     document.getElementById('remoteDisplayPortInputGroup').style.display = 'none'
   }
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/system/getPlatformDetails'
   })
@@ -234,7 +234,7 @@ function configureInterface () {
 function loadVersion () {
   // Load version.txt and update the GUI with the current version
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/_static/version.txt',
     rawResponse: true
@@ -247,7 +247,7 @@ function loadVersion () {
 function populateAvailableData () {
   // Get a list of available data files and populate the voting kiosk download select
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/data/getAvailable'
   })
@@ -268,16 +268,16 @@ function downloadDataAsCSV () {
   // Download the currently selected data file as a CSV file.
 
   const name = document.getElementById('votingKioskCSVDownloadSelect').value
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/data/getCSV',
     params: { name }
   })
     .then((result) => {
       if ('success' in result && result.success === true) {
-        if (constCommon.config.remoteDisplay === false) {
+        if (exCommon.config.remoteDisplay === false) {
           // Ask the app to create a save dialog
-          constCommon.makeHelperRequest({
+          exCommon.makeHelperRequest({
             method: 'POST',
             endpoint: '/app/saveFile',
             params: {
@@ -302,7 +302,7 @@ function downloadDataAsCSV () {
 function populateHelpTab () {
   // Load the overall README.md and add its contents to the Help tab
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/README.md',
     rawResponse: true
@@ -323,7 +323,7 @@ function populateAvailableDefinitions () {
 
   const optionsByApp = {}
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   })
@@ -342,7 +342,7 @@ function populateAvailableDefinitions () {
       })
       // Then, sort the categories and add them with header entries
       Object.keys(optionsByApp).sort().forEach((app) => {
-        const header = new Option(constCommon.appNameToDisplayName(app))
+        const header = new Option(exCommon.appNameToDisplayName(app))
         header.setAttribute('disabled', true)
         definitionSelect.appendChild(header)
 
@@ -354,7 +354,7 @@ function populateAvailableDefinitions () {
 function gotoAppLink (el) {
   // Navigate to the link given by element el, either in the browser or in the webview
 
-  if (constCommon.config.remoteDisplay === true) {
+  if (exCommon.config.remoteDisplay === true) {
     // Switch webpages in the browser
 
     const endpoint = el.getAttribute('data-web-link')
@@ -367,7 +367,7 @@ function gotoAppLink (el) {
     if (page === 'app') {
       reload = true
     }
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/app/showWindow/' + page,
       params: { reload }
@@ -379,9 +379,9 @@ function configureUser (user) {
   // Configure the interface for the permissions of the given user
 
   // Check whether the user has permission to edit this component
-  constCommon.makeServerRequest({
+  exCommon.makeServerRequest({
     method: 'GET',
-    endpoint: '/component/' + constCommon.config.uuid + '/groups'
+    endpoint: '/component/' + exCommon.config.uuid + '/groups'
   })
     .then((response) => {
       let groups = []
@@ -404,7 +404,7 @@ function configureUser (user) {
       if (allowed) {
         document.getElementById('helpInsufficientPermissionstMessage').style.display = 'none'
       } else {
-        if (constSetup.config.loggedIn === true) {
+        if (exSetup.config.loggedIn === true) {
           document.getElementById('helpInsufficientPermissionstMessage').style.display = 'block'
         }
         document.getElementById('nav-settings-tab').style.setProperty('display', 'none', 'important')
@@ -416,9 +416,9 @@ function configureUser (user) {
     })
 }
 
-constCommon.config.helperAddress = window.location.origin
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'settings'
+exCommon.config.helperAddress = window.location.origin
+exCommon.config.updateParser = updateParser // Function to read app-specific updatess
+exCommon.config.constellationAppID = 'settings'
 
 // Activate tooltips
 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -429,13 +429,13 @@ tooltipTriggerList.map(function (tooltipTriggerEl) {
 const markdownConverter = new showdown.Converter()
 markdownConverter.setFlavor('github')
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
         .then(() => {
-          configureUser(constSetup.config.user)
+          configureUser(exSetup.config.user)
         })
         .catch(() => {
           // This has likely failed because of no connection to Control Server
@@ -451,7 +451,7 @@ populateAvailableData()
 populateAvailableDefinitions()
 
 // Add event handlers
-constSetup.createLoginEventListeners()
+exSetup.createLoginEventListeners()
 
 // Activate app links
 Array.from(document.querySelectorAll('.app-link')).forEach((el) => {
@@ -468,7 +468,7 @@ document.getElementById('saveDefaultsButton').addEventListener('click', (event) 
   saveConfiguration()
 })
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
-  constFileSelectModal.createFileSelectionModal({ manage: true })
+  exFileSelectModal.createFileSelectionModal({ manage: true })
 })
 document.getElementById('definitionSelectListRefresh').addEventListener('click', populateAvailableDefinitions)
 Array.from(document.querySelectorAll('.gui-toggle')).forEach((el) => {

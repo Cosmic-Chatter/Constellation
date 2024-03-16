@@ -11,7 +11,7 @@ from typing import Union
 
 # Constellation modules
 import config
-import constellation_tools as c_tools
+import exhibitera_tools as c_tools
 
 
 def create_CSV(file_path: Union[str, os.PathLike], filename: str = "") -> str:
@@ -197,7 +197,7 @@ def write_raw_text(data: str, name: str, kind: str = "flexible-tracker", mode: s
 
 
 # Set up log file
-log_path = c_tools.get_path(["control_server.log"], user_file=True)
+log_path = c_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

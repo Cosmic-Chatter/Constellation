@@ -90,7 +90,7 @@ def get_system_stats() -> dict[str, Union[int, float]]:
 
 
 def read_defaults() -> bool:
-    """Load config.json and set up Constellation Apps based on its contents."""
+    """Load config.json and set up Exhibitera Apps based on its contents."""
 
     defaults_path = helper_files.get_path(["configuration", "config.json"], user_file=True)
     config.defaults = helper_files.load_json(defaults_path)
@@ -179,9 +179,9 @@ def command_line_setup_print_gui() -> None:
 
     clear_terminal()
     print("################################################################################")
-    print("                      Welcome to Constellation Apps!")
+    print("                      Welcome to Exhibitera Apps!")
     print("")
-    print("Constellation Apps is a collection of software that helps you put your digital")
+    print("Exhibitera Apps is a collection of software that helps you put your digital")
     print("content front-and-center. It's a powerful yet intuitive way to build guest-")
     print("facing digital interactives for use on the museum floor.")
     print("")
@@ -199,7 +199,7 @@ def handle_missing_defaults_file():
 
     defaults = {
         "app": {},
-        "control_server": {},
+        "hub": {},
         "permissions": {},
         "system": {
             "remote_display": True
@@ -242,14 +242,14 @@ def handle_missing_defaults_file():
         port = input("Enter the Control Server's port (default=8082): ").strip()
         if port == "":
             port = 8082
-        defaults["control_server"]["ip_address"] = ip
-        defaults["control_server"]["port"] = int(port)
+        defaults["hub"]["ip_address"] = ip
+        defaults["hub"]["port"] = int(port)
 
     command_line_setup_print_gui()
 
     print("--- Select a port ---")
     print("")
-    print("After completing setup, you will access Constellation Apps using the web address")
+    print("After completing setup, you will access Exhibitera Apps using the web address")
     print("http://localhost:[port]. Which network port would you like to use?")
     default_port = find_available_port()
 
@@ -288,7 +288,7 @@ def handle_missing_defaults_file():
         print("stored and never leave your local network.")
         print("")
 
-        print("Constellation Apps will now check for permission to capture screenshots.")
+        print("Exhibitera Apps will now check for permission to capture screenshots.")
         _ = input("Press Enter to continue...")
         _ = capture_screenshot()
 

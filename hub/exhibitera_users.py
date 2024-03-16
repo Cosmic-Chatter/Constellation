@@ -8,9 +8,9 @@ import uuid
 import argon2
 from cryptography.fernet import Fernet, InvalidToken
 
-# Constellation modules
+# Exhibitera modules
 import config
-import constellation_tools as c_tools
+import exhibitera_tools as c_tools
 
 password_hasher = argon2.PasswordHasher(time_cost=1,
                                         memory_cost=1024,
@@ -20,7 +20,7 @@ password_hasher = argon2.PasswordHasher(time_cost=1,
 
 
 class User:
-    """A Constellation user account."""
+    """An Exhibitera user account."""
 
     def __init__(self,
                  username: str,
@@ -198,9 +198,9 @@ def check_for_root_admin():
     if not os.path.exists(path):
         c_tools.clear_terminal()
         print("##########################################################")
-        print("Welcome to Constellation Control Server!")
+        print("Welcome to Exhibitera Hub!")
         print("")
-        print("Access to Constellation is controlled by a user account")
+        print("Access to Exhibitera is controlled by a user account")
         print("system. To begin, you must create a password for the root")
         print("admin account. You will be able to use this password to")
         print("manage other accounts.")

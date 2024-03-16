@@ -1,7 +1,7 @@
 /* global Coloris, bootstrap */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 class DMXUniverse {
   // A mirror for the DMXUniverse Python class
@@ -190,7 +190,7 @@ class DMXFixture {
       console.log('Error: null value:', channel, this.channelValues[channel])
       return
     }
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/' + this.uuid + '/setChannel',
       params: {
@@ -203,7 +203,7 @@ class DMXFixture {
   sendColorUpdate () {
     // Send a message to the helper asking it to update the color
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/' + this.uuid + '/setColor',
       params: {
@@ -215,7 +215,7 @@ class DMXFixture {
   sendBrightnessUpdate () {
     // Send a message to the helper asking it to update the brightness
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/' + this.uuid + '/setBrightness',
       params: {
@@ -579,7 +579,7 @@ class DMXFixtureGroup {
           valueToUpdate[channel] = value
           fixture.setChannelValues(valueToUpdate)
         })
-        constCommon.makeHelperRequest({
+        exCommon.makeHelperRequest({
           method: 'POST',
           endpoint: '/DMX/group/' + thisUUID + '/setChannel',
           params: { channel, value }
@@ -611,7 +611,7 @@ class DMXFixtureGroup {
           valueToUpdate[channel] = value
           fixture.setChannelValues(valueToUpdate)
         })
-        constCommon.makeHelperRequest({
+        exCommon.makeHelperRequest({
           method: 'POST',
           endpoint: '/DMX/group/' + thisUUID + '/setChannel',
           params: { channel, value }
@@ -815,7 +815,7 @@ class DMXFixtureGroup {
   showScene (uuid) {
     // Tell the helper to set the given scene.
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/group/' + this.uuid + '/showScene',
       params: {
@@ -931,7 +931,7 @@ function onColorChangeFromPicker (collectionName, uuid, meta = true) {
 
   if (meta === true) {
     // Send the update to the whole group
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/group/' + uuid + '/setColor',
       params: { color: [red, green, blue] }
@@ -1018,7 +1018,7 @@ function updateUniverseFromModal () {
   fixtureChecks.forEach((fixture) => {
     if (fixture.checked === false) {
       const fixtureUUID = fixture.getAttribute('data-uuid')
-      promiseList.push(constCommon.makeHelperRequest({
+      promiseList.push(exCommon.makeHelperRequest({
         method: 'POST',
         endpoint: '/DMX/fixture/remove',
         params: { fixtureUUID }
@@ -1029,7 +1029,7 @@ function updateUniverseFromModal () {
   // Change the name
   const newName = document.getElementById('editUniverseModalNameInput').value
   if (newName !== currentName) {
-    promiseList.push(constCommon.makeHelperRequest({
+    promiseList.push(exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/universe/rename',
       params: {
@@ -1192,7 +1192,7 @@ function editGroupFromModal () {
     group.name = document.getElementById('editGroupNameInput').value
     group.addFixtures(fixturesToAdd)
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/group/' + groupUUID + '/edit',
       params: {
@@ -1216,7 +1216,7 @@ function editGroupFromModal () {
 function createGroupFromModal (name, fixturesToAdd, fixturesToAddUUID) {
   // Ask the helper to create the group, then add the fixtures.
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/DMX/group/create',
     params: {
@@ -1289,7 +1289,7 @@ function editSceneFromModal () {
   if (uuid === '') {
     // We are creating a new scene
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/group/' + groupUUID + '/createScene',
       params: { name: sceneName, values: sceneDict, duration }
@@ -1305,7 +1305,7 @@ function editSceneFromModal () {
   } else {
     // We are editing an existing scene
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/group/' + groupUUID + '/editScene',
       params: { name: sceneName, values: sceneDict, duration, uuid }
@@ -1330,7 +1330,7 @@ function deleteSceneFromModal () {
   const groupUUID = $('#editSceneModal').data('group').uuid
   const uuid = $('#editSceneModal').data('uuid')
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/DMX/group/' + groupUUID + '/deleteScene',
     params: { uuid }
@@ -1511,13 +1511,13 @@ function addFixtureFromModal () {
 
   let promise
   if (mode === 'add') {
-    promise = constCommon.makeHelperRequest({
+    promise = exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/create',
       params: definition
     })
   } else {
-    promise = constCommon.makeHelperRequest({
+    promise = exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/DMX/fixture/edit',
       params: definition
@@ -1543,7 +1543,7 @@ function createUniverse (name, uuid, controller) {
 function deleteUniverse (uuid) {
   // Ask the helper to delete the given universe and then remove it from the interface.
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/universe/' + uuid + '/delete'
   })
@@ -1567,7 +1567,7 @@ function createGroup (name, uuid = '') {
 function deleteGroup (uuid) {
   // Ask the helper to delete the given group and then remove it from the interface.
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/group/' + uuid + '/delete'
   })
@@ -1648,7 +1648,7 @@ function getFixtureByUUID (uuid) {
 function getDMXStatus () {
   // Ask the helper for the latest status for each fixture.
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/getStatus'
   })
@@ -1667,7 +1667,7 @@ function getDMXConfiguration () {
 
   let configuration
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/getConfiguration'
   })
@@ -1787,7 +1787,7 @@ function showAddUniverseMOdal () {
   $('#addUniverseMissingNameWarning').hide()
 
   // Get a list of available DMX controllers
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/DMX/getAvailableControllers'
   })
@@ -1826,7 +1826,7 @@ function addUniverseFromModal () {
     return
   }
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/DMX/universe/create',
     params: {
@@ -1889,27 +1889,27 @@ popoverTriggerList.map(function (popoverTriggerEl) {
   return new bootstrap.Popover(popoverTriggerEl)
 })
 
-constCommon.config.updateParser = updateFunc // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'dmx_control'
-constCommon.config.helperAddress = window.location.origin
+exCommon.config.updateParser = updateFunc // Function to read app-specific updatess
+exCommon.config.constellationAppID = 'dmx_control'
+exCommon.config.helperAddress = window.location.origin
 
 const universeList = []
 let groupList = []
 
-constCommon.config.debug = true
+exCommon.config.debug = true
 let standalone = false
 
-const searchParams = constCommon.parseQueryString()
+const searchParams = exCommon.parseQueryString()
 if (searchParams.has('standalone')) {
   // We are displaying this because it was clicked from the web console DMX tab
   standalone = true
 } else {
   // We are displaying this as the main app
-  constCommon.askForDefaults()
+  exCommon.askForDefaults()
     .then(() => {
-      constCommon.sendPing()
+      exCommon.sendPing()
 
-      setInterval(constCommon.sendPing, 5000)
+      setInterval(exCommon.sendPing, 5000)
     })
 }
 
@@ -1921,10 +1921,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 }
 
 document.getElementById('helpButton').addEventListener('click', (event) => {
-  constSetup.showAppHelpModal('dmx_control')
+  exSetup.showAppHelpModal('dmx_control')
 })
 
-setInterval(constCommon.checkForHelperUpdates, 5000)
+setInterval(exCommon.checkForHelperUpdates, 5000)
 
 getDMXConfiguration()
 setInterval(getDMXStatus, 5000)

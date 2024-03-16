@@ -8,7 +8,7 @@ from typing import Any, Union
 
 # Constellation imports
 import config
-import constellation_tools as c_tools
+import exhibitera_tools as c_tools
 
 
 def get_maintenance_report(file_path: Union[str, os.PathLike]) -> dict:
@@ -163,7 +163,7 @@ def convert_legacy_maintenance_log(this_id: str) -> dict[str, Any] | None:
 
 
 # Set up log file
-log_path = c_tools.get_path(["control_server.log"], user_file=True)
+log_path = c_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

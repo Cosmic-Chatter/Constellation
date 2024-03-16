@@ -12,9 +12,9 @@ pyinstaller --clean --onefile \
             --add-data "*.txt:."\
             --add-data "js/app.js:js/." \
             --add-data "js/coloris.min.js:js/." \
-            --add-data "js/constellation_app_common.js:js/." \
-            --add-data "js/constellation_file_select_modal.js:js/." \
-            --add-data "js/constellation_setup_common.js:js/." \
+            --add-data "js/exhibitera_app_common.js:js/." \
+            --add-data "js/exhibitera_file_select_modal.js:js/." \
+            --add-data "js/exhibitera_setup_common.js:js/." \
             --add-data "js/setup.js:js/." \
             --add-data "js/html2canvas.min.js:js/." \
             --add-data "js/jquery-3.6.1.min.js:js/." \
@@ -26,7 +26,7 @@ pyinstaller --clean --onefile \
             --add-data "css/bootstrap_5_3/*:css/bootstrap_5_3/." \
             --add-data "css/coloris.min.css:css/." \
             --add-data "css/simple-keyboard.css:css/." \
-            --add-data "css/constellation-common.css:css/." \
+            --add-data "css/exhibitera-common.css:css/." \
             --add-data "_fonts/*:_fonts/." \
             --add-data "dmx_control/*.*:dmx_control/." \
             --add-data "InfoStation/*.*:InfoStation/." \

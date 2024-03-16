@@ -9,9 +9,9 @@ import os
 
 # Constellation imports
 import config
-import constellation_exhibit as c_exhibit
-import constellation_maintenance as c_maint
-import constellation_tools as c_tools
+import exhibitera_exhibit as c_exhibit
+import exhibitera_maintenance as c_maint
+import exhibitera_tools as c_tools
 
 
 # Added in C5 to convert legacy C4 and earlier projector.json

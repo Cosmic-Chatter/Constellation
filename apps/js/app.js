@@ -1,4 +1,4 @@
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function updateParser (update) {
   // Read updates
@@ -11,40 +11,40 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-constCommon.config.updateParser = updateParser // Function to read app-specific updatess
-constCommon.config.constellationAppID = 'none'
-constCommon.config.debug = true
-constCommon.config.helperAddress = window.location.origin
+exCommon.config.updateParser = updateParser // Function to read app-specific updatess
+exCommon.config.constellationAppID = 'none'
+exCommon.config.debug = true
+exCommon.config.helperAddress = window.location.origin
 
-constCommon.askForDefaults()
+exCommon.askForDefaults()
   .then(() => {
-    console.log(constCommon.config)
-    if (constCommon.config.standalone === false) {
+    console.log(exCommon.config)
+    if (exCommon.config.standalone === false) {
       // Using Control Server
       document.getElementById('standaloneWelcome').style.display = 'none'
       document.getElementById('controlServerWelcome').style.display = 'block'
-      document.getElementById('controlServerAddress').innerHTML = constCommon.config.serverAddress
+      document.getElementById('controlServerAddress').innerHTML = exCommon.config.serverAddress
 
-      constCommon.sendPing()
-      setInterval(constCommon.sendPing, 5000)
-      if (constCommon.config.connectionChecker != null) setInterval(constCommon.config.connectionChecker, 500)
+      exCommon.sendPing()
+      setInterval(exCommon.sendPing, 5000)
+      if (exCommon.config.connectionChecker != null) setInterval(exCommon.config.connectionChecker, 500)
     } else {
       // Not using Control Server
       document.getElementById('standaloneWelcome').style.display = 'block'
       document.getElementById('controlServerWelcome').style.display = 'none'
-      constCommon.loadDefinition(constCommon.config.currentDefinition)
+      exCommon.loadDefinition(exCommon.config.currentDefinition)
     }
   })
 
 document.getElementById('settingsButton').addEventListener('click', (event) => {
-  if (constCommon.config.remoteDisplay === true) {
+  if (exCommon.config.remoteDisplay === true) {
     // Switch webpages in the browser
 
     window.open(window.location.origin + '/setup.html', '_blank').focus()
   } else {
     // Launch the appropriate webview page in the app
 
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/app/showWindow/settings',
       params: { reload: true }

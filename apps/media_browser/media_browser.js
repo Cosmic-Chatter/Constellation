@@ -1,6 +1,6 @@
 /* global bootstrap */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function changePage (val) {
   switch (val) {
@@ -176,7 +176,7 @@ function _getFilterOptions (key) {
   for (const row of spreadsheet) {
     if (key in row) resultDict[row[key]] = 1
   }
-  return constCommon.sortAlphabetically(Object.keys(resultDict))
+  return exCommon.sortAlphabetically(Object.keys(resultDict))
 }
 
 function _populateResultsRow (currentKey) {
@@ -290,7 +290,7 @@ function updateParser (update) {
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -312,14 +312,14 @@ function loadDefinition (def) {
   const langs = Object.keys(def.languages)
   if (langs.length === 0) return
 
-  constCommon.createLanguageSwitcher(def, localize)
+  exCommon.createLanguageSwitcher(def, localize)
 
   // Configure the attractor
   if ('inactivity_timeout' in def) {
     inactivityTimeout = def.inactivity_timeout * 1000
   }
   if ('attractor' in def && def.attractor.trim() !== '') {
-    if (constCommon.guessMimetype(def.attractor) === 'video') {
+    if (exCommon.guessMimetype(def.attractor) === 'video') {
       attractorType = 'video'
 
       document.getElementById('attractorVideo').src = 'content/' + def.attractor
@@ -400,12 +400,12 @@ function loadDefinition (def) {
 
   // Backgorund settings
   if ('background' in def.style) {
-    constCommon.setBackground(def.style.background, root, '#fff')
+    exCommon.setBackground(def.style.background, root, '#fff')
   }
 
   // Set icon colors based on the background color.
-  const backgroundColor = constCommon.getColorAsRGBA(document.body, 'background')
-  const backgroundClassification = constCommon.classifyColor(backgroundColor)
+  const backgroundColor = exCommon.getColorAsRGBA(document.body, 'background')
+  const backgroundClassification = exCommon.classifyColor(backgroundColor)
   if (backgroundClassification === 'light') {
     document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_black.svg'
     document.getElementById('filterDropdownIcon').src = '_static/icons/filter_black.svg'
@@ -455,19 +455,19 @@ function loadDefinition (def) {
   })
 
   // Load the CSV file containing the items ad build the results row
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + def.spreadsheet,
     rawResponse: true,
     noCache: true
   })
     .then((response) => {
-      const csvAsJSON = constCommon.csvToJSON(response)
+      const csvAsJSON = exCommon.csvToJSON(response)
       spreadsheet = csvAsJSON.json // Global property
       localize(defaultLang)
 
       // Send a thumbnail to the helper
-      setTimeout(() => constCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 500)
+      setTimeout(() => exCommon.saveScreenshotAsThumbnail(def.uuid + '.png'), 500)
     })
 }
 
@@ -525,7 +525,7 @@ function showAttractor () {
     return
   }
 
-  constCommon.config.currentInteraction = false
+  exCommon.config.currentInteraction = false
   if (attractorAvailable) {
     if (attractorType === 'video') {
       document.getElementById('attractorVideo').play()
@@ -552,7 +552,7 @@ function hideAttractor () {
     if (attractorType === 'video') {
       document.getElementById('attractorVideo').pause()
     }
-    constCommon.config.currentInteraction = true
+    exCommon.config.currentInteraction = true
     resetActivityTimer()
   })
 }
@@ -581,7 +581,7 @@ function showMediaInLightbox (media, title = '', caption = '', credit = '') {
   }
 
   // Load the media with a callback to fade it in when it is loaded
-  const mimetype = constCommon.guessMimetype(media)
+  const mimetype = exCommon.guessMimetype(media)
   if (mimetype === 'image') {
     $('#mediaLightboxImage').one('load', function () {
       $('#mediaLightboxImage, #mediaLightboxTitle, #mediaLightboxCredit, #mediaLightboxCaption').fadeIn()
@@ -642,7 +642,7 @@ let currentPage = 0
 let cardsPerPage, numCols, numRows
 let defaultLang = ''
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'media_browser',
   debug: true,
   loadDefinition,

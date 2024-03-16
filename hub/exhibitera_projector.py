@@ -5,8 +5,8 @@ import time
 
 # Constellation imports
 import config
-import constellation_tools as c_tools
-import constellation_exhibit as c_exhibit
+import exhibitera_tools as c_tools
+import exhibitera_exhibit as c_exhibit
 
 
 
@@ -27,7 +27,7 @@ def poll_projectors():
 
 
 # Set up log file
-log_path = c_tools.get_path(["control_server.log"], user_file=True)
+log_path = c_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

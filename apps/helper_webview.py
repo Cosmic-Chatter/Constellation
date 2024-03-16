@@ -84,15 +84,15 @@ def show_webview_window(app, reload=False):
     # If reload=True, destroy any existing copy of this window
     if reload:
         for window in webview.windows:
-            if window.title == 'Constellation Apps - ' + names[app] or \
-                    (app == 'app' and window.title == 'Constellation Apps'):
+            if window.title == 'Exhibitera Apps - ' + names[app] or \
+                    (app == 'app' and window.title == 'Exhibitera Apps'):
                 window.destroy()
 
     # If not, create one
     if app == 'app':
-        name = "Constellation Apps"
+        name = "Exhibitera Apps"
     else:
-        name = 'Constellation Apps - ' + names[app]
+        name = 'Exhibitera Apps - ' + names[app]
     webview.create_window(name,
                           height=600,
                           width=800,

@@ -1,6 +1,6 @@
 /* global helperAddress, showdown */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function startSeekBack () {
   // Begin a timer that sends messages to the helper to ask the video player
@@ -109,7 +109,7 @@ function askForDefaults () {
   // Send a message to the local helper and ask for the latest configuration
   // defaults, then use them.
 
-  constCommon.askForDefaults()
+  exCommon.askForDefaults()
   setTimeout(rebuildInterface(), 500)
 }
 
@@ -198,16 +198,16 @@ function updateParser (update) {
 
   // current_config = update;
   if ('kiosk_id' in update) {
-    constCommon.config.id = update.kiosk_id
+    exCommon.config.id = update.kiosk_id
   }
   if ('kiosk_type' in update) {
-    constCommon.config.type = update.kiosk_type
+    exCommon.config.type = update.kiosk_type
   }
   if ('dictionary' in update) {
-    constCommon.config.dictionary = update.dictionary
+    exCommon.config.dictionary = update.dictionary
   }
   if ('kiosk_anydesk_id' in update) {
-    constCommon.config.AnyDeskID = update.kiosk_anydesk_id
+    exCommon.config.AnyDeskID = update.kiosk_anydesk_id
   }
 
   if ('commands' in update) {
@@ -238,7 +238,7 @@ function updateParser (update) {
 //       class: 'exhibitComponent',
 //       id,
 //       type,
-//       currentInteraction: String(constCommon.config.currentInteraction),
+//       currentInteraction: String(exCommon.config.currentInteraction),
 //       allowed_actions: allowedActionsDict,
 //       constellation_app_id: 'media_player',
 //       AnyDeskID
@@ -328,7 +328,7 @@ function setAutoplay (state) {
 
   const xhr = new XMLHttpRequest()
   xhr.timeout = 2000
-  xhr.open('POST', constCommon.config.helperAddress, true)
+  xhr.open('POST', exCommon.config.helperAddress, true)
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.send(requestString)
 }
@@ -505,7 +505,7 @@ function getClipList () {
   const requestString = JSON.stringify(requestDict)
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', constCommon.config.helperAddress, true)
+  xhr.open('POST', exCommon.config.helperAddress, true)
   xhr.timeout = 1000
   xhr.setRequestHeader('Content-Type', 'application/json')
   xhr.overrideMimeType('text/plain; charset=x-user-defined')
@@ -519,7 +519,7 @@ function getClipList () {
         const oldList = clipList
         clipList = update.clipList
         activeClip = parseInt(update.activeClip)
-        if (constCommon.arraysEqual(oldList, clipList) === false) {
+        if (exCommon.arraysEqual(oldList, clipList) === false) {
           rebuildInterface()
           getCurrentExhibit() // A changing clipList probably means a different exhibit
         }
@@ -537,14 +537,14 @@ function showAttractor () {
   setLang('en')
   setAutoplay('on')
   resetTextSize()
-  constCommon.config.currentInteraction = false
+  exCommon.config.currentInteraction = false
 
   const analyticsData = {
     action: 'showAttractor',
     target: 'attractor',
     idle: 'true'
   }
-  constCommon.sendAnalytics(analyticsData)
+  exCommon.sendAnalytics(analyticsData)
 }
 
 function hideAttractor () {
@@ -553,14 +553,14 @@ function hideAttractor () {
   $('#attractorOverlay').hide()
   setAutoplay('off')
   resetAttractorTimer()
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 
   const analyticsData = {
     action: 'hideAttractor',
     target: 'attractor',
     idle: 'false'
   }
-  constCommon.sendAnalytics(analyticsData)
+  exCommon.sendAnalytics(analyticsData)
 }
 
 function resetAttractorTimer () {
@@ -594,10 +594,10 @@ let seekTimer = null // Will hold setInterval reference for seeking the video
 // var playPauseTimer = null; // Will hold setTimeout reference for resuming video play after seeking
 let seekDirection = 'back'
 
-constCommon.config.helperAddress = helperAddress
-constCommon.config.updateParser = updateParser // To read kiosk-specific updates
+exCommon.config.helperAddress = helperAddress
+exCommon.config.updateParser = updateParser // To read kiosk-specific updates
 askForDefaults()
-setInterval(constCommon.sendPing, 5000)
+setInterval(exCommon.sendPing, 5000)
 setInterval(getClipList, 5000) // Poll the helper for changes to the playing clips
 updateTextSize()
 let inactivityTimer = setTimeout(showAttractor, 30000)

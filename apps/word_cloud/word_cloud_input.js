@@ -1,6 +1,6 @@
 /* global swearList */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function clear () {
   $('#inputField').val('')
@@ -25,8 +25,8 @@ function sendTextToServer () {
     text
   }
 
-  if (constCommon.config.standalone === false) {
-    constCommon.makeServerRequest(
+  if (exCommon.config.standalone === false) {
+    exCommon.makeServerRequest(
       {
         method: 'POST',
         endpoint: '/tracker/flexible-tracker/submitRawText',
@@ -38,7 +38,7 @@ function sendTextToServer () {
         }
       })
   } else {
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'POST',
       endpoint: '/data/writeRawText',
       params: requestDict
@@ -57,7 +57,7 @@ function updateFunc (update) {
   // This should be last to make sure the path has been updated
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -127,7 +127,7 @@ function loadDefinition (definition) {
 
   // Backgorund settings
   if ('background' in definition.appearance) {
-    constCommon.setBackground(definition.appearance.background, root, '#fff')
+    exCommon.setBackground(definition.appearance.background, root, '#fff')
   }
 
   // Font settings
@@ -160,7 +160,7 @@ function loadDefinition (definition) {
   }
 
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 const Keyboard = window.SimpleKeyboard.default
@@ -200,7 +200,7 @@ const keyboard = new Keyboard({
   }
 })
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'word_cloud_input',
   debug: true,
   loadDefinition,

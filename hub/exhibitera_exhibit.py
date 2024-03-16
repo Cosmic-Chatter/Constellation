@@ -17,8 +17,8 @@ import wakeonlan
 # Constellation imports
 import component_helpers
 import config
-import constellation_maintenance as c_maint
-import constellation_tools as c_tools
+import exhibitera_maintenance as c_maint
+import exhibitera_tools as c_tools
 import projector_control
 
 
@@ -47,7 +47,7 @@ class BaseComponent:
         self.WOL_broadcast_address: str = "255.255.255.255"
         self.WOL_port: int = 9
 
-        self.latency: Union[None, float] = None  # Latency between Control Server and the device in ms
+        self.latency: Union[None, float] = None  # Latency between Hub and the device in ms
         self.latency_timer: Union[threading.Timer, None] = None
 
         if last_contact_datetime == "" or last_contact_datetime == "None":
@@ -87,7 +87,7 @@ class BaseComponent:
             self.latency_timer.cancel()
 
     def remove(self):
-        """Remove the component from Control Server tracking.
+        """Remove the component from Hub tracking.
 
         If another ping is received, the component will be re-added.
         """
@@ -377,7 +377,7 @@ class WakeOnLANDevice(BaseComponent):
             except icmplib.exceptions.SocketPermissionError:
                 if "wakeOnLANPrivilege" not in config.serverWarningDict:
                     print(
-                        "Warning: to check the status of Wake on LAN devices, you must run Control Server with administrator privileges.")
+                        "Warning: to check the status of Wake on LAN devices, you must run Hub with administrator privileges.")
                     with config.logLock:
                         logging.info(f"Need administrator privilege to check Wake on LAN status")
                     config.serverWarningDict["wakeOnLANPrivilege"] = True
@@ -958,7 +958,7 @@ def read_descriptions_configuration():
 
 
 # Set up log file
-log_path = c_tools.get_path(["control_server.log"], user_file=True)
+log_path = c_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

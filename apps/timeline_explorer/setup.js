@@ -1,15 +1,15 @@
 /* global bootstrap, Coloris */
 
-import * as constCommon from '../js/constellation_app_common.js'
-import * as constFileSelect from '../js/constellation_file_select_modal.js'
-import * as constSetup from '../js/constellation_setup_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
+import * as exFileSelect from '../js/exhibitera_file_select_modal.js'
+import * as exSetup from '../js/exhibitera_setup_common.js'
 
 function initializeDefinition () {
   // Create a blank definition at save it to workingDefinition.
 
   return new Promise(function (resolve, reject) {
     // Get a new temporary uuid
-    constCommon.makeHelperRequest({
+    exCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
     })
@@ -38,7 +38,7 @@ function initializeDefinition () {
             font: {}
           }
         })
-        constSetup.previewDefinition(false)
+        exSetup.previewDefinition(false)
         resolve()
       })
   })
@@ -75,7 +75,7 @@ async function clearDefinitionInput (full = true) {
     document.querySelector('#colorPicker_' + input).dispatchEvent(new Event('input', { bubbles: true }))
   })
 
-  constSetup.updateAdvancedColorPicker('style>background', {
+  exSetup.updateAdvancedColorPicker('style>background', {
     mode: 'color',
     color: '#719abf',
     gradient_color_1: '#719abf',
@@ -83,14 +83,14 @@ async function clearDefinitionInput (full = true) {
   })
 
   // Reset font face options
-  constSetup.resetAdvancedFontPickers()
+  exSetup.resetAdvancedFontPickers()
 }
 
 function editDefinition (uuid = '') {
   // Populate the given definition for editing.
 
   clearDefinitionInput(false)
-  const def = constSetup.getDefinitionByUUID(uuid)
+  const def = exSetup.getDefinitionByUUID(uuid)
   console.log(def)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
@@ -118,14 +118,14 @@ function editDefinition (uuid = '') {
 
   // Set the appropriate values for any advanced color pickers
   if ('background' in def.style) {
-    constSetup.updateAdvancedColorPicker('style>background', def.style.background)
+    exSetup.updateAdvancedColorPicker('style>background', def.style.background)
   }
 
   // Set the appropriate values for the advanced font pickers
   if ('font' in def.style) {
     Object.keys(def.style.font).forEach((key) => {
       const picker = document.querySelector(`.AFP-select[data-path="style>font>${key}"`)
-      constSetup.setAdvancedFontPicker(picker, def.style.font[key])
+      exSetup.setAdvancedFontPicker(picker, def.style.font[key])
     })
   }
 
@@ -244,11 +244,11 @@ function createLanguageTab (code, displayName) {
     // If the checkbox is checked, uncheck all the others and save to the working definition.
     Array.from(document.querySelectorAll('.default-lang-checkbox')).forEach((el) => {
       el.checked = false
-      constSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
+      exSetup.updateWorkingDefinition(['languages', el.getAttribute('data-lang'), 'default'], false)
     })
     event.target.checked = true
-    constSetup.updateWorkingDefinition(['languages', code, 'default'], true)
-    constSetup.previewDefinition(true)
+    exSetup.updateWorkingDefinition(['languages', code, 'default'], true)
+    exSetup.previewDefinition(true)
   })
   checkContainer.appendChild(defaultCheckbox)
 
@@ -359,8 +359,8 @@ function createLanguageTab (code, displayName) {
     input.setAttribute('id', langKey)
     input.addEventListener('change', function () {
       const value = $(this).val().trim()
-      constSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
-      constSetup.previewDefinition(true)
+      exSetup.updateWorkingDefinition(['languages', code, inputFields[key].property], value)
+      exSetup.previewDefinition(true)
     })
     col.appendChild(input)
   })
@@ -407,7 +407,7 @@ function deleteLanguageFlag (lang) {
   $('#flagImg_' + lang).attr('src', '../_static/flags/' + lang + '.svg')
 
   // Delete from server
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'POST',
     endpoint: '/file/delete',
     params: {
@@ -444,7 +444,7 @@ function onFlagUploadChange (lang) {
       if ('success' in response) {
         $('#uploadFlagFilename_' + lang).html('Upload')
         $('#flagImg_' + lang).attr('src', '../content/' + newName)
-        constSetup.updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
+        exSetup.updateWorkingDefinition(['languages', lang, 'custom_flag'], newName)
       }
     } else if (this.status === 422) {
       console.log(JSON.parse(this.responseText))
@@ -462,16 +462,16 @@ function saveDefinition () {
   definition.name = $('#definitionNameInput').val()
   definition.uuid = initialDefinition.uuid
 
-  constCommon.writeDefinition(definition)
+  exCommon.writeDefinition(definition)
     .then((result) => {
       if ('success' in result && result.success === true) {
         console.log('Saved!')
         // Update the UUID in case we have created a new definition
         $('#definitionSaveButton').data('initialDefinition', structuredClone(definition))
-        constCommon.getAvailableDefinitions('timeline_explorer')
+        exCommon.getAvailableDefinitions('timeline_explorer')
           .then((response) => {
             if ('success' in response && response.success === true) {
-              constSetup.populateAvailableDefinitions(response.definitions)
+              exSetup.populateAvailableDefinitions(response.definitions)
             }
           })
       }
@@ -487,7 +487,7 @@ function onAttractorFileChange () {
   workingDefinition.attractor = file
   $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
 
-  constSetup.previewDefinition(true)
+  exSetup.previewDefinition(true)
 }
 
 function onSpreadsheetFileChange () {
@@ -503,14 +503,14 @@ function onSpreadsheetFileChange () {
     $('#definitionSaveButton').data('workingDefinition', structuredClone(workingDefinition))
   }
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + file,
     rawResponse: true,
     noCache: true
   })
     .then((result) => {
-      const csvAsJSON = constCommon.csvToJSON(result)
+      const csvAsJSON = exCommon.csvToJSON(result)
       if (csvAsJSON.error === true) {
         document.getElementById('badSpreadsheetWarningLineNumber').innerHTML = csvAsJSON.error_index + 2
         document.getElementById('badSpreadsheetWarning').style.display = 'block'
@@ -521,7 +521,7 @@ function onSpreadsheetFileChange () {
       const keys = Object.keys(spreadsheet[0])
       $('#spreadsheetSelect').data('availableKeys', keys)
       populateKeySelects(keys)
-      constSetup.previewDefinition(true)
+      exSetup.previewDefinition(true)
     })
 }
 
@@ -542,7 +542,7 @@ function checkContentExists () {
   // Get a list of available content
   let availableContent
   const missingContent = []
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/getAvailableContent'
   })
@@ -550,14 +550,14 @@ function checkContentExists () {
       console.log(result)
       availableContent = result.all_exhibits
       // Retrieve the spreadsheet and check the content for each image key against the available content
-      constCommon.makeHelperRequest({
+      exCommon.makeHelperRequest({
         method: 'GET',
         endpoint: '/content/' + workingDefinition.spreadsheet,
         rawResponse: true,
         noCache: true
       })
         .then((raw) => {
-          const spreadsheet = constCommon.csvToJSON(raw).json
+          const spreadsheet = exCommon.csvToJSON(raw).json
           spreadsheet.forEach((row) => {
             imageKeys.forEach((key) => {
               if (row[key].trim() === '') return
@@ -648,14 +648,14 @@ function optimizeMediaFromModal () {
   // Retrieve the spreadsheet and collect all images
   const toOptimize = []
 
-  constCommon.makeHelperRequest({
+  exCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + workingDefinition.spreadsheet,
     rawResponse: true,
     noCache: true
   })
     .then((raw) => {
-      const spreadsheet = constCommon.csvToJSON(raw).json
+      const spreadsheet = exCommon.csvToJSON(raw).json
       spreadsheet.forEach((row) => {
         imageKeys.forEach((key) => {
           if (row[key].trim() === '') return
@@ -671,7 +671,7 @@ function optimizeMediaFromModal () {
       document.getElementById('optimizeContentProgressBarDiv').setAttribute('aria-valuenow', 0)
 
       toOptimize.forEach((file) => {
-        constCommon.makeHelperRequest({
+        exCommon.makeHelperRequest({
           method: 'POST',
           endpoint: '/files/generateThumbnail',
           params: {
@@ -692,8 +692,8 @@ function optimizeMediaFromModal () {
     })
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
 // The input fields to specifiy content for each langauge
 const inputFields = {
@@ -762,7 +762,7 @@ setTimeout(setUpColorPickers, 100)
 // Main buttons
 $('#languageAddButton').click(addLanguage)
 document.getElementById('manageContentButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ manage: true })
+  exFileSelect.createFileSelectionModal({ manage: true })
 })
 document.getElementById('showCheckContentButton').addEventListener('click', () => {
   document.getElementById('missingContentWarningField').innerHTML = ''
@@ -774,7 +774,7 @@ document.getElementById('optimizeContentBeginButton').addEventListener('click', 
 
 // Definition fields
 document.getElementById('spreadsheetSelect').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['csv'], multiple: false })
+  exFileSelect.createFileSelectionModal({ filetypes: ['csv'], multiple: false })
     .then((files) => {
       if (files.length === 1) {
         event.target.innerHTML = files[0]
@@ -785,7 +785,7 @@ document.getElementById('spreadsheetSelect').addEventListener('click', (event) =
 })
 
 document.getElementById('attractorSelect').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['image', 'video'], multiple: false })
+  exFileSelect.createFileSelectionModal({ filetypes: ['image', 'video'], multiple: false })
     .then((files) => {
       if (files.length === 1) {
         event.target.innerHTML = files[0]
@@ -802,19 +802,19 @@ document.getElementById('attractorSelectClear').addEventListener('click', (event
 })
 
 document.getElementById('inactivityTimeoutField').addEventListener('change', (event) => {
-  constSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['inactivity_timeout'], event.target.value)
+  exSetup.previewDefinition(true)
 })
 
 // Style fields
 $('.coloris').change(function () {
   const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+  exSetup.updateWorkingDefinition(['style', 'color', $(this).data('property')], value)
+  exSetup.previewDefinition(true)
 })
 document.getElementById('manageFontsButton').addEventListener('click', (event) => {
-  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
-    .then(constSetup.refreshAdvancedFontPickers)
+  exFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(exSetup.refreshAdvancedFontPickers)
 })
 
 // Set color mode
@@ -824,10 +824,10 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-// Set helper address for use with constCommon.makeHelperRequest
-constCommon.config.helperAddress = window.location.origin
+// Set helper address for use with exCommon.makeHelperRequest
+exCommon.config.helperAddress = window.location.origin
 
-constSetup.configure({
+exSetup.configure({
   app: 'timeline_explorer',
   clearDefinition: clearDefinitionInput,
   initializeDefinition,
@@ -835,11 +835,11 @@ constSetup.configure({
   saveDefinition
 })
 
-constCommon.askForDefaults(false)
+exCommon.askForDefaults(false)
   .then(() => {
-    if (constCommon.config.standalone === false) {
+    if (exCommon.config.standalone === false) {
       // We are using Control Server, so attempt to log in
-      constSetup.authenticateUser()
+      exSetup.authenticateUser()
     } else {
       // Hide the login details
       document.getElementById('loginMenu').style.display = 'none'

@@ -1,6 +1,6 @@
 /* global swearList, pluralize, WordCloud */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function cleanText (text) {
   // Converver to lowercase and remove special characters, while attempting
@@ -78,10 +78,10 @@ function getTextUpdateFromServer () {
   // Ask the server to send the latest raw text, then trigger the wordcloud
   // to rebuild
 
-  if (constCommon.config.standalone === false) {
+  if (exCommon.config.standalone === false) {
     // If this app is running ina preview frame for setup, we won't have a valid
     // server IP address. Default to the built-in word list for testing.
-    if (constCommon.config.serverAddress === '') {
+    if (exCommon.config.serverAddress === '') {
       let wordDict = {}
       if (textCase === 'uppercase') {
         Object.keys(animalDict).forEach((key) => {
@@ -95,7 +95,7 @@ function getTextUpdateFromServer () {
       return
     }
 
-    constCommon.makeServerRequest(
+    exCommon.makeServerRequest(
       {
         method: 'POST',
         endpoint: '/tracker/flexible-tracker/getRawText',
@@ -110,7 +110,7 @@ function getTextUpdateFromServer () {
         createWordCloud()
       })
   } else {
-    constCommon.makeHelperRequest(
+    exCommon.makeHelperRequest(
       {
         method: 'POST',
         endpoint: '/data/getRawText',
@@ -132,7 +132,7 @@ function updateFunc (update) {
 
   if ('definition' in update && update.definition !== currentDefinition) {
     currentDefinition = update.definition
-    constCommon.loadDefinition(currentDefinition)
+    exCommon.loadDefinition(currentDefinition)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -235,7 +235,7 @@ function loadDefinition (definition) {
 
   // Backgorund settings
   if ('background' in definition.appearance) {
-    constCommon.setBackground(definition.appearance.background, root, '#fff')
+    exCommon.setBackground(definition.appearance.background, root, '#fff')
     WordCloudOptions.backgroundColor = 'transparent'
   }
 
@@ -267,7 +267,7 @@ function loadDefinition (definition) {
   getTextUpdateFromServer()
 
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 3000)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 3000)
 }
 
 const divForWC = document.getElementById('wordCloudContainer')
@@ -295,7 +295,7 @@ let textUpdateRate = 15
 let textCase = 'lowercase'
 let excludedWordList
 
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'word_cloud_viewer',
   debug: true,
   loadDefinition,

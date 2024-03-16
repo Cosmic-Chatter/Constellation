@@ -1,4 +1,4 @@
-# Constellation Control Server
+# Exhibitera Hub
 # A centralized server for controlling museum exhibit components
 # Written by Morgan Rehnberg, Adventure Science Center
 # Released under the MIT license
@@ -33,36 +33,36 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
-# Constellation modules
-import config as c_config
-import constellation_exhibit as c_exhibit
-import constellation_group as c_group
-import constellation_issues as c_issues
-import constellation_legacy as c_legacy
-import constellation_maintenance as c_maint
-import constellation_projector as c_proj
-import constellation_schedule as c_sched
-import constellation_tools as c_tools
-import constellation_tracker as c_track
-import constellation_users as c_users
+# Exhibitera modules
+import config as ex_config
+import exhibitera_exhibit as ex_exhibit
+import exhibitera_group as ex_group
+import exhibitera_issues as ex_issues
+import exhibitera_legacy as ex_legacy
+import exhibitera_maintenance as ex_maint
+import exhibitera_projector as ex_proj
+import exhibitera_schedule as ex_sched
+import exhibitera_tools as ex_tools
+import exhibitera_tracker as ex_track
+import exhibitera_users as ex_users
 
 
 # Set up the automatic documentation
-def constellation_schema():
+def exhibitera_schema():
     # Cached version
     if app.openapi_schema:
         return app.openapi_schema
 
     openapi_schema = get_openapi(
-        title="Constellation Control Server",
-        version=str(c_config.software_version),
-        description="Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
+        title="Exhibitera Hub",
+        version=str(ex_config.software_version),
+        description="Hub coordinates communication between Exhibitera components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
         routes=app.routes,
     )
     openapi_schema["info"] = {
-        "title": "Constellation Control Server",
-        "version": str(c_config.software_version),
-        "description": "Control Server coordinates communication between Constellation components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
+        "title": "Exhibitera Hub",
+        "version": str(ex_config.software_version),
+        "description": "Hub coordinates communication between Exhibitera components and provides a web-based interface for controlling them. It also provides tools for collecting qualitative and quantitative data, tracking maintenance, and logging exhibit issues.",
         "contact": {
             "name": "Morgan Rehnberg",
             "url": "https://cosmicchatter.org/constellation/constellation.html",
@@ -83,7 +83,7 @@ def send_webpage_update():
     update_dict = {}
 
     component_dict_list = []
-    for item in c_config.componentList:
+    for item in ex_config.componentList:
         temp = {"class": "exhibitComponent",
                 "constellation_app_id": item.config["app_name"],
                 "helperAddress": item.helperAddress,
@@ -110,7 +110,7 @@ def send_webpage_update():
             temp["autoplay_audio"] = item.config["autoplay_audio"]
         component_dict_list.append(temp)
 
-    for item in c_config.projectorList:
+    for item in ex_config.projectorList:
         temp = {"class": "projector",
                 "groups": item.groups,
                 "id": item.id,
@@ -128,7 +128,7 @@ def send_webpage_update():
             temp["description"] = item.config["description"]
         component_dict_list.append(temp)
 
-    for item in c_config.wakeOnLANList:
+    for item in ex_config.wakeOnLANList:
         temp = {"class": "wolComponent",
                 "id": item.id,
                 "groups": item.groups,
@@ -145,23 +145,23 @@ def send_webpage_update():
         component_dict_list.append(temp)
 
     update_dict["components"] = component_dict_list
-    update_dict["gallery"] = {"current_exhibit": c_config.current_exhibit,
-                              "availableExhibits": c_config.exhibit_list,
-                              "galleryName": c_config.gallery_name,
-                              "softwareVersion": str(c_config.software_version),
-                              "softwareVersionAvailable": c_config.software_update_available_version,
-                              "updateAvailable": str(c_config.software_update_available).lower()}
+    update_dict["gallery"] = {"current_exhibit": ex_config.current_exhibit,
+                              "availableExhibits": ex_config.exhibit_list,
+                              "galleryName": ex_config.gallery_name,
+                              "softwareVersion": str(ex_config.software_version),
+                              "softwareVersionAvailable": ex_config.software_update_available_version,
+                              "updateAvailable": str(ex_config.software_update_available).lower()}
 
-    update_dict["issues"] = {"issueList": [x.details for x in c_config.issueList],
-                             "lastUpdateDate": c_config.issueList_last_update_date}
+    update_dict["issues"] = {"issueList": [x.details for x in ex_config.issueList],
+                             "lastUpdateDate": ex_config.issueList_last_update_date}
 
-    update_dict["groups"] = {"group_list": c_config.group_list,
-                             "last_update_date": c_config.group_list_last_update_date}
+    update_dict["groups"] = {"group_list": ex_config.group_list,
+                             "last_update_date": ex_config.group_list_last_update_date}
 
-    with c_config.scheduleLock:
-        update_dict["schedule"] = {"updateTime": c_config.scheduleUpdateTime,
-                                   "schedule": c_config.json_schedule_list,
-                                   "nextEvent": c_config.json_next_event}
+    with ex_config.scheduleLock:
+        update_dict["schedule"] = {"updateTime": ex_config.scheduleUpdateTime,
+                                   "schedule": ex_config.json_schedule_list,
+                                   "nextEvent": ex_config.json_next_event}
 
     return update_dict
 
@@ -169,11 +169,11 @@ def send_webpage_update():
 def command_line_setup_print_gui() -> None:
     """Helper to print the header content for the setup tool"""
 
-    c_tools.clear_terminal()
+    ex_tools.clear_terminal()
     print("##########################################################")
-    print("Welcome to Constellation Control Server!")
+    print("Welcome to Exhibitera Hub!")
     print("")
-    print("This appears to be your first time running Control Server.")
+    print("This appears to be your first time running Hub.")
     print("In order to set up your configuration, let's answer a few")
     print("questions. If you don't know the answer, or wish to")
     print("accept the default, just press the enter key.")
@@ -186,10 +186,10 @@ def command_line_setup() -> None:
     settings_dict = {}
 
     command_line_setup_print_gui()
-    c_config.gallery_name = input("Enter a name for the gallery (default: Constellation): ").strip()
-    if c_config.gallery_name == "":
-        c_config.gallery_name = "Constellation"
-    settings_dict["gallery_name"] = c_config.gallery_name
+    ex_config.gallery_name = input("Enter a name for the gallery (default: Exhibitera): ").strip()
+    if ex_config.gallery_name == "":
+        ex_config.gallery_name = "Exhibitera"
+    settings_dict["gallery_name"] = ex_config.gallery_name
 
     command_line_setup_print_gui()
     default_ip = socket.gethostbyname(socket.gethostname())
@@ -216,12 +216,12 @@ def command_line_setup() -> None:
 
     settings_dict["current_exhibit"] = "default"
     # Create this exhibit file if it doesn't exist
-    if not os.path.exists(c_tools.get_path(["exhibits", "Default.json"], user_file=True)):
-        c_exhibit.create_new_exhibit("default", None)
+    if not os.path.exists(ex_tools.get_path(["exhibits", "Default.json"], user_file=True)):
+        ex_exhibit.create_new_exhibit("default", None)
 
     # Write new system config to file
-    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
-    c_tools.write_json(settings_dict, config_path)
+    config_path = ex_tools.get_path(["configuration", "system.json"], user_file=True)
+    ex_tools.write_json(settings_dict, config_path)
 
     command_line_setup_print_gui()
     print("Setup is complete! Control Server will now start.")
@@ -232,61 +232,61 @@ def load_default_configuration() -> None:
     """Initialize the server in a default state."""
 
     # Check if there is a configuration file
-    config_path = c_tools.get_path(["configuration", "system.json"], user_file=True)
+    config_path = ex_tools.get_path(["configuration", "system.json"], user_file=True)
     if not os.path.exists(config_path):
         # We don't have a config file, so let's get info from the user to create one
         command_line_setup()
-    c_users.check_for_root_admin()
-    c_tools.load_system_configuration()
+    ex_users.check_for_root_admin()
+    ex_tools.load_system_configuration()
 
     # Handle legacy conversions
-    c_legacy.convert_legacy_projector_configuration()
-    c_legacy.convert_legacy_static_configuration()
-    c_legacy.convert_legacy_WOL_configuration()
+    ex_legacy.convert_legacy_projector_configuration()
+    ex_legacy.convert_legacy_static_configuration()
+    ex_legacy.convert_legacy_WOL_configuration()
 
-    c_tools.start_debug_loop()
-    c_sched.retrieve_json_schedule()
-    c_exhibit.read_descriptions_configuration()
-    # c_proj.read_projector_configuration()
-    # c_exhibit.read_wake_on_LAN_configuration()
-    # c_exhibit.read_static_components_configuration()
-    c_exhibit.read_exhibit_configuration(c_config.current_exhibit)
+    ex_tools.start_debug_loop()
+    ex_sched.retrieve_json_schedule()
+    ex_exhibit.read_descriptions_configuration()
+    # ex_proj.read_projector_configuration()
+    # ex_exhibit.read_wake_on_LAN_configuration()
+    # ex_exhibit.read_static_components_configuration()
+    ex_exhibit.read_exhibit_configuration(ex_config.current_exhibit)
 
     # Update the components that their configuration may have changed
-    for component in c_config.componentList:
+    for component in ex_config.componentList:
         component.update_configuration()
 
     # Build any existing issues
-    c_issues.read_issue_list()
+    ex_issues.read_issue_list()
 
     # Save the current software version in .last_ver
-    last_ver_path = c_tools.get_path(["configuration", ".last_ver"], user_file=True)
+    last_ver_path = ex_tools.get_path(["configuration", ".last_ver"], user_file=True)
     with open(last_ver_path, 'w', encoding='UTF-8') as f:
-        f.write(str(c_config.software_version))
+        f.write(str(ex_config.software_version))
 
 
 def quit_handler(*args) -> None:
     """Handle cleanly shutting down the server."""
 
-    for key in c_config.polling_thread_dict:
-        c_config.polling_thread_dict[key].cancel()
+    for key in ex_config.polling_thread_dict:
+        ex_config.polling_thread_dict[key].cancel()
 
-    for component in c_config.componentList:
+    for component in ex_config.componentList:
         component.clean_up()
         component.save()
-    for component in c_config.projectorList:
+    for component in ex_config.projectorList:
         component.clean_up()
         component.save()
-    for component in c_config.wakeOnLANList:
+    for component in ex_config.wakeOnLANList:
         component.clean_up()
         component.save()
 
-    with c_config.logLock:
+    with ex_config.logLock:
         logging.info("Server shutdown")
 
-    # with c_config.galleryConfigurationLock:
-    #     with c_config.scheduleLock:
-    #         with c_config.trackingDataWriteLock:
+    # with ex_config.galleryConfigurationLock:
+    #     with ex_config.scheduleLock:
+    #         with ex_config.trackingDataWriteLock:
     #             sys.exit(exit_code)
 
 
@@ -294,9 +294,9 @@ def error_handler(*exc_info) -> None:
     """Catch errors and log them to file"""
 
     text = "".join(traceback.format_exception(*exc_info)).replace('"', "'").replace("\n", "<newline>")
-    with c_config.logLock:
+    with ex_config.logLock:
         logging.error(f'"{text}"')
-    print(f"Error: see control_server.log for more details ({datetime.datetime.now()})")
+    print(f"Error: see hub.log for more details ({datetime.datetime.now()})")
 
 
 def check_for_software_update() -> None:
@@ -306,9 +306,9 @@ def check_for_software_update() -> None:
     try:
         for line in urllib.request.urlopen(
                 "https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/control_server/version.txt"):
-            if float(line.decode('utf-8')) > c_config.software_version:
-                c_config.software_update_available = True
-                c_config.software_update_available_version = line.decode('utf-8').strip()
+            if float(line.decode('utf-8')) > ex_config.software_version:
+                ex_config.software_update_available = True
+                ex_config.software_update_available_version = line.decode('utf-8').strip()
                 break
     except urllib.error.HTTPError:
         print("cannot connect to update server")
@@ -316,24 +316,24 @@ def check_for_software_update() -> None:
     except urllib.error.URLError:
         print("cannot connect to update server")
         return
-    if c_config.software_update_available:
+    if ex_config.software_update_available:
         print("update available!")
     else:
         print("the server is up to date.")
 
 
 # Check whether we have packaged with Pyinstaller and set the appropriate root path.
-c_config.EXEC_PATH = os.path.dirname(os.path.abspath(__file__))
+ex_config.EXEC_PATH = os.path.dirname(os.path.abspath(__file__))
 if getattr(sys, 'frozen', False):
     # If the application is run as a --onefile bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True and sets the app
     # path into variable sys.executable.
-    c_config.APP_PATH = os.path.dirname(sys.executable)
+    ex_config.APP_PATH = os.path.dirname(sys.executable)
 else:
-    c_config.APP_PATH = c_config.EXEC_PATH
+    ex_config.APP_PATH = ex_config.EXEC_PATH
 
 # Set up log file
-log_path: str = c_tools.get_path(["control_server.log"], user_file=True)
+log_path: str = ex_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',
@@ -342,7 +342,7 @@ logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
 # signal.signal(signal.SIGTERM, quit_handler)
 sys.excepthook = error_handler
 
-with c_config.logLock:
+with ex_config.logLock:
     logging.info("Server started")
 
 
@@ -363,12 +363,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.openapi = constellation_schema
+app.openapi = exhibitera_schema
 
 
 @lru_cache()
 def get_config():
-    return c_config
+    return ex_config
 
 
 # User account actions
@@ -383,15 +383,15 @@ def log_in(response: Response,
 
     token = request.cookies.get("authToken", "")
 
-    success, user_uuid = c_users.authenticate_user(token=token, credentials=credentials)
+    success, user_uuid = ex_users.authenticate_user(token=token, credentials=credentials)
     if success is False:
         return {"success": False, "reason": "authentication_failed"}
 
-    user = c_users.get_user(uuid_str=user_uuid)
+    user = ex_users.get_user(uuid_str=user_uuid)
     response_dict = {"success": True, "user": user.get_dict()}
     if token == "":
-        token = c_users.encrypt_token(user_uuid)
-        if c_config.debug:
+        token = ex_users.encrypt_token(user_uuid)
+        if ex_config.debug:
             print(token)
         response.set_cookie(key="authToken", value=token, max_age=int(3e7))  # Expire cookie in approx 1 yr
         response_dict['authToken'] = token
@@ -408,11 +408,11 @@ def create_user(request: Request,
     """Create a new user account."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("users", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    success, user_dict = c_users.create_user(username, display_name, password, permissions=permissions)
+    success, user_dict = ex_users.create_user(username, display_name, password, permissions=permissions)
 
     response = {"success": success, "user": user_dict}
     if success is False:
@@ -431,16 +431,16 @@ def edit_user(request: Request,
     """Edit the given user."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("users", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("users", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    user = c_users.get_user(uuid_str=uuid_str)
+    user = ex_users.get_user(uuid_str=uuid_str)
     if user is None:
         return {"success": False, "reason": "user_does_not_exist"}
 
     if username is not None and username != user.username:
-        if c_users.check_username_available(username) is True:
+        if ex_users.check_username_available(username) is True:
             user.username = username
         else:
             return {"success": False, "reason": "username_taken"}
@@ -448,10 +448,10 @@ def edit_user(request: Request,
     if display_name is not None:
         user.display_name = display_name
     if password is not None:
-        user.password_hash = c_users.hash_password(password)
+        user.password_hash = ex_users.hash_password(password)
     if permissions is not None:
         user.permissions = permissions
-    c_users.save_users()
+    ex_users.save_users()
 
     return {"success": success, "user": user.get_dict()}
 
@@ -464,7 +464,7 @@ def list_users(permissions: dict[str, str] = Body(description="A dictionary of p
 
     matched_users = []
 
-    for user in c_config.user_list:
+    for user in ex_config.user_list:
         error = False
         for key in permissions:
 
@@ -480,7 +480,7 @@ def list_users(permissions: dict[str, str] = Body(description="A dictionary of p
 def get_user_display_name(user_uuid: str):
     """Get the display name for a user account."""
 
-    user = c_users.get_user(uuid_str=user_uuid)
+    user = ex_users.get_user(uuid_str=user_uuid)
     if user is None:
         return {"success": False, "reason": "user_does_not_exist"}
     return {"success": True, "display_name": user.display_name}
@@ -492,18 +492,18 @@ def change_user_password(user_uuid: str,
                          new_password: str = Body(description="The plaintext of the password to set.")):
     """Change the password for the given user"""
 
-    user = c_users.get_user(uuid_str=user_uuid)
+    user = ex_users.get_user(uuid_str=user_uuid)
 
     # First, check that the current password is correct
-    if c_users.hash_password(current_password) != user.password_hash:
+    if ex_users.hash_password(current_password) != user.password_hash:
         return {"success": False, "reason": "authentication_failed"}
 
     # Then, update the password
     if user.uuid != "admin":
-        user.password_hash = c_users.hash_password(new_password)
-        c_users.save_users()
+        user.password_hash = ex_users.hash_password(new_password)
+        ex_users.save_users()
     else:
-        c_users.create_root_admin(new_password)
+        ex_users.create_root_admin(new_password)
 
     return {"success": True}
 
@@ -528,7 +528,7 @@ async def get_component_groups(uuid_str: str):
 
     # Don't authenticate, as we use this as part of the component auth process
 
-    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    component = ex_exhibit.get_exhibit_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist", "groups": []}
 
@@ -545,14 +545,14 @@ async def edit_component(request: Request,
     """Edit the given component."""
 
     # Must get the component first, so we can use the groups to check for permissions
-    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    component = ex_exhibit.get_exhibit_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
-                                                                      groups=component.groups, token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("components", "edit",
+                                                                       groups=component.groups, token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -563,7 +563,7 @@ async def edit_component(request: Request,
     if description is not None:
         component.config["description"] = description
     component.save()
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
     return {"success": True}
 
 
@@ -572,7 +572,7 @@ async def set_component_app(component_id: str,
                             app_name: str = Body(description="The app to be set.", embed=True)):
     """Set the app for the component."""
 
-    c_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
+    ex_exhibit.update_exhibit_configuration(component_id, {"app_name": app_name})
 
     return {"success": True}
 
@@ -583,7 +583,7 @@ async def set_component_definition(component_id: str,
                                                     embed=True)):
     """Set the definition for the component."""
 
-    c_exhibit.update_exhibit_configuration(component_id, {"definition": uuid})
+    ex_exhibit.update_exhibit_configuration(component_id, {"definition": uuid})
 
     return {"success": True}
 
@@ -593,11 +593,11 @@ async def get_group_details(request: Request, uuid_str: str):
     """Return the details for the given group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    group = c_group.get_group(uuid_str)
+    group = ex_group.get_group(uuid_str)
 
     if group is None:
         return {"success": False, "reason": "Group does not exist."}
@@ -611,11 +611,11 @@ async def create_group(request: Request,
     """Create a group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    group = c_group.create_group(name, description)
+    group = ex_group.create_group(name, description)
     return {"success": True, "uuid": group["uuid"]}
 
 
@@ -627,11 +627,11 @@ async def edit_group(request: Request,
     """Edit a group"""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    success = c_group.edit_group(uuid_str, name=name, description=description)
+    success = ex_group.edit_group(uuid_str, name=name, description=description)
     return {"success": success}
 
 
@@ -640,11 +640,11 @@ async def delete_group(request: Request, uuid_str: str):
     """Return the details for the given group."""
 
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_group.delete_group(uuid_str)
+    ex_group.delete_group(uuid_str)
     return {"success": True}
 
 
@@ -657,11 +657,11 @@ async def create_exhibit(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("exhibits", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("exhibits", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_exhibit.create_new_exhibit(exhibit.name, clone_from)
+    ex_exhibit.create_new_exhibit(exhibit.name, clone_from)
     return {"success": True, "reason": ""}
 
 
@@ -671,11 +671,11 @@ async def delete_exhibit(request: Request, exhibit: Exhibit = Body(embed=True)):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("exhibits", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("exhibits", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_exhibit.delete_exhibit(exhibit.name)
+    ex_exhibit.delete_exhibit(exhibit.name)
     return {"success": True, "reason": ""}
 
 
@@ -684,7 +684,7 @@ async def queue_command(component: ExhibitComponent,
                         command: str = Body(description="The command to be sent to the specified component")):
     """Queue the specified command for the exhibit component to retrieve."""
 
-    c_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
+    ex_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
@@ -693,7 +693,7 @@ async def queue_WOL_command(component: ExhibitComponent,
                             command: str = Body(description="The command to be sent to the specified component")):
     """Queue the Wake on Lan command for the exhibit component to retrieve."""
 
-    c_exhibit.get_wake_on_LAN_component(component_id=component.id).queue_command(command)
+    ex_exhibit.get_wake_on_LAN_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
@@ -701,7 +701,7 @@ async def queue_WOL_command(component: ExhibitComponent,
 async def remove_component(component: ExhibitComponent = Body(embed=True)):
     """Queue the specified command for the exhibit component to retrieve."""
 
-    to_remove = c_exhibit.get_exhibit_component(component_id=component.id)
+    to_remove = ex_exhibit.get_exhibit_component(component_id=component.id)
     print("Removing component:", component.id)
     to_remove.remove()
     return {"success": True, "reason": ""}
@@ -712,11 +712,11 @@ async def set_exhibit(exhibit: Exhibit = Body(embed=True)):
     """Set the specified exhibit as the current one."""
 
     print("Changing exhibit to:", exhibit.name)
-    c_tools.update_system_configuration({"current_exhibit": exhibit.name})
-    c_exhibit.read_exhibit_configuration(exhibit.name)
+    ex_tools.update_system_configuration({"current_exhibit": exhibit.name})
+    ex_exhibit.read_exhibit_configuration(exhibit.name)
 
     # Update the components that the configuration has changed
-    for component in c_config.componentList:
+    for component in ex_config.componentList:
         component.update_configuration()
     return {"success": True, "reason": ""}
 
@@ -727,7 +727,7 @@ async def set_component_app(component: ExhibitComponent,
     """Change the active app for the given exhibit component."""
 
     print(f"Changing app for {component.id}:", app_name)
-    c_exhibit.update_exhibit_configuration(component.id, {"app_name": app_name})
+    ex_exhibit.update_exhibit_configuration(component.id, {"app_name": app_name})
     return {"success": True, "reason": ""}
 
 
@@ -735,7 +735,7 @@ async def set_component_app(component: ExhibitComponent,
 async def get_available_exhibits():
     """Return a list of available exhibits."""
 
-    return {"success": True, "available_exhibits": c_config.exhibit_list}
+    return {"success": True, "available_exhibits": ex_config.exhibit_list}
 
 
 @app.post("/exhibit/getDetails")
@@ -744,8 +744,8 @@ async def get_exhibit_details(name: str = Body(description='The name of the exhi
 
     if not name.endswith('.json'):
         name += '.json'
-    exhibit_path = c_tools.get_path(["exhibits", name], user_file=True)
-    result = c_tools.load_json(exhibit_path)
+    exhibit_path = ex_tools.get_path(["exhibits", name], user_file=True)
+    result = ex_tools.load_json(exhibit_path)
     if result is None:
         return {"success": False, "reason": "Exhibit does not exist."}
     return {"success": True, "exhibit": result}
@@ -758,7 +758,7 @@ async def create_tracker_template(request: Request, data: dict[str, Any], tracke
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("analytics", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -769,8 +769,8 @@ async def create_tracker_template(request: Request, data: dict[str, Any], tracke
     name = data["name"]
     if not name.lower().endswith(".ini"):
         name += ".ini"
-    file_path = c_tools.get_path([tracker_type, "templates", name], user_file=True)
-    success = c_track.create_template(file_path, data["template"])
+    file_path = ex_tools.get_path([tracker_type, "templates", name], user_file=True)
+    success = ex_track.create_template(file_path, data["template"])
     response = {"success": success}
     return response
 
@@ -781,7 +781,7 @@ async def delete_tracker_data(request: Request, data: dict[str, Any], tracker_ty
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("analytics", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -796,10 +796,10 @@ async def delete_tracker_data(request: Request, data: dict[str, Any], tracker_ty
         return response
     if not name.lower().endswith(".txt"):
         name += ".txt"
-    data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    data_path = ex_tools.get_path([tracker_type, "data", name], user_file=True)
     success = True
     reason = ""
-    with c_config.trackingDataWriteLock:
+    with ex_config.trackingDataWriteLock:
         try:
             os.remove(data_path)
         except PermissionError:
@@ -821,7 +821,7 @@ async def delete_tracker_template(request: Request, data: dict[str, Any], tracke
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("analytics", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("analytics", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -829,9 +829,9 @@ async def delete_tracker_template(request: Request, data: dict[str, Any], tracke
         response = {"success": False,
                     "reason": "Request missing 'name' field."}
         return response
-    file_path = c_tools.get_path([tracker_type, "templates", data["name"] + ".ini"], user_file=True)
-    with c_config.trackerTemplateWriteLock:
-        response = c_tools.delete_file(file_path)
+    file_path = ex_tools.get_path([tracker_type, "templates", data["name"] + ".ini"], user_file=True)
+    with ex_config.trackerTemplateWriteLock:
+        response = ex_tools.delete_file(file_path)
     return response
 
 
@@ -839,7 +839,7 @@ async def delete_tracker_template(request: Request, data: dict[str, Any], tracke
 async def get_available_tracker_data(tracker_type: str):
     """Send a list of all the available data files for the given tracker group."""
 
-    data_path = c_tools.get_path([tracker_type, "data"], user_file=True)
+    data_path = ex_tools.get_path([tracker_type, "data"], user_file=True)
     data_list = []
     for file in os.listdir(data_path):
         if file.lower().endswith(".txt"):
@@ -854,7 +854,7 @@ async def get_available_tracker_definitions(tracker_type: str):
     """Send a list of all the available definitions for the given tracker group (usually flexible-tracker)."""
 
     definition_list = []
-    template_path = c_tools.get_path([tracker_type, "templates"], user_file=True)
+    template_path = ex_tools.get_path([tracker_type, "templates"], user_file=True)
     for file in os.listdir(template_path):
         if file.lower().endswith(".ini"):
             definition_list.append(file)
@@ -873,10 +873,10 @@ async def get_tracker_data_csv(data: dict[str, Any], tracker_type: str):
     name = data["name"]
     if not name.lower().endswith(".txt"):
         name += ".txt"
-    data_path = c_tools.get_path([tracker_type, "data", name], user_file=True)
+    data_path = ex_tools.get_path([tracker_type, "data", name], user_file=True)
     if not os.path.exists(data_path):
         return {"success": False, "reason": f"File {data['name']}.txt does not exist!", "csv": ""}
-    result = c_track.create_CSV(data_path)
+    result = ex_track.create_CSV(data_path)
     return {"success": True, "csv": result}
 
 
@@ -889,7 +889,7 @@ async def get_tracker_layout_definition(data: dict[str, Any], tracker_type: str)
                     "reason": "Request missing 'name' field."}
         return response
 
-    layout_definition, success, reason = c_track.get_layout_definition(data["name"] + ".ini", kind=tracker_type)
+    layout_definition, success, reason = ex_track.get_layout_definition(data["name"] + ".ini", kind=tracker_type)
 
     response = {"success": success,
                 "reason": reason,
@@ -905,7 +905,7 @@ async def get_tracker_raw_text(data: dict[str, Any], tracker_type: str):
         response = {"success": False,
                     "reason": "Request missing 'name' field."}
         return response
-    result, success, reason = c_track.get_raw_text(data["name"] + ".txt", tracker_type)
+    result, success, reason = ex_track.get_raw_text(data["name"] + ".txt", tracker_type)
     response = {"success": success, "reason": reason, "text": result}
     return response
 
@@ -918,8 +918,8 @@ async def submit_analytics(data: dict[str, Any]):
         response = {"success": False,
                     "reason": "Request missing 'data' or 'name' field."}
         return response
-    file_path = c_tools.get_path(["analytics", data["name"] + ".txt"], user_file=True)
-    success, reason = c_track.write_JSON(data["data"], file_path)
+    file_path = ex_tools.get_path(["analytics", data["name"] + ".txt"], user_file=True)
+    success, reason = ex_track.write_JSON(data["data"], file_path)
     response = {"success": success, "reason": reason}
     return response
 
@@ -932,8 +932,8 @@ async def submit_tracker_data(data: dict[str, Any], tracker_type: str):
         response = {"success": False,
                     "reason": "Request missing 'data' or 'name' field."}
         return response
-    file_path = c_tools.get_path([tracker_type, "data", data["name"] + ".txt"], user_file=True)
-    success, reason = c_track.write_JSON(data["data"], file_path)
+    file_path = ex_tools.get_path([tracker_type, "data", data["name"] + ".txt"], user_file=True)
+    success, reason = ex_track.write_JSON(data["data"], file_path)
     response = {"success": success, "reason": reason}
     return response
 
@@ -954,7 +954,7 @@ async def submit_tracker_raw_text(data: dict[str, Any], tracker_type: str):
         response = {"success": False,
                     "reason": "Invalid mode field: must be 'a' (append, [default]) or 'w' (overwrite)"}
         return response
-    success, reason = c_track.write_raw_text(data["text"], data["name"] + ".txt", kind=tracker_type, mode=mode)
+    success, reason = ex_track.write_raw_text(data["text"], data["name"] + ".txt", kind=tracker_type, mode=mode)
     response = {"success": success, "reason": reason}
     return response
 
@@ -966,12 +966,12 @@ async def create_issue(request: Request, details: dict[str, Any] = Body(embed=Tr
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.create_issue(details, username=authorizing_user)
-    c_issues.save_issue_list()
+    ex_issues.create_issue(details, username=authorizing_user)
+    ex_issues.save_issue_list()
     return {"success": True}
 
 
@@ -981,11 +981,11 @@ async def delete_issue(request: Request, issue_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.remove_issue(issue_id)
+    ex_issues.remove_issue(issue_id)
     return {"success": True, "reason": ""}
 
 
@@ -995,11 +995,11 @@ async def archive_issue(request: Request, issue_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.archive_issue(issue_id, authorizing_user)
+    ex_issues.archive_issue(issue_id, authorizing_user)
     return {"success": True}
 
 
@@ -1009,11 +1009,11 @@ async def restore_issue(request: Request, issue_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.restore_issue(issue_id)
+    ex_issues.restore_issue(issue_id)
     return {"success": True}
 
 
@@ -1026,11 +1026,11 @@ async def delete_issue_media(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_issues.delete_issue_media_file(filenames, owner=owner)
+    ex_issues.delete_issue_media_file(filenames, owner=owner)
     return {"success": True}
 
 
@@ -1041,13 +1041,13 @@ async def edit_issue(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
     if "id" in details:
-        c_issues.edit_issue(details, authorizing_user)
-        c_issues.save_issue_list()
+        ex_issues.edit_issue(details, authorizing_user)
+        ex_issues.save_issue_list()
         response_dict = {"success": True}
     else:
         response_dict = {
@@ -1063,17 +1063,17 @@ async def get_issue_list(request: Request, match_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
     if match_id != "__all":
         matched_issues = []
-        for issue in c_config.issueList:
+        for issue in ex_config.issueList:
             if match_id in issue.details["relatedComponentIDs"]:
                 matched_issues.append(issue.details)
     else:
-        matched_issues = [x.details for x in c_config.issueList]
+        matched_issues = [x.details for x in ex_config.issueList]
 
     response = {
         "success": True,
@@ -1088,13 +1088,13 @@ async def get_archived_issues(request: Request, match_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    archive_file = c_tools.get_path(["issues", "archived.json"], user_file=True)
+    archive_file = ex_tools.get_path(["issues", "archived.json"], user_file=True)
 
-    with c_config.issueLock:
+    with ex_config.issueLock:
         try:
             with open(archive_file, 'r', encoding='UTF-8') as file_object:
                 archive_list = json.load(file_object)
@@ -1122,11 +1122,11 @@ async def get_issue_media(request: Request, issue_id: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    issue = c_issues.get_issue(issue_id)
+    issue = ex_issues.get_issue(issue_id)
 
     if issue is None:
         return {"success": False, "reason": f"Issue does not exist: {issue_id}"}
@@ -1140,7 +1140,7 @@ async def upload_issue_media(request: Request, files: list[UploadFile] = File())
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1149,9 +1149,9 @@ async def upload_issue_media(request: Request, files: list[UploadFile] = File())
         ext = os.path.splitext(file.filename)[1]
         filename = str(uuid.uuid4()) + ext
         filenames.append(filename)
-        file_path = c_tools.get_path(["issues", "media", filename], user_file=True)
+        file_path = ex_tools.get_path(["issues", "media", filename], user_file=True)
         print(f"Saving uploaded file to {file_path}")
-        with c_config.issueMediaLock:
+        with ex_config.issueMediaLock:
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()  # async read
                 await out_file.write(content)  # async write
@@ -1165,17 +1165,17 @@ async def delete_maintenance_record(request: Request, data: dict[str, Any]):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
     if "id" not in data:
         return {"success": False, "reason": "Request missing 'id' field."}
 
-    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
-    with c_config.maintenanceLock:
-        response = c_tools.delete_file(file_path)
-    c_config.last_update_time = time.time()
+    file_path = ex_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
+    with ex_config.maintenanceLock:
+        response = ex_tools.delete_file(file_path)
+    ex_config.last_update_time = time.time()
     return response
 
 
@@ -1185,17 +1185,17 @@ async def get_all_maintenance_statuses(request: Request):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
     record_list = []
-    maintenance_path = c_tools.get_path(["maintenance-logs"], user_file=True)
+    maintenance_path = ex_tools.get_path(["maintenance-logs"], user_file=True)
     for file in os.listdir(maintenance_path):
         if file.lower().endswith(".txt"):
-            with c_config.maintenanceLock:
+            with ex_config.maintenanceLock:
                 file_path = os.path.join(maintenance_path, file)
-                record_list.append(c_maint.get_maintenance_report(file_path))
+                record_list.append(ex_maint.get_maintenance_report(file_path))
     response_dict = {"success": True,
                      "records": record_list}
     return response_dict
@@ -1207,7 +1207,7 @@ async def get_maintenance_status(request: Request, data: dict[str, Any]):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1215,9 +1215,9 @@ async def get_maintenance_status(request: Request, data: dict[str, Any]):
         response = {"success": False,
                     "reason": "Request missing 'id' field."}
         return response
-    file_path = c_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
-    with c_config.maintenanceLock:
-        response_dict = c_maint.get_maintenance_report(file_path)
+    file_path = ex_tools.get_path(["maintenance-logs", data["id"] + ".txt"], user_file=True)
+    with ex_config.maintenanceLock:
+        response_dict = ex_maint.get_maintenance_report(file_path)
     return response_dict
 
 
@@ -1230,22 +1230,22 @@ async def update_maintenance_status(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("maintenance", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("maintenance", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    file_path = c_tools.get_path(["maintenance-logs", component_id + ".txt"], user_file=True)
+    file_path = ex_tools.get_path(["maintenance-logs", component_id + ".txt"], user_file=True)
     record = {"id": component_id,
               "date": datetime.datetime.now().isoformat(),
               "status": status,
               "notes": notes}
-    with c_config.maintenanceLock:
+    with ex_config.maintenanceLock:
         try:
             with open(file_path, 'a', encoding='UTF-8') as f:
                 f.write(json.dumps(record) + "\n")
             success = True
             reason = ""
-            c_config.last_update_time = time.time()
+            ex_config.last_update_time = time.time()
         except FileNotFoundError:
             success = False
             reason = f"File path {file_path} does not exist"
@@ -1254,7 +1254,7 @@ async def update_maintenance_status(request: Request,
             reason = f"You do not have write permission for the file {file_path}"
 
     if success is True:
-        c_exhibit.get_exhibit_component(component_id=component_id).config["maintenance_status"] = status
+        ex_exhibit.get_exhibit_component(component_id=component_id).config["maintenance_status"] = status
 
     return {"success": success, "reason": reason}
 
@@ -1269,11 +1269,11 @@ async def create_projector(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    proj = c_exhibit.add_projector(id, groups, ip_address, password=password)
+    proj = ex_exhibit.add_projector(id, groups, ip_address, password=password)
 
     return {"success": True, "uuid": proj.uuid}
 
@@ -1291,14 +1291,14 @@ async def edit_projector(request: Request,
     """Edit the given projector."""
 
     # Get the projector first, so we can use the groups to authenticate
-    proj = c_exhibit.get_projector(projector_uuid=uuid_str)
+    proj = ex_exhibit.get_projector(projector_uuid=uuid_str)
     if proj is None:
         return {"success": False, "reason": "Projector does not exist"}
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
-                                                                      groups=proj.groups, token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("components", "edit",
+                                                                       groups=proj.groups, token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1313,7 +1313,7 @@ async def edit_projector(request: Request,
     if description is not None:
         proj.config["description"] = description
     proj.save()
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
     return {"success": True}
 
 
@@ -1323,7 +1323,7 @@ async def queue_projector_command(component: ExhibitComponent,
                                       description="The command to be sent to the specified projector.")):
     """Send a command to the specified projector."""
 
-    c_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
+    ex_exhibit.get_exhibit_component(component_id=component.id).queue_command(command)
     return {"success": True, "reason": ""}
 
 
@@ -1335,11 +1335,11 @@ async def create_static_component(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    component = c_exhibit.add_exhibit_component(id, groups, 'static')
+    component = ex_exhibit.add_exhibit_component(id, groups, 'static')
 
     return {"success": True, "uuid": component.uuid}
 
@@ -1355,14 +1355,14 @@ async def edit_static_component(request: Request,
     """Edit the given static component."""
 
     # Load the component first, so we can use the groups to authenticate
-    component = c_exhibit.get_exhibit_component(component_uuid=uuid_str)
+    component = ex_exhibit.get_exhibit_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
-                                                                      groups=component.groups, token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("components", "edit",
+                                                                       groups=component.groups, token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1373,7 +1373,7 @@ async def edit_static_component(request: Request,
     if description is not None:
         component.config["description"] = description
     component.save()
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
     return {"success": True}
 
 
@@ -1388,11 +1388,11 @@ async def create_wake_on_LAN_component(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("settings", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("settings", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    component = c_exhibit.add_wake_on_LAN_device(id, groups, mac_address, ip_address=ip_address)
+    component = ex_exhibit.add_wake_on_LAN_device(id, groups, mac_address, ip_address=ip_address)
 
     return {"success": True, "uuid": component.uuid}
 
@@ -1411,14 +1411,14 @@ async def edit_wake_on_LAN_component(request: Request,
     """Edit the given wake on LAN component."""
 
     # Load the component first, so we can use the groups to authenticate
-    component = c_exhibit.get_wake_on_LAN_component(component_uuid=uuid_str)
+    component = ex_exhibit.get_wake_on_LAN_component(component_uuid=uuid_str)
     if component is None:
         return {"success": False, "reason": "Component does not exist"}
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("components", "edit",
-                                                                      groups=component.groups, token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("components", "edit",
+                                                                       groups=component.groups, token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1433,7 +1433,7 @@ async def edit_wake_on_LAN_component(request: Request,
     if description is not None:
         component.config["description"] = description
     component.save()
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
 
     return {"success": True}
 
@@ -1448,24 +1448,24 @@ async def convert_schedule(
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    with c_config.scheduleLock:
-        shutil.copy(c_tools.get_path(["schedules", convert_from.lower() + ".json"], user_file=True),
-                    c_tools.get_path(["schedules", date + ".json"], user_file=True))
+    with ex_config.scheduleLock:
+        shutil.copy(ex_tools.get_path(["schedules", convert_from.lower() + ".json"], user_file=True),
+                    ex_tools.get_path(["schedules", date + ".json"], user_file=True))
 
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
     # Reload the schedule from disk
-    c_sched.retrieve_json_schedule()
+    ex_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
-    with c_config.scheduleLock:
+    with ex_config.scheduleLock:
         response_dict = {"success": True,
-                         "updateTime": c_config.scheduleUpdateTime,
-                         "schedule": c_config.json_schedule_list,
-                         "nextEvent": c_config.json_next_event}
+                         "updateTime": ex_config.scheduleUpdateTime,
+                         "schedule": ex_config.json_schedule_list,
+                         "nextEvent": ex_config.json_next_event}
     return response_dict
 
 
@@ -1477,12 +1477,12 @@ async def create_schedule(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    success, schedule = c_sched.create_schedule(c_tools.with_extension(name, 'json'), entries)
-    c_sched.retrieve_json_schedule()
+    success, schedule = ex_sched.create_schedule(ex_tools.with_extension(name, 'json'), entries)
+    ex_sched.retrieve_json_schedule()
     return {"success": success, "schedule": schedule}
 
 
@@ -1493,7 +1493,7 @@ async def get_seconds_from_midnight(time_str: str = Body(description="The time t
     This ensures that the value in the browser is consistent with how Python will process.
     """
 
-    return {"success": True, "seconds": c_sched.seconds_from_midnight(time_str)}
+    return {"success": True, "seconds": ex_sched.seconds_from_midnight(time_str)}
 
 
 @app.get("/schedule/{schedule_name}/getCSV")
@@ -1503,11 +1503,11 @@ async def get_schedule_as_csv(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    success, csv = c_sched.convert_schedule_to_csv(schedule_name + '.json')
+    success, csv = ex_sched.convert_schedule_to_csv(schedule_name + '.json')
     return {"success": success, "csv": csv}
 
 
@@ -1518,11 +1518,11 @@ async def get_schedule_as_json_string(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    success, schedule = c_sched.load_json_schedule(schedule_name + '.json')
+    success, schedule = ex_sched.load_json_schedule(schedule_name + '.json')
     result = {}
 
     for key in list(schedule.keys()):
@@ -1544,19 +1544,19 @@ async def delete_schedule_action(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
-    c_sched.retrieve_json_schedule()
+    ex_sched.delete_json_schedule_event(schedule_name + ".json", schedule_id)
+    ex_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
-    with c_config.scheduleLock:
+    with ex_config.scheduleLock:
         response_dict = {"success": True,
-                         "updateTime": c_config.scheduleUpdateTime,
-                         "schedule": c_config.json_schedule_list,
-                         "nextEvent": c_config.json_next_event}
+                         "updateTime": ex_config.scheduleUpdateTime,
+                         "schedule": ex_config.json_schedule_list,
+                         "nextEvent": ex_config.json_next_event}
     return response_dict
 
 
@@ -1567,24 +1567,24 @@ async def delete_schedule(request: Request,
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    with c_config.scheduleLock:
-        json_schedule_path = c_tools.get_path(["schedules", name + ".json"], user_file=True)
+    with ex_config.scheduleLock:
+        json_schedule_path = ex_tools.get_path(["schedules", name + ".json"], user_file=True)
         os.remove(json_schedule_path)
-    c_config.last_update_time = time.time()
+    ex_config.last_update_time = time.time()
 
     # Reload the schedule from disk
-    c_sched.retrieve_json_schedule()
+    ex_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
-    with c_config.scheduleLock:
+    with ex_config.scheduleLock:
         response_dict = {"success": True,
-                         "updateTime": c_config.scheduleUpdateTime,
-                         "schedule": c_config.json_schedule_list,
-                         "nextEvent": c_config.json_next_event}
+                         "updateTime": ex_config.scheduleUpdateTime,
+                         "schedule": ex_config.json_schedule_list,
+                         "nextEvent": ex_config.json_next_event}
     return response_dict
 
 
@@ -1594,19 +1594,19 @@ async def refresh_schedule(request: Request):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    c_sched.retrieve_json_schedule()
+    ex_sched.retrieve_json_schedule()
 
     # Send the updated schedule back
-    with c_config.scheduleLock:
+    with ex_config.scheduleLock:
         response_dict = {"success": True,
                          "class": "schedule",
-                         "updateTime": c_config.scheduleUpdateTime,
-                         "schedule": c_config.json_schedule_list,
-                         "nextEvent": c_config.json_next_event}
+                         "updateTime": ex_config.scheduleUpdateTime,
+                         "schedule": ex_config.json_schedule_list,
+                         "nextEvent": ex_config.json_next_event}
     return response_dict
 
 
@@ -1616,11 +1616,11 @@ async def get_date_specific_schedules(request: Request):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
-    return {"success": True, "schedules": c_sched.get_available_date_specific_schedules()}
+    return {"success": True, "schedules": ex_sched.get_available_date_specific_schedules()}
 
 
 @app.get("/schedule/{schedule_name}/get")
@@ -1629,13 +1629,13 @@ async def get_specific_schedule(request: Request, schedule_name: str):
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "view", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "view", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
     if not schedule_name.endswith('.json'):
         schedule_name += '.json'
-    success, schedule = c_sched.load_json_schedule(schedule_name)
+    success, schedule = ex_sched.load_json_schedule(schedule_name)
 
     return {"success": success, "schedule": schedule}
 
@@ -1656,7 +1656,7 @@ async def update_schedule(
 
     # Check permission
     token = request.cookies.get("authToken", "")
-    success, authorizing_user, reason = c_users.check_user_permission("schedule", "edit", token=token)
+    success, authorizing_user, reason = ex_users.check_user_permission("schedule", "edit", token=token)
     if success is False:
         return {"success": False, "reason": reason}
 
@@ -1668,7 +1668,7 @@ async def update_schedule(
                          "reason": "Time not valid"}
         return response_dict
 
-    c_sched.update_json_schedule(name + ".json", {
+    ex_sched.update_json_schedule(name + ".json", {
         schedule_id: {"time": time_to_set, "action": action_to_set,
                       "target": target_to_set, "value": value_to_set}})
 
@@ -1678,13 +1678,13 @@ async def update_schedule(
     response_dict = {}
     if not error:
         # Reload the schedule from disk
-        c_sched.retrieve_json_schedule()
+        ex_sched.retrieve_json_schedule()
 
         # Send the updated schedule back
-        with c_config.scheduleLock:
-            response_dict["updateTime"] = c_config.scheduleUpdateTime
-            response_dict["schedule"] = c_config.json_schedule_list
-            response_dict["nextEvent"] = c_config.json_next_event
+        with ex_config.scheduleLock:
+            response_dict["updateTime"] = ex_config.scheduleUpdateTime
+            response_dict["schedule"] = ex_config.json_schedule_list
+            response_dict["nextEvent"] = ex_config.json_next_event
             response_dict["success"] = True
     else:
         response_dict["success"] = False
@@ -1698,7 +1698,7 @@ async def update_schedule(
 async def get_version():
     """Return the current version of Control Server"""
 
-    return {"success": True, "version": c_config.software_version}
+    return {"success": True, "version": ex_config.software_version}
 
 
 @app.get("/system/checkConnection")
@@ -1712,8 +1712,8 @@ async def check_connection():
 async def get_json_configuration(target: str):
     """Return the requested JSON configuration."""
 
-    config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
-    configuration = c_tools.load_json(config_path)
+    config_path = ex_tools.get_path(["configuration", f"{target}.json"], user_file=True)
+    configuration = ex_tools.load_json(config_path)
     if configuration is not None:
         return {"success": True, "configuration": configuration}
     return {"success": False, "reason": "File does not exist."}
@@ -1723,23 +1723,23 @@ async def get_json_configuration(target: str):
 async def get_help_text():
     """Send the contents of README.md"""
     try:
-        readme_path = c_tools.get_path(["README.md"])
+        readme_path = ex_tools.get_path(["README.md"])
         with open(readme_path, 'r', encoding='UTF-8') as f:
             text = f.read()
         response = {"success": True, "text": text}
     except FileNotFoundError:
-        with c_config.logLock:
+        with ex_config.logLock:
             logging.error("Unable to read README.md")
         response = {"success": False, "reason": "Unable to read README.md"}
     except PermissionError:
         # For some reason, Pyinstaller insists on placing the README in a directory of the same name on Windows.
         try:
-            readme_path = c_tools.get_path(["README.md", "README.md"])
+            readme_path = ex_tools.get_path(["README.md", "README.md"])
             with open(readme_path, 'r', encoding='UTF-8') as f:
                 text = f.read()
             response = {"success": True, "text": text}
         except (FileNotFoundError, PermissionError):
-            with c_config.logLock:
+            with ex_config.logLock:
                 logging.error("Unable to read README.md")
             response = {"success": False, "reason": "Unable to read README.md"}
 
@@ -1752,7 +1752,7 @@ async def get_version():
 
     response = {
         "success": True,
-        "version": str(c_config.software_version)
+        "version": str(ex_config.software_version)
     }
     return response
 
@@ -1766,14 +1766,14 @@ async def handle_ping(data: dict[str, Any], request: Request):
                     "reason": "Request missing 'uuid' field."}
         return response
 
-    c_exhibit.update_exhibit_component_status(data, request.client.host)
+    ex_exhibit.update_exhibit_component_status(data, request.client.host)
 
     if "uuid" in data:
-        # Preferred way from Constellation 5
-        component = c_exhibit.get_exhibit_component(component_uuid=data['uuid'])
+        # Preferred way from Exhibitera 5
+        component = ex_exhibit.get_exhibit_component(component_uuid=data['uuid'])
     else:
         # Legacy support
-        component = c_exhibit.get_exhibit_component(component_id=data['id'])
+        component = ex_exhibit.get_exhibit_component(component_id=data['id'])
 
     dict_to_send = component.config.copy()
     if len(dict_to_send["commands"]) > 0:
@@ -1789,14 +1789,14 @@ async def update_configuration(target: str,
     """Write the given object to the matching JSON file as the configuration."""
 
     if target == "system":
-        c_tools.update_system_configuration(configuration)
+        ex_tools.update_system_configuration(configuration)
     else:
-        config_path = c_tools.get_path(["configuration", f"{target}.json"], user_file=True)
-        c_tools.write_json(configuration, config_path)
+        config_path = ex_tools.get_path(["configuration", f"{target}.json"], user_file=True)
+        ex_tools.write_json(configuration, config_path)
 
         if target == "descriptions":
-            c_exhibit.read_descriptions_configuration()
-            c_config.last_update_time = time.time()
+            ex_exhibit.read_descriptions_configuration()
+            ex_config.last_update_time = time.time()
 
     return {"success": True}
 
@@ -1813,8 +1813,8 @@ async def send_update_stream(request: Request):
                 break
 
             # Checks for new updates and return them to client
-            if c_config.last_update_time != last_update_time:
-                last_update_time = c_config.last_update_time
+            if ex_config.last_update_time != last_update_time:
+                last_update_time = ex_config.last_update_time
 
                 yield {
                     "event": "update",
@@ -1827,65 +1827,53 @@ async def send_update_stream(request: Request):
     return EventSourceResponse(event_generator())
 
 
-@app.post("/")
-async def do_post(data: dict[str, Any], request: Request):
-    """POST requests to / are Constellation 1 legacy calls."""
-
-    client_ip = request.client.host
-    if client_ip == "::1":
-        client_ip = "localhost"
-    print(f"Received unexpected legacy connection from ip {client_ip}:", data)
-    logging.error(f"Received unexpected legacy connection from ip {client_ip}:", data)
-    return {"success": False, "reason": "Must conform to Constellation 2.0 API."}
-
-
 app.mount("/js",
-          StaticFiles(directory=c_tools.get_path(["js"])),
+          StaticFiles(directory=ex_tools.get_path(["js"])),
           name="js")
 app.mount("/css",
-          StaticFiles(directory=c_tools.get_path(["css"])),
+          StaticFiles(directory=ex_tools.get_path(["css"])),
           name="css")
 try:
-    app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
+    app.mount("/static", StaticFiles(directory=ex_tools.get_path(["static"], user_file=True)),
               name="static")
 except RuntimeError:
     # Directory does not exist, so create it
-    os.mkdir(c_tools.get_path(["static"], user_file=True))
-    app.mount("/static", StaticFiles(directory=c_tools.get_path(["static"], user_file=True)),
+    os.mkdir(ex_tools.get_path(["static"], user_file=True))
+    app.mount("/static", StaticFiles(directory=ex_tools.get_path(["static"], user_file=True)),
               name="static")
 try:
-    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+    app.mount("/issues", StaticFiles(directory=ex_tools.get_path(["issues"], user_file=True)),
               name="issues")
 except RuntimeError:
     # Directory does not exist, so create it
-    os.mkdir(c_tools.get_path(["issues"], user_file=True))
-    app.mount("/issues", StaticFiles(directory=c_tools.get_path(["issues"], user_file=True)),
+    os.mkdir(ex_tools.get_path(["issues"], user_file=True))
+    app.mount("/issues", StaticFiles(directory=ex_tools.get_path(["issues"], user_file=True)),
               name="issues")
 app.mount("/",
-          StaticFiles(directory=c_tools.get_path([""]), html=True),
+          StaticFiles(directory=ex_tools.get_path([""]), html=True),
           name="root")
 
 if __name__ == "__main__":
-    c_tools.check_file_structure()
-    c_exhibit.check_available_exhibits()
+    ex_tools.check_file_structure()
+    ex_exhibit.check_available_exhibits()
     load_default_configuration()
-    c_users.load_users()
-    c_group.load_groups()
-    c_exhibit.load_components()
-    c_proj.poll_projectors()
-    c_exhibit.poll_wake_on_LAN_devices()
+    ex_users.load_users()
+    ex_group.load_groups()
+    ex_exhibit.load_components()
+    ex_proj.poll_projectors()
+    ex_exhibit.poll_wake_on_LAN_devices()
     check_for_software_update()
 
     log_level = "warning"
-    if c_config.debug:
+    if ex_config.debug:
         log_level = "debug"
 
-    print(f"Launching Control Server for {c_config.gallery_name}.")
-    print(f"To access the server, visit http://{c_config.ip_address}:{c_config.port}")
+    print(f"Launching Control Server for {ex_config.gallery_name}.")
+    print(f"To access the server, visit http://{ex_config.ip_address}:{ex_config.port}")
 
     # Must use only one worker, since we are relying on the config module being in global
     uvicorn.run(app,
                 host="",  # Accept connections on all interfaces
                 log_level=log_level,
-                port=int(c_config.port),
+                port=int(ex_config.port),
                 reload=False, workers=1)

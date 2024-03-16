@@ -3,13 +3,13 @@ import os
 import unittest
 
 import config
-import constellation_exhibit as c_exhibit
-import constellation_issues as c_issues
-import constellation_maintenance as c_maint
-import constellation_projector as c_proj
-import constellation_schedule as c_sched
-import constellation_tools as c_tools
-import constellation_tracker as c_track
+import exhibitera_exhibit as c_exhibit
+import exhibitera_issues as c_issues
+import exhibitera_maintenance as c_maint
+import exhibitera_projector as c_proj
+import exhibitera_schedule as c_sched
+import exhibitera_tools as c_tools
+import exhibitera_tracker as c_track
 
 
 class TestHelperMethods(unittest.TestCase):

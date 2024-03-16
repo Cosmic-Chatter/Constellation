@@ -3,13 +3,13 @@ import subprocess
 import sys
 
 def quit_handler(sig, frame):
-    print("Ctrl-c detected! Passing to control_server")
+    print("Ctrl-c detected! Passing to hub")
     sys.exit(0)
 
 signal.signal(signal.SIGINT, quit_handler)
 
 while True:
-    p = subprocess.Popen(["python3", "control_server.py"], shell=False)
+    p = subprocess.Popen(["python3", "Exhibitera_Hub.py"], shell=False)
     rc = p.wait()
     if rc == 0:
         break

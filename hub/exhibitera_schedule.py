@@ -11,10 +11,10 @@ import logging
 import os
 import threading
 
-# Constellation imports
+# Exhibitera imports
 import config
-import constellation_exhibit as c_exhibit
-import constellation_tools as c_tools
+import exhibitera_exhibit as c_exhibit
+import exhibitera_tools as c_tools
 
 
 def create_schedule(name: str, entries: dict[str, dict]) -> tuple[bool, dict]:
@@ -335,7 +335,7 @@ def seconds_from_midnight(input_time: str) -> float:
 
 
 # Set up log file
-log_path = c_tools.get_path(["control_server.log"], user_file=True)
+log_path = c_tools.get_path(["hub.log"], user_file=True)
 logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S',
                     filename=log_path,
                     format='%(levelname)s, %(asctime)s, %(message)s',

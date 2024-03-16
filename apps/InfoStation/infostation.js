@@ -1,6 +1,6 @@
 /* global showdown */
 
-import * as constCommon from '../js/constellation_app_common.js'
+import * as exCommon from '../js/exhibitera_app_common.js'
 
 function loadDefinition (definition) {
   // Parse the current definition and build the interface correspondingly.
@@ -15,12 +15,12 @@ function loadDefinition (definition) {
   textTabs = []
 
   // Set up the available languages
-  constCommon.createLanguageSwitcher(definition, localize)
+  exCommon.createLanguageSwitcher(definition, localize)
 
   // Configure the attractor
   attractorAvailable = false
   if ('attractor' in definition) {
-    const fileType = constCommon.guessMimetype(definition.attractor)
+    const fileType = exCommon.guessMimetype(definition.attractor)
     if (['image', 'video'].includes(fileType)) {
       setAttractor(definition.attractor, fileType)
     }
@@ -59,7 +59,7 @@ function loadDefinition (definition) {
 
   // Backgorund settings
   if ('background' in definition.style) {
-    constCommon.setBackground(definition.style.background, root, '#719abf')
+    exCommon.setBackground(definition.style.background, root, '#719abf')
   }
 
   Object.keys(definition.style.font).forEach((key) => {
@@ -79,7 +79,7 @@ function loadDefinition (definition) {
   if (defaultLang !== '') localize(defaultLang)
 
   // Send a thumbnail to the helper
-  setTimeout(() => constCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
+  setTimeout(() => exCommon.saveScreenshotAsThumbnail(definition.uuid + '.png'), 100)
 }
 
 function localize (lang) {
@@ -283,7 +283,7 @@ function gotoTab (id) {
 function hideAttractor () {
   // Make the attractor layer invisible
 
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
 
   $('#attractorOverlay').fadeOut(100, result => {
     if (document.getElementById('attractorVideo').style.display === 'block') {
@@ -300,7 +300,7 @@ function updateFunc (update) {
 
   if ('definition' in update && update.definition !== currentDefintion) {
     currentDefintion = update.definition
-    constCommon.loadDefinition(currentDefintion)
+    exCommon.loadDefinition(currentDefintion)
       .then((result) => {
         loadDefinition(result.definition)
       })
@@ -310,7 +310,7 @@ function updateFunc (update) {
 function resetActivityTimer () {
   // Cancel the existing activity timer and set a new one
 
-  constCommon.config.currentInteraction = true
+  exCommon.config.currentInteraction = true
   clearTimeout(inactivityTimer)
   inactivityTimer = setTimeout(showAttractor, timeoutDuration)
 }
@@ -334,7 +334,7 @@ function showAttractor () {
   // Make the attractor layer visible
 
   const definition = $(document).data('definition')
-  constCommon.config.currentInteraction = false
+  exCommon.config.currentInteraction = false
 
   if (attractorAvailable) {
     if (document.getElementById('attractorVideo').style.display === 'block') {
@@ -378,7 +378,7 @@ $('#fontSizeIncreaseButton').click(fontSizeIncrease)
 $('#attractorOverlay').click(hideAttractor)
 
 // Constellation stuff
-constCommon.configureApp({
+exCommon.configureApp({
   name: 'infostation',
   debug: true,
   loadDefinition,
