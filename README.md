@@ -1,7 +1,7 @@
+_Constellation is now **Exhibitera**_. [Click here](https://github.com/Cosmic-Chatter/Exhibitera) to visit the new repo.
+
 # Constellation
 Open-source software for developing and controlling museum exhibits.
-
-[Learn more and download for Windows and Linux](https://cosmicchatter.org/constellation/constellation.html).
 
 <img src="control_server/images/Components_overview_tab.png" style="width: 100%;"></img>
 
