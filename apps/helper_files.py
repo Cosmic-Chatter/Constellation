@@ -391,6 +391,15 @@ def create_thumbnail(filename: str, mimetype: str, block: bool = False, width: i
     return True, ""
 
 
+def is_url(filename: str) -> bool:
+    """Identify if the given filename is an url."""
+
+    filename = filename.lower()
+    if filename.startswith("http://") or filename.startswith("https://"):
+        return True
+    return False
+
+
 def create_thumbnail_video_from_frames(frames: list, filename: str, duration: float = 5) -> bool:
     """Take a list of image filenames and use FFmpeg to turn it into a video thumbnail."""
 
@@ -398,25 +407,29 @@ def create_thumbnail_video_from_frames(frames: list, filename: str, duration: fl
     fps = len(frames) / duration
 
     # First, render each file in a consistent format
+    count = 0
     for i, frame in enumerate(frames):
-        thumb_path, _ = get_thumbnail(frame, force_image=True)
-        command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf',
-                   'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1',
-                   '-pix_fmt', 'yuv420p',
-                   get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True)]
+        if is_url(frame) is False:
+            thumb_path, _ = get_thumbnail(frame, force_image=True)
+            command = [ffmpeg_path, '-y', '-i', thumb_path, '-vf',
+                       'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1',
+                       '-pix_fmt', 'yuv420p',
+                       get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True)]
+            process = subprocess.Popen(command)
+            process.communicate()
+            count += 1
+
+    # Then, stitch them together into a slideshow
+    if count > 0:
+        command = [ffmpeg_path, '-y', '-r', str(fps),
+                   '-i', get_path(["thumbnails", '__tempOutput_%04d.png'], user_file=True),
+                   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', "-vf", "scale=400:-2", output_path]
         process = subprocess.Popen(command)
         process.communicate()
 
-    # Then, stitch them together into a slideshow
-    command = [ffmpeg_path, '-y', '-r', str(fps),
-               '-i', get_path(["thumbnails", '__tempOutput_%04d.png'], user_file=True),
-               '-c:v', 'libx264', '-pix_fmt', 'yuv420p', "-vf", "scale=400:-2", output_path]
-    process = subprocess.Popen(command)
-    process.communicate()
-
-    # Finally, delete the temp files
-    for i in range(len(frames)):
-        os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True))
+        # Finally, delete the temp files
+        for i in range(len(frames)):
+            os.remove(get_path(["thumbnails", '__tempOutput_' + str(i).rjust(4, '0') + '.png'], user_file=True))
 
     return True
 

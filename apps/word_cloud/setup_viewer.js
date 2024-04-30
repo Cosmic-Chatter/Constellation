@@ -2,12 +2,13 @@
 
 import * as constCommon from '../js/constellation_app_common.js'
 import * as constSetup from '../js/constellation_setup_common.js'
+import * as constFileSelect from '../js/constellation_file_select_modal.js'
 
-function clearDefinitionInput (full = true) {
-  // Clear all input related to a defnition
+function initializeDefinition () {
+  // Create a blank definition at save it to workingDefinition.
 
-  if (full === true) {
-  // Get a new temporary uuid
+  return new Promise(function (resolve, reject) {
+    // Get a new temporary uuid
     constCommon.makeHelperRequest({
       method: 'GET',
       endpoint: '/uuid/new'
@@ -46,7 +47,16 @@ function clearDefinitionInput (full = true) {
           }
         })
         constSetup.previewDefinition(false)
+        resolve()
       })
+  })
+}
+
+async function clearDefinitionInput (full = true) {
+  // Clear all input related to a defnition
+
+  if (full === true) {
+    await initializeDefinition()
   }
 
   // Definition details
@@ -80,10 +90,8 @@ function clearDefinitionInput (full = true) {
     gradient_color_2: '#fff'
   })
 
-  // Font details
-  Array.from(document.querySelectorAll('.font-select')).forEach((el) => {
-    el.value = el.getAttribute('data-default')
-  })
+  // Reset font face options
+  constSetup.resetAdvancedFontPickers()
 
   document.getElementById('promptTextSizeSlider').value = 0
 }
@@ -95,7 +103,7 @@ function editDefinition (uuid = '') {
   const def = constSetup.getDefinitionByUUID(uuid)
   $('#definitionSaveButton').data('initialDefinition', structuredClone(def))
   $('#definitionSaveButton').data('workingDefinition', structuredClone(def))
-  console.log(def)
+
   $('#definitionNameInput').val(def.name)
   if ('collection_name' in def.behavior) {
     document.getElementById('collectionNameInput').value = def.behavior.collection_name
@@ -150,10 +158,11 @@ function editDefinition (uuid = '') {
     constSetup.updateAdvancedColorPicker('appearance>background', def.appearance.background)
   }
 
-  // Fonts
+  // Set the appropriate values for the advanced font pickers
   if ('font' in def.appearance) {
     Object.keys(def.appearance.font).forEach((key) => {
-      document.getElementById('fontSelect_' + key).value = def.appearance.font[key]
+      const picker = document.querySelector(`.AFP-select[data-path="appearance>font>${key}"`)
+      constSetup.setAdvancedFontPicker(picker, def.appearance.font[key])
     })
   }
 
@@ -164,39 +173,6 @@ function editDefinition (uuid = '') {
   // Configure the preview frame
   document.getElementById('previewFrame').src = '../word_cloud_viewer.html?standalone=true&definition=' + def.uuid
   constSetup.previewDefinition()
-}
-
-function onFontUploadChange () {
-  // Classed when the user selects font files to upload
-
-  const fileInput = $('#uploadFontInput')[0]
-  const files = fileInput.files
-  const formData = new FormData()
-
-  $('#uploadFontName').html('Uploading')
-
-  Object.keys(files).forEach((key) => {
-    const file = files[key]
-    formData.append('files', file)
-  })
-
-  const xhr = new XMLHttpRequest()
-  xhr.open('POST', '/uploadContent', true)
-
-  xhr.onreadystatechange = function () {
-    if (this.readyState !== 4) return
-    if (this.status === 200) {
-      const response = JSON.parse(this.responseText)
-
-      if ('success' in response) {
-        $('#uploadFontName').html('Upload')
-        populateFontSelects()
-      }
-    } else if (this.status === 422) {
-      console.log(JSON.parse(this.responseText))
-    }
-  }
-  xhr.send(formData)
 }
 
 function saveDefinition () {
@@ -221,63 +197,6 @@ function saveDefinition () {
             }
           })
       }
-    })
-}
-
-function populateFontSelects () {
-  // Get a list of all the content and add the available font files to the appropriate selects.
-
-  const selects = ['fontSelect_prompt', 'fontSelect_words']
-  $('.font-select').empty()
-
-  // First, search the content directory for any user-provided fonts
-  constCommon.makeHelperRequest({
-    method: 'GET',
-    endpoint: '/getAvailableContent'
-  })
-    .then((result) => {
-      selects.forEach((id) => {
-        const el = document.getElementById(id)
-        // First, add the default
-        const defaultFont = document.createElement('option')
-        defaultFont.value = el.getAttribute('data-default')
-        defaultFont.innerHTML = 'Default'
-        el.appendChild(defaultFont)
-
-        const header = document.createElement('option')
-        header.value = 'User-provided'
-        header.innerHTML = 'User-provided'
-        header.setAttribute('disabled', true)
-        el.appendChild(header)
-
-        result.all_exhibits.forEach((item) => {
-          if (['ttf', 'otf', 'woff'].includes(item.split('.').pop().toLowerCase())) {
-            const option = document.createElement('option')
-            option.value = '../content/' + item
-            option.innerHTML = item
-            el.appendChild(option)
-          }
-        })
-      })
-
-      // Then, add the defaults
-      const defaultFonts = ['OpenSans-Light.ttf', 'OpenSans-LightItalic.ttf', 'OpenSans-Regular.ttf', 'OpenSans-Italic.ttf', 'OpenSans-Medium.ttf', 'OpenSans-MediumItalic.ttf', 'OpenSans-SemiBold.ttf', 'OpenSans-SemiBoldItalic.ttf', 'OpenSans-Bold.ttf', 'OpenSans-BoldItalic.ttf', 'OpenSans-ExtraBoldItalic.ttf', 'OpenSans-ExtraBold.ttf']
-
-      selects.forEach((id) => {
-        const el = document.getElementById(id)
-        const header = document.createElement('option')
-        header.value = 'Built-in'
-        header.innerHTML = 'Built-in'
-        header.setAttribute('disabled', true)
-        el.appendChild(header)
-
-        defaultFonts.forEach((font) => {
-          const option = document.createElement('option')
-          option.value = '../_fonts/' + font
-          option.innerHTML = font
-          el.appendChild(option)
-        })
-      })
     })
 }
 
@@ -376,13 +295,9 @@ document.getElementById('textCaseSelect').addEventListener('change', (event) => 
 })
 
 // Font upload
-document.getElementById('uploadFontInput').addEventListener('change', onFontUploadChange)
-
-// Font change
-$('.font-select').change(function () {
-  const value = $(this).val().trim()
-  constSetup.updateWorkingDefinition(['appearance', 'font', $(this).data('property')], value)
-  constSetup.previewDefinition(true)
+document.getElementById('manageFontsButton').addEventListener('click', (event) => {
+  constFileSelect.createFileSelectionModal({ filetypes: ['otf', 'ttf', 'woff', 'woff2'], manage: true })
+    .then(constSetup.refreshAdvancedFontPickers)
 })
 
 // Color
@@ -427,12 +342,21 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
   document.querySelector('html').setAttribute('data-bs-theme', 'light')
 }
 
-populateFontSelects()
-clearDefinitionInput()
-
 constSetup.configure({
   app: 'word_cloud_viewer',
   clearDefinition: clearDefinitionInput,
+  initializeDefinition,
   loadDefinition: editDefinition,
   saveDefinition
 })
+
+constCommon.askForDefaults(false)
+  .then(() => {
+    if (constCommon.config.standalone === false) {
+      // We are using Control Server, so attempt to log in
+      constSetup.authenticateUser()
+    } else {
+      // Hide the login details
+      document.getElementById('loginMenu').style.display = 'none'
+    }
+  })

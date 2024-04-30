@@ -42,60 +42,15 @@ export function submitProjectorAdditionFromModal () {
     document.getElementById('addProjectorModalIPError').style.display = 'none'
   }
 
-  submitProjectorChange(id, {
-    group,
-    id,
-    ip_address: ipAddress,
-    password: document.getElementById('addProjectorModalPasswordField').value,
-    protocol: 'pjlink'
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/projector/create',
+    params: {
+      id,
+      group,
+      ip_address: ipAddress,
+      password: document.getElementById('addProjectorModalPasswordField').value
+    }
   })
-    .then(() => {
-      $('#addProjectorModal').modal('hide')
-    })
-}
-
-export function submitProjectorChange (currentID, update) {
-  // Modify the projector settings conifguration with the given details
-
-  if ('protocol' in update === false) update.protocol = 'pjlink'
-
-  // First, get the current projector configuration
-  return constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/projectors/getConfiguration'
-  })
-    .then((result) => {
-      let projConfig
-      if (result.success === true) {
-        projConfig = result.configuration
-      } else {
-        projConfig = []
-      }
-
-      // Next, check if there is a configuration matching this id
-      let matchFound = false
-      for (let i = 0; i < projConfig.length; i++) {
-        if (projConfig[i].id === currentID) {
-          projConfig[i].id = update.id
-          projConfig[i].group = update.group
-          projConfig[i].ip_address = update.ip_address
-          projConfig[i].password = update.password
-          projConfig[i].protocol = update.protocol
-          matchFound = true
-          break
-        }
-      }
-      if (matchFound === false) {
-        projConfig.push(update)
-      }
-
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/projectors/updateConfiguration',
-        params: {
-          configuration: projConfig
-        }
-      })
-    })
+  $('#addProjectorModal').modal('hide')
 }

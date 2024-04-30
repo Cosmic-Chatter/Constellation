@@ -12,44 +12,7 @@
 
     <link rel="stylesheet" href="../css/bootstrap_5_3/bootstrap.min.css">
     <link rel="stylesheet" href="../css/coloris.min.css">
-
-    <style>
-      /* Style for the color pickers */
-      .clr-field {
-        width: 100%;
-      }
-      .clr-field button, .clr-field input {
-        width: 100%;
-        border-radius: 5px;
-        border: var(--bs-border-color);
-        border-width: 1px;
-        border-style: solid;
-      }
-      #previewContainer {
-        width: 100%;
-        height: 100%;
-        position: relative;
-      }
-      #previewFrame {
-        transform-origin: 0 0;
-        position: absolute;
-        left: 0;
-        top: 0;
-        border: white;
-        border-width: 1px;
-        border-style: solid;
-      }
-      .preview-landscape {
-        --previewHeight: 1080px;
-        width: 1920px;
-        height: var(--previewHeight);
-      }
-      .preview-portrait {
-        --previewHeight: 1920px;
-        width: 1080px;
-        height: var(--previewHeight);
-      }
-    </style>
+    <link rel="stylesheet" href="../css/setup.css">      
 
     <title>Media Browser Setup</title>
 
@@ -57,6 +20,41 @@
 
   <body>
     <div id="mainContainer" class="container mt-2 mb-5">
+
+      <!-- Password change modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="passwordChangeModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Change your password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="fst-italic">Use the fields below to change you password. If you don't know your current password, your administrator can set a temporary password for you.</p>
+              
+              <label class="form-label mt-2" for="passwordChangeModalCurrentPassword">Current password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalCurrentPassword">
+              
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword1">New password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword1" autocomplete="new-password">
+
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword2">Confirm new password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword2" autocomplete="new-password">
+
+              <div class="text-danger mt-3">
+                <div id="passwordChangeModalNoCurrentPassWarning">You must enter your current password.</div>
+                <div id="passwordChangeModalBadCurrentPassWarning">The current password was incorrect.</div>
+                <div id="passwordChangeModalNoBlankPassWarning">The password cannot be blank.</div>
+                <div id="passwordChangeModalPassMismatchWarning">The new passwords do not match.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="passwordChangeModalSubmitButton" type="button" class="btn btn-primary">Change</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Help modal -->
       <div id="appHelpModal" class="modal" tabindex="-1">
@@ -146,9 +144,53 @@
           </div>
         </div>
       </div>
-      <div id="setupHeader">
-        <H2>Media Browser  Setup</H2>
-        Use this utility to create and edit Media Browser configurations.
+            
+      <div class="row">
+        <div class="col-10" id="setupHeader">
+          <H2>Media Browser  Setup</H2>
+          Use this utility to create and edit Media Browser configurations.
+          </div>
+
+        <div class="col-2">
+          <div id="loginMenu">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">Log in</button>
+            <div class="dropdown-menu">
+              <div class="px-4 py-3">
+                <div class="mb-3">
+                  <label for="loginDropdownUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="loginDropdownUsername">
+                </div>
+                <div class="mb-3">
+                  <label for="loginDropdownPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="loginDropdownPassword">
+                </div>
+                <button id="loginSubmitButton" class="btn btn-primary">Log in</button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="loginCreateAccountButton">Create account</button>
+              <a class="dropdown-item" href="#">Forgot password?</a>
+            </div>
+          </div>
+          <div id="userMenu" style="display: none;">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span id="userMenuUserDisplayName" class="d-none d-sm-inline-block">Morgan Rehnberg</span>
+              <span id="userMenuUserShortName" class="d-sm-none">MR</span>
+              </button>
+            <div class="dropdown-menu">
+              <button class="dropdown-item" id="changePasswordButton">Change password</button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="logoutButton">Log out</button>
+            </div>
+          </div>
+        </div>
+        <div id="helpNewAccountMessage" class="col-6 offset-3 alert alert-primary my-4">
+          <H4 class="text-center">Need an account?</H4>
+          Constellation requires a user account to access functionality. If you need an account, or your password to be reset, please contact your system administrator.
+        </div>
+        <div id="helpInsufficientPermissionstMessage" class="col-6 offset-3 alert alert-warning my-4" style="display: none;">
+          <H4 class="text-center">Insufficient Permissions</H4>
+          You do not have permission to edit this component. If you believe this is an error, contact your system administrator.
+        </div>
       </div>
        
       <div id="setupTools" class="row my-1 gx-2 gy-2">
@@ -189,7 +231,22 @@
               <button id="previewRefreshButton" class="btn btn-info w-100">Refresh preview</button>
             </div>
             <div class="col-5 col-sm-4 col-md-3 col-lg-2">
-              <button id="previewRotateButton" class="btn btn-info w-100">Rotate preview</button>
+              <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">Adjust preview</button>
+                <ul class="dropdown-menu">
+                  <li><h6 class="dropdown-header">Typical widescreen</h6></li>
+                  <li><a id="previewAspect16x9" class="dropdown-item" href="#">16x9 (horizontal)</a></li>
+                  <li><a id="previewAspect9x16" class="dropdown-item" href="#">9x16 (vertical)</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Business widescreen</h6></li>
+                  <li><a id="previewAspect16x10" class="dropdown-item" href="#">16x10 (horizontal)</a></li>
+                  <li><a id="previewAspect10x16" class="dropdown-item" href="#">10x16 (vertical)</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Fullscreen / iPad</h6></li>
+                  <li><a id="previewAspect4x3" class="dropdown-item" href="#">4x3 (horizontal)</a></li>
+                  <li><a id="previewAspect3x4" class="dropdown-item" href="#">3x4 (vertical)</a></li>
+                </ul>
+              </div>
             </div>
             <div class="col-6 col-sm-4 offset-sm-8 offset-md-0 col-md-3 col-xl-2 d-flex align-items-center">
               <div class="form-check mb-0">
@@ -279,10 +336,10 @@
                 <div id="languageNav" class="nav nav-tabs" role="tablist">
                 </div>
               </nav>
-              <div class="tab-content" id="languageNavContent">
+              <div class="tab-content border-bottom" id="languageNavContent">
               </div>
 
-              <h3>Appearance</h3>
+              <h3 class="mt-2">Appearance</h3>
 
               <h4>Grid layout</h4>
               <div class="row gy-2 mb-3">
@@ -342,35 +399,44 @@
                     <input id="colorPicker_titleColor" type="text" class="coloris form-control" value="#000000" data-property="titleColor" data-default="#000000">
                   </div>
                 </div>
-      
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterBackgroundColor" class="form-label">Filter background</label>
+                  <div>
+                    <input id="colorPicker_filterBackgroundColor" type="text" class="coloris form-control" value="#ffffff" data-property="filterBackgroundColor" data-default="#ffffff">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterLabelColor" class="form-label">Filter label</label>
+                  <div>
+                    <input id="colorPicker_filterLabelColor" type="text" class="coloris form-control" value="#000000" data-property="filterLabelColor" data-default="#000000">
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                  <label for="colorPicker_filterTextColor" class="form-label">Filter text</label>
+                  <div>
+                    <input id="colorPicker_filterTextColor" type="text" class="coloris form-control" value="#000000" data-property="filterTextColor" data-default="#000000">
+                  </div>
+                </div>
               </div>
 
               <h4>Fonts</h4>
               <div class="row gy-2">
-                <div class="col-12 col-lg-3">
-                  <label class="btn btn-outline-primary w-100">
-                    <span id="uploadFontName" class="w-100">Upload</span>
-                    <input id="uploadFontInput" class="form-control-file w-100 align-self-center" multiple type="file" hidden="true" accept=".ttf, .otf, .woff">
-                  </label>
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                  <button id="manageFontsButton" class="btn btn-info w-100">Manage fonts</button>
                 </div>
                 <div class="col-0 col-lg-9"></div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Title" class="form-label">Item title</label>
-                  <select id="fontSelect_Title" class="form-select font-select" data-property="Title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_title" class="form-label">Lightbox title</label>
-                  <select id="fontSelect_Lightbox_title" class="form-select font-select" data-property="Lightbox_title" data-default="../_fonts/OpenSans-Bold.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_caption" class="form-label">Lightbox caption</label>
-                  <select id="fontSelect_Lightbox_caption" class="form-select font-select" data-property="Lightbox_caption" data-default="../_fonts/OpenSans-Regular.ttf"></select>
-                </div>
-                <div class="col-12 col-md-6 col-xl-3">
-                  <label for="fontSelect_Lightbox_credit" class="form-label">Lightbox credit</label>
-                  <select id="fontSelect_Lightbox_credit" class="form-select font-select" data-property="Lightbox_credit" data-default="../_fonts/OpenSans-LightItalic.ttf"></select>
-                </div>
 
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Item title" data-constAFP-path="style>font>Title" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox title" data-constAFP-path="style>font>Lightbox_title" data-default="OpenSans-Bold.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox caption" data-constAFP-path="style>font>Lightbox_caption" data-default="OpenSans-Regular.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Lightbox credit" data-constAFP-path="style>font>Lightbox_credit" data-default="OpenSans-LightItalic.ttf"></div>
+
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Filter label" data-constAFP-path="style>font>filter_label" data-default="OpenSans-Bold.ttf"></div>
+                
+                <div class="col-12 col-md-6 col-xl-3 advanced-font-picker" data-constAFP-name="Filter text" data-constAFP-path="style>font>filter_text" data-default="OpenSans-Regular.ttf"></div>
               </div>
 
               <h4 class="mt-2">Text size</h4>
@@ -391,13 +457,21 @@
                   <label for="Lightbox_creditTextSizeSlider" class="form-label">Lightbox credit</label>
                   <input id="Lightbox_creditTextSizeSlider" type="range" class="form-range text-size-slider" data-property="Lightbox_credit" min="-0.5", max="2" start="0" step="0.5">
                 </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="filter_labelTextSizeSlider" class="form-label">Filter label</label>
+                  <input id="filter_labelTextSizeSlider" type="range" class="form-range text-size-slider" data-property="filter_label" min="-0.5", max="2" start="0" step="0.5">
+                </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                  <label for="filter_textTextSizeSlider" class="form-label">Filter text</label>
+                  <input id="filter_textTextSizeSlider" type="range" class="form-range text-size-slider" data-property="filter_text" min="-0.5", max="2" start="0" step="0.5">
+                </div>
               </div>
             </div>
           </div>
         </div>
         <div id='previewPane' class="col-6 col-lg-5 sticky-top" style="z-index: 1;">
           <div id="previewContainer">
-            <iframe id="previewFrame" class="mt-3 preview-landscape" src="../media_browser.html?standalone=true"></iframe>
+            <iframe id="previewFrame" class="mt-3 preview-16x9" src="../media_browser.html?standalone=true"></iframe>
           </div>
         </div>
       </div>

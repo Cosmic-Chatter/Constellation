@@ -10,118 +10,250 @@
     <link rel="icon" type="image/x-icon" href="icon/green.ico">
 
     <link rel="stylesheet" href="css/bootstrap_5_3/bootstrap.min.css">
+    <link rel="stylesheet" href="css/webpage.css">
 
     <title></title>
 
-    <style>
-      /* Styling for code snippets and tables in help text */
-      pre {
-        background-color: #414242;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-      }
-      table {
-        background-color: #414242;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-        border-collapse: collapse;
-        border: 3px solid #8e184f;
-      }
-      tr, td, th {
-        padding-top: 5px;
-        padding-bottom: 5px;
-        margin-left: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 10px;
-        border-collapse: collapse;
-        border: 1px solid #8e184f;
-      }
-      .componentContentButton {
-        width: 80% !important;
-        overflow-wrap: break-word;
-      }
-      .componentStatusButton {
-        overflow-wrap: break-word;
-        width: 75%;
-      }
-      .constellation-dialog {
-        max-width: min(95%, 750px); 
-        width: min(95%, 750px);
-      }
-      .container {
-        max-width: 1600px;
-      }
-      .contentThumbnail {
-        width: 100%;
-      }
-      .dropdown-item {
-        padding-top: 10px;
-        padding-bottom: 10px;
-      }
-      .handCursor {
-        cursor: pointer;
-      }
-      .schedule-date-specific {
-        background-color: rgba(91, 192, 222, 0.2);
-      }
-      #completedIssuesModalIssueRow {
-        max-height: 55vh;
-        min-height: 35vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalDefinitionList {
-        height: 45vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalDMXSceneList {
-        height: 45vh;
-        overflow-y: auto;
-      }
-      #componentInfoModalMaintenanceRelatedIssues {
-        height: 35vh;
-        overflow-y: scroll;
-      }
-      #exhibitNameField {
-        font-size: 30px;
-      }
-      #galleryNameField {
-        font-size: 20px;
-      }
-      #issueMediaUploadFilename {
-        overflow-wrap: break-word!important;
-      }
-      #projectorStatusDetailTable {
-        background-color: #414242;
-        padding-top: 0px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        margin-left: 0px;
-        padding-left: 10px;
-        padding-right: 10px;
-        margin-right: 0px;
-        border-collapse: collapse;
-        border: 2px solid #8e184f;
-      }
-      #updateInfoModalChangelogContainer {
-        max-height: 60vh;
-        min-height: 15vh;
-        overflow-y: auto;
-      }
-    </style>
   </head>
 
   <body>
 
-    <main role="main" class="container mb-4 pt-1 pt-md-3 px-md-5">
+    <main role="main" class="container mb-4 pt-1 pt-md-2 px-md-5">
+
+      <!-- What's new modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="whatsNewModal">
+        <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Welcome to Constellation 5</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password change modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="passwordChangeModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Change your password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="fst-italic">Use the fields below to change you password. If you don't know your current password, your administrator can set a temporary password for you.</p>
+              
+              <label class="form-label mt-2" for="passwordChangeModalCurrentPassword">Current password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalCurrentPassword">
+              
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword1">New password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword1" autocomplete="new-password">
+
+              <label class="form-label mt-2" for="passwordChangeModalNewPassword2">Confirm new password</label>
+              <input class="form-control editUserField" type="password" id="passwordChangeModalNewPassword2" autocomplete="new-password">
+
+              <div class="text-danger mt-3">
+                <div id="passwordChangeModalNoCurrentPassWarning">You must enter your current password.</div>
+                <div id="passwordChangeModalBadCurrentPassWarning">The current password was incorrect.</div>
+                <div id="passwordChangeModalNoBlankPassWarning">The password cannot be blank.</div>
+                <div id="passwordChangeModalPassMismatchWarning">The new passwords do not match.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="passwordChangeModalSubmitButton" type="button" class="btn btn-primary">Change</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit user modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="editUserModal">
+        <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="editUserModalTitle" class="modal-title">Create a user</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-4">
+                  <label class="form-label" for="editUserUsernameInput">Username</label>
+                  <input class="form-control editUserField" id="editUserUsernameInput" type="text" placeholder="jsmith" autocomplete="off">
+                  <label class="form-label mt-2" for="editUserDisplayNameInput">Display name</label>
+                  <input class="form-control editUserField" id="editUserDisplayNameInput" type="text" placeholder="Jane Smith" autocomplete="off">
+                  <label class="form-label mt-2" for="editUserPassword1Input">Password</label>
+                  <input class="form-control editUserField" type="password" id="editUserPassword1Input" autocomplete="new-password">
+  
+                  <label class="form-label mt-2" for="editUserPassword2Input">Confirm password</label>
+                  <input class="form-control editUserField" type="password" id="editUserPassword2Input" autocomplete="new-password">
+                </div>
+                <div class="col-8">
+                  <h4>Permissions</h4>
+                  <div class="row row-cols-3 gy-2">
+                    <!-- Analytics permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionAnalytics">
+                        Analytics
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Access to analytics data and Flexible Tracker." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionAnalytics" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Exhibits permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionExhibits">
+                        Exhibits
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, edit, and switch exhibits." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionExhibits" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Maintenance permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionMaintenance">
+                        Maintenance
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, and modify issues and change maintenance status." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionMaintenance" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Schedule permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionSchedule">
+                        Schedule
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="View or modify the schedule." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionSchedule" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Settings permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionSettings">
+                        Settings
+                        <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Change fundamental Control Server settings, such as IP address or port." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionSettings" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                    <!-- Users permission -->
+                    <div class="col d-flex flex-column justify-content-end">
+                      <label class="form-label" for="editUserPermissionUsers">
+                        Users
+                        <span class="badge bg-danger ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Create, view, edit, or delete other users' accounts." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <select id="editUserPermissionUsers" class="form-select editUserField">
+                        <option value="none">None</option>
+                        <option value="view">View</option>
+                        <option value="edit">Edit</option>
+                      </select>
+                    </div>
+                  </div>    
+                  <div class="row mt-2">
+                    <div class="col-12">
+                      <label class="form-label" for="editUserPermissionGroups">
+                        Component groups
+                        <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="View or modify components in the given group." style="font-size: 0.55em; color: black">?</span>
+                      </label>
+                      <div class="row">
+                        <div class="col-4">
+                          <select id="editUserPermissionGroups" class="form-select editUserField">
+                            <option value="none">None</option>
+                            <option value="view">View all</option>
+                            <option value="edit_content">Edit all (content & definitions only)</option>
+                            <option value="edit">Edit all (content, definitions, & settings)</option>
+                            <option value="custom">Custom</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row row-cols-3 gy-2 mt-2" id="editUserGroupsRow"></div>
+                    </div>
+                  </div>            
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div id="editUserBlankUsername" class="col-12 text-danger">
+                  Username may not be blank.
+                </div>
+                <div id="editUserBlankDisplayname" class="col-12 text-danger">
+                  Display name may not be blank.
+                </div>
+                <div id="editUserPasswordMismatch" class="col-12 text-danger">
+                  Passwords do not match
+                </div>
+                <div id="editUserBlankPassword" class="col-12 text-danger">
+                  Password may not be blank.
+                </div>
+                <div id="editUserUsernameExists" class="col-12 text-danger">
+                  This username already exists.
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="editUserSubmitButton" type="button" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit group modal -->
+      <div class="modal" tabindex="-1" role="dialog" id="editGroupModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 id="editGroupModalTitle" class="modal-title">Create a group</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row gy-2">
+                <div class="col-6">
+                  <label for="editGroupModalNameInput" class="form-label">Group name</label>
+                  <input id="editGroupModalNameInput" class="form-control" type="text">
+                </div>
+                <div class="col-12">
+                  <label for="editGroupModalDescriptionInput" class="form-label">
+                    Description
+                    <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Descriptions help others understand what this group should contain." style="font-size: 0.55em; color: black">?</span>
+                  </label>
+                  <input id="editGroupModalDescriptionInput" class="form-control" type="text">
+                </div>
+                <div id="editGroupModalNameWarning" class="col-12">
+                  <div class="alert alert-danger py-2">The group must have a name.</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="editGroupModalSubmitButton" type="button" class="btn btn-primary">Add</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Component info modal -->
       <div class="modal" tabindex="-1" role="dialog" id="componentInfoModal">
@@ -182,6 +314,12 @@
               </div>
             </div>
             <div class="modal-body ">
+
+              <!-- Status messages -->
+              <div class="row">
+                <div id="componentInfoStatusMessage" class='col-8 offset-2 text-center h4'>
+                </div>
+              </div>
 
               <!-- Tab buttons -->
               <ul class="nav nav-tabs" id="componentInfoModalTabList" role="tablist">
@@ -244,10 +382,10 @@
                     </div>
                     <div class="col-4 col-sm-3 offset-sm-3 col-md-2 offset-md-4">
                       <div class="dropdown">
-                        <button class="btn btn-primary btn-sm w-100 dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button class="btn btn-primary btn-sm w-100 dropdown-toggle" type="button" id="componentInfoModalNewDefinitionButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                           New
                         </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <div class="dropdown-menu" aria-labelledby="componentInfoModalNewDefinitionButton">
                           <a class="dropdown-item defintion-new-option" href="#" data-app="InfoStation" target="_blank">Infostation</a>
                           <a class="dropdown-item defintion-new-option" href="#" data-app="media_browser" target="_blank">Media Browser</a>
                           <a class="dropdown-item defintion-new-option" href="#" data-app="media_player" target="_blank">Media Player</a>
@@ -259,14 +397,6 @@
                           <a class="dropdown-item defintion-new-option" href="#" data-app="other" target="_blank">Other</a>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div class="row mt-3" id="componentInfoConnectingNotice">
-                    <div class='col-8 offset-2'>
-                      <center>
-                        <H5 id="componentInfoConnectionStatusInPrograss">Connecting to component...</H5>
-                        <H5 id="componentInfoConnectionStatusFailed">Unable to connect to component</H5>
-                      </center>
                     </div>
                   </div>
                   <div id="componentInfoModalDefinitionList" class="row mx-1">
@@ -398,152 +528,206 @@
                   </div>
                 </div>
                 <div class="tab-pane fade" id="componentInfoModalSettingsTab" role="tabpanel" aria-labelledby="componentInfoModalSettingsTabButton">
-                  <!-- Full settings -->
                   <div class="d-flex flex-column" style="height: 52vh">
-                    <div class="row">
-                      <div class="col">
-                        <a id='componentInfoModalFullSettingsButton' class="btn btn-primary mt-3" target='_blank'>Open full settings</a>
+                  <!-- Exhibit component settings -->
+                    <div id="componentInfoModalSettingsPermissionsPane" class="mt-2">
+                      <div class="row gy-2">
+                        <div class="col-4">
+                          <div class="row gy-2 row-cols-1">
+                            <div class="col">
+                              <label for="componentInfoModalBasicSettingsID" class="form-label">
+                                ID
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <input id="componentInfoModalBasicSettingsID" class="form-control componentInfoBasicSetting" type="text">
+                            </div>
+                            <div class="col">
+                              <label for="componentInfoModalBasicSettingsGroup" class="form-label">Groups</label>
+                              <select id="componentInfoModalBasicSettingsGroup" class="form-control componentInfoBasicSetting" multiple></select>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-8">
+                          <div class="row row-cols-2 row-cols-sm-3 gy-2">
+                            <!-- Audio permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
+                                Audio
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Refresh permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
+                                Refresh
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Restart permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowRestart" class="form-label">
+                                Restart
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Shutdown permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
+                                Shutdown
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <!-- Sleep permission -->
+                            <div class="col">
+                              <label for="componentInfoModalSettingsAllowSleep" class="form-label">
+                                Sleep
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
+                                <option value="true">Allow</option>
+                                <option value="false">Disallow</option>
+                              </select>
+                            </div>
+                            <div class="col d-flex">
+                              <a id='componentInfoModalFullSettingsButton' class="btn btn-primary w-100 align-self-end" target='_blank'>Full settings</a>
+                            </div>
+                            
+                          </div>
+                          <div class="row mt-2">
+                            <div class="col-12">
+                              <!-- Component description input -->
+                              <label class="form-label" for="componentInfoModalExhibitDescriptionInput">
+                                Component description
+                                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                              </label>
+                              <input id="componentInfoModalExhibitDescriptionInput" class="form-control componentInfoBasicSetting" type="text">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-12">
+                          <div id="componentInfoModalBasicSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
+                          <div id="componentInfoModalBasicSettingsGroupWarning" class="text-danger mt-2">Components must be in at least one group.</div>
+                        </div>
                       </div>
                     </div>
                     
-                    <div id="componentInfoModalSettingsPermissionsPane" class="row row-cols-2 row-cols-sm-3 row-cols-md-5">
-                      <!-- Audio permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAutoplayAudio" class="form-label">
-                          Audio
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to toggle audio auto-play." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAutoplayAudio">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Refresh permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowRefresh" class="form-label">
-                          Refresh
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to reload the app view." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRefresh">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Restart permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowRestart" class="form-label">
-                          Restart
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to restart the PC." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowRestart">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Shutdown permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowShutdown" class="form-label">
-                          Shutdown
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to shut down the PC. Make sure you have Wake-on-LAN configured if you want to remotely start the PC." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowShutdown">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                      <!-- Sleep permission -->
-                      <div class="col mt-2">
-                        <label for="componentInfoModalSettingsAllowSleep" class="form-label">
-                          Sleep
-                          <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Allow Control Server to put the display to sleep." style="font-size: 0.55em; color: black">?</span>
-                        </label>
-                        <select class="form-select componentInfoSetting" id="componentInfoModalSettingsAllowSleep">
-                          <option value="true">Allow</option>
-                          <option value="false">Disallow</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <!-- Projector settings -->
+                      <!-- Projector settings -->
                     <div id="componentInfoModalProjectorSettings" class="mt-2">
                       <span class="h5">Projector settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalProjectorSettingsID" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col">
-                          <label for="componentInfoModalProjectorSettingsGroup" class="form-label">Group</label>
-                          <input id="componentInfoModalProjectorSettingsGroup" class="form-control componentInfoProjectorSetting" type="text">
+                        <div class="col col-6 col-sm-4 col-md-3">
+                          <label for="componentInfoModalProjectorSettingsGroup" class="form-label">Groups</label>
+                          <select id="componentInfoModalProjectorSettingsGroup" class="form-control componentInfoProjectorSetting" multiple></select>
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsIPAddress" class="form-label">IP address</label>
                           <input id="componentInfoModalProjectorSettingsIPAddress" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalProjectorSettingsPassword" class="form-label">Password</label>
                           <input id="componentInfoModalProjectorSettingsPassword" class="form-control componentInfoProjectorSetting" type="text">
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalProjectorDescriptionInputLabel" class="form-label" for="componentInfoModalProjectorDescriptionInput">
+                            Projector description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this projector." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalProjectorDescriptionInput" class="form-control componentInfoProjectorSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalProjectorSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalProjectorSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
-                      <div id="componentInfoModalProjectorSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
+                      <div id="componentInfoModalProjectorSettingsGroupWarning" class="text-danger mt-2">The projector must belong to at least one group.</div>
                       <div id="componentInfoModalProjectorSettingsIPWarning" class="text-danger mt-2">IP address must not be blank.</div>
                     </div>
 
                     <!-- Static settings -->
                     <div id="componentInfoModalStaticSettings" class="mt-2">
                       <span class="h5">Static component settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-md-4">
                           <label for="componentInfoModalStaticSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalStaticSettingsID" class="form-control componentInfoStaticSetting" type="text">
                         </div>
-                        <div class="col">
-                          <label for="componentInfoModalStaticSettingsGroup" class="form-label">Group</label>
-                          <input id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" type="text">
+                        <div class="col col-6 col-md-4">
+                          <label for="componentInfoModalStaticSettingsGroup" class="form-label">Groups</label>
+                          <select id="componentInfoModalStaticSettingsGroup" class="form-control componentInfoStaticSetting" multiple></select>
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalStaticDescriptionInputLabel" class="form-label" for="componentInfoModalStaticDescriptionInput">
+                            Component description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalStaticDescriptionInput" class="form-control componentInfoStaticSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalStaticSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalStaticSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
-                      <div id="componentInfoModalStaticSettingsGroupWarning" class="text-danger mt-2">Group must not be blank.</div>
+                      <div id="componentInfoModalStaticSettingsGroupWarning" class="text-danger mt-2">Components must be in at least one group.</div>
                     </div>
 
                     <!-- Wake on LAN settings -->
                     <div id="componentInfoModalWakeOnLANSettings" class="mt-2">
                       <span class="h5">Wake on LAN settings</span>
-                      <div class="row gy-2 row-cols-2 row-cols-sm-3 row-cols-md-4">
-                        <div class="col">
+                      <div class="row gy-2">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsID" class="form-label">
                             ID
                             <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Every Constellation component must have a unique ID." style="font-size: 0.55em; color: black">?</span>
                           </label>
                           <input id="componentInfoModalWakeOnLANSettingsID" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsGroup" class="form-label">Group</label>
-                          <input id="componentInfoModalWakeOnLANSettingsGroup" class="form-control componentInfoWakeOnLANSetting" type="text">
+                          <select id="componentInfoModalWakeOnLANSettingsGroup" class="form-control componentInfoWakeOnLANSetting" multiple></select>
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsMAC" class="form-label">MAC address</label>
                           <input id="componentInfoModalWakeOnLANSettingsMAC" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col">
+                        <div class="col col-6 col-sm-4 col-md-3">
                           <label for="componentInfoModalWakeOnLANSettingsIPAddress" class="form-label">IP address</label>
                           <input id="componentInfoModalWakeOnLANSettingsIPAddress" class="form-control componentInfoWakeOnLANSetting" type="text">
                         </div>
-                        <div class="col d-flex">
-                          <button id="componentInfoModalWakeOnLANSettingsSaveButton" class="btn btn-primary align-self-end">Save changes</button>
+                        <div class="col-12">
+                          <label id="componentInfoModalWakeOnLANDescriptionInputLabel" class="form-label" for="componentInfoModalWakeOnLANDescriptionInput">
+                            Component description
+                            <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
+                          </label>
+                          <input id="componentInfoModalWakeOnLANDescriptionInput" class="form-control componentInfoWakeOnLANSetting" type="text">
+                        </div>
+                        <div class="col">
+                          <button id="componentInfoModalWakeOnLANSettingsSaveButton" class="btn btn-primary">Save changes</button>
                         </div>
                       </div>
                       <div id="componentInfoModalWakeOnLANSettingsIDWarning" class="text-danger mt-2">ID must not be blank.</div>
@@ -551,17 +735,10 @@
                       <div id="componentInfoModalWakeOnLANSettingsMACWarning" class="text-danger mt-2">MAC address must be six pairs of two characters, separated by - or :.</div>
                     </div>
 
-                    <!-- Component description input -->
-                    <span class="h5 mt-3">General settings</span>
-                    <label class="form-label" for="componentInfoModalDescriptionInput">
-                      Component description
-                      <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A short description to help others recognize this component." style="font-size: 0.55em; color: black">?</span>
-                    </label>
-                    <input id="componentInfoModalDescriptionInput" class="form-control componentInfoSetting" type="text">
-
                     <div class="row mt-3 mt-auto">
                       <div class="col">
                         <button id="componentInfoModalSettingsSaveButton" class="btn btn-primary">Save changes</button>
+                        <button id="componentInfoModalBasicSettingsSaveButton" class="btn btn-primary">Save changes</button>
                       </div>
                     </div>
                   </div>
@@ -586,7 +763,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form id="scheduleEditForm" class="mb-2" onsubmit="event.preventDefault();">
+              <form class="mb-2" onsubmit="event.preventDefault();">
                 <div class="form-group">
                   <div class="row gy-2">
                     <div class="col-8">
@@ -865,12 +1042,42 @@
         </div>
       </div>
 
-      <div class="row mt-2 mb-2 flex-column-reverse flex-sm-row">
-        <div class="col-12 col-sm-auto d-flex">
-          <div id="exhibitNameField" class="align-self-center"></div>
+      <div class="row mb-2">
+        <div class="col-10">
+          <div id="galleryNameField"></div>
+          <div id="exhibitNameField"></div>
         </div>
-        <div class="col-12 col-sm-auto d-flex ms-auto">
-          <div id="galleryNameField" class="align-self-center"></div>
+        <div class="col-2">
+          <div id="loginMenu">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">Log in</button>
+            <div class="dropdown-menu">
+              <div class="px-4 py-3">
+                <div class="mb-3">
+                  <label for="loginDropdownUsername" class="form-label">Username</label>
+                  <input type="text" class="form-control" id="loginDropdownUsername">
+                </div>
+                <div class="mb-3">
+                  <label for="loginDropdownPassword" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="loginDropdownPassword">
+                </div>
+                <button id="loginSubmitButton" class="btn btn-primary">Log in</button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="loginCreateAccountButton">Create account</button>
+              <a class="dropdown-item" href="#">Forgot password?</a>
+            </div>
+          </div>
+          <div id="userMenu" style="display: none;">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle float-end" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span id="userMenuUserDisplayName" class="d-none d-sm-inline-block">Morgan Rehnberg</span>
+              <span id="userMenuUserShortName" class="d-sm-none">MR</span>
+              </button>
+            <div class="dropdown-menu">
+              <button class="dropdown-item" id="changePasswordButton">Change password</button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="logoutButton">Log out</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -884,25 +1091,33 @@
             <a class="nav-link d-block d-sm-block" id="nav-schedule-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link d-none d-sm-block" id="nav-exhibits-tab" data-bs-toggle="tab" href="#nav-exhibits" role="tab" aria-controls="nav-exhibits" aria-selected="false">Exhibits</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link d-none d-sm-block" id="nav-issues-tab" data-bs-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-sm-block" id="nav-analytics-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+            <a class="nav-link d-none d-md-block" id="nav-analytics-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-md-block" id="nav-settings-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
+            <a class="nav-link d-none d-lg-block" id="nav-users-tab" data-bs-toggle="tab" href="#nav-users" role="tab" aria-controls="nav-users" aria-selected="false">Users</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-none d-md-block" id="nav-help-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
+            <a class="nav-link d-none d-lg-block" id="nav-settings-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-none d-lg-block" id="nav-help-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
           </li>
           
           <!-- Dropdown for overflow items -->
-          <li class="nav-item dropdown d-block d-md-none">
+          <li class="nav-item dropdown d-block d-lg-none">
             <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">More</a>
             <div class="dropdown-menu">
               <!-- <a class="dropdown-item d-block d-sm-none" id="nav-schedule-dropdown-tab" data-bs-toggle="tab" href="#nav-schedule" role="tab" aria-controls="nav-schedule" aria-selected="false">Schedule</a> -->
+              <a class="dropdown-item d-block d-sm-none" id="nav-exhibits-dropdown-tab" data-bs-toggle="tab" href="#nav-exhibits" role="tab" aria-controls="nav-exhibits" aria-selected="false">Exhibits</a>
               <a class="dropdown-item d-block d-sm-none" id="nav-issues-dropdown-tab" data-bs-toggle="tab" href="#nav-issues" role="tab" aria-controls="nav-issues" aria-selected="false">Maintenance</a>
-              <a class="dropdown-item d-block d-sm-none" id="nav-analytics-dropdown-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics" aria-selected="false">Analytics</a>
+              <a class="dropdown-item d-block d-md-none" id="nav-analytics-dropdown-tab" data-bs-toggle="tab" href="#nav-analytics" role="tab" aria-controls="nav-analytics d-block d-md-none" aria-selected="false">Analytics</a>
+              <a class="dropdown-item" id="nav-users-dropdown-tab" data-bs-toggle="tab" href="#nav-users" role="tab" aria-controls="nav-users" aria-selected="false">Users</a>
               <a class="dropdown-item" id="nav-settings-dropdown-tab" data-bs-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
               <a class="dropdown-item" id="nav-help-dropdown-tab" data-bs-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="false">Help</a>
             </div>
@@ -1094,6 +1309,64 @@
             </div>
           </div>
 
+          <!-- Create schedule from CSV modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="scheduleFromFileModal">
+            <div class="modal-dialog constellation-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Create a schedule from file</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"> 
+                  <div class="row gy-2">
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <div>
+                        <label for="scheduleFromFileKindSelect">Schedule to create</label>
+                        <select id="scheduleFromFileKindSelect" class="form-select mt-1">
+                          <option value="monday">All Mondays</option>
+                          <option value="tuesday">All Tuesdays</option>
+                          <option value="wednesday">All Wednesdays</option>
+                          <option value="thursday">All Thursdays</option>
+                          <option value="friday">All Fridays</option>
+                          <option value="saturday">All Saturdays</option>
+                          <option value="sunday">All Sundays</option>
+                          <option value="date-specific">Specific date</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <input id="scheduleFromFileDateSelect" type="date" class="form-control mt-2">
+                    </div>
+                    <div class="col-6 col-md-3 d-flex align-self-end">
+                      <label class="btn btn-outline-primary w-100">
+                        <span id="scheduleFromFileModalFileInputLabel" style="overflow-wrap: break-word!important;">Select file</span>
+                        <input hidden type="file" class="form-control" id="scheduleFromFileModalFileInput" accept=".csv,.json">
+                      </label>
+                    </div>
+                    <div class="col-3 d-flex align-self-end">
+                      <button id="scheduleFromFileModalUploadButton" class="btn btn-primary w-100">Upload</button>
+                    </div>
+                  </div>
+                  <div id="scheduleFromFileScheduleCompare" class="row gy-2 mt-2">
+                    <div class="col-6 border-end">
+                      <H5 class="text-center">Current schedule</H5>
+                      <div id="scheduleFromFileCurrentSchedule"></div>
+                    </div>
+                    <div class="col-6">
+                      <H5 class="text-center">Replace with</H5>
+                      <div id="scheduleFromFileNewSchedule"></div>
+                    </div>
+                    
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button id="scheduleFromFileModalSubmitButton" type="button" class="btn btn-primary">Create</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Add action modal -->
           <div class="modal" tabindex="-1" role="dialog" id="scheduleEditModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -1151,14 +1424,17 @@
             </div>
           </div>
 
-          <div class="row mt-4">
+          <div class="row mt-4 gy-2">
             <div class='col-12'>
               <h4><b>Next scheduled action: </b><span id="Schedule_next_event"></span></h4>
             </div>
-            <div class='col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-2'>
+            <div class='col-6 col-sm-3 col-md-4 col-lg-3 col-xl-2 my-auto'>
               <button id='manageFutureDateButton' class='btn btn-primary w-100'>Manage future date</button>
             </div>
-            <div id='dateSpecificScheduleAlert' class="col-12 col-sm-auto alert schedule-date-specific my-auto" role="alert">
+            <div class='col-6 col-sm-4 col-md-3 col-lg-2 my-auto'>
+              <button id="showScheduleFromFileModalButton" class="btn btn-primary w-100">Create from file</button>
+            </div>
+            <div id='dateSpecificScheduleAlert' class="col-sm-auto alert schedule-date-specific my-auto py-1 mt-2 mt-md-0" role="alert">
               Date-specific schedule
             </div>
           </div>
@@ -1167,9 +1443,170 @@
           </div>
         </div>
 
-        <div class="tab-pane fade" id="nav-issues" role="tabpanel" aria-labelledby="nav-issues-tab">
+        <div class="tab-pane fade" id="nav-exhibits" role="tabpanel" aria-labelledby="nav-exhibits-tab">
+          <!-- Change exhibits modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="changeExhibitModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly.
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" id="exhibitChangeConfirmationButton">Change exhibit</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          
+          <!-- Delete exhibit modal -->
+          <div class="modal" tabindex="-1" role="dialog" id="deleteExhibitModal">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Are you sure?</h5>
+                </div>
+                <div class="modal-body">
+                  Deleting an exhibit cannot be undone.
+                </div>
+                <div class="modal-footer">
+                  <button id="deleteExhibitButton" type="button" class="btn btn-danger">Delete exhibit</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal for managing exhibits -->
+          <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
+            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Manage exhibits</h5>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <!-- Tool row -->
+                    <div class="col-12">
+                      <div class="row gy-2">
+                        <div class="col-6 col-sm-3 col-md-4 d-flex align-items-end">
+                          <div class="dropdown w-100">
+                            <button class="btn btn-primary dropdown w-100 mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              Create new
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                              <li><a id="manageExhibitsCreateEmptyButton" class="dropdown-item" href="#">
+                                <span class="d-none d-sm-block">Create empty exhibit</span>
+                                <span class="d-block d-sm-none">Create empty</span>
+                              </a></li>
+                              <li><a id="manageExhibitsCloneCurrentButton" class="dropdown-item" href="#">
+                                <span class="d-none d-sm-block">Clone current exhibit</span>
+                                <span class="d-block d-sm-none">Clone current</span>
+                              </a></li>
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div class="col-6 col-sm-3">
+                          <label for="manageExhibitModalExhibitNameInput">Name</label>
+                          <input type="text" class="form-control" id="manageExhibitModalExhibitNameInput" placeholder="Name">
+                      </div>
+                      <div class="col-6 col-sm-3 col-md-2 d-flex align-items-end">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" value="" id="manageExhibitModalExhibitThumbnailCheckbox" checked>
+                          <label class="form-check-label" for="manageExhibitModalExhibitThumbnailCheckbox">
+                            Thumbnails
+                          </label>
+                        </div>
+                      </div>
+                      <div class="col-6 col-sm-3 d-flex align-items-end">
+                        <button class="btn btn-success w-100">
+                          Save exhibit
+                        </button>
+                      </div>
+                      </div>
+                      <hr>
+                    </div>
+                    <!-- Exhibit list -->
+                    <div class="col-4 border-end">
+                      <div id="manageExhibitsModalExhibitList" class="row"></div>
+                    </div>
+                    <!-- Exhibit content -->
+                    <div class="col-8">
+                      <div id="manageExhibitsModalExhibitContentList" class="row"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-0 gy-2">
+            <div class="col-12 fst-italic">
+              Exhibits match each component in your gallery with one of its definitions. Switching exhibits makes it easy to switch the content on many components at once.
+            </div>
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+              <div class="form-group">
+                <label for="exhibitSelect">Set current exhibit</label>
+                <select class="form-select" id="exhibitSelect"></select>
+              </div>
+            </div>
+            <!-- <div class="col-3 d-flex align-items-end">
+              <button id="manageExhibitsButton" class="btn btn-primary">Manage exhibits</button>
+            </div> -->
+            <div class="col-12 col-md-8">
+              <div class="form-group">
+                <label for="createExhibitNameInput">Create new exhibit</label>
+                <div class='row'>
+                  <div class='col-8 col-md-6 col-lg-4 col-xl-3 pe-1 mt-1'>
+                    <input type="text" id='createExhibitNameInput' class='form-control' placeholder="Enter exhibit name"></input>
+                  </div>
+                  <div class='col-4 col-md-4 col-lg-3 col-xl-2 mt-1'>
+                    <div class="dropdown">
+                      <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Create
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><button id="createExhibitButton" class='dropdown-item'>Create empty</button></li>
+                        <li><button id="cloneExhibitButton" class='dropdown-item'>Clone current</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <!-- <div class='col-6 col-md-3 col-lg-3 mt-1'>
+                    <button id="createExhibitButton" class='btn btn-primary w-100'>Create Empty</button>
+                  </div>
+                  <div class='col-6 col-md-4 col-lg-3 mt-1'>
+                    <button id="cloneExhibitButton" class='btn btn-primary w-100'>Clone Current</button>
+                  </div> -->
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-6 col-lg-4">
+              <div class="form-group">
+                  <label for="exhibitDeleteSelector">Delete exhibit</label>
+                <div class="row">
+                  <div class='col-7'>
+                    <select class="form-select w-100" id="exhibitDeleteSelector"></select>
+                  </div>
+                  <div class='col-5'>
+                    <button class='btn btn-danger w-100' id="exhibitDeleteSelectorButton">Delete</button>
+                  </div>
+                  <div class='col-12 mt-1'>
+                    <span class='text-danger' id="exhibitDeleteSelectorWarning">Cannot delete current exhibit</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="nav-issues" role="tabpanel" aria-labelledby="nav-issues-tab">
 
           <div id='issueTabButtons' class='row gy-2 mt-2'>
             <div class='col-6 col-md-3 col-lg-2 d-flex align-items-end'>
@@ -1407,152 +1844,35 @@
 
         <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
 
-          <!-- Change exhibits modal -->
-          <div class="modal" tabindex="-1" role="dialog" id="changeExhibitModal">
+          <!-- Delete group confirmation -->
+          <div class="modal" tabindex="-1" role="dialog" id="deleteGroupModal">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
+                  <h5 class="modal-title">Delete group?</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                  Changing the exhibit will be immediately visible to guests and the changing process may be unsightly.
+                <div class="modal-body text-danger">
+                  Deleting a group cannot be undone.
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-primary" id="exhibitChangeConfirmationButton">Change exhibit</button>
+                  <button id="deleteGroupConfirmationButton" type="button" class="btn btn-danger ms-auto">Delete</button>
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Delete exhibit modal -->
-          <div class="modal" tabindex="-1" role="dialog" id="deleteExhibitModal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Are you sure?</h5>
-                </div>
-                <div class="modal-body">
-                  Deleting an exhibit cannot be undone.
-                </div>
-                <div class="modal-footer">
-                  <button id="deleteExhibitButton" type="button" class="btn btn-danger">Delete exhibit</button>
-                  <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
+          <H3 class='mt-4'>Groups</H3>
+          <div class="row mt-0 gy-2">
+            <div class="col-12 fst-italic">
+              Groups help you organize your components. You may choose to arrange them by location, type, content, or whatever supports your needs.
             </div>
-          </div>
-
-          <!-- Modal for managing exhibits -->
-          <div class="modal" tabindex="-1" role="dialog" id="manageExhibitsModal">
-            <div class="modal-dialog modal-dialog-centered constellation-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Manage exhibits</h5>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <!-- Tool row -->
-                    <div class="col-12">
-                      <div class="row gy-2">
-                        <div class="col-6 col-sm-3 col-md-4 d-flex align-items-end">
-                          <div class="dropdown w-100">
-                            <button class="btn btn-primary dropdown w-100 mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                              Create new
-                            </button>
-                            <ul class="dropdown-menu w-100">
-                              <li><a id="manageExhibitsCreateEmptyButton" class="dropdown-item" href="#">
-                                <span class="d-none d-sm-block">Create empty exhibit</span>
-                                <span class="d-block d-sm-none">Create empty</span>
-                              </a></li>
-                              <li><a id="manageExhibitsCloneCurrentButton" class="dropdown-item" href="#">
-                                <span class="d-none d-sm-block">Clone current exhibit</span>
-                                <span class="d-block d-sm-none">Clone current</span>
-                              </a></li>
-                            </ul>
-                          </div>
-                        </div>
-
-                        <div class="col-6 col-sm-3">
-                          <label for="manageExhibitModalExhibitNameInput">Name</label>
-                          <input type="text" class="form-control" id="manageExhibitModalExhibitNameInput" placeholder="Name">
-                      </div>
-                      <div class="col-6 col-sm-3 col-md-2 d-flex align-items-end">
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" value="" id="manageExhibitModalExhibitThumbnailCheckbox" checked>
-                          <label class="form-check-label" for="manageExhibitModalExhibitThumbnailCheckbox">
-                            Thumbnails
-                          </label>
-                        </div>
-                      </div>
-                      <div class="col-6 col-sm-3 d-flex align-items-end">
-                        <button class="btn btn-success w-100">
-                          Save exhibit
-                        </button>
-                      </div>
-                      </div>
-                      <hr>
-                    </div>
-                    <!-- Exhibit list -->
-                    <div class="col-4 border-end">
-                      <div id="manageExhibitsModalExhibitList" class="row"></div>
-                    </div>
-                    <!-- Exhibit content -->
-                    <div class="col-8">
-                      <div id="manageExhibitsModalExhibitContentList" class="row"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-              </div>
+            <div class="col-4 col-sm-3 col-md-2 border-end">
+              <button id="settingsAddGroupButton" class="btn btn-primary w-100">Add group</button>
             </div>
-          </div>
-
-          <H3 class='mt-2'>Exhibits</H3>
-          <i>Exhibits match each component in your gallery with one of its definitions.</i>
-          <div class="row mt-2 gy-2">
-            <div class="col-6 col-md-4 col-lg-3">
-              <div class="form-group">
-                <label for="exhibitSelect">Set current exhibit</label>
-                <select class="form-select" id="exhibitSelect"></select>
-              </div>
-            </div>
-            <!-- <div class="col-3 d-flex align-items-end">
-              <button id="manageExhibitsButton" class="btn btn-primary">Manage exhibits</button>
-            </div> -->
-            <div class="col-12 col-md-8">
-              <div class="form-group">
-                <label for="createExhibitNameInput">Create new exhibit</label>
-                <div class='row'>
-                  <div class='col-12 col-lg-5 pe-1 mt-1'>
-                    <input type="text" id='createExhibitNameInput' class='form-control' placeholder="Enter exhibit name"></input>
-                  </div>
-                  <div class='col-6 col-lg-3 mt-1'>
-                    <button id="createExhibitButton" class='btn btn-primary w-100'>Create Empty</button>
-                  </div>
-                  <div id="cloneExhibitButton" class='col-6 col-lg-3 mt-1'>
-                    <button class='btn btn-primary w-100'>Clone Current</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-              <div class="form-group">
-                  <label for="exhibitDeleteSelector">Delete exhibit</label>
-                <div class="row">
-                  <div class='col-7'>
-                    <select class="form-select text-danger w-100" id="exhibitDeleteSelector"></select>
-                  </div>
-                  <div class='col-5'>
-                    <button class='btn btn-danger w-100' id="exhibitDeleteSelectorButton">Delete</button>
-                  </div>
-                  <div class='col-12 mt-1'>
-                    <span class='text-danger' id="exhibitDeleteSelectorWarning">Cannot delete current exhibit</span>
-                  </div>
-                </div>
-              </div>
+            <div class="col-8 col-sm-9 col-md-10">
+              <div id="settingsGroupsRow" class="row gy-2 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5"></div>
             </div>
           </div>
 
@@ -1585,15 +1905,6 @@
               <input id="controlServerSettingsGalleryName" type="text" class="form-control controlServerSettingsInputField"></input>
             </div>
 
-            <!-- Assignable staff -->
-            <div class="col">
-              <label class="form-label" for="controlServerSettingsAssignableStaff">
-                Assignable staff
-                <span class="badge bg-info ms-1 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="A comma-separated list of names to whom issues can be assigned." style="font-size: 0.55em; color: black">?</span>
-              </label>
-              <input id="controlServerSettingsAssignableStaff" type="text" class="form-control controlServerSettingsInputField"></input>
-            </div>
-
             <!-- Debug mode -->
             <div class="col">
               <label class="form-label" for="controlServerSettingsDebugMode">
@@ -1610,11 +1921,30 @@
           <div id="controlServerSettingsPortWarning" class="mt-2 text-danger"> The port must be a number.</div>
           <button id="controlServerSettingsSaveButton" class="btn btn-primary mt-2">Save changes</button>
         </div>
+
+        <div class="tab-pane fade" id="nav-users" role="tabpanel" aria-labelledby="nav-users-tab">
+          <div class="row mt-3">
+            <div class="col-2">
+              <button id="showEditUserModalButton" class="btn btn-primary">Create user</button>
+            </div>
+            <div class="col-12 mt-2">
+              <h4>Users</h4>
+              <div id="usersRow" class="row gy-2 row-cols-2 row-cols-md-3 row-cols-lg-5 col-xl-6">
+              </div>
+            </div>
+            
+          </div>
+        </div>
         
         <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
           <div class="row mt-4">
+            <div id="helpNewAccountMessage" class="col-6 offset-3 alert alert-primary mb-4">
+              <H4 class="text-center">Need an account?</H4>
+              Constellation requires a user account to access functionality. If you need an account, or your password to be reset, please contact your system administrator.
+            </div>
             <div class="col-12">
               <span class="alert alert-secondary">Version: <span id="versionSpan"></span></span>
+              <button class="btn btn-info ms-3" data-bs-toggle="modal" data-bs-target="#whatsNewModal">What's New</button>
             </div>
             
             <div id='helpTextDiv' class='col-auto mt-3'>

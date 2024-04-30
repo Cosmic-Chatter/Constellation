@@ -20,15 +20,17 @@ export const config = {
   availableDefinitions: {},
   clearDefinition: null,
   loadDefinition: null,
-  saveDefinition: null
+  saveDefinition: null,
+  fontCache: {} // Keys with any value indicate that font has already been made
 }
 
-export function configure (options) {
+export async function configure (options) {
   // Set up the common fields for the setup app.
 
   const defaults = {
     app: null,
     clearDefinition: null,
+    initializeDefinition: null,
     loadDefinition: null,
     saveDefinition: null
   }
@@ -37,17 +39,25 @@ export function configure (options) {
 
   // Make sure we have the options we need
   if (options.app == null) throw new Error("The options must include the 'app' field.")
+  if (options.initializeDefinition == null) throw new Error("The options must include the 'initializeDefinition' field referencing the appropriate function.")
   if (options.loadDefinition == null) throw new Error("The options must include the 'loadDefinition' field referencing the appropriate function.")
   if (options.saveDefinition == null) throw new Error("The options must include the 'saveDefinition' field referencing the appropriate function.")
 
   config.app = options.app
   config.clearDefinition = options.clearDefinition
+  config.initializeDefinition = options.initializeDefinition
   config.loadDefinition = options.loadDefinition
   config.saveDefinition = options.saveDefinition
 
+  await config.initializeDefinition()
+  const userFonts = await getUserFonts()
+
   createAdvancedColorPickers()
+  createAdvancedFontPickers(userFonts)
   createDefinitionDeletePopup()
+  createLoginEventListeners()
   createEventListeners()
+  resizePreview()
 
   constCommon.getAvailableDefinitions(options.app)
     .then((response) => {
@@ -57,6 +67,48 @@ export function configure (options) {
     })
     .then(() => {
       configureFromQueryString()
+    })
+}
+
+function configureGUIForUser (user) {
+  // Configure the interface for the permissions of the given user
+
+  // Check whether the user has permission to edit this component
+  constCommon.makeServerRequest({
+    method: 'GET',
+    endpoint: '/component/' + constCommon.config.uuid + '/groups'
+  })
+    .then((response) => {
+      let groups = []
+      if ('success' in response) {
+        groups = response.groups
+      }
+
+      let allowed = false
+
+      if (user.permissions.components.edit.includes('__all') || user.permissions.components.edit_content.includes('__all')) {
+        allowed = true
+      } else {
+        for (const group of groups) {
+          if (user.permissions.components.edit.includes(group) || user.permissions.components.edit_content.includes(group)) {
+            allowed = true
+          }
+        }
+      }
+      if (allowed) {
+        document.getElementById('helpInsufficientPermissionstMessage').style.display = 'none'
+      } else {
+        if (config.loggedIn === true) {
+          document.getElementById('helpInsufficientPermissionstMessage').style.display = 'block'
+          try {
+            document.getElementById('setupTools').style.display = 'none'
+            document.getElementById('editPane').style.display = 'none'
+            document.getElementById('previewPane').style.display = 'none'
+          } catch {
+            // Doesn't exist for the settings page
+          }
+        }
+      }
     })
 }
 
@@ -207,6 +259,17 @@ export function updateWorkingDefinition (property, value) {
   constCommon.setObjectProperty($('#definitionSaveButton').data('workingDefinition'), property, value)
 }
 
+export function createLoginEventListeners () {
+  // Bind event listeners for login elements
+
+  // Login
+  document.getElementById('loginSubmitButton').addEventListener('click', loginFromDropdown)
+  document.getElementById('logoutButton').addEventListener('click', logoutUser)
+
+  document.getElementById('changePasswordButton').addEventListener('click', showPasswordChangeModal)
+  document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', submitUserPasswordChange)
+}
+
 function createEventListeners () {
   // Bind various event listeners to their elements.
 
@@ -231,9 +294,24 @@ function createEventListeners () {
     previewDefinition(false)
   })
 
-  // Rotate preview button
-  document.getElementById('previewRotateButton').addEventListener('click', () => {
-    rotatePreview()
+  // configure preview options
+  document.getElementById('previewAspect16x9').addEventListener('click', () => {
+    configurePreview('16x9')
+  })
+  document.getElementById('previewAspect9x16').addEventListener('click', () => {
+    configurePreview('9x16')
+  })
+  document.getElementById('previewAspect16x10').addEventListener('click', () => {
+    configurePreview('16x10')
+  })
+  document.getElementById('previewAspect10x16').addEventListener('click', () => {
+    configurePreview('10x16')
+  })
+  document.getElementById('previewAspect4x3').addEventListener('click', () => {
+    configurePreview('4x3')
+  })
+  document.getElementById('previewAspect3x4').addEventListener('click', () => {
+    configurePreview('3x4')
   })
 
   // Help button
@@ -272,12 +350,22 @@ function createDefinitionDeletePopup () {
   })
 }
 
-function rotatePreview () {
-  // Toggle the preview between landscape and portrait orientations.
+function configurePreview (ratio) {
+  // Toggle the preview between various aspect ratios and orientations.
 
-  document.getElementById('previewFrame').classList.toggle('preview-landscape')
-  document.getElementById('previewFrame').classList.toggle('preview-portrait')
+  const previewFrame = document.getElementById('previewFrame')
+  // First, remove all ratio classes
+  previewFrame.classList.remove('preview-16x9')
+  previewFrame.classList.remove('preview-9x16')
+  previewFrame.classList.remove('preview-16x10')
+  previewFrame.classList.remove('preview-10x16')
+  previewFrame.classList.remove('preview-4x3')
+  previewFrame.classList.remove('preview-3x4')
+
+  previewFrame.classList.add('preview-' + ratio)
+
   resizePreview()
+  previewDefinition()
 }
 
 function resizePreview () {
@@ -295,7 +383,7 @@ function resizePreview () {
   const paneWidth = $('#previewPane').width()
   const paneHeight = $('#previewPane').height()
 
-  // Size of frame (this will be 1920x1080 or 1080x1920)
+  // Size of frame (this will be 1920 on the long axis)
   const frameWidth = $('#previewFrame').width()
   const frameHeight = $('#previewFrame').height()
   const frameAspect = frameWidth / frameHeight
@@ -328,7 +416,12 @@ export function previewDefinition (automatic = false) {
     .then((result) => {
       if ('success' in result && result.success === true) {
         // Configure the preview frame
-        document.getElementById('previewFrame').src = '../' + config.app + '.html?standalone=true&definition=' + '__preview_' + config.app
+        if (config.app !== 'other') {
+          document.getElementById('previewFrame').src = '../' + config.app + '.html?standalone=true&definition=' + '__preview_' + config.app
+        } else {
+          if (def.path === '') return
+          document.getElementById('previewFrame').src = '../' + def.path + '?standalone=true&definition=' + '__preview_other'
+        }
       }
     })
 }
@@ -477,6 +570,358 @@ export function updateAdvancedColorPicker (path, details) {
 
   const id = el.getAttribute('data-constACP-id')
   _onAdvancedColorPickerModeChange(id, path, details.mode)
+}
+
+function createAdvancedFontPickers (userFonts) {
+  // Automatically create advanced font pickers for all marked elements
+
+  Array.from(document.querySelectorAll('.advanced-font-picker')).forEach((el) => {
+    const name = el.getAttribute('data-constAFP-name')
+    const path = el.getAttribute('data-constAFP-path')
+    const defaultFont = el.getAttribute('data-default')
+    createAdvancedFontPicker({ parent: el, name, path, default: defaultFont })
+  })
+
+  populateAdvancedFontPickers(userFonts)
+}
+
+export function createAdvancedFontPicker (details) {
+  // Create an advanced font select
+
+  const id = constCommon.uuid()
+  details.parent.setAttribute('data-constAFP-id', id)
+
+  const html = `
+  <label for="AFPSelect_${id}" class="form-label">${details.name}</label>
+    <select id="AFPSelect_${id}" class="form-select AFP-select" data-default="${details.default}"></select>
+  `
+
+  details.parent.innerHTML = html
+  const el = document.getElementById(`AFPSelect_${id}`)
+  el.setAttribute('data-path', details.path)
+  // Add event listeners
+  el.addEventListener('change', (event) => {
+    _onAdvancedFontPickerChange(event.target)
+  })
+}
+
+function getUserFonts () {
+  // Query the app for any uploaded user fonts.
+
+  return new Promise(function (resolve, reject) {
+    constCommon.makeHelperRequest({
+      method: 'GET',
+      endpoint: '/getAvailableContent'
+    })
+      .then((result) => {
+        const availableFonts = []
+        result.all_exhibits.forEach((item) => {
+          if (constCommon.guessMimetype(item) === 'font') {
+            availableFonts.push(item)
+          }
+        })
+        resolve(availableFonts)
+      })
+  })
+}
+
+export async function refreshAdvancedFontPickers () {
+  // Retrive any new fonts and update the pickers
+
+  const userFonts = await getUserFonts()
+
+  // Cache the current values
+  const currentDict = {}
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((el) => {
+    currentDict[el.getAttribute('id')] = el.value
+  })
+  populateAdvancedFontPickers(userFonts)
+  for (const id of Object.keys(currentDict)) {
+    const picker = document.getElementById(id)
+    // Check if option still exists (font may have been deleted)
+    if (Array.from(picker.options).map(o => o.value).includes(currentDict[id]) === false) {
+      picker.value = '../_fonts/' + picker.getAttribute('data-default')
+    } else {
+      picker.value = currentDict[id]
+    }
+    _onAdvancedFontPickerChange(picker)
+  }
+}
+
+function populateAdvancedFontPickers (userFonts) {
+  // Add user and default fonts
+
+  const builtInFonts = [
+    { name: 'Open Sans Light', path: 'OpenSans-Light.ttf' },
+    { name: 'Open Sans Light Italic', path: 'OpenSans-LightItalic.ttf' },
+    { name: 'Open Sans Regular', path: 'OpenSans-Regular.ttf' },
+    { name: 'Open Sans Italic', path: 'OpenSans-Italic.ttf' },
+    { name: 'Open Sans Medium', path: 'OpenSans-Medium.ttf' },
+    { name: 'Open Sans Medium Italic', path: 'OpenSans-MediumItalic.ttf' },
+    { name: 'Open Sans Semibold', path: 'OpenSans-SemiBold.ttf' },
+    { name: 'Open Sans Semibold Italic', path: 'OpenSans-SemiBoldItalic.ttf' },
+    { name: 'Open Sans Bold', path: 'OpenSans-Bold.ttf' },
+    { name: 'Open Sans Bold Italic', path: 'OpenSans-BoldItalic.ttf' },
+    { name: 'Open Sans Extra Bold', path: 'OpenSans-ExtraBold.ttf' },
+    { name: 'Open Sans Extra Bold Italic', path: 'OpenSans-ExtraBoldItalic.ttf' }
+  ]
+
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((parent) => {
+    parent.innerHTML = ''
+
+    // First, add the detault
+    const defaultFont = parent.getAttribute('data-default')
+    _createAdvancedFontOption(parent, 'Default', '../_fonts/' + defaultFont)
+
+    // Then, add the user fonts
+    if (userFonts.length > 0) {
+      const user = new Option('User-provided')
+      user.setAttribute('disabled', true)
+      parent.appendChild(user)
+
+      userFonts.forEach((font) => {
+        _createAdvancedFontOption(parent, font, '../content/' + font)
+      })
+    }
+
+    // Finally, add the built-in font list
+    const builtInLabel = new Option('Built-in')
+    builtInLabel.setAttribute('disabled', true)
+    parent.appendChild(builtInLabel)
+    builtInFonts.forEach((font) => {
+      _createAdvancedFontOption(parent, font.name, '../_fonts/' + font.path)
+    })
+
+    _onAdvancedFontPickerChange(parent, false)
+  })
+}
+
+function _createAdvancedFontOption (parent, name, path) {
+  // Create a stylized option to represent the font and add it to the parent select.
+
+  let safeName = name.replaceAll(' ', '').replaceAll('.', '').replaceAll('/', '').replaceAll('\\', '')
+  if (safeName === 'Default') {
+    safeName += parent.getAttribute('id').slice(10)
+  }
+
+  const option = new Option(name, path)
+
+  // Check if font already exists
+  if ((safeName in config.fontCache) === false) {
+    const fontDef = new FontFace(safeName, 'url(' + encodeURI(path) + ')')
+    document.fonts.add(fontDef)
+    config.fontCache[safeName] = true
+  }
+  option.style.fontFamily = safeName
+  option.setAttribute('data-safeName', safeName)
+
+  parent.appendChild(option)
+}
+
+function _onAdvancedFontPickerChange (el, saveChange = true) {
+  // Respond to a change in an advanced font select.
+  // Set writeChange = false when first setting up the element
+
+  const path = el.getAttribute('data-path').split('>')
+
+  if (saveChange) {
+  // Save the change
+    updateWorkingDefinition([...path], el.value)
+    previewDefinition(true)
+  }
+
+  // Change the select font to match this font
+  let safeName = el.options[el.selectedIndex].getAttribute('data-safeName')
+  if (safeName === 'Default') {
+    safeName += el.getAttribute('id').slice(10)
+  }
+  el.style.fontFamily = safeName
+}
+
+export function setAdvancedFontPicker (el, value) {
+  // Set the given advanced font picker to the specified font.
+
+  el.value = value
+  _onAdvancedFontPickerChange(el)
+}
+
+export function resetAdvancedFontPickers () {
+  // Find and reset all advanced font pickers to their default values.
+  Array.from(document.querySelectorAll('.AFP-select')).forEach((el) => {
+    const defaultFont = '../_fonts/' + el.getAttribute('data-default')
+    setAdvancedFontPicker(el, defaultFont)
+  })
+}
+
+export function loginFromDropdown () {
+  // Collect the username and password and attempt to log in the user.
+
+  const username = document.getElementById('loginDropdownUsername').value.trim().toLowerCase()
+  const password = document.getElementById('loginDropdownPassword').value
+
+  constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/login',
+    params: {
+      credentials: [username, password]
+    }
+  })
+    .then((response) => {
+      if ('authToken' in response) {
+        // Set a cookie
+        document.cookie = 'authToken="' + response.authToken + '"; max-age=31536000; path=/'
+      }
+      if (response.success === true) {
+        // Reload the page now that the authentication cookie is set.
+        location.reload()
+      }
+    })
+}
+
+export function logoutUser () {
+  // Remove the user and delete the cookie.
+
+  document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/'
+  location.reload()
+}
+
+export function authenticateUser () {
+  // If authToken exists in the cookie, use it to log in
+
+  let token = ''
+  document.cookie.split(';').forEach((item) => {
+    item = item.trim()
+    if (item.startsWith('authToken="')) {
+      token = item.slice(11, -1)
+    }
+  })
+
+  if (token === '') {
+    token = 'This will fail' // Token cannot be an empty string
+    configureUser({}, false)
+  }
+
+  return constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/login',
+    withCredentials: true
+  })
+    .then((response) => {
+      if (response.success === true) {
+        configureUser(response.user)
+      }
+    })
+}
+
+function configureUser (userDict, login = true) {
+  // Take a dictionary of user details and set up Constellation to reflect it.
+  // set login=false to set up a logged out user
+
+  if (Object.keys(userDict).length === 0) {
+    // Configure minimal permissions
+    userDict.permissions = {
+      analytics: 'none',
+      components: {
+        edit: [],
+        edit_content: [],
+        view: []
+      },
+      exhibits: 'none',
+      maintenance: 'none',
+      schedule: 'none',
+      settings: 'none',
+      users: 'none'
+    }
+  }
+  config.user = userDict
+  config.loggedIn = login
+
+  if (login === true) {
+    document.getElementById('helpNewAccountMessage').style.display = 'none'
+    document.getElementById('loginMenu').style.display = 'none'
+    document.getElementById('userMenu').style.display = 'block'
+
+    // Set the name of the account
+    document.getElementById('userMenuUserDisplayName').innerHTML = userDict.display_name
+    let initials = ''
+    userDict.display_name.split(' ').forEach((word) => {
+      initials += word.slice(0, 1)
+    })
+    document.getElementById('userMenuUserShortName').innerHTML = initials
+  } else {
+    document.getElementById('helpNewAccountMessage').style.display = 'block'
+    document.getElementById('loginMenu').style.display = 'block'
+    document.getElementById('userMenu').style.display = 'none'
+    try {
+      document.getElementById('setupTools').style.display = 'none'
+      document.getElementById('editPane').style.display = 'none'
+      document.getElementById('previewPane').style.display = 'none'
+    } catch {
+      // Doesn't exist for the settings page
+    }
+  }
+  configureGUIForUser(userDict)
+}
+
+export function showPasswordChangeModal () {
+  // Prepare the modal for changing the current user's password and show it.
+
+  // Hide warnings and clear fields
+  document.getElementById('passwordChangeModalCurrentPassword').value = ''
+  document.getElementById('passwordChangeModalNewPassword1').value = ''
+  document.getElementById('passwordChangeModalNewPassword2').value = ''
+
+  document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'none'
+
+  $('#passwordChangeModal').modal('show')
+}
+
+export function submitUserPasswordChange () {
+  // Collect the relevant details from the password change modal and submit it
+
+  const currentPass = document.getElementById('passwordChangeModalCurrentPassword').value
+  const newPass1 = document.getElementById('passwordChangeModalNewPassword1').value
+  const newPass2 = document.getElementById('passwordChangeModalNewPassword2').value
+  if (currentPass === '') {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoCurrentPassWarning').style.display = 'none'
+  }
+  if (newPass1 === '') {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalNoBlankPassWarning').style.display = 'none'
+  }
+  if (newPass1 !== newPass2) {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('passwordChangeModalPassMismatchWarning').style.display = 'none'
+  }
+
+  constCommon.makeServerRequest({
+    method: 'POST',
+    endpoint: '/user/' + config.user.uuid + '/changePassword',
+    params: {
+      current_password: currentPass,
+      new_password: newPass1
+    }
+  })
+    .then((response) => {
+      if (response.success === false) {
+        if (response.reason === 'authentication_failed') {
+          document.getElementById('passwordChangeModalBadCurrentPassWarning').style.display = 'block'
+        }
+      } else {
+        $('changePasswordModal').modal('hide')
+        logoutUser()
+      }
+    })
 }
 
 const markdownConverter = new showdown.Converter()

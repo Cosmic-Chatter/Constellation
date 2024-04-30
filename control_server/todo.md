@@ -1,5 +1,13 @@
 # To-do list
 
+## General
+- Rename ideas:
+  - ExhibitMate
+    - ExhibitMate Apps
+    - ExhibitMate Hub
+  - Exhibitera
+- Separate versioning for Control Server and Apps
+
 ## Control Server
 
 ### General
@@ -10,7 +18,6 @@
 ### Components
 - Hide the view screenshot option is screenshot permission is not available
 - Replace table layout for projector status
-
 
 ### Analytics
 - Record app analytics
@@ -25,26 +32,31 @@
 - Search issues and archived issues
 
 ### Schedule
-- Add schedule via CSV
 - Create public API for adding schedule entries
 - Clone other schedule
 - Name date-specific schedule
+- Fix GUI issues when actions/targets
 
 ## Constellation Apps
 
 ### General
-- Change preview aspect ratio in definition setup.
 - Add heartbeat app
+- Add map app
+- Download files from content directory
+- Download definition file
 
 ### DMX Control
 
 ### Media Browser
-- Ability to filter results
+- Ability to search results
 
 ### Media Player
 
 ### Timelapse Viewer
 - Option to prevent looping when scrolling
+
+### Timeline Explorer
+- Ability to adjust default font sizes
 
 ### Voting Kiosk
 - Ability to shuffle options

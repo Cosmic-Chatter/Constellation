@@ -1,10 +1,11 @@
 export default {
-  assignableStaff: [],
   availableExhibits: [], // An array of strings
   componentGroups: [],
   currentExhibit: '',
   errorDict: {},
   exhibitComponents: [],
+  groups: [],
+  groupLastUpdateDate: 0,
   issueList: [],
   MAINTANANCE_STATUS: {
     'On floor, working': { name: 'On floor, working', value: 1, colorClass: 'btn-success' },
@@ -24,5 +25,9 @@ export default {
     'SYSTEM ON': { name: 'SYSTEM ON', value: 4, colorClass: 'btn-info' },
     UNKNOWN: { name: 'UNKNOWN', value: 5, colorClass: 'btn-warning' },
     OFFLINE: { name: 'OFFLINE', value: 6, colorClass: 'btn-danger' }
-  }
+  },
+  user: {
+    permissions: {}
+  },
+  usersDisplayNameCache: {}
 }

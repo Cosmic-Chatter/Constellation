@@ -1,15 +1,17 @@
 import constConfig from './config.js'
 import * as constDMX from './constellation_dmx.js'
+import * as constGroup from './constellation_group.js'
 import * as constMaint from './constellation_maintenance.js'
-import * as constProj from './constellation_projector.js'
 import * as constTools from './constellation_tools.js'
+import * as constUsers from './constellation_users.js'
 
 class BaseComponent {
   // A basic Constellation component.
 
-  constructor (id, group) {
+  constructor (uuid, id, groups) {
+    this.uuid = uuid
     this.id = id
-    this.group = group
+    this.groups = groups
     this.type = 'base_component'
 
     this.status = constConfig.STATUS.OFFLINE
@@ -21,9 +23,17 @@ class BaseComponent {
     this.lastContactDateTime = null
   }
 
-  buildHTML () {
+  buildHTML (group) {
     // Function to build the HTML representation of this component
     // and add it to the row of the parent group
+
+    // First, make sure we have permission to view this group.
+    if (constUsers.checkUserPermission('components', 'view', group) === false) return
+
+    let permission = 'view'
+    if (constUsers.checkUserPermission('components', 'edit', group)) {
+      permission = 'edit'
+    }
 
     // If the element is static and the 'Show STATIC' checkbox is not ticked, bail out
     if (this.status === constConfig.STATUS.STATIC && $('#componentsTabSettingsShowStatic').prop('checked') === false) {
@@ -33,26 +43,6 @@ class BaseComponent {
     const displayName = this.id
     const thisId = this.id
     const cleanId = this.id.replaceAll(' ', '_')
-
-    // Change the amount of the Bootstrap grid being used depending on the
-    // number of components in this group. Larger groups get more horizontal
-    // space, so each component needs a smaller amount of grid.
-
-    // Cycle through the components and count how many we will actually be displaying
-    // const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
-    // let numToDisplay = 0
-    // getExhibitComponentGroup(this.group).components.forEach((component) => {
-    //   if (showStatic || component.status !== constConfig.STATUS.STATIC) {
-    //     numToDisplay += 1
-    //   }
-    // })
-
-    // let classString
-    // if (numToDisplay > 7) {
-    //   classString = 'col-12 col-sm-4 col-md-3 mt-1'
-    // } else {
-    //   classString = 'col-12 col-sm-4 col-md-6 mt-1'
-    // }
 
     const col = document.createElement('div')
     col.classList = 'col mt-1'
@@ -64,9 +54,9 @@ class BaseComponent {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn w-100 componentStatusButton ' + this.getStatus().colorClass
     mainButton.setAttribute('type', 'button')
-    mainButton.setAttribute('id', cleanId + 'MainButton')
+    mainButton.setAttribute('id', cleanId + '_' + group + '_MainButton')
     mainButton.addEventListener('click', function () {
-      showExhibitComponentInfo(thisId)
+      showExhibitComponentInfo(thisId, group)
     }, false)
     btnGroup.appendChild(mainButton)
 
@@ -76,13 +66,13 @@ class BaseComponent {
     mainButton.appendChild(displayNameEl)
 
     const statusFieldEl = document.createElement('div')
-    statusFieldEl.setAttribute('id', cleanId + 'StatusField')
+    statusFieldEl.setAttribute('id', cleanId + '_' + group + '_StatusField')
     statusFieldEl.innerHTML = this.getStatus().name
     mainButton.appendChild(statusFieldEl)
 
     const dropdownButton = document.createElement('button')
     dropdownButton.classList = 'btn dropdown-toggle dropdown-toggle-split ' + this.getStatus().colorClass
-    dropdownButton.setAttribute('id', cleanId + 'DropdownButton')
+    dropdownButton.setAttribute('id', cleanId + '_' + group + '_DropdownButton')
     dropdownButton.setAttribute('type', 'button')
     dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
     dropdownButton.setAttribute('aria-haspopup', 'true')
@@ -96,11 +86,10 @@ class BaseComponent {
 
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
-    dropdownMenu.setAttribute('id', cleanId + 'DropdownMenu')
-    this.populateActionMenu(dropdownMenu)
+    dropdownMenu.setAttribute('id', cleanId + '_' + group + '_DropdownMenu')
+    this.populateActionMenu(dropdownMenu, group, permission)
     btnGroup.appendChild(dropdownMenu)
-
-    $('#' + this.group.replaceAll(' ', '_') + 'ComponentList').append(col)
+    return col
   }
 
   getStatus () {
@@ -108,103 +97,104 @@ class BaseComponent {
 
     if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
       return this.status
-    } else {
+    } else if (this.maintenanceStatus != null) {
       return this.maintenanceStatus
     }
+    return constConfig.MAINTANANCE_STATUS['Off floor, not working']
   }
 
-  populateActionMenu (dropdownMenu = null) {
+  populateActionMenu (dropdownMenu, groupUUID, permission = 'view') {
     // Build out the dropdown menu options based on the this.permissions.
 
-    if (dropdownMenu == null) {
-      const cleanID = this.id.replaceAll(' ', '_')
-      dropdownMenu = document.getElementById(cleanID + 'DropdownMenu')
-    }
     $(dropdownMenu).empty()
     const thisId = this.id
     let numOptions = 0
 
-    if ('refresh' in this.permissions && this.permissions.refresh === true) {
-      numOptions += 1
-      const refreshAction = document.createElement('a')
-      refreshAction.classList = 'dropdown-item handCursor'
-      refreshAction.innerHTML = 'Refresh component'
-      refreshAction.addEventListener('click', function () {
-        queueCommand(thisId, 'refresh')
-      }, false)
-      dropdownMenu.appendChild(refreshAction)
-    }
+    if (permission === 'edit') {
+      if ('refresh' in this.permissions && this.permissions.refresh === true) {
+        numOptions += 1
+        const refreshAction = document.createElement('a')
+        refreshAction.classList = 'dropdown-item handCursor'
+        refreshAction.innerHTML = 'Refresh component'
+        refreshAction.addEventListener('click', function () {
+          queueCommand(thisId, 'refresh')
+        }, false)
+        dropdownMenu.appendChild(refreshAction)
+      }
 
-    if ('sleep' in this.permissions && this.permissions.sleep === true) {
-      numOptions += 2
-      const sleepAction = document.createElement('a')
-      sleepAction.classList = 'dropdown-item handCursor'
-      sleepAction.innerHTML = 'Sleep display'
-      sleepAction.addEventListener('click', function () {
-        queueCommand(thisId, 'sleepDisplay')
-      }, false)
-      dropdownMenu.appendChild(sleepAction)
+      if ('sleep' in this.permissions && this.permissions.sleep === true) {
+        numOptions += 2
+        const sleepAction = document.createElement('a')
+        sleepAction.classList = 'dropdown-item handCursor'
+        sleepAction.innerHTML = 'Sleep display'
+        sleepAction.addEventListener('click', function () {
+          queueCommand(thisId, 'sleepDisplay')
+        }, false)
+        dropdownMenu.appendChild(sleepAction)
 
-      const wakeAction = document.createElement('a')
-      wakeAction.classList = 'dropdown-item handCursor'
-      wakeAction.innerHTML = 'Wake display'
-      wakeAction.addEventListener('click', function () {
-        queueCommand(thisId, 'wakeDisplay')
-      }, false)
-      dropdownMenu.appendChild(wakeAction)
-    }
+        const wakeAction = document.createElement('a')
+        wakeAction.classList = 'dropdown-item handCursor'
+        wakeAction.innerHTML = 'Wake display'
+        wakeAction.addEventListener('click', function () {
+          queueCommand(thisId, 'wakeDisplay')
+        }, false)
+        dropdownMenu.appendChild(wakeAction)
+      }
 
-    if ('restart' in this.permissions && this.permissions.restart === true) {
-      numOptions += 1
-      const restartAction = document.createElement('a')
-      restartAction.classList = 'dropdown-item handCursor'
-      restartAction.innerHTML = 'Restart component'
-      restartAction.addEventListener('click', function () {
-        queueCommand(thisId, 'restart')
-      }, false)
-      dropdownMenu.appendChild(restartAction)
-    }
+      if ('restart' in this.permissions && this.permissions.restart === true) {
+        numOptions += 1
+        const restartAction = document.createElement('a')
+        restartAction.classList = 'dropdown-item handCursor'
+        restartAction.innerHTML = 'Restart component'
+        restartAction.addEventListener('click', function () {
+          queueCommand(thisId, 'restart')
+        }, false)
+        dropdownMenu.appendChild(restartAction)
+      }
 
-    if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
-      numOptions += 1
-      const shutdownAction = document.createElement('a')
-      shutdownAction.classList = 'dropdown-item handCursor'
-      shutdownAction.innerHTML = 'Power off component'
-      shutdownAction.addEventListener('click', function () {
-        queueCommand(thisId, 'restart')
-      }, false)
-      dropdownMenu.appendChild(shutdownAction)
-    }
+      if ('shutdown' in this.permissions && this.permissions.shutdown === true) {
+        numOptions += 1
+        const shutdownAction = document.createElement('a')
+        shutdownAction.classList = 'dropdown-item handCursor'
+        shutdownAction.innerHTML = 'Power off component'
+        shutdownAction.addEventListener('click', function () {
+          queueCommand(thisId, 'restart')
+        }, false)
+        dropdownMenu.appendChild(shutdownAction)
+      }
 
-    if ('power_on' in this.permissions && this.permissions.power_on === true) {
-      numOptions += 1
-      const powerOnAction = document.createElement('a')
-      powerOnAction.classList = 'dropdown-item handCursor'
-      powerOnAction.innerHTML = 'Power on component'
-      powerOnAction.addEventListener('click', function () {
-        queueCommand(thisId, 'power_on')
-      }, false)
-      dropdownMenu.appendChild(powerOnAction)
-    }
+      if ('power_on' in this.permissions && this.permissions.power_on === true) {
+        numOptions += 1
+        const powerOnAction = document.createElement('a')
+        powerOnAction.classList = 'dropdown-item handCursor'
+        powerOnAction.innerHTML = 'Power on component'
+        powerOnAction.addEventListener('click', function () {
+          queueCommand(thisId, 'power_on')
+        }, false)
+        dropdownMenu.appendChild(powerOnAction)
+      }
 
-    if (numOptions > 0) {
-      const divider = document.createElement('hr')
-      divider.classList = 'dropdown-divider'
-      dropdownMenu.appendChild(divider)
+      if (numOptions > 0) {
+        const divider = document.createElement('hr')
+        divider.classList = 'dropdown-divider'
+        dropdownMenu.appendChild(divider)
+      }
     }
 
     const detailsAction = document.createElement('a')
     detailsAction.classList = 'dropdown-item handCursor'
     detailsAction.innerHTML = 'View details'
     detailsAction.addEventListener('click', function () {
-      showExhibitComponentInfo(thisId)
+      showExhibitComponentInfo(thisId, groupUUID)
     }, false)
     dropdownMenu.appendChild(detailsAction)
   }
 
   remove () {
     // Remove the component from its ComponentGroup
-    getExhibitComponentGroup(this.group).removeComponent(this.id)
+    for (const group of this.groups) {
+      getExhibitComponentGroup(group).removeComponent(this.id)
+    }
 
     // Remove the component from the exhibitComponents list
     const thisInstance = this
@@ -217,11 +207,36 @@ class BaseComponent {
     rebuildComponentInterface()
   }
 
+  setGroups (groups) {
+    // Adjust the component's groups and rebuild the interface if needed.
+
+    if (groups.length === 0) groups = ['Default']
+
+    // First, remove the component from any groups it is no longer in
+    for (const group of this.groups) {
+      if (groups.includes(group) === false) getExhibitComponentGroup(group).removeComponent(this.id)
+    }
+
+    // Then, add component to any groups it was not in before
+    for (const group of groups) {
+      if (this.groups.includes(group) === false) {
+        let componentGroup = getExhibitComponentGroup(group)
+        if (componentGroup == null) {
+          // If this is the first component in the group, create the group first.
+          componentGroup = new ExhibitComponentGroup(group)
+          constConfig.componentGroups.push(componentGroup)
+        }
+        componentGroup.addComponent(this)
+      }
+    }
+    this.groups = groups
+    rebuildComponentInterface()
+  }
+
   setPermissions (permissions) {
     // Set the compnent's permisions and then rebuild the action list
 
     this.permissions = permissions
-    this.populateActionMenu()
   }
 
   setStatus (status, maintenanceStatus) {
@@ -232,24 +247,29 @@ class BaseComponent {
     this.status = constConfig.STATUS[status]
     this.maintenanceStatus = constConfig.MAINTANANCE_STATUS[maintenanceStatus]
 
-    // Update the GUI based on which view mode we're in
-    const statusFieldEl = document.getElementById(cleanId + 'StatusField')
-    if (statusFieldEl == null) return // This is a hidden static component
+    for (const group of this.groups) {
+      // Make sure this is a group we can actually see
+      if (constUsers.checkUserPermission('components', 'view', group) === false) return
 
-    let btnClass
-    if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
+      // Update the GUI based on which view mode we're in
+      const statusFieldEl = document.getElementById(cleanId + '_' + group + '_StatusField')
+      if (statusFieldEl == null) return // This is a hidden static component
+
+      let btnClass
+      if (document.getElementById('componentStatusModeRealtimeCheckbox').checked === true) {
       // Real-time status mode
-      statusFieldEl.innerHTML = this.status.name
-      btnClass = this.status.colorClass
-    } else {
+        statusFieldEl.innerHTML = this.status.name
+        btnClass = this.status.colorClass
+      } else {
       // Maintenance status mode
-      statusFieldEl.innerHTML = this.maintenanceStatus.name
-      btnClass = this.maintenanceStatus.colorClass
-    }
+        statusFieldEl.innerHTML = this.maintenanceStatus.name
+        btnClass = this.maintenanceStatus.colorClass
+      }
 
-    // Strip all existing classes, then add the new one
-    $('#' + cleanId + 'MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
-    $('#' + cleanId + 'DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+      // Strip all existing classes, then add the new one
+      $('#' + cleanId + '_' + group + '_MainButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+      $('#' + cleanId + '_' + group + '_DropdownButton').removeClass('btn-primary btn-warning btn-danger btn-success btn-info').addClass(btnClass)
+    }
   }
 
   updateFromServer (update) {
@@ -257,6 +277,12 @@ class BaseComponent {
 
     this.setStatus(update.status, update.maintenance_status)
 
+    if ('uuid' in update) {
+      this.uuid = update.uuid
+    }
+    if ('groups' in update && constTools.arraysEqual(this.groups, update.groups) === false) {
+      this.setGroups(update.groups)
+    }
     if ('ip_address' in update) {
       this.ip_address = update.ip_address
     }
@@ -290,8 +316,8 @@ class BaseComponent {
 class ExhibitComponent extends BaseComponent {
   // A component representing an device running a Constellation App or using the API
 
-  constructor (id, group) {
-    super(id, group)
+  constructor (uuid, id, groups) {
+    super(uuid, id, groups)
 
     this.type = 'exhibit_component'
     this.helperAddress = null
@@ -365,98 +391,26 @@ class ExhibitComponent extends BaseComponent {
 export class WakeOnLANComponent extends BaseComponent {
   // A component representings a Wake on LAN device
 
-  constructor (id, group, macAddress) {
-    super(id, group)
+  constructor (uuid, id, groups, macAddress) {
+    super(uuid, id, groups)
 
     this.type = 'wol_component'
     this.mac_address = macAddress
     this.constellationAppId = 'wol_only'
-  }
-
-  remove (deleteConfigurtion = true) {
-    // Remove the device from the system configuration
-
-    if (deleteConfigurtion === true) {
-      // First, get the current wake on LAN configuration
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: '/system/wake_on_LAN/getConfiguration'
-      })
-        .then((result) => {
-          let wolConfig = result.configuration
-          // Next, remove this element
-          const thisID = this.id
-          wolConfig = wolConfig.filter(function (obj) {
-            return obj.id !== thisID
-          })
-
-          // Finally, send the configuration back for writing
-          constTools.makeServerRequest({
-            method: 'POST',
-            endpoint: '/system/wake_on_LAN/updateConfiguration',
-            params: {
-              configuration: wolConfig
-            }
-          })
-            .then(() => {
-              super.remove()
-              rebuildComponentInterface()
-            })
-        })
-    } else {
-      super.remove()
-      rebuildComponentInterface()
-    }
   }
 }
 
 class Projector extends BaseComponent {
   // A component representing a projector
 
-  constructor (id, group) {
-    super(id, group)
+  constructor (uuid, id, groups) {
+    super(uuid, id, groups)
 
     this.type = 'projector'
     this.constellationAppId = 'projector'
     this.password = ''
     this.protocol = 'pjlink'
     this.state = {}
-  }
-
-  remove (deleteConfiguration = true) {
-    // Remove the projector from the system configuration
-
-    if (deleteConfiguration === true) {
-      // First, get the current projector configuration
-      constTools.makeServerRequest({
-        method: 'GET',
-        endpoint: '/system/projectors/getConfiguration'
-      })
-        .then((result) => {
-          let projConfig = result.configuration
-          // Next, remove this element
-          const thisID = this.id
-          projConfig = projConfig.filter(function (obj) {
-            return obj.id !== thisID
-          })
-
-          // Finally, send the configuration back for writing
-          constTools.makeServerRequest({
-            method: 'POST',
-            endpoint: '/system/projectors/updateConfiguration',
-            params: {
-              configuration: projConfig
-            }
-          })
-            .then(() => {
-              super.remove()
-              rebuildComponentInterface()
-            })
-        })
-    } else {
-      super.remove()
-      rebuildComponentInterface()
-    }
   }
 
   updateFromServer (update) {
@@ -547,6 +501,14 @@ class ExhibitComponentGroup {
     // Function to build the HTML representation of this group
     // and add it to the componentGroupsRow
 
+    // First, make sure we have permission to view this group.
+    if (constUsers.checkUserPermission('components', 'view', this.group) === false) return
+
+    let permission = 'view'
+    if (constUsers.checkUserPermission('components', 'edit', this.group) === true) {
+      permission = 'edit'
+    }
+
     let onCmdName = ''
     let offCmdName = ''
     const thisGroup = this.group
@@ -557,10 +519,7 @@ class ExhibitComponentGroup {
       onCmdName = 'wakeDisplay'
       offCmdName = 'sleepDisplay'
     }
-    let displayRefresh = 'block'
-    if (thisGroup === 'WAKE_ON_LAN') {
-      displayRefresh = 'none'
-    }
+    const displayRefresh = 'block'
 
     // Cycle through the components and count how many we will actually be displaying
     const showStatic = $('#componentsTabSettingsShowStatic').prop('checked')
@@ -594,50 +553,52 @@ class ExhibitComponentGroup {
     const mainButton = document.createElement('button')
     mainButton.classList = 'btn btn-secondary w-100 btn-lg'
     mainButton.setAttribute('type', 'button')
-    mainButton.innerHTML = this.group
+    mainButton.innerHTML = constGroup.getGroupName(this.group)
     btnGroup.appendChild(mainButton)
 
-    const dropdownButton = document.createElement('button')
-    dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
-    dropdownButton.setAttribute('type', 'button')
-    dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
-    dropdownButton.setAttribute('aria-haspopup', 'true')
-    dropdownButton.setAttribute('aria-expanded', 'false')
-    btnGroup.appendChild(dropdownButton)
+    if (permission === 'edit') {
+      const dropdownButton = document.createElement('button')
+      dropdownButton.classList = 'btn btn-secondary dropdown-toggle dropdown-toggle-split'
+      dropdownButton.setAttribute('type', 'button')
+      dropdownButton.setAttribute('data-bs-toggle', 'dropdown')
+      dropdownButton.setAttribute('aria-haspopup', 'true')
+      dropdownButton.setAttribute('aria-expanded', 'false')
+      btnGroup.appendChild(dropdownButton)
 
-    const srHint = document.createElement('span')
-    srHint.classList = 'visually-hidden'
-    srHint.innerHTML = 'Toggle Dropdown'
-    dropdownButton.appendChild(srHint)
+      const srHint = document.createElement('span')
+      srHint.classList = 'visually-hidden'
+      srHint.innerHTML = 'Toggle Dropdown'
+      dropdownButton.appendChild(srHint)
 
-    const dropdownMenu = document.createElement('div')
-    dropdownMenu.classList = 'dropdown-menu'
-    btnGroup.appendChild(dropdownMenu)
+      const dropdownMenu = document.createElement('div')
+      dropdownMenu.classList = 'dropdown-menu'
+      btnGroup.appendChild(dropdownMenu)
 
-    const refreshOption = document.createElement('a')
-    refreshOption.classList = 'dropdown-item handCursor'
-    refreshOption.style.display = displayRefresh
-    refreshOption.innerHTML = 'Refresh all components'
-    refreshOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, 'refresh_page')
-    }, false)
-    dropdownMenu.appendChild(refreshOption)
+      const refreshOption = document.createElement('a')
+      refreshOption.classList = 'dropdown-item handCursor'
+      refreshOption.style.display = displayRefresh
+      refreshOption.innerHTML = 'Refresh all components'
+      refreshOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, 'refresh_page')
+      }, false)
+      dropdownMenu.appendChild(refreshOption)
 
-    const wakeOption = document.createElement('a')
-    wakeOption.classList = 'dropdown-item handCursor'
-    wakeOption.innerHTML = 'Wake all components'
-    wakeOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, onCmdName)
-    }, false)
-    dropdownMenu.appendChild(wakeOption)
+      const wakeOption = document.createElement('a')
+      wakeOption.classList = 'dropdown-item handCursor'
+      wakeOption.innerHTML = 'Wake all components'
+      wakeOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, onCmdName)
+      }, false)
+      dropdownMenu.appendChild(wakeOption)
 
-    const sleepOption = document.createElement('a')
-    sleepOption.classList = 'dropdown-item handCursor'
-    sleepOption.innerHTML = 'Sleep all components'
-    sleepOption.addEventListener('click', function () {
-      sendGroupCommand(thisGroup, offCmdName)
-    }, false)
-    dropdownMenu.appendChild(sleepOption)
+      const sleepOption = document.createElement('a')
+      sleepOption.classList = 'dropdown-item handCursor'
+      sleepOption.innerHTML = 'Sleep all components'
+      sleepOption.addEventListener('click', function () {
+        sendGroupCommand(thisGroup, offCmdName)
+      }, false)
+      dropdownMenu.appendChild(sleepOption)
+    }
 
     const componentList = document.createElement('div')
     componentList.classList = 'row'
@@ -650,10 +611,9 @@ class ExhibitComponentGroup {
 
     col.appendChild(componentList)
 
-    $('#componentGroupsRow').append(col)
-
+    document.getElementById('componentGroupsRow').appendChild(col)
     this.components.forEach((component) => {
-      component.buildHTML()
+      componentList.appendChild(component.buildHTML(this.group))
     })
   }
 }
@@ -665,28 +625,33 @@ export function createComponentFromUpdate (update) {
   const obj = getExhibitComponent(update.id)
   if (obj != null) return
 
-  // First, make sure the group matching this group exists
-  let group = getExhibitComponentGroup(update.group)
-  if (group == null) {
-    group = new ExhibitComponentGroup(update.group)
-    constConfig.componentGroups.push(group)
+  // First, make sure the groups exist
+  for (const group of update.groups) {
+    let matchingGroup = getExhibitComponentGroup(group)
+
+    if (matchingGroup == null) {
+      matchingGroup = new ExhibitComponentGroup(group)
+      constConfig.componentGroups.push(matchingGroup)
+    }
   }
 
   // Then create a new component
   let newComponent
   if (update.class === 'exhibitComponent') {
-    newComponent = new ExhibitComponent(update.id, update.group)
+    newComponent = new ExhibitComponent(update.uuid, update.id, update.groups)
   } else if (update.class === 'wolComponent') {
-    newComponent = new WakeOnLANComponent(update.id, update.group, update.mac_address)
+    newComponent = new WakeOnLANComponent(update.uuid, update.id, update.groups, update.mac_address)
   } else if (update.class === 'projector') {
-    newComponent = new Projector(update.id, update.group)
+    newComponent = new Projector(update.uuid, update.id, update.groups)
   }
 
   newComponent.buildHTML()
   constConfig.exhibitComponents.push(newComponent)
 
-  // Add the component to the right group
-  group.addComponent(newComponent)
+  // Add the component to the right groups
+  for (const group of update.groups) {
+    getExhibitComponentGroup(group).addComponent(newComponent)
+  }
 
   // Finally, update the new component
   newComponent.updateFromServer(update)
@@ -697,6 +662,7 @@ export function updateComponentFromServer (update) {
   // and use it to set up the component
 
   const obj = getExhibitComponent(update.id)
+
   if (obj != null) {
     // Update the object with the latest info from the server
     obj.updateFromServer(update)
@@ -725,13 +691,84 @@ export function getExhibitComponentGroup (group) {
   return result
 }
 
-function showExhibitComponentInfo (id) {
+function setComponentInfoStatusMessage (msg) {
+  // Set the given string as the status message and show it.
+
+  if (msg.trim() === '') {
+    clearComponentInfoStatusMessage()
+    return
+  }
+
+  const el = document.getElementById('componentInfoStatusMessage')
+
+  el.innerHTML = msg
+  el.style.display = 'block'
+}
+
+function clearComponentInfoStatusMessage () {
+  // Hide the status message
+
+  const el = document.getElementById('componentInfoStatusMessage')
+
+  el.style.display = 'none'
+}
+
+function componentCannotConnect () {
+  // Configure the componentInfoModal for a failed connection.
+
+  setComponentInfoStatusMessage('Cannot connect to component')
+
+  // Hide the tabs
+  document.getElementById('componentInfoModalTabList').style.display = 'none'
+  document.getElementById('componentInfoModalTabContainer').style.display = 'none'
+  document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
+}
+
+function componentGoodConnection (screenshot = true) {
+  // Configure the componentInfoModal for a good connection
+
+  clearComponentInfoStatusMessage()
+  // Show the tabs
+  document.getElementById('componentInfoModalTabList').style.display = 'flex'
+  document.getElementById('componentInfoModalTabContainer').style.display = 'block'
+  if (screenshot) document.getElementById('componentInfoModalViewScreenshot').style.display = 'block'
+}
+
+function showExhibitComponentInfo (id, groupUUID) {
   // This sets up the componentInfoModal with the info from the selected
   // component and shows it on the screen.
 
-  $('#componentInfoModal').data('id', id)
+  // Check permission
+  let permission
+  if (constUsers.checkUserPermission('components', 'edit', groupUUID) === true) {
+    permission = 'edit'
+    document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'block'
+    document.getElementById('componentInfoModalSettingsTabButton').style.display = 'block'
+  } else if (constUsers.checkUserPermission('components', 'view', groupUUID) === true) {
+    permission = 'view'
+    document.getElementById('componentInfoModalRemoveComponentButton').style.display = 'none'
+    document.getElementById('componentInfoModalSettingsTabButton').style.display = 'none'
+  } else {
+    // No permission to view
+    return
+  }
+
+  let maintenancePermission
+  if (constUsers.checkUserPermission('maintenance', 'edit', groupUUID) === true) {
+    maintenancePermission = 'edit'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
+  } else if (constUsers.checkUserPermission('maintenance', 'view', groupUUID) === true) {
+    maintenancePermission = 'view'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'block'
+  } else {
+    maintenancePermission = 'none'
+    document.getElementById('componentInfoModalMaintenanceTabButton').style.display = 'none'
+  }
 
   const obj = getExhibitComponent(id)
+
+  $('#componentInfoModal').data('id', id)
+  document.getElementById('componentInfoModal').setAttribute('data-uuid', obj.uuid)
 
   document.getElementById('componentInfoModalTitle').innerHTML = id
 
@@ -763,7 +800,7 @@ function showExhibitComponentInfo (id) {
     } else {
       document.getElementById('componentInfoModalOperatingSystemGroup').style.display = 'none'
     }
-    if ('browser' in obj.platformDetails) {
+    if ('browser' in obj.platformDetails && obj.platformDetails.browser !== 'null null') {
       document.getElementById('componentInfoModalBrowser').innerHTML = obj.platformDetails.browser
       document.getElementById('componentInfoModalBrowserGroup').style.display = 'block'
     } else {
@@ -796,21 +833,12 @@ function showExhibitComponentInfo (id) {
   }
 
   // Add any available description
-  if (obj.description === '') {
-    document.getElementById('componentInfoModalDescription').style.display = 'none'
-    document.getElementById('componentInfoModalDescriptionInput').value = ''
-  } else {
-    document.getElementById('componentInfoModalDescription').innerHTML = obj.description
-    document.getElementById('componentInfoModalDescription').style.display = 'block'
-    document.getElementById('componentInfoModalDescriptionInput').value = obj.description
-  }
+  updateComponentInfoDescription(obj.description)
 
   // Show/hide warnings and checkboxes as appropriate
   $('#componentInfoModalThumbnailCheckbox').prop('checked', true)
-  $('#componentInfoConnectingNotice').show()
-  $('#componentInfoConnectionStatusFailed').hide()
-  $('#componentInfoConnectionStatusInPrograss').show()
   $('#componentSaveConfirmationButton').hide()
+  clearComponentInfoStatusMessage()
 
   document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
   document.getElementById('componentInfoModalSettingsPermissionsPane').style.display = 'none'
@@ -828,6 +856,11 @@ function showExhibitComponentInfo (id) {
   document.getElementById('definitionTabAppFilterSelect').value = 'all'
   document.getElementById('definitionTabThumbnailsCheckbox').checked = true
   document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
+  if (permission === 'edit') {
+    document.getElementById('componentInfoModalNewDefinitionButton').style.display = 'block'
+  } else {
+    document.getElementById('componentInfoModalNewDefinitionButton').style.display = 'none'
+  }
 
   // Settings tab
   document.getElementById('componentInfoModalFullSettingsButton').style.display = 'none'
@@ -836,17 +869,14 @@ function showExhibitComponentInfo (id) {
   $('#componentInfoModalDMXTabButton').hide()
   $('#contentUploadSystemStatsView').hide()
 
-  $('#componentInfoConnectionStatusFailed').show()
-  $('#componentInfoConnectionStatusInPrograss').hide()
-
   // Based on the component type, configure the various tabs and panes
   if (obj.type === 'exhibit_component') {
     if (obj.status !== constConfig.STATUS.STATIC) {
       // This is an active component
-      configureComponentInfoModalForExhibitComponent(obj)
+      configureComponentInfoModalForExhibitComponent(obj, permission)
     } else {
       // This is a static component
-      configureComponentInfoModalForStatic(obj)
+      configureComponentInfoModalForStatic(obj, permission, maintenancePermission)
     }
   } else if (obj.type === 'projector') {
     configureComponentInfoModalForProjector(obj)
@@ -855,17 +885,33 @@ function showExhibitComponentInfo (id) {
   }
 
   // Must be after all the settings are configured
-  toggleExhibitComponentInfoSettingWarnings()
+  $('[data-bs-toggle="tooltip"]').tooltip()
   $('#componentInfoModalSettingsSaveButton').hide()
+  document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'none'
 
   // Make the modal visible
   $('#componentInfoModal').modal('show')
 }
 
-function configureComponentInfoModalForExhibitComponent (obj) {
+function configureComponentInfoModalForExhibitComponent (obj, permission) {
   // Set up the componentInfoModal to show an exhibit component
 
   // Configure the settings page with the current settings
+  document.getElementById('componentInfoModalBasicSettingsID').value = obj.id
+
+  const groupSelect = document.getElementById('componentInfoModalBasicSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   $('#componentInfoModalSettingsAppName').val(obj.constellationAppId)
   $('#componentInfoModalFullSettingsButton').prop('href', obj.helperAddress + '?showSettings=true')
   $('#componentInfoModalSettingsAutoplayAudio').val(String(obj.permissions.audio))
@@ -878,10 +924,17 @@ function configureComponentInfoModalForExhibitComponent (obj) {
   document.getElementById('componentInfoModalFullSettingsButton').style.display = 'inline-block'
   document.getElementById('componentInfoModalDefinitionsTabButton').style.display = 'block'
 
+  // Description
+  document.getElementById('componentInfoModalExhibitDescriptionInput').style.display = 'block'
+
+  // Warnings
+  document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'none'
+  document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'none'
+
   $('#componentInfoModalDefinitionsTabButton').tab('show')
 
   // This component may be accessible over the network.
-  updateComponentInfoModalFromHelper(obj.id)
+  updateComponentInfoModalFromHelper(obj.id, permission)
   configureNewDefinitionOptions(obj)
 
   // Fetch any DMX lighting scenes and show the tab if necessary
@@ -1013,7 +1066,20 @@ function configureComponentInfoModalForProjector (obj) {
 
   // Projetor settings
   document.getElementById('componentInfoModalProjectorSettingsID').value = obj.id
-  document.getElementById('componentInfoModalProjectorSettingsGroup').value = obj.group
+
+  const groupSelect = document.getElementById('componentInfoModalProjectorSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   document.getElementById('componentInfoModalProjectorSettingsIPAddress').value = obj.ip_address
   document.getElementById('componentInfoModalProjectorSettingsPassword').value = obj.password
   document.getElementById('componentInfoModalProjectorSettings').style.display = 'block'
@@ -1023,8 +1089,27 @@ function configureComponentInfoModalForProjector (obj) {
   document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
 }
 
-function configureComponentInfoModalForStatic (obj) {
+function configureComponentInfoModalForStatic (obj, componentPermission, maintenancePermission) {
   // Configure componentInfoModal to show a static component
+
+  // Check permissions and show the right tab
+  if ((componentPermission !== 'edit') && (maintenancePermission === 'none')) {
+    // Nothing to show
+    document.getElementById('componentInfoModalTabList').style.display = 'none'
+    document.getElementById('componentInfoModalTabContainer').style.display = 'none'
+    setComponentInfoStatusMessage('Nothing to show')
+  } else {
+    // Something to show
+    document.getElementById('componentInfoModalTabList').style.display = 'flex'
+    document.getElementById('componentInfoModalTabContainer').style.display = 'block'
+    clearComponentInfoStatusMessage()
+
+    if (maintenancePermission !== 'none') {
+      $('#componentInfoModalMaintenanceTabButton').tab('show')
+    } else {
+      $('#componentInfoModalSettingsTabButton').tab('show')
+    }
+  }
 
   document.getElementById('componentInfoModalStaticSettings').style.display = 'block'
   document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
@@ -1032,9 +1117,19 @@ function configureComponentInfoModalForStatic (obj) {
   document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
 
   document.getElementById('componentInfoModalStaticSettingsID').value = obj.id
-  document.getElementById('componentInfoModalStaticSettingsGroup').value = obj.group
 
-  $('#componentInfoModalMaintenanceTabButton').tab('show')
+  const groupSelect = document.getElementById('componentInfoModalStaticSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
 }
 
 function configureComponentInfoModalForWakeOnLAN (obj) {
@@ -1047,11 +1142,22 @@ function configureComponentInfoModalForWakeOnLAN (obj) {
   document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
 
   document.getElementById('componentInfoModalWakeOnLANSettingsID').value = obj.id
-  document.getElementById('componentInfoModalWakeOnLANSettingsGroup').value = obj.group
+
+  const groupSelect = document.getElementById('componentInfoModalWakeOnLANSettingsGroup')
+  groupSelect.innerHTML = ''
+  const defaultOption = new Option('Default', 'Default')
+  if (obj.groups.includes('Default')) defaultOption.selected = true
+  groupSelect.appendChild(defaultOption)
+  for (const group of constConfig.groups) {
+    const option = new Option(group.name, group.uuid)
+    if (obj.groups.includes(group.uuid)) {
+      option.selected = true
+    }
+    groupSelect.appendChild(option)
+  }
+
   document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value = obj.mac_address
   document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value = obj.ip_address
-
-  $('#componentInfoModalMaintenanceTabButton').tab('show')
 }
 
 function configureNewDefinitionOptions (obj) {
@@ -1072,14 +1178,18 @@ function configureNewDefinitionOptions (obj) {
 export function updateProjectorFromInfoModal () {
   // Collect details from the component info modal and update the proejctor
 
-  const id = document.getElementById('componentInfoModalTitle').innerHTML
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
+
+  const groupSelect = document.getElementById('componentInfoModalProjectorSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
 
   const update = {
     id: document.getElementById('componentInfoModalProjectorSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalProjectorSettingsGroup').value.trim(),
+    groups: selectedGroupUUIDs,
     ip_address: document.getElementById('componentInfoModalProjectorSettingsIPAddress').value.trim(),
     password: document.getElementById('componentInfoModalProjectorSettingsPassword').value.trim(),
-    protocol: 'pjlink'
+    description: document.getElementById('componentInfoModalProjectorDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1102,22 +1212,34 @@ export function updateProjectorFromInfoModal () {
     document.getElementById('componentInfoModalProjectorSettingsIPWarning').style.display = 'none'
   }
 
-  constProj.submitProjectorChange(id, update)
-    .then(() => {
-      document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
-      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalProjectorSettingsID').value.trim()
-      rebuildComponentInterface()
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/projector/' + uuid + '/edit',
+    params: update
+  })
+    .then((response) => {
+      if (response.success === true) {
+        document.getElementById('componentInfoModalTitle').innerHTML = update.id
+        document.getElementById('componentInfoModalProjectorSettingsSaveButton').style.display = 'none'
+        updateComponentInfoDescription(update.description)
+        rebuildComponentInterface()
+      }
     })
 }
 
 export function updateStaticComponentFromInfoModal () {
   // Collect details from the component info modal and update the static component
 
-  const id = document.getElementById('componentInfoModalTitle').innerHTML
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
+
+  const groupSelect = document.getElementById('componentInfoModalStaticSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
 
   const update = {
     id: document.getElementById('componentInfoModalStaticSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalStaticSettingsGroup').value.trim()
+    groups: selectedGroupUUIDs,
+    description: document.getElementById('componentInfoModalStaticDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1127,31 +1249,45 @@ export function updateStaticComponentFromInfoModal () {
   } else {
     document.getElementById('componentInfoModalStaticSettingsIDWarning').style.display = 'none'
   }
-  if (update.group === '') {
+  if (update.groups.length === 0) {
     document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'block'
     return
   } else {
     document.getElementById('componentInfoModalStaticSettingsGroupWarning').style.display = 'none'
   }
 
-  submitStaticComponentChange(id, update)
-    .then(() => {
-      document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
-      document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalStaticSettingsID').value.trim()
-      rebuildComponentInterface()
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/static/' + uuid + '/edit',
+    params: update
+  })
+    .then((response) => {
+      if ('success' in response && response.success === true) {
+        document.getElementById('componentInfoModalStaticSettingsSaveButton').style.display = 'none'
+        document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalStaticSettingsID').value.trim()
+        updateComponentInfoDescription(update.description)
+        rebuildComponentInterface()
+      } else {
+        console.log('Saving failed:', response.reason)
+      }
     })
 }
 
 export function updateWakeOnLANComponentFromInfoModal () {
   // Collect details from the component info modal and update the Wake on LAN component
 
-  const id = document.getElementById('componentInfoModalTitle').innerHTML
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
+
+  const groupSelect = document.getElementById('componentInfoModalWakeOnLANSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
 
   const update = {
     id: document.getElementById('componentInfoModalWakeOnLANSettingsID').value.trim(),
-    group: document.getElementById('componentInfoModalWakeOnLANSettingsGroup').value.trim(),
+    groups: selectedGroupUUIDs,
     mac_address: document.getElementById('componentInfoModalWakeOnLANSettingsMAC').value.trim(),
-    ip_address: document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value.trim()
+    ip_address: document.getElementById('componentInfoModalWakeOnLANSettingsIPAddress').value.trim(),
+    description: document.getElementById('componentInfoModalWakeOnLANDescriptionInput').value.trim()
   }
 
   // Check that fields are properly filled out
@@ -1175,90 +1311,37 @@ export function updateWakeOnLANComponentFromInfoModal () {
     document.getElementById('componentInfoModalWakeOnLANSettingsMACWarning').style.display = 'none'
   }
 
-  submitWakeOnLANComponentChange(id, update)
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/WOL/' + uuid + '/edit',
+    params: update
+  })
     .then(() => {
       document.getElementById('componentInfoModalWakeOnLANSettingsSaveButton').style.display = 'none'
       document.getElementById('componentInfoModalTitle').innerHTML = document.getElementById('componentInfoModalWakeOnLANSettingsID').value.trim()
+      updateComponentInfoDescription(update.description)
       rebuildComponentInterface()
     })
 }
 
-function submitStaticComponentChange (currentID, update) {
-  // Modify the static settings conifguration with the given details
+function updateComponentInfoDescription (value) {
+  // Update the GUI to reflect the given description. For simplicity, we change it for
+  // all the component types, since only the correct one will be displayed.
 
-  // First, get the current  configuration
-  return constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/static/getConfiguration'
-  })
-    .then((result) => {
-      let staticConfig = []
-      if (result.success === true) {
-        staticConfig = result.configuration
-      }
+  // Description at the top of the modal
+  const descriptionEl = document.getElementById('componentInfoModalDescription')
+  descriptionEl.innerHTML = value
+  if (value !== '') {
+    descriptionEl.style.display = 'block'
+  } else {
+    descriptionEl.style.display = 'none'
+  }
 
-      // Next, check if there is a configuration matching this id
-      let matchFound = false
-      for (let i = 0; i < staticConfig.length; i++) {
-        if (staticConfig[i].id === currentID) {
-          staticConfig[i].id = update.id
-          staticConfig[i].group = update.group
-          matchFound = true
-          break
-        }
-      }
-      if (matchFound === false) {
-        staticConfig.push(update)
-      }
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/static/updateConfiguration',
-        params: {
-          configuration: staticConfig
-        }
-      })
-    })
-}
-
-function submitWakeOnLANComponentChange (currentID, update) {
-  // Modify the Wake on LAN settings conifguration with the given details
-
-  // First, get the current  configuration
-  return constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/wake_on_LAN/getConfiguration'
-  })
-    .then((result) => {
-      let WOLConfig = []
-      if (result.success === true) {
-        WOLConfig = result.configuration
-      }
-
-      // Next, check if there is a configuration matching this id
-      let matchFound = false
-      for (let i = 0; i < WOLConfig.length; i++) {
-        if (WOLConfig[i].id === currentID) {
-          WOLConfig[i].id = update.id
-          WOLConfig[i].group = update.group
-          WOLConfig[i].mac_address = update.mac_address
-          WOLConfig[i].ip_address = update.ip_address
-          matchFound = true
-          break
-        }
-      }
-      if (matchFound === false) {
-        WOLConfig.push(update)
-      }
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/wake_on_LAN/updateConfiguration',
-        params: {
-          configuration: WOLConfig
-        }
-      })
-    })
+  // All the various input fields
+  document.getElementById('componentInfoModalExhibitDescriptionInput').value = value
+  document.getElementById('componentInfoModalProjectorDescriptionInput').value = value
+  document.getElementById('componentInfoModalStaticDescriptionInput').value = value
+  document.getElementById('componentInfoModalWakeOnLANDescriptionInput').value = value
 }
 
 export function convertAppIDtoDisplayName (appName) {
@@ -1371,7 +1454,7 @@ export function removeExhibitComponentFromModal () {
     })
 }
 
-function populateComponentDefinitionList (definitions, thumbnails) {
+function populateComponentDefinitionList (definitions, thumbnails, permission) {
   // Take a dictionary of definitions and convert it to GUI elements.
 
   const component = getExhibitComponent($('#componentInfoModal').data('id'))
@@ -1420,9 +1503,12 @@ function populateComponentDefinitionList (definitions, thumbnails) {
       name.classList.remove('btn-primary')
       name.classList.add('btn-success')
     }
-    name.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
+    if (permission === 'edit') {
+      name.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
+    }
+
     name.style.fontSize = '18px'
     name.innerHTML = definition.name
     btnGroup.appendChild(name)
@@ -1443,18 +1529,38 @@ function populateComponentDefinitionList (definitions, thumbnails) {
 
     const dropdownMenu = document.createElement('div')
     dropdownMenu.classList = 'dropdown-menu'
-    dropdownMenu.innerHTML = `
+    let html = `
     <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '.html?standalone=true&definition=' + uuid}" target="_blank">Preview</a>
-    <a class="dropdown-item" href="${component.getHelperURL() + '/' + definition.app + '/setup.html?definition=' + uuid}" target="_blank">Edit</a>
     `
+    if (permission === 'edit') {
+      let app = definition.app
+      let page = 'setup.html'
+      if (app === 'infostation') {
+        app = 'InfoStation'
+      } else if (app === 'word_cloud_input') {
+        app = 'word_cloud'
+        page = 'setup_input.html'
+      } else if (app === 'word_cloud_viewer') {
+        app = 'word_cloud'
+        page = 'setup_viewer.html'
+      }
+
+      html += `
+      <a class="dropdown-item" href="${component.getHelperURL() + '/' + app + '/' + page + '?definition=' + uuid}" target="_blank">Edit</a>
+      `
+    }
+    dropdownMenu.innerHTML = html
     btnGroup.appendChild(dropdownMenu)
 
     if (thumbnails.includes(uuid + '.mp4')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
-      thumbCol.addEventListener('click', () => {
-        handleDefinitionItemSelection(uuid)
-      })
+      if (permission === 'edit') {
+        thumbCol.addEventListener('click', () => {
+          handleDefinitionItemSelection(uuid)
+        })
+      }
+
       row.append(thumbCol)
 
       const thumb = document.createElement('video')
@@ -1472,9 +1578,11 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     } else if (thumbnails.includes(uuid + '.jpg')) {
       const thumbCol = document.createElement('div')
       thumbCol.classList = 'col-12 bg-secondary pt-2 definition-thumbnail'
-      thumbCol.addEventListener('click', () => {
-        handleDefinitionItemSelection(uuid)
-      })
+      if (permission === 'edit') {
+        thumbCol.addEventListener('click', () => {
+          handleDefinitionItemSelection(uuid)
+        })
+      }
       row.append(thumbCol)
 
       const thumb = document.createElement('img')
@@ -1489,9 +1597,12 @@ function populateComponentDefinitionList (definitions, thumbnails) {
     app.classList = 'col-12 bg-secondary text-dark rounded-bottom pb-1'
     app.setAttribute('id', 'definitionButtonApp_' + uuid)
     app.innerHTML = convertAppIDtoDisplayName(definition.app)
-    app.addEventListener('click', () => {
-      handleDefinitionItemSelection(uuid)
-    })
+    if (permission === 'edit') {
+      app.addEventListener('click', () => {
+        handleDefinitionItemSelection(uuid)
+      })
+    }
+
     row.appendChild(app)
 
     $('#componentInfoModalDefinitionList').append(col)
@@ -1531,7 +1642,7 @@ export function submitDefinitionSelectionFromModal () {
   document.getElementById('componentInfoModalDefinitionSaveButton').style.display = 'none'
 }
 
-function updateComponentInfoModalFromHelper (id) {
+function updateComponentInfoModalFromHelper (id, permission) {
   // Ask the given helper to send an update and use it to update the interface.
 
   const obj = getExhibitComponent(id)
@@ -1539,30 +1650,27 @@ function updateComponentInfoModalFromHelper (id) {
   const url = obj.getHelperURL()
   if (url == null) {
     // We don't have enough information to contact the helper
-    $('#componentInfoConnectionStatusFailed').show()
-    $('#componentInfoConnectionStatusInPrograss').hide()
-    document.getElementById('componentInfoModalViewScreenshot').style.display = 'none'
+    componentCannotConnect()
 
-    // Show the maintenance tab
-    $('#componentInfoModalMaintenanceTabButton').tab('show')
     // Make the modal visible
     $('#componentInfoModal').modal('show')
     return
   }
 
+  setComponentInfoStatusMessage('Connecting to component...')
   constTools.makeRequest({
     method: 'GET',
     url,
     endpoint: '/getAvailableContent',
-    timeout: 10000
+    timeout: 3000
   })
     .then((availableContent) => {
       // Good connection, so show the interface elements
-      $('#componentInfoConnectingNotice').hide()
+      componentGoodConnection()
 
       // Create entries for available definitions
       if (availableContent.definitions != null) {
-        populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails)
+        populateComponentDefinitionList(availableContent.definitions, availableContent.thumbnails, permission)
       }
 
       // If it is provided, show the system stats
@@ -1616,6 +1724,9 @@ function updateComponentInfoModalFromHelper (id) {
         $('#contentUploadSystemStatsView').hide()
       }
     })
+    .catch(() => {
+      componentCannotConnect()
+    })
 }
 
 export function onDefinitionTabThumbnailsCheckboxChange () {
@@ -1649,23 +1760,49 @@ export function filterDefinitionListByApp () {
   })
 }
 
-export function toggleExhibitComponentInfoSettingWarnings () {
-  // Show or hide the exhibit component setting warnings based on their state
+export function submitComponentBasicSettingsChange () {
+  // Update the id, group, and description of an exhibit component
 
-  // Enable all tooltips
-  $('[data-bs-toggle="tooltip"]').tooltip()
+  const uuid = document.getElementById('componentInfoModal').getAttribute('data-uuid')
 
-  if ($('#componentInfoModalSettingsAllowShutdown').prop('checked')) {
-    $('#componentInfoModalSettingsAllowShutdownWarning').show()
-  } else {
-    $('#componentInfoModalSettingsAllowShutdownWarning').hide()
+  const groupSelect = document.getElementById('componentInfoModalBasicSettingsGroup')
+  const selectedGroups = groupSelect.selectedOptions
+  const selectedGroupUUIDs = Array.from(selectedGroups).map(({ value }) => value)
+
+  const update = {
+    id: document.getElementById('componentInfoModalBasicSettingsID').value.trim(),
+    groups: selectedGroupUUIDs,
+    description: document.getElementById('componentInfoModalExhibitDescriptionInput').value.trim(),
+    uuid
   }
 
-  if ($('#componentInfoModalSettingsAutoplayAudio').prop('checked')) {
-    $('#componentInfoModalSettingsAutoplayAudioWarning').show()
+  updateComponentInfoDescription(update.description)
+
+  // Check that fields are properly filled out
+  if (update.id === '') {
+    document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'block'
+    return
   } else {
-    $('#componentInfoModalSettingsAutoplayAudioWarning').hide()
+    document.getElementById('componentInfoModalBasicSettingsIDWarning').style.display = 'none'
   }
+  if (update.group === '') {
+    document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'block'
+    return
+  } else {
+    document.getElementById('componentInfoModalBasicSettingsGroupWarning').style.display = 'none'
+  }
+
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/' + uuid + '/edit',
+    params: update
+  })
+    .then((response) => {
+      if (response.success === true) {
+        document.getElementById('componentInfoModalTitle').innerHTML = update.id
+        document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'none'
+      }
+    })
 }
 
 export function submitComponentSettingsChange () {
@@ -1698,20 +1835,6 @@ export function submitComponentSettingsChange () {
           }
         }
       })
-  }
-
-  // Update component description
-  const description = document.getElementById('componentInfoModalDescriptionInput').value.trim()
-  const descriptionEl = document.getElementById('componentInfoModalDescription')
-  submitComponentDescriptionChange(obj.id, {
-    description,
-    id: obj.id
-  })
-  descriptionEl.innerHTML = description
-  if (description !== '') {
-    descriptionEl.style.display = 'block'
-  } else {
-    descriptionEl.style.display = 'none'
   }
 }
 
@@ -1750,48 +1873,6 @@ export function rebuildComponentInterface () {
   }
 }
 
-function submitComponentDescriptionChange (currentID, update) {
-  // Update the description for a component
-  // update is an object with keys `id` and `description`
-
-  // First, get the current description configuration
-  constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/descriptions/getConfiguration'
-  })
-    .then((result) => {
-      let descConfig
-      if (result.success === true) {
-        descConfig = result.configuration
-      } else {
-        descConfig = []
-      }
-
-      // Next, check if there is a configuration matching this id
-      let matchFound = false
-      for (let i = 0; i < descConfig.length; i++) {
-        if (descConfig[i].id === currentID) {
-          descConfig[i].description = update.description
-          descConfig[i].id = update.id
-          matchFound = true
-          break
-        }
-      }
-      if (matchFound === false) {
-        descConfig.push(update)
-      }
-
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/descriptions/updateConfiguration',
-        params: {
-          configuration: descConfig
-        }
-      })
-    })
-}
-
 export function queueCommand (id, cmd) {
   // Function to send a command to the control server that will then
   // be sent to the component the next time it pings the server
@@ -1809,7 +1890,7 @@ export function queueCommand (id, cmd) {
     let cmdPath = ''
     if (obj.type === 'projector') {
       cmdPath = '/projector/queueCommand'
-    } else if (obj.group === 'WAKE_ON_LAN') {
+    } else if (obj.type === 'wol_component') {
       cmdPath = '/exhibit/queueWOLCommand'
     } else {
       cmdPath = '/exhibit/queueCommand'
@@ -1863,7 +1944,11 @@ export function submitStaticComponentAdditionFromModal () {
     document.getElementById('addStaticComponentModalGroupError').style.display = 'none'
   }
 
-  submitStaticComponentChange(id, { id, group })
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/component/static/create',
+    params: { id, group }
+  })
     .then((response) => {
       $('#addStaticComponentModal').modal('hide')
     })
@@ -1922,37 +2007,17 @@ export function submitWakeOnLANAdditionFromModal () {
     document.getElementById('addWakeOnLANModalBadMACError').style.display = 'none'
   }
 
-  // First, get the current static configuration
   constTools.makeServerRequest({
-    method: 'GET',
-    endpoint: '/system/wake_on_LAN/getConfiguration'
+    method: 'POST',
+    endpoint: '/component/WOL/create',
+    params: {
+      group,
+      id,
+      ip_address: ipAddress,
+      mac_address: macAddress
+    }
   })
-    .then((result) => {
-      let wolConfig
-      if (result.success === true) {
-        wolConfig = result.configuration
-      } else {
-        wolConfig = []
-      }
-
-      // Next, add the new element
-      wolConfig.push({
-        group,
-        id,
-        ip_address: ipAddress,
-        mac_address: macAddress
-      })
-
-      // Finally, send the configuration back for writing
-      constTools.makeServerRequest({
-        method: 'POST',
-        endpoint: '/system/wake_on_LAN/updateConfiguration',
-        params: {
-          configuration: wolConfig
-        }
-      })
-        .then((response) => {
-          $('#addWakeOnLANModal').modal('hide')
-        })
+    .then((response) => {
+      $('#addWakeOnLANModal').modal('hide')
     })
 }

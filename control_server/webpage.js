@@ -2,12 +2,14 @@
 
 import constConfig from './config.js'
 import * as constExhibit from './constellation_exhibit.js'
+import * as constGroup from './constellation_group.js'
 import * as constIssues from './constellation_issues.js'
 import * as constMaintenance from './constellation_maintenance.js'
 import * as constProjector from './constellation_projector.js'
 import * as constSchedule from './constellation_schedule.js'
 import * as constTools from './constellation_tools.js'
 import * as constTracker from './constellation_tracker.js'
+import * as constUsers from './constellation_users.js'
 
 function showManageExhibitsModal () {
   // Configure the manageExhibitsModal and show it.
@@ -399,6 +401,19 @@ function parseUpdate (update) {
     }
   }
 
+  if ('groups' in update) {
+    // Check if the list of groups has changed.
+
+    const updateDate = new Date(update.groups.last_update_date)
+    const currentGroupsDate = new Date(constConfig.groupLastUpdateDate)
+
+    if (updateDate > currentGroupsDate) {
+      constConfig.groupLastUpdateDate = update.groups.last_update_date
+      constConfig.groups = update.groups.group_list
+      constGroup.populateGroupsRow()
+    }
+  }
+
   if ('issues' in update) {
     // Check for the time of the most recent update. If it is more
     // recent than our existing date, rebuild the issue list
@@ -406,19 +421,10 @@ function parseUpdate (update) {
     const currentLastDate = Math.max.apply(Math, constConfig.issueList.map(function (o) { return new Date(o.lastUpdateDate) }))
     const updatedDate = new Date(update.issues.lastUpdateDate)
 
-    if (!constTools.arraysEqual(constConfig.assignableStaff, update.issues.assignable_staff)) {
-      constConfig.assignableStaff = update.issues.assignable_staff
-      // Populate the filter
-      $('#issueListFilterAssignedToSelect').empty()
-      $('#issueListFilterAssignedToSelect').append(new Option('All', 'all'))
-      $('#issueListFilterAssignedToSelect').append(new Option('Unassigned', 'unassigned'))
-      for (let i = 0; i < constConfig.assignableStaff.length; i++) {
-        $('#issueListFilterAssignedToSelect').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
-      }
-    }
     if (updatedDate > currentLastDate) {
       constConfig.issueList = update.issues.issueList
       constIssues.rebuildIssueList()
+      constIssues.rebuildIssueFilters()
     }
   }
 
@@ -810,21 +816,6 @@ function parseQueryString () {
 
   const searchParams = new URLSearchParams(queryString)
 
-  if (searchParams.has('hideComponents')) {
-    $('#nav-components-tab').hide()
-  }
-  if (searchParams.has('hideSchedule')) {
-    $('#nav-schedule-tab').hide()
-  }
-  if (searchParams.has('hideIssues')) {
-    $('#nav-issues-tab').hide()
-  }
-  if (searchParams.has('hideSettings')) {
-    $('#nav-settings-tab').hide()
-  }
-  if (searchParams.has('hideHelp')) {
-    $('#nav-help-tab').hide()
-  }
   if (searchParams.has('hideSTATIC')) {
     $('#componentsTabSettingsShowStatic').prop('checked', false)
   }
@@ -907,14 +898,6 @@ function populateControlServerSettings () {
       document.getElementById('controlServerSettingsPort').value = config.port
       document.getElementById('controlServerSettingsGalleryName').value = config.gallery_name
       document.getElementById('controlServerSettingsDebugMode').value = config.debug
-
-      let staffString
-      try {
-        staffString = config.assignable_staff.join(', ')
-      } catch {
-        staffString = ''
-      }
-      document.getElementById('controlServerSettingsAssignableStaff').value = staffString
     })
 }
 
@@ -925,7 +908,6 @@ function updateSystemConfiguration () {
     ip_address: document.getElementById('controlServerSettingsIPAddress').value.trim(),
     port: parseInt(document.getElementById('controlServerSettingsPort').value),
     gallery_name: document.getElementById('controlServerSettingsGalleryName').value.trim(),
-    assignable_staff: document.getElementById('controlServerSettingsAssignableStaff').value.split(',').map(item => item.trim()),
     debug: constTools.stringToBool(document.getElementById('controlServerSettingsDebugMode').value)
   }
 
@@ -971,6 +953,12 @@ function loadVersion () {
 }
 
 // Bind event listeners
+
+// Login
+document.getElementById('loginSubmitButton').addEventListener('click', constUsers.loginFromDropdown)
+document.getElementById('logoutButton').addEventListener('click', constUsers.logoutUser)
+document.getElementById('changePasswordButton').addEventListener('click', constUsers.showPasswordChangeModal)
+document.getElementById('passwordChangeModalSubmitButton').addEventListener('click', constUsers.submitUserPasswordChange)
 
 // Components tab
 // =========================
@@ -1022,11 +1010,11 @@ $('#componentInfoModalMaintenanceSaveButton').click(function () {
 $('#componentInfoModalMaintenanceStatusSelector').change(function () {
   $('#componentInfoModalMaintenanceSaveButton').show()
 })
-$('#componentInfoModalSettingsAutoplayAudio').change(function () {
-  constExhibit.toggleExhibitComponentInfoSettingWarnings()
-})
-$('#componentInfoModalSettingsAllowShutdown').change(function () {
-  constExhibit.toggleExhibitComponentInfoSettingWarnings()
+document.getElementById('componentInfoModalBasicSettingsSaveButton').addEventListener('click', constExhibit.submitComponentBasicSettingsChange)
+Array.from(document.querySelectorAll('.componentInfoBasicSetting')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('componentInfoModalBasicSettingsSaveButton').style.display = 'block'
+  })
 })
 $('.componentInfoSetting').change(function () {
   $('#componentInfoModalSettingsSaveButton').show()
@@ -1078,6 +1066,14 @@ document.getElementById('manageFutureDateCreateScheduleButton').addEventListener
 document.getElementById('manageFutureDateDeleteScheduleButton').addEventListener('click', (event) => {
   event.target.focus()
 })
+// Create schedule from file modal
+document.getElementById('showScheduleFromFileModalButton').addEventListener('click', constSchedule.showScheduleFromFileModal)
+document.getElementById('scheduleFromFileModalFileInput').addEventListener('change', constSchedule.onScheduleFromFileModalFileInputChange)
+document.getElementById('scheduleFromFileModalUploadButton').addEventListener('click', constSchedule.previewScheduleFromFile)
+document.getElementById('scheduleFromFileKindSelect').addEventListener('change', constSchedule.onCreateScheduleFromFileTypeSelect)
+document.getElementById('scheduleFromFileDateSelect').addEventListener('change', constSchedule.onscheduleFromFileDateSelectChange)
+document.getElementById('scheduleFromFileModalSubmitButton').addEventListener('click', constSchedule.createScheduleFromFile)
+
 $('#scheduleEditDeleteActionButton').click(constSchedule.scheduleDeleteActionFromModal)
 $('#scheduleEditSubmitButton').click(constSchedule.sendScheduleUpdateFromModal)
 $('#scheduleActionSelector').change(constSchedule.setScheduleActionTargetSelector)
@@ -1094,7 +1090,29 @@ document.addEventListener('click', (event) => {
   }
 })
 
-// Issues tab
+// Exhibits tab
+// =========================
+// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
+$('#exhibitSelect').change(function () {
+  changeExhibit(false)
+})
+$('#exhibitDeleteSelector').change(checkDeleteSelection)
+$('#createExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), null)
+  $('#createExhibitNameInput').val('')
+})
+$('#cloneExhibitButton').click(function () {
+  createExhibit($('#createExhibitNameInput').val(), $('#exhibitSelect').val())
+  $('#createExhibitNameInput').val('')
+})
+$('#exhibitChangeConfirmationButton').click(function () {
+  changeExhibit(true)
+})
+$('#deleteExhibitButton').click(deleteExhibitFromModal)
+$('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
+document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
+
+// Maintenance tab
 // =========================
 // This event detects when the delete button has been clicked inside a popover
 document.addEventListener('click', (event) => {
@@ -1179,28 +1197,34 @@ $('#editTrackerTemplateModalDeleteWidgetButton').click(editTrackerTemplateModalD
 $('#editTrackerTemplateModalSubmitChangesButton').click(editTrackerTemplateModalSubmitChanges)
 $('.editTrackerTemplateInputField').on('input', editTrackerTemplateModalUpdateFromInput)
 
+// Users tab
+// =========================
+document.getElementById('showEditUserModalButton').addEventListener('click', () => {
+  constUsers.showEditUserModal()
+})
+Array.from(document.querySelectorAll('.editUserField')).forEach((el) => {
+  el.addEventListener('change', () => {
+    document.getElementById('editUserSubmitButton').style.display = 'block'
+  })
+})
+document.getElementById('editUserPermissionGroups').addEventListener('change', (event) => {
+  if (event.target.value === 'custom') {
+    document.getElementById('editUserGroupsRow').style.display = 'flex'
+  } else {
+    document.getElementById('editUserGroupsRow').style.display = 'none'
+  }
+})
+document.getElementById('editUserSubmitButton').addEventListener('click', constUsers.submitChangeFromEditUserModal)
+
 // Settings tab
 // =========================
-// Exhibits
-// document.getElementById('manageExhibitsButton').addEventListener('click', showManageExhibitsModal)
-$('#exhibitSelect').change(function () {
-  changeExhibit(false)
+
+// Groups
+document.getElementById('settingsAddGroupButton').addEventListener('click', () => {
+  constGroup.showEditGroupModal()
 })
-$('#exhibitDeleteSelector').change(checkDeleteSelection)
-$('#createExhibitButton').click(function () {
-  createExhibit($('#createExhibitNameInput').val(), null)
-  $('#createExhibitNameInput').val('')
-})
-$('#cloneExhibitButton').click(function () {
-  createExhibit($('#createExhibitNameInput').val(), $('#exhibitSelect').val())
-  $('#createExhibitNameInput').val('')
-})
-$('#exhibitChangeConfirmationButton').click(function () {
-  changeExhibit(true)
-})
-$('#deleteExhibitButton').click(deleteExhibitFromModal)
-$('#exhibitDeleteSelectorButton').click(showExhibitDeleteModal)
-document.getElementById('manageExhibitModalExhibitThumbnailCheckbox').addEventListener('change', onManageExhibitModalThumbnailCheckboxChange)
+document.getElementById('editGroupModalSubmitButton').addEventListener('click', constGroup.submitChangeFromGroupEditModal)
+document.getElementById('deleteGroupConfirmationButton').addEventListener('click', constGroup.deleteGroupFromModal)
 
 // Server settings
 Array.from(document.querySelectorAll('.controlServerSettingsInputField')).forEach((el) => {
@@ -1221,17 +1245,6 @@ const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstra
 
 constConfig.serverAddress = location.origin
 
-// Subscribe to updates from the control server
-const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
-eventSource.addEventListener('update', function (event) {
-  const update = JSON.parse(event.data)
-  parseUpdate(update)
-})
-eventSource.addEventListener('end', function (event) {
-  console.log('Handling end....')
-  eventSource.close()
-})
-
 // Set color mode
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.querySelector('html').setAttribute('data-bs-theme', 'dark')
@@ -1241,6 +1254,21 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
 loadVersion()
 populateHelpTab()
+constUsers.populateUsers()
 populateControlServerSettings()
 parseQueryString()
 constTracker.getAvailableDefinitions(populateTrackerTemplateSelect)
+
+constUsers.authenticateUser()
+  .then(() => {
+    // Subscribe to updates from the control server once we're logged in (or not)
+    const eventSource = new EventSource(constConfig.serverAddress + '/system/updateStream')
+    eventSource.addEventListener('update', function (event) {
+      const update = JSON.parse(event.data)
+      parseUpdate(update)
+    })
+    eventSource.addEventListener('end', function (event) {
+      console.log('Handling end....')
+      eventSource.close()
+    })
+  })

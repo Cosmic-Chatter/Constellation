@@ -5,8 +5,9 @@ export function rebuildIssueList () {
   // Take an array of issue dictionaries and build the GUI representation.
 
   // Gather the settings for the various filters
-  const filterPriority = $('#issueListFilterPrioritySelect').val()
-  const filterAssignedTo = $('#issueListFilterAssignedToSelect').val()
+  const filterPriority = document.getElementById('issueListFilterPrioritySelect').value
+  let filterAssignedTo = document.getElementById('issueListFilterAssignedToSelect').value
+  if (filterAssignedTo === '') filterAssignedTo = 'all'
   const issueList = document.getElementById('issuesRow')
   issueList.innerHTML = ''
 
@@ -24,8 +25,40 @@ export function rebuildIssueList () {
   })
 }
 
+export async function rebuildIssueFilters () {
+  // Rebuild the 'Assigned to' issue filter
+
+  const assignedToSelect = document.getElementById('issueListFilterAssignedToSelect')
+  assignedToSelect.innerHTML = ''
+  assignedToSelect.appendChild(new Option('All', 'all'))
+  assignedToSelect.appendChild(new Option('Unassigned', 'unassigned'))
+
+  // First, aggregate the various options needed
+  const assignableUserList = []
+  const optionList = []
+  for (const issue of constConfig.issueList) {
+    for (const uuid of issue.assignedTo) {
+      if (assignableUserList.includes(uuid) === false) {
+        assignableUserList.push(uuid)
+        const displayName = await constTools.getUserDisplayName(uuid)
+        optionList.push(new Option(displayName, uuid))
+      }
+    }
+  }
+
+  const sortedOptionsList = optionList.sort(function (a, b) {
+    return a.innerHTML.toLowerCase().localeCompare(b.innerHTML.toLowerCase())
+  })
+  // Populate the filter
+  sortedOptionsList.forEach((option) => {
+    assignedToSelect.appendChild(option)
+  })
+}
+
 export function createIssueHTML (issue, full = true, archived = false) {
   // Create an HTML representation of an issue
+
+  const allowEdit = constTools.checkPermission('maintenance', 'edit')
 
   const col = document.createElement('div')
   col.setAttribute('class', 'col mt-2')
@@ -63,15 +96,18 @@ export function createIssueHTML (issue, full = true, archived = false) {
     content.appendChild(tag)
   })
 
-  issue.assignedTo.forEach((name, i) => {
+  issue.assignedTo.forEach((uuid, i) => {
     const tag = document.createElement('span')
     tag.setAttribute('class', 'badge bg-success me-1')
-    tag.innerHTML = name
+    constTools.getUserDisplayName(uuid)
+      .then((displayName) => {
+        tag.innerHTML = displayName
+      })
     content.appendChild(tag)
   })
 
   const desc = document.createElement('p')
-  desc.setAttribute('class', 'card-text')
+  desc.classList = 'card-text mt-2'
   desc.style.whiteSpace = 'pre-wrap' // To preserve new lines
   desc.innerHTML = issue.issueDescription
   content.appendChild(desc)
@@ -80,69 +116,75 @@ export function createIssueHTML (issue, full = true, archived = false) {
   row1.classList = 'row gy-2 row-cols-2'
   content.appendChild(row1)
 
-  const actionCol = document.createElement('div')
-  actionCol.classList = 'col'
-  row1.appendChild(actionCol)
+  const row2 = document.createElement('div')
+  row2.classList = 'row'
+  content.appendChild(row2)
 
-  if (archived === false) {
-    const actionDropdownContainer = document.createElement('div')
-    actionDropdownContainer.classList = 'dropdown'
-    actionCol.appendChild(actionDropdownContainer)
+  if (allowEdit) {
+    const actionCol = document.createElement('div')
+    actionCol.classList = 'col'
+    row1.appendChild(actionCol)
 
-    const actionButton = document.createElement('a')
-    actionButton.classList = 'btn btn-primary btn-sm dropdown-toggle w-100'
-    actionButton.innerHTML = 'Action'
-    actionButton.href = '#'
-    actionButton.setAttribute('role', 'button')
-    actionButton.setAttribute('data-bs-toggle', 'dropdown')
-    actionButton.setAttribute('aria-expanded', 'false')
-    actionDropdownContainer.appendChild(actionButton)
+    if (archived === false) {
+      const actionDropdownContainer = document.createElement('div')
+      actionDropdownContainer.classList = 'dropdown'
+      actionCol.appendChild(actionDropdownContainer)
 
-    const actionDropdownList = document.createElement('ul')
-    actionDropdownList.classList = 'dropdown-menu'
-    actionDropdownList.style.position = 'static'
-    actionDropdownContainer.appendChild(actionDropdownList)
+      const actionButton = document.createElement('a')
+      actionButton.classList = 'btn btn-primary btn-sm dropdown-toggle w-100'
+      actionButton.innerHTML = 'Action'
+      actionButton.href = '#'
+      actionButton.setAttribute('role', 'button')
+      actionButton.setAttribute('data-bs-toggle', 'dropdown')
+      actionButton.setAttribute('aria-expanded', 'false')
+      actionDropdownContainer.appendChild(actionButton)
 
-    const actionDropdownListEditItem = document.createElement('li')
-    const actionDropdownListEditButton = document.createElement('a')
-    actionDropdownListEditButton.classList = 'dropdown-item text-info handCursor'
-    actionDropdownListEditButton.innerHTML = 'Edit'
-    actionDropdownListEditButton.addEventListener('click', function () {
-      showIssueEditModal('edit', issue.id)
-    })
-    actionDropdownListEditItem.appendChild(actionDropdownListEditButton)
-    actionDropdownList.appendChild(actionDropdownListEditItem)
+      const actionDropdownList = document.createElement('ul')
+      actionDropdownList.classList = 'dropdown-menu'
+      actionDropdownList.style.position = 'static'
+      actionDropdownContainer.appendChild(actionDropdownList)
 
-    const actionDropdownListDeleteItem = document.createElement('li')
-    const actionDropdownListDeleteButton = document.createElement('a')
-    actionDropdownListDeleteButton.classList = 'dropdown-item text-danger handCursor'
-    actionDropdownListDeleteButton.innerHTML = 'Delete'
-    actionDropdownListDeleteButton.addEventListener('click', function () {
-      showModifyIssueModal(issue.id, 'delete')
-    })
-    actionDropdownListDeleteItem.appendChild(actionDropdownListDeleteButton)
-    actionDropdownList.appendChild(actionDropdownListDeleteItem)
+      const actionDropdownListEditItem = document.createElement('li')
+      const actionDropdownListEditButton = document.createElement('a')
+      actionDropdownListEditButton.classList = 'dropdown-item text-info handCursor'
+      actionDropdownListEditButton.innerHTML = 'Edit'
+      actionDropdownListEditButton.addEventListener('click', function () {
+        showIssueEditModal('edit', issue.id)
+      })
+      actionDropdownListEditItem.appendChild(actionDropdownListEditButton)
+      actionDropdownList.appendChild(actionDropdownListEditItem)
 
-    const actionDropdownListArchiveItem = document.createElement('li')
-    const actionDropdownListArchiveButton = document.createElement('a')
-    actionDropdownListArchiveButton.classList = 'dropdown-item text-success handCursor'
-    actionDropdownListArchiveButton.innerHTML = 'Mark complete'
-    actionDropdownListArchiveButton.addEventListener('click', function () {
-      showModifyIssueModal(issue.id, 'archive')
-    })
-    actionDropdownListArchiveItem.appendChild(actionDropdownListArchiveButton)
-    actionDropdownList.appendChild(actionDropdownListArchiveItem)
-  } else {
-    const unarchiveButton = document.createElement('button')
-    unarchiveButton.classList = 'btn btn-primary w-100'
-    unarchiveButton.innerHTML = 'Re-open issue'
-    unarchiveButton.addEventListener('click', (event) => {
-      modifyIssue(issue.id, 'restore')
-        .then(() => {
-          showArchivedIssuesModal()
-        })
-    })
-    actionCol.appendChild(unarchiveButton)
+      const actionDropdownListDeleteItem = document.createElement('li')
+      const actionDropdownListDeleteButton = document.createElement('a')
+      actionDropdownListDeleteButton.classList = 'dropdown-item text-danger handCursor'
+      actionDropdownListDeleteButton.innerHTML = 'Delete'
+      actionDropdownListDeleteButton.addEventListener('click', function () {
+        showModifyIssueModal(issue.id, 'delete')
+      })
+      actionDropdownListDeleteItem.appendChild(actionDropdownListDeleteButton)
+      actionDropdownList.appendChild(actionDropdownListDeleteItem)
+
+      const actionDropdownListArchiveItem = document.createElement('li')
+      const actionDropdownListArchiveButton = document.createElement('a')
+      actionDropdownListArchiveButton.classList = 'dropdown-item text-success handCursor'
+      actionDropdownListArchiveButton.innerHTML = 'Mark complete'
+      actionDropdownListArchiveButton.addEventListener('click', function () {
+        showModifyIssueModal(issue.id, 'archive')
+      })
+      actionDropdownListArchiveItem.appendChild(actionDropdownListArchiveButton)
+      actionDropdownList.appendChild(actionDropdownListArchiveItem)
+    } else {
+      const unarchiveButton = document.createElement('button')
+      unarchiveButton.classList = 'btn btn-primary w-100'
+      unarchiveButton.innerHTML = 'Re-open issue'
+      unarchiveButton.addEventListener('click', (event) => {
+        modifyIssue(issue.id, 'restore')
+          .then(() => {
+            showArchivedIssuesModal()
+          })
+      })
+      actionCol.appendChild(unarchiveButton)
+    }
   }
 
   if (issue.media != null && issue.media.length > 0) {
@@ -162,6 +204,59 @@ export function createIssueHTML (issue, full = true, archived = false) {
       constTools.openMediaInNewTab(mediaFiles)
     }, false)
     mediaCol.appendChild(mediaBut)
+  }
+
+  const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' }
+  if (archived === true) {
+    if ('archivedUsername' in issue && 'archiveDate' in issue) {
+      // Add line with when this was archived and by whom.
+      const archivedDateCol = document.createElement('div')
+      archivedDateCol.classList = 'col-12 fst-italic text-secondary mt-2'
+      archivedDateCol.style.fontSize = '0.7rem'
+
+      const archivedDate = new Date(issue.archiveDate)
+      archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)}`
+      row2.appendChild(archivedDateCol)
+
+      constTools.getUserDisplayName(issue.archivedUsername)
+        .then((displayName) => {
+          archivedDateCol.innerHTML = `Archived ${archivedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+        })
+    }
+  } else {
+    // Add a line about when this issue was created
+    const createdDateCol = document.createElement('div')
+    createdDateCol.classList = 'col-12 fst-italic text-secondary mt-2'
+    createdDateCol.style.fontSize = '0.7rem'
+
+    const createdDate = new Date(issue.creationDate)
+    createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)}`
+    row2.appendChild(createdDateCol)
+
+    if ('createdUsername' in issue && issue.createdUsername !== '') {
+      constTools.getUserDisplayName(issue.createdUsername)
+        .then((displayName) => {
+          createdDateCol.innerHTML = `Created ${createdDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+        })
+    }
+
+    // Add a line about when this issue was last updated, if different than created.
+    if (issue.creationDate !== issue.lastUpdateDate) {
+      const updatedDateCol = document.createElement('div')
+      updatedDateCol.classList = 'col-12 fst-italic text-secondary'
+      updatedDateCol.style.fontSize = '0.7rem'
+
+      const updatedDate = new Date(issue.lastUpdateDate)
+      updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)}`
+      row2.appendChild(updatedDateCol)
+
+      if ('lastUpdateUsername' in issue && issue.lastUpdateUsername !== '') {
+        constTools.getUserDisplayName(issue.lastUpdateUsername)
+          .then((displayName) => {
+            updatedDateCol.innerHTML = `Updated ${updatedDate.toLocaleDateString(undefined, dateOptions)} by ${displayName}`
+          })
+      }
+    }
   }
 
   const footer = document.createElement('div')
@@ -323,12 +418,23 @@ export function showIssueEditModal (issueType, target) {
 
   // Make sure we have all the assignable staff listed as options for
   // issueAssignedToSelector
-  for (let i = 0; i < constConfig.assignableStaff.length; i++) {
-    // Check if component already exists as an option. If not, add it
-    if ($(`#issueAssignedToSelector option[value='${constConfig.assignableStaff[i]}']`).length === 0) {
-      $('#issueAssignedToSelector').append(new Option(constConfig.assignableStaff[i], constConfig.assignableStaff[i]))
+  document.getElementById('issueAssignedToSelector').innerHTML = ''
+  constTools.makeServerRequest({
+    method: 'POST',
+    endpoint: '/users/list',
+    params: {
+      permissions: {
+        maintenance: 'view'
+      }
     }
-  }
+  })
+    .then((response) => {
+      if (response.success === true) {
+        response.users.forEach((user) => {
+          document.getElementById('issueAssignedToSelector').appendChild(new Option(user.display_name, user.username))
+        })
+      }
+    })
 
   // Clear file upload interface elements
   $('#issueMediaUploadFilename').html('Choose files')

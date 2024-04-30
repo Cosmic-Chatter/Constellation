@@ -358,3 +358,175 @@ export function sortDefinitionsByApp (defDict, dropPreview = true) {
 
   return result
 }
+
+export function checkPermission (action, neededLevel, group = null) {
+  // Check that the user has permission for the requested action
+
+  if (Object.keys(constConfig.user).length === 0) return false
+
+  if (action !== 'components') {
+    if (neededLevel === 'none') return true
+    if (action in constConfig.user.permissions === false) return false
+
+    const allowedLevel = constConfig.user.permissions[action]
+    if (neededLevel === 'edit') {
+      if (allowedLevel === 'edit') return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (allowedLevel === 'edit' || allowedLevel === 'view') return true
+      return false
+    }
+  } else {
+    // Components
+    if (neededLevel === 'edit') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if ((group != null) && constConfig.user.permissions.components.edit.includes(group)) return true
+      return false
+    }
+    if (neededLevel === 'view') {
+      if (constConfig.user.permissions.components.edit.includes('__all')) return true
+      if (constConfig.user.permissions.components.view.includes('__all')) return true
+      if ((group != null) && (constConfig.user.permissions.components.edit.includes(group) || (constConfig.user.permissions.components.view.includes(group)))) return true
+      return false
+    }
+  }
+  return false
+}
+
+export function getUserDisplayName (uuid) {
+  // Return the display name for a user or the uuid if the name cannot be resolved.
+
+  return new Promise(function (resolve, reject) {
+  // First, check the cache
+    if (constConfig.usersDisplayNameCache[uuid] !== undefined) {
+      resolve(constConfig.usersDisplayNameCache[uuid])
+    }
+    makeServerRequest({
+      method: 'GET',
+      endpoint: `/user/${uuid}/getDisplayName`
+    })
+      .then((response) => {
+        if (response.success === true) {
+          constConfig.usersDisplayNameCache[uuid] = response.display_name
+          resolve(response.display_name)
+        } else {
+          resolve(uuid)
+        }
+      })
+  })
+}
+
+export function uuid () {
+  // Generate a new UUID v4 without using the crypto library (we may not be in HTTPS).
+  // Format: 8-4-4-4-12
+
+  const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 12; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  return result
+}
+
+export function csvToJSON (csv) {
+  // From https://stackoverflow.com/questions/59016562/parse-csv-records-in-to-an-array-of-objects-in-javascript
+
+  const lines = csv.split('\n')
+  const result = []
+  const headers = lines[0].split(',')
+
+  for (let i = 1; i < lines.length; i++) {
+    const obj = {}
+
+    if (lines[i] === undefined || lines[i].trim() === '') {
+      continue
+    }
+
+    // regex to split on comma, but ignore inside of ""
+    const words = splitCsv(lines[i])
+    for (let j = 0; j < words.length; j++) {
+      // Clean up "" used to escape commas in the CSV
+      let word = words[j].trim()
+      if (word.slice(0, 1) === '"' && word.slice(-1) === '"') {
+        word = word.slice(1, -1)
+      }
+
+      word = word.replaceAll('""', '"')
+      obj[headers[j].trim()] = word.trim()
+    }
+
+    result.push(obj)
+  }
+  const detectBad = detectBadCSV(result)
+
+  if (detectBad.error === true) {
+    return {
+      json: result,
+      error: true,
+      error_index: detectBad.error_index
+    }
+  }
+
+  return { json: result, error: false }
+}
+
+function detectBadCSV (jsonArray) {
+  // Take the JSON array from csvToJSON and check if it seems properly formed.
+
+  const lengthCounts = {}
+  const lengthList = []
+  jsonArray.forEach((el) => {
+    // Count the number of fields (which should be the same for each row)
+    const length = Object.keys(el).length
+    if (length in lengthCounts) {
+      lengthCounts[length] += 1
+    } else {
+      lengthCounts[length] = 1
+    }
+    lengthList.push(length)
+  })
+
+  // Assume that the length that occurs most often is the correct one
+  const mostCommon = parseInt(Object.keys(lengthCounts).reduce((a, b) => lengthCounts[a] > lengthCounts[b] ? a : b))
+  const badIndices = []
+  lengthList.forEach((el, i) => {
+    if (el !== mostCommon) badIndices.push(i)
+  })
+  if (badIndices.length > 0) {
+    return { error: true, error_index: badIndices[0] }
+  }
+  return { error: false }
+}
+
+function splitCsv (str) {
+  // From https://stackoverflow.com/a/31955570
+
+  return str.split(',').reduce((accum, curr) => {
+    if (accum.isConcatting) {
+      accum.soFar[accum.soFar.length - 1] += ',' + curr
+    } else {
+      accum.soFar.push(curr)
+    }
+    if (curr.split('"').length % 2 === 0) {
+      accum.isConcatting = !accum.isConcatting
+    }
+    return accum
+  }, { soFar: [], isConcatting: false }).soFar
+}

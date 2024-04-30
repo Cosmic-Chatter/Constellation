@@ -5,7 +5,7 @@ export const config = {
     audio: true,
     refresh: true,
     restart: false,
-    shutfown: false,
+    shutdown: false,
     sleep: false
   },
   autoplayAudio: false,
@@ -16,6 +16,7 @@ export const config = {
   currentInteraction: false,
   definitionLoader: null, // A function used by loadDefinition() to set up the specific app.
   errorDict: {},
+  fontCache: {},
   group: 'Default',
   helperAddress: 'http://localhost:8000',
   id: 'TEMP ' + String(new Date().getTime()),
@@ -26,9 +27,10 @@ export const config = {
   remoteDisplay: false, // false == we are using the webview app, true == browser
   serverAddress: '',
   softwareUpdateLocation: 'https://raw.githubusercontent.com/Cosmic-Chatter/Constellation/main/apps/_static/version.txt',
-  softwareVersion: 4,
+  softwareVersion: 5,
   standalone: false, // false == we are using Control Server
-  updateParser: null // Function used by readUpdate() to parse app-specific updates
+  updateParser: null, // Function used by readUpdate() to parse app-specific updates
+  uuid: ''
 }
 
 export function configureApp (opt = {}) {
@@ -83,7 +85,13 @@ export function makeRequest (opt) {
 
   return new Promise(function (resolve, reject) {
     const xhr = new XMLHttpRequest()
-    xhr.open(opt.method, opt.url + opt.endpoint, true)
+    if ('withCredentials' in opt && opt.withCredentials === true) xhr.withCredentials = true
+    const path = opt.url + opt.endpoint
+    if ('noCache' in opt && opt.noCache === true) {
+      xhr.open(opt.method, path + (/\?/.test(path) ? '&' : '?') + new Date().getTime(), true)
+    } else {
+      xhr.open(opt.method, path, true)
+    }
     xhr.timeout = opt.timeout ?? 2000 // ms
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -143,7 +151,7 @@ export function sendPing () {
   const pingRequest = function () {
     const requestDict = {
       id: config.id,
-      group: config.group,
+      uuid: config.uuid,
       helperAddress: config.helperAddress,
       permissions: config.permissions,
       constellation_app_id: config.constellationAppID,
@@ -342,8 +350,8 @@ function readHelperUpdate (update, changeApp = true) {
   // App settings
   if ('app' in update) {
     if ('id' in update.app) config.id = update.app.id
-    if ('group' in update.app) config.group = update.app.group
     if ('definition' in update.app) config.definition = update.app.definition
+    if ('uuid' in update.app) config.uuid = update.app.uuid
   }
   if ('control_server' in update) {
     if (('ip_address' in update.control_server) && ('port' in update.control_server)) {
@@ -712,6 +720,8 @@ export function guessMimetype (filename) {
     return 'image'
   } else if (['aac', 'm4a', 'mp3', 'oga', 'ogg', 'wav'].includes(ext)) {
     return 'audio'
+  } else if (['otf', 'ttf', 'woff', 'woff2'].includes(ext)) {
+    return 'font'
   }
 }
 
@@ -734,14 +744,16 @@ export function saveScreenshotAsThumbnail (filename) {
   }).then((canvas) => {
     canvas.toBlob((img) => {
       const formData = new FormData()
-      formData.append('files', img, filename)
-      fetch('/files/uploadThumbnail', {
-        method: 'POST',
-        body: formData
-      })
-        .catch(error => {
-          console.error(error)
+      if (img != null) {
+        formData.append('files', img, filename)
+        fetch('/files/uploadThumbnail', {
+          method: 'POST',
+          body: formData
         })
+          .catch(error => {
+            console.error(error)
+          })
+      }
     })
   })
 }
@@ -857,4 +869,61 @@ export function setBackground (details, root, defaultColor = '#22222E') {
     console.log()
     root.style.setProperty('--background-color', `url(../content/${details.image})`)
   }
+}
+
+export function uuid () {
+  // Generate a new UUID v4 without using the crypto library (we may not be in HTTPS).
+  // Format: 8-4-4-4-12
+
+  const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 4; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  result += '-'
+  for (let i = 0; i < 12; i++) {
+    result += chars[Math.floor(Math.random() * 36)]
+  }
+  return result
+}
+
+export function sortAlphabetically (array) {
+  // Sort the given array alphabetically
+
+  return array.sort((a, b) => {
+    try {
+      const aName = a.toLowerCase()
+      const bName = b.toLowerCase()
+      if (aName > bName) return 1
+      if (aName < bName) return -1
+    } catch {
+
+    }
+    return 0
+  })
+}
+
+export function createFont (name, font) {
+  // Create the desired font, if it doesn't already exist.
+
+  const safeName = name.replaceAll(' ', '').replaceAll('.', '').replaceAll('/', '').replaceAll('\\', '')
+
+  if ((safeName in config.fontCache) === false) {
+    const fontDef = new FontFace(safeName, 'url(' + encodeURI(font) + ')')
+    document.fonts.add(fontDef)
+    config.fontCache[safeName] = true
+  }
+  return safeName
 }

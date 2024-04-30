@@ -16,7 +16,7 @@ port: int = 8000
 ip_address: str = "localhost"
 last_update_time: float = 0  # Will hold time.time() of last change to the server
 
-software_version: float = 4
+software_version: float = 5
 software_update_available: bool = False
 software_update_available_version: str = ""
 
@@ -39,6 +39,10 @@ wakeOnLANList = []
 synchronizationList = []  # Holds sets of displays that are being synchronized
 componentDescriptions = {}  # Holds optional short descriptions of each component
 
+# Group stuff
+group_list: list[dict[str, Any]] = []
+group_list_last_update_date = datetime.datetime.now().isoformat()
+
 # Dictionary to keep track of warnings we have already presented
 serverWarningDict = {}
 
@@ -59,5 +63,8 @@ rebooting: bool = False  # This will be set to True from a background thread whe
 # Exhibit stuff
 current_exhibit: Union[str, None] = None  # The JSON file defining the current exhibit "name.json"
 exhibit_configuration: Union[list[dict[str, Any]], None] = None
-assignable_staff: list[str] = []  # staff to whom issues can be assigned.
 exhibit_list: list[str] = []
+
+# User stuff
+encryption_key: bytes | None = None
+user_list: list = []

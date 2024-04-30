@@ -1,3 +1,5 @@
+/* global bootstrap */
+
 import * as constCommon from '../js/constellation_app_common.js'
 
 function changePage (val) {
@@ -27,8 +29,13 @@ function clear () {
   // $('#searchInput').val('')
   // keyboard.input.default = ''
   // keyboard.input.searchInput = ''
-  // $('.filterSelect').val(null)
-  populateResultsRow()
+  Array.from(document.getElementsByClassName('filter-entry')).forEach((el) => {
+    el.value = ''
+  })
+  // Close the filter dropdown
+  new bootstrap.Dropdown(document.getElementById('filterDropdown')).hide()
+
+  localize(defaultLang)
 }
 
 function createCard (obj) {
@@ -120,40 +127,56 @@ function onFilterOptionChange () {
   populateResultsRow()
 }
 
-function populateFilterOptions (titles) {
-  // Read the filterKeys and create a dropdown for each
+function populateFilterOptions (order, filters) {
+  // Read the filters and create a dropdown for each
 
-  if (filterKeys == null) {
-    return
-  }
-  $('#filterOptionsRow').empty()
+  const filterOptionsEl = document.getElementById('filterOptions')
+  filterOptionsEl.innerHTML = ''
 
-  filterKeys.forEach((key, i) => {
-    const newCol = document.createElement('div')
-    newCol.className = 'col-3 col-xl-6'
-    $('#filterOptionsRow').append(newCol)
+  for (const uuid of order) {
+    const details = filters[uuid]
 
-    if (titles != null) {
-      const title = document.createElement('H3')
-      title.innerHTML = titles[i]
-      newCol.append(title)
+    const li = document.createElement('li')
+    filterOptionsEl.appendChild(li)
+
+    const div = document.createElement('div')
+    div.classList = 'dropdown-item'
+    li.appendChild(div)
+
+    const label = document.createElement('label')
+    label.classList = 'form-label filter-label'
+    label.innerHTML = details.display_name
+    label.setAttribute('for', 'filterSelect_' + uuid)
+    div.appendChild(label)
+
+    const select = document.createElement('select')
+    select.classList = 'form-select filter-entry'
+    select.setAttribute('id', 'filterSelect_' + uuid)
+    select.setAttribute('data-key', details.key)
+    select.addEventListener('change', onFilterOptionChange)
+    div.appendChild(select)
+
+    const options = _getFilterOptions(details.key)
+
+    const blank = new Option('-', '')
+    select.append(blank)
+
+    for (const entry of options) {
+      const option = new Option(entry, entry)
+      select.appendChild(option)
     }
-    const newSelect = document.createElement('select')
-    newSelect.className = 'form-select filterSelect'
-    newSelect.multiple = true
-    newSelect.setAttribute('data-filterKey', key)
+  }
+}
 
-    const uniqueValues = [...new Set(spreadsheet.map(entry => entry[key]))].sort()
-    let newOption
-    uniqueValues.forEach((value, j) => {
-      newOption = document.createElement('option')
-      newOption.value = value
-      newOption.innerHTML = value
-      newSelect.appendChild(newOption)
-    })
-    newCol.appendChild(newSelect)
-    newSelect.addEventListener('change', onFilterOptionChange)
-  })
+function _getFilterOptions (key) {
+  // For a given spreadsheet key, get a list of the unique options for the select.
+
+  const resultDict = {} // Will hold unique entries without duplicates
+
+  for (const row of spreadsheet) {
+    if (key in row) resultDict[row[key]] = 1
+  }
+  return constCommon.sortAlphabetically(Object.keys(resultDict))
 }
 
 function _populateResultsRow (currentKey) {
@@ -183,46 +206,48 @@ function _populateResultsRow (currentKey) {
   //   }
   // })
 
-  // // Filter on filter options
-  // const filters = $.makeArray($('.filterSelect'))
-  // const filteredData = []
-  // let thisKey, selectedValues, filterMathces
-  // // Iterate through the remaining data and make sure it matches at least
-  // // one filtered value.
-  // searchedData.forEach((item, i) => {
-  //   filterMathces = {}
-  //   filters.forEach((filter, j) => {
-  //     thisKey = filter.getAttribute('data-filterKey')
-  //     selectedValues = $(filter).val()
-  //     if (selectedValues.length > 0) {
-  //       if (selectedValues.includes(item[thisKey])) {
-  //         filterMathces[thisKey] = 1
-  //         item.matchCount += 1
-  //       } else {
-  //         filterMathces[thisKey] = 0
-  //       }
-  //     } else {
-  //       // If no values are selected for this filter, pass all matches through
-  //       filterMathces[thisKey] = 1
-  //     }
-  //   })
-  //   // Iterate through the matches to make sure we've matched on every filter
-  //   let totalMathces = 0
-  //   for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
-  //     if (matchValue === 1) {
-  //       totalMathces += 1
-  //     }
-  //   }
-  //   if (totalMathces === filters.length) {
-  //     filteredData.push(item)
-  //   }
-  // })
+  // Filter on filter options
+  const filters = Array.from(document.getElementsByClassName('filter-entry'))
+  const filteredData = []
+  let thisKey, selectedValue, filterMathces
 
-  // // Sort by the number of matches, so better results rise to the top.
-  // filteredData.sort((a, b) => b.matchCount - a.matchCount)
+  // Iterate through the remaining data and make sure it matches at least
+  // one filtered value.
+  spreadsheet.forEach((item) => {
+    filterMathces = {}
+    filters.forEach((filter) => {
+      thisKey = filter.getAttribute('data-key')
+      filterMathces[thisKey] = 0
 
-  // Make sure we have no more than 12 results to display
-  const displayedResults = spreadsheet.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
+      selectedValue = filter.value // Can only select one for now
+
+      if (selectedValue != null && selectedValue !== '') {
+        if (selectedValue.includes(item[thisKey])) {
+          filterMathces[thisKey] = 1
+        }
+      } else {
+        // If no values are selected for this filter, pass all matches through
+        filterMathces[thisKey] = 1
+      }
+    })
+
+    // Iterate through the matches to make sure we've matched on every filter
+    let totalMathces = 0
+    for (const [matchKey, matchValue] of Object.entries(filterMathces)) {
+      if (matchValue === 1) {
+        totalMathces += 1
+      }
+    }
+    if (totalMathces === filters.length) {
+      filteredData.push(item)
+    }
+  })
+
+  // Sort by the number of matches, so better results rise to the top.
+  filteredData.sort((a, b) => b.matchCount - a.matchCount)
+
+  // Make sure we have the correct number of results to display
+  const displayedResults = filteredData.slice(cardsPerPage * currentPage, cardsPerPage * (currentPage + 1))
   // Create a card for each item and add it to the display
   displayedResults.forEach((item, i) => {
     createCard(item)
@@ -319,17 +344,6 @@ function loadDefinition (def) {
     hideAttractor()
     attractorAvailable = false
   }
-
-  // Configure layout
-  // if ('show_search_and_filter' in def.style.layout && def.style.layout.show_search_and_filter === true) {
-  //   document.getElementById('seerchFilterPane').style.display = 'flex'
-  //   document.getElementById('displayPane').classList.remove('display-full')
-  //   document.getElementById('displayPane').classList.add('display-share')
-  // } else {
-  //   document.getElementById('seerchFilterPane').style.display = 'none'
-  //   document.getElementById('displayPane').classList.add('display-full')
-  //   document.getElementById('displayPane').classList.remove('display-share')
-  // }
   if ('num_columns' in def.style.layout) {
     document.getElementById('resultsRow').classList = 'h-100 row row-cols-' + String(def.style.layout.num_columns)
     numCols = def.style.layout.num_columns
@@ -372,6 +386,9 @@ function loadDefinition (def) {
   // First, reset to defaults (in case a style option doesn't exist in the definition)
   root.style.setProperty('--background-color', 'white')
   root.style.setProperty('--titleColor', 'black')
+  root.style.setProperty('--filterBackgroundColor', 'white')
+  root.style.setProperty('--filterLabelColor', 'black')
+  root.style.setProperty('--filterTextColor', 'black')
 
   // Then, apply the definition settings
   Object.keys(def.style.color).forEach((key) => {
@@ -391,8 +408,10 @@ function loadDefinition (def) {
   const backgroundClassification = constCommon.classifyColor(backgroundColor)
   if (backgroundClassification === 'light') {
     document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_black.svg'
+    document.getElementById('filterDropdownIcon').src = '_static/icons/filter_black.svg'
   } else {
     document.getElementById('langSwitchDropdownIcon').src = '_static/icons/translation-icon_white.svg'
+    document.getElementById('filterDropdownIcon').src = '_static/icons/filter_white.svg'
   }
 
   // Font
@@ -403,6 +422,8 @@ function loadDefinition (def) {
   root.style.setProperty('--Lightbox_title-font', 'Lightbox_title-default')
   root.style.setProperty('--Lightbox_caption-font', 'Lightbox_caption-default')
   root.style.setProperty('--Lightbox_credit-font', 'Lightbox_credit-default')
+  root.style.setProperty('--filter_label-font', 'filter_label-default')
+  root.style.setProperty('--filter_text-font', 'filter_text-default')
 
   // Then, apply the definition settings
   Object.keys(def.style.font).forEach((key) => {
@@ -419,6 +440,8 @@ function loadDefinition (def) {
   root.style.setProperty('--Lightbox_title-font-adjust', 0)
   root.style.setProperty('--Lightbox_caption-font-adjust', 0)
   root.style.setProperty('--Lightbox_credit-font-adjust', 0)
+  root.style.setProperty('--filter_label-font-adjust', 0)
+  root.style.setProperty('--filter_text-font-adjust', 0)
 
   // Then, apply the definition settings
   Object.keys(def.style.text_size).forEach((key) => {
@@ -435,7 +458,8 @@ function loadDefinition (def) {
   constCommon.makeHelperRequest({
     method: 'GET',
     endpoint: '/content/' + def.spreadsheet,
-    rawResponse: true
+    rawResponse: true,
+    noCache: true
   })
     .then((response) => {
       const csvAsJSON = constCommon.csvToJSON(response)
@@ -477,40 +501,17 @@ function localize (lang) {
   } else {
     creditKey = null
   }
-  if ('search_keys' in definition.languages[lang]) {
-    searchKeys = definition.languages[lang].search_keys
+
+  if ('filter_order' in definition.languages[lang] && definition.languages[lang].filter_order.length > 0) {
+    // Show the filter icon
+    document.getElementById('filterDropdown').style.display = 'block'
+    populateFilterOptions(definition.languages[lang].filter_order, definition.languages[lang].filters)
   } else {
-    searchKeys = []
+    // Clear any filters
+    document.getElementById('filterOptions').innerHTML = ''
+    // Hide the filter icon
+    document.getElementById('filterDropdown').style.display = 'none'
   }
-
-  if ('filter_keys' in definition.languages[lang] && definition.languages[lang].filter_keys.length > 0) {
-    // Split and trim the entries in a list
-    filterKeys = definition.languages[lang].filter_keys.map(function (item) {
-      return item.trim()
-    })
-    $('#filterRegion').show()
-  } else {
-    filterKeys = []
-    $('#filterRegion').hide()
-  }
-  let filterTitles = null
-  if ('filter_titles' in definition.languages[lang]) {
-    // Split and trim the entries in a list
-    filterTitles = definition.languages[lang].map(function (item) {
-      return item.trim()
-    })
-  }
-
-  populateFilterOptions(filterTitles)
-
-  // Create a new property, searchData, for each data element that includes
-  // everything we can search against as a string.
-  spreadsheet.forEach((item, i) => {
-    item.searchData = ''
-    searchKeys.forEach((key, j) => {
-      item.searchData += String(item[key]) + ' '
-    })
-  })
 
   populateResultsRow()
 }
@@ -636,8 +637,7 @@ function showMediaInLightbox (media, title = '', caption = '', credit = '') {
 //   }
 // })
 
-let spreadsheet, mediaKey, thumbnailKey, searchKeys, titleKey, captionKey, creditKey, filterKeys
-const currentContent = []
+let spreadsheet, mediaKey, thumbnailKey, titleKey, captionKey, creditKey
 let currentPage = 0
 let cardsPerPage, numCols, numRows
 let defaultLang = ''

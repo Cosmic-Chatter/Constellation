@@ -32,23 +32,23 @@
       <div id="mediaLightbox">
         <div style='width: 100vw; height: 100vh;'>
           <div class='row' style="height: 100%;">
-            <div class='hideLightboxTrigger col-2 pt-4'>
-            </div>
-            <div class='col-8 pt-4 pb-2' style="max-height: 100%;">
+            <!-- <div class='hideLightboxTrigger col-2 pt-4'>
+            </div> -->
+            <div class='col-12 pt-4 pb-2 hideLightboxTrigger' style="max-height: 100%;">
               <img id="mediaLightboxImage" class="lightboxMedia"></img>
               <video id="mediaLightboxVideo" class="lightboxMedia" disablePictureInPicture="true" webkit-playsinline="true" playsinline="true"></video>
-              <div id='mediaLightboxTitle'>
+              <div class="mx-5" id='mediaLightboxTitle'>
               </div>
-              <div id='mediaLightboxCaption'>
+              <div class="mx-5" id='mediaLightboxCaption'>
               </div>
-              <div id='mediaLightboxCredit'>
-              </div>
+              <div class="mx-5" id='mediaLightboxCredit'>
+              </div>              
             </div>
-            <div class='hideLightboxTrigger col-1 pt-4'>
+            <!-- <div class='hideLightboxTrigger col-1 pt-4'>
             </div>
             <div class="hideLightboxTrigger col-1 pt-4">
               <button class='hideLightboxTrigger btn btn-lg btn-secondary' style="font-size: 50px;">╳</button>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -57,6 +57,14 @@
 
         <div class="col-2 col-lg-1 text-center">
           <button id="previousPageButton" class='pageButton btn btn-lg btn-secondary'>←</button>
+
+          <div id="filterDropdown" class="btn-group dropup text-center">
+            <button type="button" class="btn btn-link w-100 h-100 px-0 py-0" data-bs-toggle="dropdown" aria-expanded="false">
+              <img height="100%" id="filterDropdownIcon" src="_static/icons/filter_black.svg">
+            </button>
+            <ul id="filterOptions" class="dropdown-menu">
+            </ul>
+          </div>
         </div>
         <div id="resultsPane" class="col-8 col-offset-2 col-offset-lg-0 col-lg-10 h-100">
           <div id="resultsRow" class="row">
@@ -71,29 +79,9 @@
             </button>
             <ul id="langSwitchOptions" class="dropdown-menu">
             </ul>
-        </div>
+          </div>
         </div>
       </div>
-      <!-- <div id="seerchFilterPane" class="row" style="height:30vh;">
-          <div id="logoRegion" class="d-none d-xl-block col-3">
-          </div>
-          <div id="keyboardRegion" class="col-12 col-xl-6">
-            <div class="row">
-              <div class='col-10'>
-                <input id="searchInput" class="input w-100" placeholder="Begin typing to search" readonly/>
-              </div>
-              <div class='col-2'>
-                <button id="clearButton" class='btn btn-secondary w-100'>Clear all</button>
-              </div>
-            </div>
-            <div class="simple-keyboard"></div>
-          </div>
-          <div id="filterRegion" class="col-12 col-xl-3">
-              <center><H1>Filter Options</H1></center>
-              <div id="filterOptionsRow" class="row">
-              </div>
-          </div>
-      </div> -->
     </div>
 
   <script type="text/javascript" src="js/jquery-3.6.1.min.js"></script>
